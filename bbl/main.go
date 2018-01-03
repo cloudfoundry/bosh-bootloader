@@ -202,7 +202,6 @@ func main() {
 	commandSet["latest-error"] = commands.NewLatestError(logger, stateValidator)
 	commandSet["print-env"] = commands.NewPrintEnv(logger, stderrLogger, stateValidator, sshKeyGetter, credhubGetter, terraformManager)
 	commandSet["cloud-config"] = commands.NewCloudConfig(logger, stateValidator, cloudConfigManager)
-	commandSet["bosh-deployment-vars"] = commands.NewBOSHDeploymentVars(logger, boshManager, stateValidator, terraformManager)
 
 	app := application.New(commandSet, appConfig, usage)
 

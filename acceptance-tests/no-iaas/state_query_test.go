@@ -4,8 +4,6 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
-	yaml "gopkg.in/yaml.v2"
-
 	acceptance "github.com/cloudfoundry/bosh-bootloader/acceptance-tests"
 	"github.com/cloudfoundry/bosh-bootloader/acceptance-tests/actors"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
@@ -18,7 +16,6 @@ var _ = Describe("state query against a bbl 5.1.0 state file", func() {
 	// Tests all the bbl read commands:
 	//
 	//   lbs                     Prints attached load balancer(s)
-	//   bosh-deployment-vars    Prints required variables for BOSH deployment
 	//   cloud-config            Prints suggested cloud configuration for BOSH environment
 	//   jumpbox-address         Prints BOSH jumpbox address
 	//   director-address        Prints BOSH director address
@@ -48,21 +45,6 @@ CF SSH Proxy LB: 104.196.181.208
 CF TCP Router LB: 35.185.98.78
 CF WebSocket LB: 104.196.197.242
 CF Credhub LB: 35.196.150.246`))
-	})
-
-	It("bbl bosh-deployment-vars", func() {
-		stdout := bbl.BOSHDeploymentVars()
-		var boshDeploymentVars map[string]interface{}
-		err := yaml.Unmarshal([]byte(stdout), &boshDeploymentVars)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(boshDeploymentVars["internal_cidr"].(string)).To(Equal("10.0.0.0/24"))
-		Expect(boshDeploymentVars["internal_gw"].(string)).To(Equal("10.0.0.1"))
-		Expect(boshDeploymentVars["internal_ip"].(string)).To(Equal("10.0.0.6"))
-		Expect(boshDeploymentVars["director_name"].(string)).To(Equal("bosh-some-env-bbl5"))
-		Expect(boshDeploymentVars["zone"].(string)).To(Equal("us-east1-b"))
-		Expect(boshDeploymentVars["network"].(string)).To(Equal("some-env-bbl5-network"))
-		Expect(boshDeploymentVars["subnetwork"].(string)).To(Equal("some-env-bbl5-subnet"))
-		Expect(boshDeploymentVars["tags"].([]interface{})[0].(string)).To(Equal("some-env-bbl5-bosh-director"))
 	})
 
 	It("bbl cloud-config", func() {

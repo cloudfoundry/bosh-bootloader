@@ -901,16 +901,6 @@ var _ = Describe("LoadState", func() {
 			})
 
 			Describe("deprecated commands", func() {
-				Context("when the command is bosh-deployment-vars", func() {
-					It("prints a warning", func() {
-						appConfig, err := c.Bootstrap([]string{"bbl", "bosh-deployment-vars"})
-						Expect(err).NotTo(HaveOccurred())
-
-						Expect(appConfig.Command).To(Equal("bosh-deployment-vars"))
-						Expect(fakeLogger.PrintlnCall.Receives.Message).To(Equal(`Deprecation warning: the bosh-deployment-vars command has been deprecated and will be removed in bbl v6.0.0. The bosh deployment vars are stored in the vars directory.`))
-					})
-				})
-
 				Context("when the command is create-lbs", func() {
 					It("prints a warning", func() {
 						appConfig, err := c.Bootstrap([]string{"bbl", "create-lbs"})

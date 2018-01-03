@@ -152,7 +152,6 @@ var _ = Describe("Commands Usage", func() {
 		Entry("director-ssh-key", commands.SSHKey{Director: true}, "Prints SSH private key for the director."),
 		Entry("print-env", commands.PrintEnv{}, "Prints required BOSH environment variables"),
 		Entry("latest-error", commands.LatestError{}, "Prints the output from the latest call to terraform"),
-		Entry("bosh-deployment-vars", commands.BOSHDeploymentVars{}, "Prints required variables for BOSH deployment"),
 		Entry("version", commands.Version{}, "Prints version"),
 		Entry("cloud-config", commands.CloudConfig{}, "Prints suggested cloud configuration for BOSH environment"),
 	)

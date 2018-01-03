@@ -162,10 +162,6 @@ func (b BBL) EnvID() string {
 	return b.fetchValue("env-id")
 }
 
-func (b BBL) BOSHDeploymentVars() string {
-	return b.fetchValue("bosh-deployment-vars")
-}
-
 func (b BBL) CloudConfig() string {
 	return b.fetchValue("cloud-config")
 }

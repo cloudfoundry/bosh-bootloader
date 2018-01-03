@@ -153,10 +153,6 @@ func (c Config) Bootstrap(args []string) (application.Configuration, error) {
 		c.logger.Println("Deprecation warning: the --gcp-zone flag (BBL_GCP_ZONE) is now ignored.")
 	}
 
-	if command == "bosh-deployment-vars" {
-		c.logger.Println(`Deprecation warning: the bosh-deployment-vars command has been deprecated and will be removed in bbl v6.0.0. The bosh deployment vars are stored in the vars directory.`)
-	}
-
 	if command == "create-lbs" {
 		c.logger.Println(`Deprecation warning: the create-lbs command has been deprecated and will be removed in bbl v6.0.0. Create load balancers with "plan" or "up" e.g. "bbl up --lb-type <type> --lb-cert <cert> --lb-key <key>" or "bbl up --lb-type <type> --lb-cert <cert> --lb-key <key>".`)
 	}
