@@ -662,7 +662,6 @@ var _ = Describe("LoadState", func() {
 								"bbl", "up", "--name", "some-env-id",
 								"--iaas", "gcp",
 								"--gcp-service-account-key", serviceAccountKey,
-								"--gcp-zone", "some-availability-zone",
 								"--gcp-region", "some-region",
 							}
 						})
@@ -687,7 +686,6 @@ var _ = Describe("LoadState", func() {
 									"up",
 									"--iaas", "gcp",
 									"--gcp-service-account-key", "/this/file/isn't/real",
-									"--gcp-zone", "some-availability-zone",
 									"--gcp-region", "some-region",
 								}
 								fakeFileIO.StatCall.Returns.Error = errors.New("no file found")
@@ -706,7 +704,6 @@ var _ = Describe("LoadState", func() {
 									"bbl", "up", "--name", "some-env-id",
 									"--iaas", "gcp",
 									"--gcp-service-account-key", "some-key",
-									"--gcp-zone", "some-availability-zone",
 									"--gcp-region", "some-region",
 								}
 								fakeFileIO.ReadFileCall.Returns.Contents = []byte("not-json")
@@ -725,7 +722,6 @@ var _ = Describe("LoadState", func() {
 								"bbl", "up", "--name", "some-env-id",
 								"--iaas", "gcp",
 								"--gcp-service-account-key", "some-key",
-								"--gcp-zone", "some-availability-zone",
 								"--gcp-region", "some-region",
 							}
 							fakeFileIO.ReadFileCall.Returns.Contents = []byte("{}")
@@ -743,7 +739,6 @@ var _ = Describe("LoadState", func() {
 								"bbl", "up", "--name", "some-env-id",
 								"--iaas", "gcp",
 								"--gcp-service-account-key", "some-key",
-								"--gcp-zone", "some-availability-zone",
 								"--gcp-region", "some-region",
 							}
 							fakeFileIO.StatCall.Returns.Error = errors.New("no file found")
@@ -762,7 +757,6 @@ var _ = Describe("LoadState", func() {
 								"bbl", "up", "--name", "some-env-id",
 								"--iaas", "gcp",
 								"--gcp-service-account-key", "some-key",
-								"--gcp-zone", "some-availability-zone",
 								"--gcp-region", "some-region",
 							}
 							fakeFileIO.StatCall.Returns.Error = errors.New("no file found")
@@ -878,24 +872,6 @@ var _ = Describe("LoadState", func() {
 
 						Expect(appConfig.State.GCP.ProjectID).To(Equal("some-project-id"))
 						Expect(fakeLogger.PrintlnCall.Receives.Message).To(Equal("Deprecation warning: the --gcp-project-id flag (BBL_GCP_PROJECT_ID) is now ignored."))
-					})
-				})
-
-				Context("when the deprecated --gcp-zone is passed in", func() {
-					BeforeEach(func() {
-						args = []string{
-							"bbl", "up",
-							"--iaas", "gcp",
-							"--gcp-zone", "some-zone",
-							"--gcp-service-account-key", serviceAccountKey,
-						}
-					})
-					It("ignores the flag and prints a warning", func() {
-						appConfig, err := c.Bootstrap(args)
-						Expect(err).NotTo(HaveOccurred())
-
-						Expect(appConfig.State.GCP.Zone).To(Equal(""))
-						Expect(fakeLogger.PrintlnCall.Receives.Message).To(Equal("Deprecation warning: the --gcp-zone flag (BBL_GCP_ZONE) is now ignored."))
 					})
 				})
 			})

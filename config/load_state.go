@@ -32,7 +32,6 @@ type globalFlags struct {
 
 	GCPServiceAccountKey string `long:"gcp-service-account-key" env:"BBL_GCP_SERVICE_ACCOUNT_KEY"`
 	GCPProjectID         string `long:"gcp-project-id"          env:"BBL_GCP_PROJECT_ID"`
-	GCPZone              string `long:"gcp-zone"                env:"BBL_GCP_ZONE"`
 	GCPRegion            string `long:"gcp-region"              env:"BBL_GCP_REGION"`
 
 	VSphereCluster         string `long:"vsphere-vcenter-cluster"  env:"BBL_VSPHERE_VCENTER_CLUSTER"`
@@ -147,10 +146,6 @@ func (c Config) Bootstrap(args []string) (application.Configuration, error) {
 
 	if globalFlags.GCPProjectID != "" {
 		c.logger.Println("Deprecation warning: the --gcp-project-id flag (BBL_GCP_PROJECT_ID) is now ignored.")
-	}
-
-	if globalFlags.GCPZone != "" {
-		c.logger.Println("Deprecation warning: the --gcp-zone flag (BBL_GCP_ZONE) is now ignored.")
 	}
 
 	if command == "create-lbs" {

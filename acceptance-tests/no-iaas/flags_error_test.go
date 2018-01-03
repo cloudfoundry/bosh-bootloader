@@ -26,7 +26,6 @@ var _ = Describe("bbl", func() {
 				pathToBBL, "up",
 				"--iaas", "gcp",
 				"--gcp-service-account-key", `{"project_id": "idk"}`,
-				"--gcp-zone", "us-central1-a",
 				"--gcp-region", "us-central1",
 			)
 			session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
