@@ -855,27 +855,6 @@ var _ = Describe("LoadState", func() {
 				)
 			})
 
-			Describe("deprecated flags", func() {
-				var args []string
-				Context("when the deprecated --gcp-project-id is passed in", func() {
-					BeforeEach(func() {
-						args = []string{
-							"bbl", "up",
-							"--iaas", "gcp",
-							"--gcp-project-id", "ignored-project-id",
-							"--gcp-service-account-key", serviceAccountKey,
-						}
-					})
-					It("ignores the flag and prints a warning", func() {
-						appConfig, err := c.Bootstrap(args)
-						Expect(err).NotTo(HaveOccurred())
-
-						Expect(appConfig.State.GCP.ProjectID).To(Equal("some-project-id"))
-						Expect(fakeLogger.PrintlnCall.Receives.Message).To(Equal("Deprecation warning: the --gcp-project-id flag (BBL_GCP_PROJECT_ID) is now ignored."))
-					})
-				})
-			})
-
 			Describe("deprecated commands", func() {
 				Context("when the command is create-lbs", func() {
 					It("prints a warning", func() {

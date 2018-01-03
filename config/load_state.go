@@ -31,7 +31,6 @@ type globalFlags struct {
 	AzureTenantID       string `long:"azure-tenant-id"        env:"BBL_AZURE_TENANT_ID"`
 
 	GCPServiceAccountKey string `long:"gcp-service-account-key" env:"BBL_GCP_SERVICE_ACCOUNT_KEY"`
-	GCPProjectID         string `long:"gcp-project-id"          env:"BBL_GCP_PROJECT_ID"`
 	GCPRegion            string `long:"gcp-region"              env:"BBL_GCP_REGION"`
 
 	VSphereCluster         string `long:"vsphere-vcenter-cluster"  env:"BBL_VSPHERE_VCENTER_CLUSTER"`
@@ -142,10 +141,6 @@ func (c Config) Bootstrap(args []string) (application.Configuration, error) {
 			ShowCommandHelp: true,
 			Command:         command,
 		}, nil
-	}
-
-	if globalFlags.GCPProjectID != "" {
-		c.logger.Println("Deprecation warning: the --gcp-project-id flag (BBL_GCP_PROJECT_ID) is now ignored.")
 	}
 
 	if command == "create-lbs" {
