@@ -88,7 +88,7 @@ func (e Executor) getSetupFiles(sourcePath, destPath string) []setupFile {
 	return files
 }
 
-func (e Executor) JumpboxCreateEnvArgs(input InterpolateInput) error {
+func (e Executor) PlanJumpbox(input InterpolateInput) error {
 	setupFiles := e.getSetupFiles(jumpboxDeploymentRepo, input.DeploymentDir)
 
 	for _, f := range setupFiles {
@@ -191,7 +191,7 @@ func (e Executor) getDirectorOpsFiles(input InterpolateInput) []string {
 	return files
 }
 
-func (e Executor) DirectorCreateEnvArgs(input InterpolateInput) error {
+func (e Executor) PlanDirector(input InterpolateInput) error {
 	setupFiles := e.getDirectorSetupFiles(input)
 	userOpsFile := setupFile{
 		dest:     filepath.Join(input.VarsDir, "user-ops-file.yml"),

@@ -18,7 +18,7 @@ import (
 )
 
 var _ = Describe("Executor", func() {
-	Describe("JumpboxCreateEnvArgs", func() {
+	Describe("PlanJumpbox", func() {
 		var (
 			cmd *fakes.BOSHCommand
 
@@ -66,7 +66,7 @@ var _ = Describe("Executor", func() {
 		})
 
 		It("writes bosh-deployment assets to the deployment dir", func() {
-			err := executor.JumpboxCreateEnvArgs(interpolateInput)
+			err := executor.PlanJumpbox(interpolateInput)
 			Expect(err).NotTo(HaveOccurred())
 
 			simplePath := filepath.Join(deploymentDir, "no-external-ip.yml")
@@ -87,7 +87,7 @@ var _ = Describe("Executor", func() {
 		It("generates create-env args for jumpbox", func() {
 			interpolateInput.OpsFile = ""
 
-			err := executor.JumpboxCreateEnvArgs(interpolateInput)
+			err := executor.PlanJumpbox(interpolateInput)
 			Expect(err).NotTo(HaveOccurred())
 
 			expectedArgs := []string{
@@ -133,7 +133,7 @@ var _ = Describe("Executor", func() {
 			})
 
 			It("generates create-env args for jumpbox", func() {
-				err := executor.JumpboxCreateEnvArgs(interpolateInput)
+				err := executor.PlanJumpbox(interpolateInput)
 				Expect(err).NotTo(HaveOccurred())
 
 				expectedArgs := []string{
@@ -172,7 +172,7 @@ var _ = Describe("Executor", func() {
 		})
 	})
 
-	Describe("DirectorCreateEnvArgs", func() {
+	Describe("PlanDirector", func() {
 		var (
 			cmd *fakes.BOSHCommand
 
@@ -218,7 +218,7 @@ var _ = Describe("Executor", func() {
 
 		It("writes bosh-deployment assets to the deployment dir", func() {
 			interpolateInput.IAAS = "warden"
-			err := executor.DirectorCreateEnvArgs(interpolateInput)
+			err := executor.PlanDirector(interpolateInput)
 			Expect(err).NotTo(HaveOccurred())
 
 			simplePath := filepath.Join(deploymentDir, "LICENSE")
@@ -260,11 +260,11 @@ var _ = Describe("Executor", func() {
 			})
 
 			It("writes create-director.sh and delete-director.sh", func() {
-				behavesLikeCreateEnvArgs(expectedArgs, cmd, executor, awsInterpolateInput, stateDir)
+				behavesLikePlan(expectedArgs, cmd, executor, awsInterpolateInput, stateDir)
 			})
 
 			It("writes aws-specific ops files", func() {
-				err := executor.DirectorCreateEnvArgs(awsInterpolateInput)
+				err := executor.PlanDirector(awsInterpolateInput)
 				Expect(err).NotTo(HaveOccurred())
 
 				ipOpsFile := filepath.Join(stateDir, "bbl-ops-files", "aws", "bosh-director-ephemeral-ip-ops.yml")
@@ -312,11 +312,11 @@ var _ = Describe("Executor", func() {
 			})
 
 			It("writes create-director.sh and delete-director.sh", func() {
-				behavesLikeCreateEnvArgs(expectedArgs, cmd, executor, gcpInterpolateInput, stateDir)
+				behavesLikePlan(expectedArgs, cmd, executor, gcpInterpolateInput, stateDir)
 			})
 
 			It("writes gcp-specific ops files", func() {
-				err := executor.DirectorCreateEnvArgs(gcpInterpolateInput)
+				err := executor.PlanDirector(gcpInterpolateInput)
 				Expect(err).NotTo(HaveOccurred())
 
 				ipOpsFile := filepath.Join(stateDir, "bbl-ops-files", "gcp", "bosh-director-ephemeral-ip-ops.yml")
@@ -352,7 +352,7 @@ var _ = Describe("Executor", func() {
 			})
 
 			It("writes create-director.sh and delete-director.sh", func() {
-				behavesLikeCreateEnvArgs(expectedArgs, cmd, executor, azureInterpolateInput, stateDir)
+				behavesLikePlan(expectedArgs, cmd, executor, azureInterpolateInput, stateDir)
 			})
 		})
 
@@ -378,7 +378,7 @@ var _ = Describe("Executor", func() {
 			})
 
 			It("writes create-director.sh and delete-director.sh", func() {
-				behavesLikeCreateEnvArgs(expectedArgs, cmd, executor, input, stateDir)
+				behavesLikePlan(expectedArgs, cmd, executor, input, stateDir)
 			})
 		})
 	})
@@ -627,13 +627,13 @@ func formatScript(command string, stateDir string, args []string) string {
 	return fmt.Sprintf("%s\n", script[:len(script)-2])
 }
 
-func behavesLikeCreateEnvArgs(expectedArgs []string, cmd *fakes.BOSHCommand, executor bosh.Executor, input bosh.InterpolateInput, stateDir string) {
+func behavesLikePlan(expectedArgs []string, cmd *fakes.BOSHCommand, executor bosh.Executor, input bosh.InterpolateInput, stateDir string) {
 	cmd.RunStub = func(stdout io.Writer, workingDirectory string, args []string) error {
 		stdout.Write([]byte("some-manifest"))
 		return nil
 	}
 
-	err := executor.DirectorCreateEnvArgs(input)
+	err := executor.PlanDirector(input)
 	Expect(err).NotTo(HaveOccurred())
 	Expect(cmd.RunCallCount()).To(Equal(0))
 
