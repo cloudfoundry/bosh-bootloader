@@ -458,8 +458,26 @@ var _ = Describe("Executor", func() {
 
 		AfterEach(func() {
 			os.Remove(filepath.Join(varsDir, "some-deployment-vars-store.yml"))
-			os.Remove(filepath.Join(stateDir, "create-some-deployment.sh"))
+			os.Remove(createEnvPath)
+			os.Remove(filepath.Join(stateDir, "create-some-deployment-override.sh"))
 			os.Unsetenv("BBL_STATE_DIR")
+		})
+
+		Context("when the user provides a create-env override", func() {
+			BeforeEach(func() {
+				overridePath := filepath.Join(stateDir, "create-some-deployment-override.sh")
+				overrideContents := fmt.Sprintf("#!/bin/bash\necho 'override-vars-store-contents' > %s/some-deployment-vars-store.yml\n", varsDir)
+
+				ioutil.WriteFile(overridePath, []byte(overrideContents), storage.ScriptMode)
+			})
+
+			It("runs the create-env-override.sh script", func() {
+				vars, err := executor.CreateEnv(createEnvInput)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(cmd.RunCallCount()).To(Equal(0))
+				Expect(vars).To(ContainSubstring("override-vars-store-contents"))
+			})
 		})
 
 		It("runs the create-env script and returns the resulting vars-store contents", func() {
@@ -526,6 +544,31 @@ var _ = Describe("Executor", func() {
 		AfterEach(func() {
 			os.Unsetenv("BBL_STATE_DIR")
 			os.Remove(filepath.Join(stateDir, "delete-some-deployment.sh"))
+		})
+
+		Context("when the user provides a delete-env override", func() {
+			BeforeEach(func() {
+				overridePath := filepath.Join(stateDir, "delete-some-deployment-override.sh")
+				overrideContents := fmt.Sprintf("#!/bin/bash\necho 'override' > %s/delete-env-output\n", varsDir)
+
+				ioutil.WriteFile(overridePath, []byte(overrideContents), storage.ScriptMode)
+			})
+
+			AfterEach(func() {
+				os.Remove(filepath.Join(varsDir, "delete-env-output"))
+				os.Remove(filepath.Join(stateDir, "delete-some-deployment-override.sh"))
+			})
+
+			It("runs the delete-env-override.sh script", func() {
+				err := executor.DeleteEnv(deleteEnvInput)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(cmd.RunCallCount()).To(Equal(0))
+
+				overrideOut, err := ioutil.ReadFile(filepath.Join(varsDir, "delete-env-output"))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(overrideOut).To(ContainSubstring("override"))
+			})
 		})
 
 		It("deletes a bosh environment with the delete-env script", func() {

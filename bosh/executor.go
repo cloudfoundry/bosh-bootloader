@@ -276,13 +276,17 @@ func (e Executor) WriteDeploymentVars(createEnvInput CreateEnvInput) error {
 
 func (e Executor) CreateEnv(createEnvInput CreateEnvInput) (string, error) {
 	os.Setenv("BBL_STATE_DIR", createEnvInput.StateDir)
-	createEnvScript := filepath.Join(createEnvInput.StateDir, fmt.Sprintf("create-%s.sh", createEnvInput.Deployment))
+	createEnvScript := filepath.Join(createEnvInput.StateDir, fmt.Sprintf("create-%s-override.sh", createEnvInput.Deployment))
+	_, err := os.Stat(createEnvScript)
+	if err != nil {
+		createEnvScript = strings.Replace(createEnvScript, "-override", "", -1)
+	}
 
 	cmd := exec.Command(createEnvScript)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
-	err := cmd.Run()
+	err = cmd.Run()
 	if err != nil {
 		return "", fmt.Errorf("Run bosh create-env: %s", err)
 	}
@@ -298,13 +302,17 @@ func (e Executor) CreateEnv(createEnvInput CreateEnvInput) (string, error) {
 
 func (e Executor) DeleteEnv(deleteEnvInput DeleteEnvInput) error {
 	os.Setenv("BBL_STATE_DIR", deleteEnvInput.StateDir)
-	deleteEnvScript := filepath.Join(deleteEnvInput.StateDir, fmt.Sprintf("delete-%s.sh", deleteEnvInput.Deployment))
+	deleteEnvScript := filepath.Join(deleteEnvInput.StateDir, fmt.Sprintf("delete-%s-override.sh", deleteEnvInput.Deployment))
+	_, err := os.Stat(deleteEnvScript)
+	if err != nil {
+		deleteEnvScript = strings.Replace(deleteEnvScript, "-override", "", -1)
+	}
 
 	cmd := exec.Command(deleteEnvScript)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
-	err := cmd.Run()
+	err = cmd.Run()
 	if err != nil {
 		return fmt.Errorf("Run bosh delete-env: %s", err)
 	}
