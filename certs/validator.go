@@ -49,16 +49,16 @@ func (v Validator) Read(certPath, keyPath, chainPath string) (CertData, error) {
 	var chainBytes []byte
 	validateErrors := multierror.NewMultiError("")
 
-	if certBytes, err = readFile("certificate", "--cert", certPath); err != nil {
+	if certBytes, err = readFile("certificate", "--lb-cert", certPath); err != nil {
 		validateErrors.Add(err)
 	}
 
-	if keyBytes, err = readFile("key", "--key", keyPath); err != nil {
+	if keyBytes, err = readFile("key", "--lb-key", keyPath); err != nil {
 		validateErrors.Add(err)
 	}
 
 	if chainPath != "" {
-		if chainBytes, err = readFile("chain", "--chain", chainPath); err != nil {
+		if chainBytes, err = readFile("chain", "--lb-chain", chainPath); err != nil {
 			validateErrors.Add(err)
 		}
 	}
@@ -160,11 +160,11 @@ func (v Validator) ReadPKCS12(certPath, passwordPath string) (CertData, error) {
 	var passwordBytes []byte
 	validateErrors := multierror.NewMultiError("")
 
-	if certBytes, err = readFile("certificate", "--cert", certPath); err != nil {
+	if certBytes, err = readFile("certificate", "--lb-cert", certPath); err != nil {
 		validateErrors.Add(err)
 	}
 
-	if passwordBytes, err = readFile("key", "--key", passwordPath); err != nil {
+	if passwordBytes, err = readFile("key", "--lb-key", passwordPath); err != nil {
 		validateErrors.Add(err)
 	}
 

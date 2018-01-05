@@ -72,8 +72,8 @@ var _ = Describe("CertificateValidator", func() {
 			It("returns an error", func() {
 				_, err := certificateValidator.ReadPKCS12("", "")
 				expectedErr := multierror.NewMultiError("")
-				expectedErr.Add(errors.New("--cert is required"))
-				expectedErr.Add(errors.New("--key is required"))
+				expectedErr.Add(errors.New("--lb-cert is required"))
+				expectedErr.Add(errors.New("--lb-key is required"))
 
 				Expect(err).To(Equal(expectedErr))
 			})
@@ -219,8 +219,8 @@ var _ = Describe("CertificateValidator", func() {
 			It("returns an error", func() {
 				_, err := certificateValidator.Read("", "", "")
 				expectedErr := multierror.NewMultiError("")
-				expectedErr.Add(errors.New("--cert is required"))
-				expectedErr.Add(errors.New("--key is required"))
+				expectedErr.Add(errors.New("--lb-cert is required"))
+				expectedErr.Add(errors.New("--lb-key is required"))
 
 				Expect(err).To(Equal(expectedErr))
 			})
