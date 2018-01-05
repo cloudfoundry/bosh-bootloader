@@ -44,6 +44,16 @@ type FileIO struct {
 			Error    error
 		}
 	}
+	RenameCall struct {
+		CallCount int
+		Receives  struct {
+			Oldpath string
+			Newpath string
+		}
+		Returns struct {
+			Error error
+		}
+	}
 }
 
 func (fake *FileIO) TempFile(dir, prefix string) (f *os.File, err error) {
@@ -70,4 +80,11 @@ func (fake *FileIO) Stat(name string) (os.FileInfo, error) {
 	fake.StatCall.CallCount++
 	fake.StatCall.Receives.Name = name
 	return fake.StatCall.Returns.FileInfo, fake.StatCall.Returns.Error
+}
+
+func (fake *FileIO) Rename(oldpath, newpath string) error {
+	fake.RenameCall.CallCount++
+	fake.RenameCall.Receives.Oldpath = oldpath
+	fake.RenameCall.Receives.Newpath = newpath
+	return fake.RenameCall.Returns.Error
 }

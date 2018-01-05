@@ -18,9 +18,14 @@ type Stater interface {
 	Stat(name string) (os.FileInfo, error)
 }
 
+type Renamer interface {
+	Rename(oldpath, newpath string) error
+}
+
 type FileIO interface {
 	FileWriter
 	FileReader
 	TempFiler
 	Stater
+	Renamer
 }

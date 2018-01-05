@@ -16,6 +16,7 @@ var _ = Describe("Migrator", func() {
 	var (
 		migrator          storage.Migrator
 		store             *fakes.StateStore
+		fileIO            *fakes.FileIO
 		stateDir          string
 		varsDir           string
 		oldBblDir         string
@@ -25,7 +26,8 @@ var _ = Describe("Migrator", func() {
 
 	BeforeEach(func() {
 		store = &fakes.StateStore{}
-		migrator = storage.NewMigrator(store)
+		fileIO = &fakes.FileIO{}
+		migrator = storage.NewMigrator(store, fileIO)
 
 		var err error
 		stateDir, err = ioutil.TempDir("", "")
@@ -481,6 +483,42 @@ var _ = Describe("Migrator", func() {
 					})
 				})
 			})
+		})
+
+		Context("when the state has bbl-provided tfvars in the terraform.tfvars file", func() {
+			var (
+				bblVarsPath string
+				tfVarsPath  string
+			)
+			BeforeEach(func() {
+				bblVarsPath = filepath.Join(varsDir, "bbl.tfvars")
+				tfVarsPath = filepath.Join(varsDir, "terraform.tfvars")
+				ioutil.WriteFile(tfVarsPath, []byte("some-tf-vars"), os.ModePerm)
+			})
+
+			AfterEach(func() {
+				os.Remove(tfVarsPath)
+			})
+
+			It("migrates terraform.tfvars to bbl.tfvars", func() {
+				_, err := migrator.Migrate(storage.State{EnvID: "some-env"})
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(fileIO.RenameCall.Receives.Oldpath).To(Equal(tfVarsPath))
+				Expect(fileIO.RenameCall.Receives.Newpath).To(Equal(bblVarsPath))
+			})
+
+			Context("when renaming the tfvars file fails", func() {
+				BeforeEach(func() {
+					fileIO.RenameCall.Returns.Error = errors.New("potatoes aren't a fruit")
+				})
+
+				It("returns an error", func() {
+					_, err := migrator.Migrate(storage.State{EnvID: "some-env"})
+					Expect(err).To(MatchError(ContainSubstring("potatoes")))
+				})
+			})
+
 		})
 	})
 })

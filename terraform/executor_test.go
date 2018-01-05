@@ -57,7 +57,7 @@ var _ = Describe("Executor", func() {
 		relativeStatePath, err = filepath.Rel(terraformDir, tfStatePath)
 		Expect(err).NotTo(HaveOccurred())
 
-		tfVarsPath = filepath.Join(varsDir, "terraform.tfvars")
+		tfVarsPath = filepath.Join(varsDir, "bbl.tfvars")
 		relativeVarsPath, err = filepath.Rel(terraformDir, tfVarsPath)
 		Expect(err).NotTo(HaveOccurred())
 

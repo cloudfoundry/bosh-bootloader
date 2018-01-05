@@ -20,3 +20,7 @@ func (*FileIOAdapter) WriteFile(filename string, data []byte, perm os.FileMode) 
 func (*FileIOAdapter) Stat(name string) (os.FileInfo, error) {
 	return os.Stat(name)
 }
+
+func (*FileIOAdapter) Rename(oldpath, newpath string) error {
+	return os.Rename(oldpath, newpath)
+}

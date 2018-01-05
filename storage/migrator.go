@@ -7,6 +7,8 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+
+	"github.com/cloudfoundry/bosh-bootloader/fileio"
 )
 
 type store interface {
@@ -17,11 +19,12 @@ type store interface {
 }
 
 type Migrator struct {
-	store store
+	store  store
+	fileIO fileio.FileIO
 }
 
-func NewMigrator(store store) Migrator {
-	return Migrator{store: store}
+func NewMigrator(store store, fileIO fileio.FileIO) Migrator {
+	return Migrator{store: store, fileIO: fileIO}
 }
 
 func (m Migrator) Migrate(state State) (State, error) {
@@ -93,6 +96,15 @@ func (m Migrator) Migrate(state State) (State, error) {
 		err = os.RemoveAll(m.store.GetOldBblDir())
 		if err != nil {
 			return State{}, fmt.Errorf("removing legacy .bbl dir: %s", err)
+		}
+	}
+
+	tfVarsPath := filepath.Join(varsDir, "terraform.tfvars")
+	bblVarsPath := filepath.Join(varsDir, "bbl.tfvars")
+	if _, err := os.Stat(tfVarsPath); err == nil {
+		err = m.fileIO.Rename(tfVarsPath, bblVarsPath)
+		if err != nil {
+			return State{}, fmt.Errorf("migrating tfvars: %s", err)
 		}
 	}
 
