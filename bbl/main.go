@@ -46,9 +46,10 @@ func main() {
 		log.Fatalf("\n\n%s\n", err)
 	}
 
+	fileIO := &fileio.FileIOAdapter{}
 	stateStore := storage.NewStore(globals.StateDir)
-	stateMigrator := storage.NewMigrator(stateStore)
-	newConfig := config.NewConfig(stateBootstrap, stateMigrator, stderrLogger, &fileio.FileIOAdapter{})
+	stateMigrator := storage.NewMigrator(stateStore, fileIO)
+	newConfig := config.NewConfig(stateBootstrap, stateMigrator, stderrLogger, fileIO)
 
 	appConfig, err := newConfig.Bootstrap(os.Args)
 	if err != nil {
