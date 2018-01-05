@@ -143,14 +143,6 @@ func (c Config) Bootstrap(args []string) (application.Configuration, error) {
 		}, nil
 	}
 
-	if command == "create-lbs" {
-		c.logger.Println(`Deprecation warning: the create-lbs command has been deprecated and will be removed in bbl v6.0.0. Create load balancers with "plan" or "up" e.g. "bbl up --lb-type <type> --lb-cert <cert> --lb-key <key>" or "bbl up --lb-type <type> --lb-cert <cert> --lb-key <key>".`)
-	}
-
-	if command == "delete-lbs" {
-		c.logger.Println(`Deprecation warning: the delete-lbs command has been deprecated and will be removed in bbl v6.0.0. Delete load balancers by calling "plan" without the lb flags.`)
-	}
-
 	state, err := c.stateBootstrap.GetState(globalFlags.StateDir)
 	if err != nil {
 		return application.Configuration{}, err
@@ -393,14 +385,11 @@ func ValidateIAAS(state storage.State) error {
 
 func NeedsIAASCreds(command string) bool {
 	_, ok := map[string]struct{}{
-		"up":         struct{}{},
-		"down":       struct{}{},
-		"plan":       struct{}{},
-		"destroy":    struct{}{},
-		"create-lbs": struct{}{},
-		"delete-lbs": struct{}{},
-		"update-lbs": struct{}{},
-		"rotate":     struct{}{},
+		"up":      struct{}{},
+		"down":    struct{}{},
+		"plan":    struct{}{},
+		"destroy": struct{}{},
+		"rotate":  struct{}{},
 	}[command]
 	return ok
 }

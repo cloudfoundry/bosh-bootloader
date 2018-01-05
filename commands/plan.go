@@ -75,18 +75,18 @@ func (p Plan) CheckFastFails(args []string, state storage.State) error {
 
 func (p Plan) ParseArgs(args []string, state storage.State) (PlanConfig, error) {
 	var (
-		config   PlanConfig
-		lbConfig CreateLBsConfig
+		config PlanConfig
+		lbArgs LBArgs
 	)
 	planFlags := flags.New("up")
 	planFlags.Bool(&config.NoDirector, "", "no-director", state.NoDirector)
 	planFlags.String(&config.Name, "name", "")
-	planFlags.String(&lbConfig.LBType, "lb-type", "")
-	planFlags.String(&lbConfig.CertPath, "lb-cert", "")
-	planFlags.String(&lbConfig.KeyPath, "lb-key", "")
-	planFlags.String(&lbConfig.Domain, "lb-domain", "")
+	planFlags.String(&lbArgs.LBType, "lb-type", "")
+	planFlags.String(&lbArgs.CertPath, "lb-cert", "")
+	planFlags.String(&lbArgs.KeyPath, "lb-key", "")
+	planFlags.String(&lbArgs.Domain, "lb-domain", "")
 	if state.IAAS == "aws" {
-		planFlags.String(&lbConfig.ChainPath, "lb-chain", "")
+		planFlags.String(&lbArgs.ChainPath, "lb-chain", "")
 	}
 
 	err := planFlags.Parse(args)
@@ -94,8 +94,8 @@ func (p Plan) ParseArgs(args []string, state storage.State) (PlanConfig, error) 
 		return PlanConfig{}, err
 	}
 
-	if (lbConfig != CreateLBsConfig{}) {
-		lbState, err := p.lbArgsHandler.GetLBState(state.IAAS, lbConfig)
+	if (lbArgs != LBArgs{}) {
+		lbState, err := p.lbArgsHandler.GetLBState(state.IAAS, lbArgs)
 		if err != nil {
 			return PlanConfig{}, err
 		}

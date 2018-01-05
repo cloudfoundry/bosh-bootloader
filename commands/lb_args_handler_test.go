@@ -41,7 +41,7 @@ var _ = Describe("LB args handler", func() {
 		})
 
 		It("returns a storage.LB object", func() {
-			lbState, err := handler.GetLBState("aws", commands.CreateLBsConfig{
+			lbState, err := handler.GetLBState("aws", commands.LBArgs{
 				LBType:    "cf",
 				CertPath:  "/path/to/cert",
 				KeyPath:   "/path/to/key",
@@ -64,7 +64,7 @@ var _ = Describe("LB args handler", func() {
 		Context("when lb type is concourse", func() {
 			Context("on gcp", func() {
 				It("does not call certificateValidator", func() {
-					lbState, err := handler.GetLBState("gcp", commands.CreateLBsConfig{
+					lbState, err := handler.GetLBState("gcp", commands.LBArgs{
 						LBType: "concourse",
 					})
 					Expect(err).NotTo(HaveOccurred())
@@ -78,7 +78,7 @@ var _ = Describe("LB args handler", func() {
 			})
 			Context("on aws", func() {
 				It("does not call certificateValidator", func() {
-					lbState, err := handler.GetLBState("aws", commands.CreateLBsConfig{
+					lbState, err := handler.GetLBState("aws", commands.LBArgs{
 						LBType: "concourse",
 					})
 					Expect(err).NotTo(HaveOccurred())
@@ -94,7 +94,7 @@ var _ = Describe("LB args handler", func() {
 
 		Context("when iaas is azure and lb type is cf", func() {
 			It("it reads the certificate and validates the password", func() {
-				lbState, err := handler.GetLBState("azure", commands.CreateLBsConfig{
+				lbState, err := handler.GetLBState("azure", commands.LBArgs{
 					LBType: "cf",
 				})
 				Expect(err).NotTo(HaveOccurred())
@@ -109,7 +109,7 @@ var _ = Describe("LB args handler", func() {
 
 		Context("when empty config is passed in", func() {
 			It("does not call certificateValidator", func() {
-				lbState, err := handler.GetLBState("", commands.CreateLBsConfig{})
+				lbState, err := handler.GetLBState("", commands.LBArgs{})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(lbState.Type).To(Equal(""))
 				Expect(lbState.Cert).To(Equal(""))
@@ -124,7 +124,7 @@ var _ = Describe("LB args handler", func() {
 			Context("when certificate validator fails for cert and key", func() {
 				It("returns an error", func() {
 					certificateValidator.ReadAndValidateCall.Returns.Error = errors.New("failed to validate")
-					_, err := handler.GetLBState("aws", commands.CreateLBsConfig{
+					_, err := handler.GetLBState("aws", commands.LBArgs{
 						LBType:    "cf",
 						CertPath:  "/path/to/cert",
 						KeyPath:   "/path/to/key",
@@ -138,7 +138,7 @@ var _ = Describe("LB args handler", func() {
 			Context("when certificate validator fails for cert and password", func() {
 				It("returns an error", func() {
 					certificateValidator.ReadAndValidatePKCS12Call.Returns.Error = errors.New("failed to validate")
-					_, err := handler.GetLBState("azure", commands.CreateLBsConfig{
+					_, err := handler.GetLBState("azure", commands.LBArgs{
 						LBType:    "cf",
 						CertPath:  "/path/to/cert",
 						KeyPath:   "/path/to/key",
@@ -151,7 +151,7 @@ var _ = Describe("LB args handler", func() {
 
 			Context("when lb type is concourse and domain flag is supplied", func() {
 				It("returns an error", func() {
-					_, err := handler.GetLBState("gcp", commands.CreateLBsConfig{
+					_, err := handler.GetLBState("gcp", commands.LBArgs{
 						LBType: "concourse",
 						Domain: "something.io",
 					})

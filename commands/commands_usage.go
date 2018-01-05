@@ -57,18 +57,6 @@ const (
   [--no-confirm]       Do not ask for confirmation (optional)
   [--skip-if-missing]  Gracefully exit if there is no state file (optional)`
 
-	CreateLBsCommandUsage = `Attaches load balancer(s) with a certificate, key, and optional chain
-
-  --type              Load balancer(s) type: "concourse" or "cf"
-  [--cert]            Path to SSL certificate (supported when type="cf")
-  [--key]             Path to SSL certificate key (supported when type="cf")
-  [--chain]           Path to SSL certificate chain (supported when iaas="aws")
-  [--domain]          Creates a DNS zone and records for the given domain (supported when type="cf")`
-
-	DeleteLBsCommandUsage = `Deletes load balancer(s)
-
-  [--skip-if-missing]  Skips deleting load balancer(s) if it is not attached (optional)`
-
 	LBsCommandUsage = "Prints attached load balancer(s)"
 
 	VersionCommandUsage = "Prints version"
@@ -114,14 +102,6 @@ func (Destroy) Usage() string {
 
 func (Rotate) Usage() string {
 	return fmt.Sprintf("%s%s%s", RotateCommandUsage, requiresCredentials, Credentials)
-}
-
-func (CreateLBs) Usage() string {
-	return fmt.Sprintf("%s%s%s", CreateLBsCommandUsage, requiresCredentials, Credentials)
-}
-
-func (DeleteLBs) Usage() string {
-	return fmt.Sprintf("%s%s%s", DeleteLBsCommandUsage, requiresCredentials, Credentials)
 }
 
 func (LBs) Usage() string { return LBsCommandUsage }

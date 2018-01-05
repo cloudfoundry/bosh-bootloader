@@ -73,7 +73,7 @@ type certificateValidator interface {
 }
 
 type lbArgsHandler interface {
-	GetLBState(string, CreateLBsConfig) (storage.LB, error)
+	GetLBState(string, LBArgs) (storage.LB, error)
 	Merge(storage.LB, storage.LB) storage.LB
 }
 

@@ -143,7 +143,6 @@ func main() {
 	credhubGetter := bosh.NewCredhubGetter(stateStore)
 	boshManager := bosh.NewManager(boshExecutor, logger, socks5Proxy, stateStore, sshKeyGetter)
 	boshClientProvider := bosh.NewClientProvider(socks5Proxy, sshKeyGetter)
-	environmentValidator := application.NewEnvironmentValidator(boshClientProvider)
 
 	var cloudConfigOpsGenerator cloudconfig.OpsGenerator
 	switch appConfig.State.IAAS {
@@ -188,9 +187,6 @@ func main() {
 	commandSet["rotate"] = commands.NewRotate(stateValidator, sshKeyDeleter, up)
 	commandSet["destroy"] = commands.NewDestroy(plan, logger, os.Stdin, boshManager, stateStore, stateValidator, terraformManager, networkDeletionValidator)
 	commandSet["down"] = commandSet["destroy"]
-	commandSet["create-lbs"] = commands.NewCreateLBs(logger, stateValidator, boshManager, lbArgsHandler, cloudConfigManager, terraformManager, stateStore, environmentValidator)
-	commandSet["update-lbs"] = commandSet["create-lbs"]
-	commandSet["delete-lbs"] = commands.NewDeleteLBs(logger, stateValidator, boshManager, cloudConfigManager, stateStore, environmentValidator, terraformManager)
 	commandSet["lbs"] = commands.NewLBs(lbsCmd, stateValidator)
 	commandSet["jumpbox-address"] = commands.NewStateQuery(logger, stateValidator, terraformManager, commands.JumpboxAddressPropertyName)
 	commandSet["director-address"] = commands.NewStateQuery(logger, stateValidator, terraformManager, commands.DirectorAddressPropertyName)

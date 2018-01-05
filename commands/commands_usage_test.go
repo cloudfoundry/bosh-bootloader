@@ -68,38 +68,6 @@ var _ = Describe("Commands Usage", func() {
 		})
 	})
 
-	Describe("Create LBs", func() {
-		Describe("Usage", func() {
-			It("returns string describing usage", func() {
-				command := commands.CreateLBs{}
-				usageText := command.Usage()
-				Expect(usageText).To(Equal(fmt.Sprintf(`Attaches load balancer(s) with a certificate, key, and optional chain
-
-  --type              Load balancer(s) type: "concourse" or "cf"
-  [--cert]            Path to SSL certificate (supported when type="cf")
-  [--key]             Path to SSL certificate key (supported when type="cf")
-  [--chain]           Path to SSL certificate chain (supported when iaas="aws")
-  [--domain]          Creates a DNS zone and records for the given domain (supported when type="cf")
-
-  Credentials for your IaaS are required:%s`, commands.Credentials)))
-			})
-		})
-	})
-
-	Describe("Delete LBs", func() {
-		Describe("Usage", func() {
-			It("returns string describing usage", func() {
-				command := commands.DeleteLBs{}
-				usageText := command.Usage()
-				Expect(usageText).To(Equal(fmt.Sprintf(`Deletes load balancer(s)
-
-  [--skip-if-missing]  Skips deleting load balancer(s) if it is not attached (optional)
-
-  Credentials for your IaaS are required:%s`, commands.Credentials)))
-			})
-		})
-	})
-
 	Describe("Destroy", func() {
 		Describe("Usage", func() {
 			It("returns string describing usage", func() {

@@ -88,8 +88,14 @@ var _ = Describe("plan lbs test", func() {
 		})
 
 		By("deleting lbs", func() {
-			session := bbl.DeleteLBs()
-			Eventually(session, 15*time.Minute).Should(gexec.Exit(0))
+			session := bbl.Plan(
+				"--name", bbl.PredefinedEnvID(),
+				"--no-director",
+			)
+			Eventually(session, 1*time.Minute).Should(gexec.Exit(0))
+
+			session = bbl.Up()
+			Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 		})
 
 		By("confirming that the target pools do not exist", func() {

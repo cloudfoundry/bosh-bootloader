@@ -13,51 +13,59 @@ type LBArgsHandler struct {
 	certificateValidator certificateValidator
 }
 
+type LBArgs struct {
+	LBType    string
+	CertPath  string
+	KeyPath   string
+	ChainPath string
+	Domain    string
+}
+
 func NewLBArgsHandler(certificateValidator certificateValidator) LBArgsHandler {
 	return LBArgsHandler{
 		certificateValidator: certificateValidator,
 	}
 }
 
-func (l LBArgsHandler) GetLBState(iaas string, config CreateLBsConfig) (storage.LB, error) {
+func (l LBArgsHandler) GetLBState(iaas string, args LBArgs) (storage.LB, error) {
 	var certData certs.CertData
 	var err error
 
-	if config.LBType == "" {
+	if args.LBType == "" {
 		return storage.LB{}, nil
 	}
 
-	if iaas == "azure" && config.LBType == "cf" {
-		certData, err = l.certificateValidator.ReadAndValidatePKCS12(config.CertPath, config.KeyPath)
+	if iaas == "azure" && args.LBType == "cf" {
+		certData, err = l.certificateValidator.ReadAndValidatePKCS12(args.CertPath, args.KeyPath)
 		if err != nil {
 			return storage.LB{}, fmt.Errorf("Validate certificate: %s", err)
 		}
 
 		return storage.LB{
-			Type:   config.LBType,
+			Type:   args.LBType,
 			Cert:   base64.StdEncoding.EncodeToString(certData.Cert),
 			Key:    string(certData.Key),
-			Domain: config.Domain,
+			Domain: args.Domain,
 		}, nil
 	}
 
-	if config.LBType != "concourse" {
-		certData, err = l.certificateValidator.ReadAndValidate(config.CertPath, config.KeyPath, config.ChainPath)
+	if args.LBType != "concourse" {
+		certData, err = l.certificateValidator.ReadAndValidate(args.CertPath, args.KeyPath, args.ChainPath)
 		if err != nil {
 			return storage.LB{}, fmt.Errorf("Validate certificate: %s", err)
 		}
 	}
 
-	if config.LBType == "concourse" && config.Domain != "" {
+	if args.LBType == "concourse" && args.Domain != "" {
 		return storage.LB{}, errors.New("domain is not implemented for concourse load balancers. Remove the --domain flag and try again.")
 	}
 
 	return storage.LB{
-		Type:   config.LBType,
+		Type:   args.LBType,
 		Cert:   string(certData.Cert),
 		Key:    string(certData.Key),
 		Chain:  string(certData.Chain),
-		Domain: config.Domain,
+		Domain: args.Domain,
 	}, nil
 }
 

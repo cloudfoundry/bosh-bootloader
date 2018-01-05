@@ -45,14 +45,11 @@ Global Options:
   --version   [-v]        Prints version
 
 Basic Commands: A good place to start
-  up                      Deploys BOSH director on an IAAS. Updates existing director
+  up                      Deploys BOSH director on an IAAS, creates CF/Concourse load balancers. Updates existing director.
   print-env               All environment variables needed for targeting BOSH. Use with: eval "$(bbl print-env)"
-  create-lbs              Creates recommended load balancer(s) for CF, Concourse
 
 Maintenance Lifecycle Commands:
   destroy                 Tears down BOSH director infrastructure. Cleans up state directory
-  update-lbs              Updates load balancer(s)
-  delete-lbs              Deletes attached load balancer(s)
   rotate                  Rotates SSH key for the jumpbox user
   plan                    Populates a state directory with the latest config without applying it
 

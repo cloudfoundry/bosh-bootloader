@@ -135,7 +135,7 @@ var _ = Describe("Plan", func() {
 					Expect(err).NotTo(HaveOccurred())
 					Expect(lbArgsHandler.GetLBStateCall.CallCount).To(Equal(1))
 					Expect(lbArgsHandler.GetLBStateCall.Receives.IAAS).To(Equal("aws"))
-					Expect(lbArgsHandler.GetLBStateCall.Receives.Config).To(Equal(commands.CreateLBsConfig{
+					Expect(lbArgsHandler.GetLBStateCall.Receives.Args).To(Equal(commands.LBArgs{
 						LBType:    "cf",
 						CertPath:  "cert",
 						KeyPath:   "key",
@@ -328,7 +328,7 @@ var _ = Describe("Plan", func() {
 					Expect(err).NotTo(HaveOccurred())
 					Expect(lbArgsHandler.GetLBStateCall.CallCount).To(Equal(1))
 					Expect(lbArgsHandler.GetLBStateCall.Receives.IAAS).To(Equal("aws"))
-					Expect(lbArgsHandler.GetLBStateCall.Receives.Config).To(Equal(commands.CreateLBsConfig{
+					Expect(lbArgsHandler.GetLBStateCall.Receives.Args).To(Equal(commands.LBArgs{
 						LBType:    "cf",
 						CertPath:  "cert",
 						KeyPath:   "key",

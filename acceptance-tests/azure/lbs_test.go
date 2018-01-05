@@ -18,6 +18,8 @@ var _ = Describe("create lbs test", func() {
 		bbl            actors.BBL
 		azure          actors.Azure
 		appGatewayName string
+		certPath       string
+		keyPath        string
 	)
 
 	BeforeEach(func() {
@@ -30,8 +32,14 @@ var _ = Describe("create lbs test", func() {
 		azure = actors.NewAzure(configuration)
 		appGatewayName = bbl.PredefinedEnvID() + "-app-gateway"
 
-		session := bbl.Up("--name", bbl.PredefinedEnvID(), "--no-director")
-		Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
+		pfx_data, err := base64.StdEncoding.DecodeString(testhelpers.PFX_BASE64)
+		Expect(err).NotTo(HaveOccurred())
+
+		certPath, err = testhelpers.WriteByteContentsToTempFile(pfx_data)
+		Expect(err).NotTo(HaveOccurred())
+
+		keyPath, err = testhelpers.WriteContentsToTempFile(testhelpers.PFX_PASSWORD)
+		Expect(err).NotTo(HaveOccurred())
 	})
 
 	AfterEach(func() {
@@ -41,17 +49,13 @@ var _ = Describe("create lbs test", func() {
 
 	It("successfully creates, updates, and deletes cf lbs", func() {
 		By("creating cf load balancers", func() {
-			pfx_data, err := base64.StdEncoding.DecodeString(testhelpers.PFX_BASE64)
-			Expect(err).NotTo(HaveOccurred())
-
-			certPath, err := testhelpers.WriteByteContentsToTempFile(pfx_data)
-			Expect(err).NotTo(HaveOccurred())
-
-			keyPath, err := testhelpers.WriteContentsToTempFile(testhelpers.PFX_PASSWORD)
-			Expect(err).NotTo(HaveOccurred())
-
-			session := bbl.CreateLB("cf", certPath, keyPath, "")
-			Eventually(session, 25*time.Minute).Should(gexec.Exit(0))
+			session := bbl.Up("--name", bbl.PredefinedEnvID(),
+				"--no-director",
+				"--lb-type", "cf",
+				"--lb-cert", certPath,
+				"--lb-key", keyPath,
+			)
+			Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 		})
 
 		By("confirming that the app gateway exist", func() {
@@ -66,8 +70,13 @@ var _ = Describe("create lbs test", func() {
 		})
 
 		By("deleting lbs", func() {
-			session := bbl.DeleteLBs()
-			Eventually(session, 15*time.Minute).Should(gexec.Exit())
+			session := bbl.Plan("--name", bbl.PredefinedEnvID(),
+				"--no-director",
+			)
+			Eventually(session, 1*time.Minute).Should(gexec.Exit(0))
+
+			session = bbl.Up()
+			Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 		})
 
 		By("confirming that the app gateway does not exist", func() {

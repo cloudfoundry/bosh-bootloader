@@ -81,7 +81,7 @@ var _ = Describe("LoadState", func() {
 				Entry("bbl help help", []string{"bbl", "help", "help"}, "help"),
 				Entry("bbl help version", []string{"bbl", "help", "version"}, "version"),
 				Entry("bbl version --help", []string{"bbl", "version", "--help"}, "version"),
-				Entry("bbl help create-lbs", []string{"bbl", "help", "create-lbs"}, "create-lbs"),
+				Entry("bbl help rotate", []string{"bbl", "help", "rotate"}, "rotate"),
 			)
 		})
 
@@ -193,7 +193,7 @@ var _ = Describe("LoadState", func() {
 			It("returns the existing state", func() {
 				appConfig, err := c.Bootstrap([]string{
 					"bbl",
-					"create-lbs",
+					"rotate",
 				})
 				Expect(err).NotTo(HaveOccurred())
 
@@ -209,7 +209,7 @@ var _ = Describe("LoadState", func() {
 			It("uses the working directory", func() {
 				appConfig, err := c.Bootstrap([]string{
 					"bbl",
-					"create-lbs",
+					"rotate",
 				})
 				Expect(err).NotTo(HaveOccurred())
 
@@ -232,7 +232,7 @@ var _ = Describe("LoadState", func() {
 				It("uses the absolute path of the state dir", func() {
 					appConfig, err := c.Bootstrap([]string{
 						"bbl",
-						"create-lbs",
+						"rotate",
 						"--state-dir", "some-state-dir",
 					})
 					Expect(err).NotTo(HaveOccurred())
@@ -258,7 +258,7 @@ var _ = Describe("LoadState", func() {
 				It("does not modify the path of the state dir", func() {
 					appConfig, err := c.Bootstrap([]string{
 						"bbl",
-						"create-lbs",
+						"rotate",
 						"--state-dir", stateDir,
 					})
 					Expect(err).NotTo(HaveOccurred())
@@ -282,7 +282,7 @@ var _ = Describe("LoadState", func() {
 				It("returns an error", func() {
 					_, err := c.Bootstrap([]string{
 						"bbl",
-						"create-lbs",
+						"rotate",
 						"--state-dir", "/this/will/not/work",
 					})
 
@@ -297,7 +297,7 @@ var _ = Describe("LoadState", func() {
 				It("returns an error", func() {
 					_, err := c.Bootstrap([]string{
 						"bbl",
-						"create-lbs",
+						"rotate",
 						"--state-dir", "some-state-dir",
 					})
 					Expect(err).To(MatchError("coconut"))
@@ -308,7 +308,7 @@ var _ = Describe("LoadState", func() {
 				It("returns an error", func() {
 					_, err := c.Bootstrap([]string{
 						"bbl",
-						"create-lbs",
+						"rotate",
 						"--state-dir",
 						"--help",
 					})
@@ -448,7 +448,7 @@ var _ = Describe("LoadState", func() {
 					It("returns state with existing configuration", func() {
 						appConfig, err := c.Bootstrap([]string{
 							"bbl",
-							"create-lbs",
+							"up",
 							"--iaas", "vsphere",
 							"--vsphere-vcenter-user", "user",
 							"--vsphere-vcenter-password", "password",
@@ -472,7 +472,7 @@ var _ = Describe("LoadState", func() {
 
 						Expect(err).To(MatchError(expected))
 					},
-					Entry("returns an error for non-matching IAAS", []string{"bbl", "create-lbs", "--iaas", "gcp"},
+					Entry("returns an error for non-matching IAAS", []string{"bbl", "up", "--iaas", "gcp"},
 						"The iaas type cannot be changed for an existing environment. The current iaas type is vsphere."),
 				)
 			})
@@ -853,28 +853,6 @@ var _ = Describe("LoadState", func() {
 					Entry("returns an error for non-matching project id", []string{"bbl", "create-lbs", "--gcp-service-account-key", `{"project_id": "some-other-project-id"}`},
 						"The project ID cannot be changed for an existing environment. The current project ID is some-project-id."),
 				)
-			})
-
-			Describe("deprecated commands", func() {
-				Context("when the command is create-lbs", func() {
-					It("prints a warning", func() {
-						appConfig, err := c.Bootstrap([]string{"bbl", "create-lbs"})
-						Expect(err).NotTo(HaveOccurred())
-
-						Expect(appConfig.Command).To(Equal("create-lbs"))
-						Expect(fakeLogger.PrintlnCall.Receives.Message).To(Equal(`Deprecation warning: the create-lbs command has been deprecated and will be removed in bbl v6.0.0. Create load balancers with "plan" or "up" e.g. "bbl up --lb-type <type> --lb-cert <cert> --lb-key <key>" or "bbl up --lb-type <type> --lb-cert <cert> --lb-key <key>".`))
-					})
-				})
-
-				Context("when the command is delete-lbs", func() {
-					It("prints a warning", func() {
-						appConfig, err := c.Bootstrap([]string{"bbl", "delete-lbs"})
-						Expect(err).NotTo(HaveOccurred())
-
-						Expect(appConfig.Command).To(Equal("delete-lbs"))
-						Expect(fakeLogger.PrintlnCall.Receives.Message).To(Equal(`Deprecation warning: the delete-lbs command has been deprecated and will be removed in bbl v6.0.0. Delete load balancers by calling "plan" without the lb flags.`))
-					})
-				})
 			})
 		})
 
