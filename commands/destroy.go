@@ -131,7 +131,6 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
 	if !d.plan.IsInitialized(state) {
 		planConfig := PlanConfig{
 			Name:       state.EnvID,
-			OpsFile:    state.BOSH.UserOpsFile,
 			NoDirector: state.NoDirector,
 			LB:         state.LB,
 		}

@@ -204,15 +204,9 @@ output "internal_az_subnet_id_mapping" {
 				"template.tf",
 			})
 			checkExists(filepath.Join(stateDir, "vars"), []string{
-				//  These don't exist because we overwrite the create-env scripts
-				// "bosh-state.json",
-				// "jumpbox-state.json",
-				// "director-variables.yml",
-				// "jumpbox-variables.yml",
 				"director-vars-file.yml",
 				"jumpbox-vars-file.yml",
 				"terraform.tfstate",
-				"user-ops-file.yml",
 			})
 		})
 

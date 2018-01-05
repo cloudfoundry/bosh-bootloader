@@ -355,13 +355,13 @@ var _ = Describe("Up", func() {
 
 	Describe("ParseArgs", func() {
 		It("returns ParseArgs on Plan", func() {
-			plan.ParseArgsCall.Returns.Config = commands.PlanConfig{OpsFile: "some-path"}
-			config, err := command.ParseArgs([]string{"--ops-file", "some-path"}, storage.State{ID: "some-state-id"})
+			plan.ParseArgsCall.Returns.Config = commands.PlanConfig{Name: "environment name"}
+			config, err := command.ParseArgs([]string{"--name", "environment name"}, storage.State{ID: "some-state-id"})
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(plan.ParseArgsCall.Receives.Args).To(Equal([]string{"--ops-file", "some-path"}))
+			Expect(plan.ParseArgsCall.Receives.Args).To(Equal([]string{"--name", "environment name"}))
 			Expect(plan.ParseArgsCall.Receives.State).To(Equal(storage.State{ID: "some-state-id"}))
-			Expect(config.OpsFile).To(Equal("some-path"))
+			Expect(config.Name).To(Equal("environment name"))
 		})
 	})
 })

@@ -27,7 +27,6 @@ type InterpolateInput struct {
 	StateDir      string
 	VarsDir       string
 	IAAS          string
-	OpsFile       string
 }
 
 type CreateEnvInput struct {
@@ -193,11 +192,6 @@ func (e Executor) getDirectorOpsFiles(input InterpolateInput) []string {
 
 func (e Executor) PlanDirector(input InterpolateInput) error {
 	setupFiles := e.getDirectorSetupFiles(input)
-	userOpsFile := setupFile{
-		dest:     filepath.Join(input.VarsDir, "user-ops-file.yml"),
-		contents: []byte(input.OpsFile),
-	}
-	setupFiles = append(setupFiles, userOpsFile)
 
 	for _, f := range setupFiles {
 		if f.source != "" {
@@ -219,10 +213,6 @@ func (e Executor) PlanDirector(input InterpolateInput) error {
 
 	if input.IAAS == "vsphere" {
 		sharedArgs = append(sharedArgs, "-o", filepath.Join(input.DeploymentDir, "vsphere", "resource-pool.yml"))
-	}
-
-	if input.OpsFile != "" {
-		sharedArgs = append(sharedArgs, "-o", filepath.Join(input.VarsDir, "user-ops-file.yml"))
 	}
 
 	boshState := filepath.Join(input.VarsDir, "bosh-state.json")

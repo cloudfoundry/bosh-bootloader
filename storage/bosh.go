@@ -13,7 +13,6 @@ type BOSH struct {
 	Variables              string                 `json:"variables"`
 	State                  map[string]interface{} `json:"state"`
 	Manifest               string                 `json:"manifest"`
-	UserOpsFile            string                 `json:"userOpsFile"`
 }
 
 func (b BOSH) IsEmpty() bool {

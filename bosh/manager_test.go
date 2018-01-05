@@ -85,7 +85,6 @@ director_ssl:
 					State: map[string]interface{}{
 						"some-key": "some-value",
 					},
-					UserOpsFile: "some-ops-file",
 				},
 			}
 
@@ -184,8 +183,7 @@ some-key: some-value
 					DirectorSSLCA:          "some-ca",
 					DirectorSSLCertificate: "some-certificate",
 					DirectorSSLPrivateKey:  "some-private-key",
-					UserOpsFile:            "some-ops-file",
-					State:                  nil,
+					State: nil,
 				}))
 			})
 
@@ -533,8 +531,7 @@ director_name: bosh-`))
 					State: map[string]interface{}{
 						"key": "value",
 					},
-					Variables:   boshVars,
-					UserOpsFile: "some-ops-file",
+					Variables: boshVars,
 				},
 			}, terraform.Outputs{})
 			Expect(err).NotTo(HaveOccurred())

@@ -42,7 +42,7 @@ var _ = Describe("StateBootstrap", func() {
 				state, err := bootstrap.GetState(tempDir)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(state).To(Equal(storage.State{
-					Version:    13,
+					Version:    storage.STATE_SCHEMA,
 					BBLVersion: latestVersion,
 				}))
 			})
@@ -65,7 +65,7 @@ var _ = Describe("StateBootstrap", func() {
 		Context("when there is a current version state file", func() {
 			BeforeEach(func() {
 				err := ioutil.WriteFile(filepath.Join(tempDir, "bbl-state.json"), []byte(`{
-					"version": 12,
+					"version": 13,
 					"bblVersion": "some-bbl-version",
 					"iaas": "aws",
 					"aws": {
@@ -87,7 +87,7 @@ var _ = Describe("StateBootstrap", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(state).To(Equal(storage.State{
-					Version:    12,
+					Version:    13,
 					BBLVersion: "some-bbl-version",
 					IAAS:       "aws",
 					AWS: storage.AWS{

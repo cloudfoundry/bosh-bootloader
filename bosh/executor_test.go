@@ -59,7 +59,6 @@ var _ = Describe("Executor", func() {
 				DeploymentDir: deploymentDir,
 				VarsDir:       varsDir,
 				StateDir:      stateDir,
-				OpsFile:       "some-ops-file",
 			}
 
 			executor = bosh.NewExecutor(cmd, ioutil.ReadFile, json.Unmarshal, json.Marshal, ioutil.WriteFile)
@@ -85,8 +84,6 @@ var _ = Describe("Executor", func() {
 		})
 
 		It("generates create-env args for jumpbox", func() {
-			interpolateInput.OpsFile = ""
-
 			err := executor.PlanJumpbox(interpolateInput)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -129,7 +126,6 @@ var _ = Describe("Executor", func() {
 		Context("when the iaas is vsphere", func() {
 			BeforeEach(func() {
 				interpolateInput.IAAS = "vsphere"
-				interpolateInput.OpsFile = ""
 			})
 
 			It("generates create-env args for jumpbox", func() {
@@ -210,7 +206,6 @@ var _ = Describe("Executor", func() {
 				DeploymentDir: deploymentDir,
 				StateDir:      stateDir,
 				VarsDir:       varsDir,
-				OpsFile:       "some-ops-file",
 			}
 
 			executor = bosh.NewExecutor(cmd, ioutil.ReadFile, json.Unmarshal, json.Marshal, ioutil.WriteFile)
@@ -255,7 +250,6 @@ var _ = Describe("Executor", func() {
 					"-o", filepath.Join(relativeStateDir, "bbl-ops-files", "aws", "bosh-director-ephemeral-ip-ops.yml"),
 					"-o", filepath.Join(relativeDeploymentDir, "aws", "iam-instance-profile.yml"),
 					"-o", filepath.Join(relativeStateDir, "bbl-ops-files", "aws", "bosh-director-encrypt-disk-ops.yml"),
-					"-o", filepath.Join(relativeVarsDir, "user-ops-file.yml"),
 				}
 			})
 
@@ -307,7 +301,6 @@ var _ = Describe("Executor", func() {
 					"-o", filepath.Join(relativeDeploymentDir, "uaa.yml"),
 					"-o", filepath.Join(relativeDeploymentDir, "credhub.yml"),
 					"-o", filepath.Join(relativeStateDir, "bbl-ops-files", "gcp", "bosh-director-ephemeral-ip-ops.yml"),
-					"-o", filepath.Join(relativeVarsDir, "user-ops-file.yml"),
 				}
 			})
 
@@ -347,7 +340,6 @@ var _ = Describe("Executor", func() {
 					"-o", filepath.Join(relativeDeploymentDir, "jumpbox-user.yml"),
 					"-o", filepath.Join(relativeDeploymentDir, "uaa.yml"),
 					"-o", filepath.Join(relativeDeploymentDir, "credhub.yml"),
-					"-o", filepath.Join(relativeVarsDir, "user-ops-file.yml"),
 				}
 			})
 
@@ -373,7 +365,6 @@ var _ = Describe("Executor", func() {
 					"-o", filepath.Join(relativeDeploymentDir, "uaa.yml"),
 					"-o", filepath.Join(relativeDeploymentDir, "credhub.yml"),
 					"-o", filepath.Join(relativeDeploymentDir, "vsphere", "resource-pool.yml"),
-					"-o", filepath.Join(relativeVarsDir, "user-ops-file.yml"),
 				}
 			})
 

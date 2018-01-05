@@ -102,9 +102,8 @@ var _ = Describe("Store", func() {
 						State: map[string]interface{}{
 							"key": "value",
 						},
-						Variables:   "some-vars",
-						Manifest:    "name: bosh",
-						UserOpsFile: "some-ops-file",
+						Variables: "some-vars",
+						Manifest:  "name: bosh",
 					},
 					EnvID:   "some-env-id",
 					TFState: "some-tf-state",
@@ -114,7 +113,7 @@ var _ = Describe("Store", func() {
 				data, err := ioutil.ReadFile(filepath.Join(tempDir, "bbl-state.json"))
 				Expect(err).NotTo(HaveOccurred())
 				Expect(data).To(MatchJSON(`{
-				"version": 13,
+				"version": 14,
 				"bblVersion": "5.3.0",
 				"iaas": "aws",
 				"noDirector": false,
@@ -155,7 +154,6 @@ var _ = Describe("Store", func() {
 					"directorSSLPrivateKey": "some-bosh-ssl-private-key",
 					"variables":   "some-vars",
 					"manifest": "name: bosh",
-					"userOpsFile": "some-ops-file",
 					"state": {
 						"key": "value"
 					}

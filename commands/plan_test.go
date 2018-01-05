@@ -2,9 +2,6 @@ package commands_test
 
 import (
 	"errors"
-	"io/ioutil"
-	"path/filepath"
-	"runtime"
 
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/commands"
@@ -152,40 +149,7 @@ var _ = Describe("Plan", func() {
 			})
 		})
 
-		Context("when --ops-file is passed", func() {
-			var (
-				opsFilePath     string
-				opsFileContents string
-			)
-
-			BeforeEach(func() {
-				opsFile, err := ioutil.TempFile("", "ops-file")
-				Expect(err).NotTo(HaveOccurred())
-
-				opsFilePath = opsFile.Name()
-
-				opsFileContents = "some-ops-file-contents"
-				err = ioutil.WriteFile(opsFilePath, []byte(opsFileContents), storage.StateMode)
-				Expect(err).NotTo(HaveOccurred())
-			})
-			It("passes the ops file contents to the bosh manager", func() {
-				err := command.Execute([]string{"--ops-file", opsFilePath}, storage.State{})
-
-				Expect(err).NotTo(HaveOccurred())
-				Expect(boshManager.InitializeDirectorCall.Receives.State.BOSH.UserOpsFile).To(Equal(opsFileContents))
-			})
-		})
-
 		Describe("failure cases", func() {
-			It("returns an error if reading the ops file fails", func() {
-				err := command.Execute([]string{"--ops-file", "some-invalid-path"}, storage.State{})
-				if runtime.GOOS == "windows" {
-					Expect(err).To(MatchError("Reading ops-file contents: open some-invalid-path: The system cannot find the file specified."))
-				} else {
-					Expect(err).To(MatchError("Reading ops-file contents: open some-invalid-path: no such file or directory"))
-				}
-			})
-
 			It("returns an error if state store set fails", func() {
 				stateStore.SetCall.Returns = []fakes.SetCallReturn{{Error: errors.New("peach")}}
 
@@ -310,31 +274,6 @@ var _ = Describe("Plan", func() {
 	})
 
 	Describe("ParseArgs", func() {
-		Context("when the --ops-file flag is specified", func() {
-			var providedOpsFilePath string
-			BeforeEach(func() {
-				opsFileDir, err := ioutil.TempDir("", "")
-				Expect(err).NotTo(HaveOccurred())
-
-				providedOpsFilePath = filepath.Join(opsFileDir, "some-ops-file")
-
-				err = ioutil.WriteFile(providedOpsFilePath, []byte("some-ops-file-contents"), storage.StateMode)
-				Expect(err).NotTo(HaveOccurred())
-			})
-
-			It("returns a config with the ops-file path contents", func() {
-				config, err := command.ParseArgs([]string{
-					"--ops-file", providedOpsFilePath,
-				}, storage.State{})
-				Expect(err).NotTo(HaveOccurred())
-				Expect(config.OpsFile).To(Equal("some-ops-file-contents"))
-
-				By("notifying the user the flag is deprecated", func() {
-					Expect(logger.PrintlnCall.Receives.Message).To(Equal(`Deprecation warning: the --ops-file flag is now deprecated and will be removed in bbl v6.0.0. Use "bbl plan" and modify create-director.sh in your state directory to supply operations files for bosh-deployment.`))
-				})
-			})
-		})
-
 		Context("when the user provides the name flag", func() {
 			It("passes the name flag in the up config", func() {
 				config, err := command.ParseArgs([]string{

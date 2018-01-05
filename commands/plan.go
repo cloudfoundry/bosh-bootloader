@@ -3,7 +3,6 @@ package commands
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 
 	"github.com/cloudfoundry/bosh-bootloader/flags"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
@@ -22,7 +21,6 @@ type Plan struct {
 
 type PlanConfig struct {
 	Name       string
-	OpsFile    string
 	NoDirector bool
 	LB         storage.LB
 }
@@ -77,14 +75,12 @@ func (p Plan) CheckFastFails(args []string, state storage.State) error {
 
 func (p Plan) ParseArgs(args []string, state storage.State) (PlanConfig, error) {
 	var (
-		config      PlanConfig
-		lbConfig    CreateLBsConfig
-		opsFilePath string
+		config   PlanConfig
+		lbConfig CreateLBsConfig
 	)
 	planFlags := flags.New("up")
-	planFlags.String(&config.Name, "name", "")
-	planFlags.String(&opsFilePath, "ops-file", "")
 	planFlags.Bool(&config.NoDirector, "", "no-director", state.NoDirector)
+	planFlags.String(&config.Name, "name", "")
 	planFlags.String(&lbConfig.LBType, "lb-type", "")
 	planFlags.String(&lbConfig.CertPath, "lb-cert", "")
 	planFlags.String(&lbConfig.KeyPath, "lb-key", "")
@@ -104,18 +100,6 @@ func (p Plan) ParseArgs(args []string, state storage.State) (PlanConfig, error) 
 			return PlanConfig{}, err
 		}
 		config.LB = lbState
-	}
-
-	if opsFilePath != "" {
-		p.logger.Println(`Deprecation warning: the --ops-file flag is now deprecated and will be removed in bbl v6.0.0. Use "bbl plan" and modify create-director.sh in your state directory to supply operations files for bosh-deployment.`)
-
-		opsFileContents, err := ioutil.ReadFile(opsFilePath)
-		if err != nil {
-			return PlanConfig{}, fmt.Errorf("Reading ops-file contents: %v", err)
-		}
-		config.OpsFile = string(opsFileContents)
-	} else {
-		config.OpsFile = state.BOSH.UserOpsFile
 	}
 
 	return config, nil
@@ -170,7 +154,6 @@ func (p Plan) InitializePlan(config PlanConfig, state storage.State) (storage.St
 		return storage.State{}, fmt.Errorf("Bosh manager initialize jumpbox: %s", err)
 	}
 
-	state.BOSH.UserOpsFile = config.OpsFile
 	if err := p.boshManager.InitializeDirector(state); err != nil {
 		return storage.State{}, fmt.Errorf("Bosh manager initialize director: %s", err)
 	}

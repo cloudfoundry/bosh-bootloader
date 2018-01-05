@@ -336,10 +336,7 @@ var _ = Describe("Destroy", func() {
 				plan.IsInitializedCall.Returns.IsInitialized = false
 				stdin.Write([]byte("yes\n"))
 				state := storage.State{
-					EnvID: "unintialized",
-					BOSH: storage.BOSH{
-						UserOpsFile: "some ops file contents",
-					},
+					EnvID:      "unintialized",
 					NoDirector: true,
 					LB:         storage.LB{Type: "lb-type", Domain: "lb-domain"},
 				}
@@ -352,7 +349,6 @@ var _ = Describe("Destroy", func() {
 				Expect(plan.InitializePlanCall.Receives.State).To(Equal(state))
 				Expect(plan.InitializePlanCall.Receives.Plan).To(Equal(commands.PlanConfig{
 					Name:       "unintialized",
-					OpsFile:    "some ops file contents",
 					NoDirector: true,
 					LB:         storage.LB{Type: "lb-type", Domain: "lb-domain"},
 				}))

@@ -187,7 +187,6 @@ func (m *Manager) InitializeDirector(state storage.State) error {
 		StateDir:      stateDir,
 		VarsDir:       varsDir,
 		IAAS:          state.IAAS,
-		OpsFile:       state.BOSH.UserOpsFile,
 	}
 
 	err = m.executor.PlanDirector(iaasInputs)
@@ -256,7 +255,6 @@ func (m *Manager) CreateDirector(state storage.State, terraformOutputs terraform
 		DirectorSSLCA:          directorVars.sslCA,
 		DirectorSSLCertificate: directorVars.sslCertificate,
 		DirectorSSLPrivateKey:  directorVars.sslPrivateKey,
-		UserOpsFile:            state.BOSH.UserOpsFile,
 	}
 
 	m.logger.Step("created bosh director")
