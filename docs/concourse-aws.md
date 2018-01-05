@@ -11,14 +11,6 @@ install to AWS using `bbl` and `bosh`.
 
 ## Create load balancer
 
-This:
-
-```
-bbl create-lbs --type concourse
-```
-
-Or this:
-
 ```
 bbl plan --lb-type concourse && bbl up
 ```

@@ -54,7 +54,7 @@ For detailed, IAAS specific instructions see your preferred IAAS's getting start
 
 1. Create an environment and target the BOSH director as described above
 
-1. `bbl create-lbs --type cf` with a certificate and key as flags or environment variables.
+1. `bbl plan --lb-type cf --cert cert --key key && bbl plan` with a certificate and key as flags or environment variables.
 (Continue to provide the IAAS credentials as flags or environment variables.)
 
 1. `bosh deploy cf.yml -o operations/<MY IAAS>` using the [CF deployment manifest!](https://github.com/cloudfoundry/cf-deployment)

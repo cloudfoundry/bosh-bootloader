@@ -447,8 +447,7 @@ var _ = Describe("LoadState", func() {
 				Context("when valid matching configuration is passed in", func() {
 					It("returns state with existing configuration", func() {
 						appConfig, err := c.Bootstrap([]string{
-							"bbl",
-							"up",
+							"bbl", "up",
 							"--iaas", "vsphere",
 							"--vsphere-vcenter-user", "user",
 							"--vsphere-vcenter-password", "password",
@@ -521,8 +520,7 @@ var _ = Describe("LoadState", func() {
 
 					BeforeEach(func() {
 						args = []string{
-							"bbl",
-							"up",
+							"bbl", "up",
 						}
 
 						os.Setenv("BBL_IAAS", "aws")
@@ -574,8 +572,7 @@ var _ = Describe("LoadState", func() {
 				Context("when valid matching configuration is passed in", func() {
 					It("returns state with existing configuration", func() {
 						appConfig, err := c.Bootstrap([]string{
-							"bbl",
-							"create-lbs",
+							"bbl", "up",
 							"--iaas", "aws",
 							"--aws-access-key-id", "some-access-key-id",
 							"--aws-secret-access-key", "some-secret-access-key",
@@ -593,9 +590,9 @@ var _ = Describe("LoadState", func() {
 
 						Expect(err).To(MatchError(expected))
 					},
-					Entry("returns an error for non-matching IAAS", []string{"bbl", "create-lbs", "--iaas", "gcp"},
+					Entry("returns an error for non-matching IAAS", []string{"bbl", "up", "--iaas", "gcp"},
 						"The iaas type cannot be changed for an existing environment. The current iaas type is aws."),
-					Entry("returns an error for non-matching region", []string{"bbl", "create-lbs", "--aws-region", "some-other-region"},
+					Entry("returns an error for non-matching region", []string{"bbl", "up", "--aws-region", "some-other-region"},
 						"The region cannot be changed for an existing environment. The current region is some-region."),
 				)
 			})
@@ -826,8 +823,7 @@ var _ = Describe("LoadState", func() {
 				Context("when valid matching configuration is passed in", func() {
 					It("returns state with existing configuration", func() {
 						appConfig, err := c.Bootstrap([]string{
-							"bbl",
-							"create-lbs",
+							"bbl", "up",
 							"--iaas", "gcp",
 							"--gcp-service-account-key", serviceAccountKey,
 							"--gcp-region", "some-region",
@@ -846,11 +842,11 @@ var _ = Describe("LoadState", func() {
 
 						Expect(err).To(MatchError(expected))
 					},
-					Entry("returns an error for non-matching IAAS", []string{"bbl", "create-lbs", "--iaas", "aws"},
+					Entry("returns an error for non-matching IAAS", []string{"bbl", "up", "--iaas", "aws"},
 						"The iaas type cannot be changed for an existing environment. The current iaas type is gcp."),
-					Entry("returns an error for non-matching region", []string{"bbl", "create-lbs", "--gcp-region", "some-other-region"},
+					Entry("returns an error for non-matching region", []string{"bbl", "up", "--gcp-region", "some-other-region"},
 						"The region cannot be changed for an existing environment. The current region is some-region."),
-					Entry("returns an error for non-matching project id", []string{"bbl", "create-lbs", "--gcp-service-account-key", `{"project_id": "some-other-project-id"}`},
+					Entry("returns an error for non-matching project id", []string{"bbl", "up", "--gcp-service-account-key", `{"project_id": "some-other-project-id"}`},
 						"The project ID cannot be changed for an existing environment. The current project ID is some-project-id."),
 				)
 			})
@@ -955,8 +951,7 @@ var _ = Describe("LoadState", func() {
 				Context("when no configuration is passed in", func() {
 					It("returns state with existing configuration", func() {
 						appConfig, err := c.Bootstrap([]string{
-							"bbl",
-							"create-lbs",
+							"bbl", "up",
 						})
 						Expect(err).NotTo(HaveOccurred())
 
@@ -972,8 +967,7 @@ var _ = Describe("LoadState", func() {
 				Context("when valid matching configuration is passed in", func() {
 					It("returns state with existing configuration", func() {
 						appConfig, err := c.Bootstrap([]string{
-							"bbl",
-							"create-lbs",
+							"bbl", "up",
 							"--iaas", "azure",
 							"--azure-client-id", "client-id",
 							"--azure-client-secret", "client-secret",
@@ -993,7 +987,7 @@ var _ = Describe("LoadState", func() {
 
 						Expect(err).To(MatchError(expected))
 					},
-					Entry("returns an error for non-matching IAAS", []string{"bbl", "create-lbs", "--iaas", "aws"},
+					Entry("returns an error for non-matching IAAS", []string{"bbl", "up", "--iaas", "aws"},
 						"The iaas type cannot be changed for an existing environment. The current iaas type is azure."),
 				)
 			})
