@@ -17,6 +17,7 @@ var _ = Describe("Migrator", func() {
 		migrator          storage.Migrator
 		store             *fakes.StateStore
 		fileIO            *fakes.FileIO
+		incomingState     storage.State
 		stateDir          string
 		varsDir           string
 		oldBblDir         string
@@ -54,9 +55,364 @@ var _ = Describe("Migrator", func() {
 		store.GetOldBblDirCall.Returns.Directory = oldBblDir
 	})
 
-	Describe("Migrate", func() {
-		var incomingState storage.State
+	Describe("MigrateJumpboxVars", func() {
+		Context("when the state has populated jumpbox variables", func() {
+			BeforeEach(func() {
+				incomingState = storage.State{
+					EnvID: "some-env-id",
+					Jumpbox: storage.Jumpbox{
+						URL:       "10.0.0.5:25555",
+						Variables: "some-jumpbox-vars",
+					},
+				}
+				fileIO.StatCall.Returns.Error = errors.New("nope")
+			})
 
+			It("copies the jumpbox state to the jumpbox-vars-store.yml file", func() {
+				_, err := migrator.MigrateJumpboxVars(incomingState, varsDir)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(fileIO.WriteFileCall.Receives.Contents).To(Equal([]byte("some-jumpbox-vars")))
+				Expect(fileIO.WriteFileCall.Receives.Filename).To(Equal(filepath.Join(varsDir, "jumpbox-vars-store.yml")))
+			})
+
+			Context("failure cases", func() {
+				Context("when the director variables file cannot be written", func() {
+					BeforeEach(func() {
+						fileIO.WriteFileCall.Returns.Error = errors.New("persimmon")
+					})
+
+					It("returns an error", func() {
+						_, err := migrator.MigrateJumpboxVars(incomingState, varsDir)
+						Expect(err).To(MatchError(ContainSubstring("migrating jumpbox variables: persimmon")))
+					})
+				})
+			})
+		})
+
+		Context("when jumpbox variables are in jumpbox-variables.yml", func() {
+			BeforeEach(func() {
+				fileIO.ReadFileCall.Returns.Contents = []byte("some-jumpbox-vars")
+
+				incomingState = storage.State{EnvID: "some-env-id"}
+			})
+
+			It("moves jumpbox-variables.yml to jumpbox-vars-store.yml", func() {
+				_, err := migrator.MigrateJumpboxVars(incomingState, varsDir)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(fileIO.WriteFileCall.Receives.Filename).To(Equal(filepath.Join(varsDir, "jumpbox-vars-store.yml")))
+				Expect(fileIO.WriteFileCall.Receives.Contents).To(Equal([]byte("some-jumpbox-vars")))
+			})
+
+			Context("failure cases", func() {
+				Context("when the jumpbox legacy vars-store file cannot be read", func() {
+					BeforeEach(func() {
+						fileIO.ReadFileCall.Returns.Error = errors.New("pomegranate")
+					})
+
+					It("returns an error", func() {
+						_, err := migrator.MigrateJumpboxVars(incomingState, varsDir)
+						Expect(err).To(MatchError(ContainSubstring("reading legacy jumpbox vars store: pomegranate")))
+					})
+				})
+			})
+		})
+	})
+
+	Describe("MigrateDirectorVars", func() {
+		Context("when the state has populated BOSH variables", func() {
+			BeforeEach(func() {
+				incomingState = storage.State{
+					EnvID: "some-env-id",
+					BOSH: storage.BOSH{
+						DirectorAddress: "10.0.0.6",
+						Variables:       "some-director-vars",
+					},
+				}
+				fileIO.StatCall.Returns.Error = errors.New("nope")
+			})
+			It("copies the BOSH state to the director-vars-store.yml file", func() {
+				_, err := migrator.MigrateDirectorVars(incomingState, varsDir)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(fileIO.WriteFileCall.Receives.Contents).To(Equal([]byte("some-director-vars")))
+				Expect(fileIO.WriteFileCall.Receives.Filename).To(Equal(filepath.Join(varsDir, "director-vars-store.yml")))
+			})
+			Context("failure cases", func() {
+				Context("when the director variables file cannot be written", func() {
+					BeforeEach(func() {
+						fileIO.WriteFileCall.Returns.Error = errors.New("watermelon")
+					})
+
+					It("returns an error", func() {
+						_, err := migrator.MigrateDirectorVars(incomingState, varsDir)
+						Expect(err).To(MatchError(ContainSubstring("migrating director variables: watermelon")))
+					})
+				})
+			})
+		})
+
+		Context("when BOSH variables are in director-variables.yml", func() {
+			BeforeEach(func() {
+				fileIO.ReadFileCall.Returns.Contents = []byte("some-director-vars")
+
+				incomingState = storage.State{EnvID: "some-env"}
+			})
+
+			It("moves director-variables.yml to director-vars-store.yml", func() {
+				_, err := migrator.MigrateDirectorVars(storage.State{EnvID: "some-env"}, varsDir)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(fileIO.WriteFileCall.Receives.Filename).To(Equal(filepath.Join(varsDir, "director-vars-store.yml")))
+				Expect(fileIO.WriteFileCall.Receives.Contents).To(Equal([]byte("some-director-vars")))
+			})
+
+			Context("failure cases", func() {
+				Context("when the director legacy vars-store file cannot be read", func() {
+					BeforeEach(func() {
+						fileIO.ReadFileCall.Returns.Error = errors.New("pomelo")
+					})
+
+					It("returns an error", func() {
+						_, err := migrator.MigrateDirectorVars(incomingState, varsDir)
+						Expect(err).To(MatchError(ContainSubstring("reading legacy director vars store: pomelo")))
+					})
+				})
+			})
+		})
+	})
+
+	Describe("MigrateTFVars", func() {
+		Context("when the state has bbl-provided tfvars in the terraform.tfvars file", func() {
+			var (
+				bblVarsPath string
+				tfVarsPath  string
+			)
+			BeforeEach(func() {
+				bblVarsPath = filepath.Join(varsDir, "bbl.tfvars")
+				tfVarsPath = filepath.Join(varsDir, "terraform.tfvars")
+			})
+
+			It("migrates terraform.tfvars to bbl.tfvars", func() {
+				err := migrator.MigrateTerraformVars(varsDir)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(fileIO.RenameCall.Receives.Oldpath).To(Equal(tfVarsPath))
+				Expect(fileIO.RenameCall.Receives.Newpath).To(Equal(bblVarsPath))
+			})
+
+			Context("when renaming the tfvars file fails", func() {
+				BeforeEach(func() {
+					fileIO.RenameCall.Returns.Error = errors.New("potatoes aren't a fruit")
+				})
+
+				It("returns an error", func() {
+					err := migrator.MigrateTerraformVars(varsDir)
+					Expect(err).To(MatchError(ContainSubstring("potatoes")))
+				})
+			})
+		})
+	})
+
+	Describe("MigrateCloudConfigDir", func() {
+		Context("when the state has a populated .bbl directory", func() {
+			var cloudConfigFilePath string
+			BeforeEach(func() {
+				cloudConfigFilePath = filepath.Join(oldCloudConfigDir, "some-config-file")
+				fileIO.ReadDirCall.Returns.FileInfos = []os.FileInfo{
+					fakes.FileInfo{
+						FileName: "some-config-file",
+					},
+				}
+				fileIO.ReadFileCall.Returns.Contents = []byte("some-cloud-config")
+			})
+
+			It("moves the cloud-config directory to the top level", func() {
+				err := migrator.MigrateCloudConfigDir(oldBblDir, cloudConfigDir)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(fileIO.WriteFileCall.Receives.Filename).To(Equal(filepath.Join(cloudConfigDir, "some-config-file")))
+				Expect(fileIO.WriteFileCall.Receives.Contents).To(Equal([]byte("some-cloud-config")))
+				Expect(fileIO.RemoveAllCall.Receives.Path).To(Equal(oldBblDir))
+			})
+
+			Context("failure cases", func() {
+				Context("when the contents of the old .bbl dir cannot be read", func() {
+					BeforeEach(func() {
+						fileIO.ReadDirCall.Returns.Error = errors.New("kiwano")
+					})
+
+					It("returns an error", func() {
+						err := migrator.MigrateCloudConfigDir(oldBblDir, cloudConfigDir)
+						Expect(err).To(MatchError(ContainSubstring("reading legacy .bbl dir contents: ")))
+					})
+				})
+
+				Context("when the reading the old cloud config file fails", func() {
+					BeforeEach(func() {
+						fileIO.ReadFileCall.Returns.Error = errors.New("durian")
+					})
+
+					It("returns an error", func() {
+						err := migrator.MigrateCloudConfigDir(oldBblDir, cloudConfigDir)
+						Expect(err).To(MatchError(ContainSubstring("reading")))
+					})
+				})
+
+				Context("when renaming a cloud-config file fails", func() {
+					BeforeEach(func() {
+						fileIO.WriteFileCall.Returns.Error = errors.New("tamarillo")
+					})
+
+					It("returns an error", func() {
+						err := migrator.MigrateCloudConfigDir(oldBblDir, cloudConfigDir)
+						Expect(err).To(MatchError(ContainSubstring("migrating")))
+					})
+				})
+
+				Context("when removing the old .bbl dir fails", func() {
+					BeforeEach(func() {
+						fileIO.RemoveAllCall.Returns.Error = errors.New("feijoa")
+					})
+
+					It("returns an error", func() {
+						err := migrator.MigrateCloudConfigDir(oldBblDir, cloudConfigDir)
+						Expect(err).To(MatchError(ContainSubstring("removing legacy .bbl dir: ")))
+					})
+				})
+			})
+		})
+	})
+
+	Describe("MigrateJumpboxState", func() {
+		Context("when the state has a populated jumpbox state", func() {
+			BeforeEach(func() {
+				incomingState = storage.State{
+					EnvID: "some-env-id",
+					Jumpbox: storage.Jumpbox{
+						URL: "10.0.0.5",
+						State: map[string]interface{}{
+							"some-jumpbox-key": "some-jumpbox-value",
+						},
+					},
+				}
+			})
+			It("copies the jumpbox state to the jumpbox-state.json vars file", func() {
+				state, err := migrator.MigrateJumpboxState(incomingState, varsDir)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(fileIO.WriteFileCall.Receives.Contents).To(MatchJSON(`{"some-jumpbox-key": "some-jumpbox-value"}`))
+				Expect(fileIO.WriteFileCall.Receives.Filename).To(Equal(filepath.Join(varsDir, "jumpbox-state.json")))
+				Expect(state.Jumpbox.State).To(BeNil())
+			})
+			Context("failure cases", func() {
+				Context("when the jumpbox state file cannot be written", func() {
+					BeforeEach(func() {
+						fileIO.WriteFileCall.Returns.Error = errors.New("pitaya")
+					})
+
+					It("returns an error", func() {
+						_, err := migrator.MigrateJumpboxState(incomingState, varsDir)
+						Expect(err).To(MatchError(ContainSubstring("migrating jumpbox state: ")))
+					})
+				})
+				Context("when the jumpbox state file cannot be written", func() {
+					BeforeEach(func() {
+						incomingState.Jumpbox.State["invalid-key"] = func() string { return "invalid" }
+					})
+
+					It("returns an error", func() {
+						_, err := migrator.MigrateJumpboxState(incomingState, varsDir)
+						Expect(err).To(MatchError(ContainSubstring("marshalling jumpbox state: ")))
+					})
+				})
+			})
+		})
+
+	})
+
+	Describe("MigrateDirectorState", func() {
+		Context("when the state has a populated BOSH state", func() {
+			BeforeEach(func() {
+				incomingState = storage.State{
+					EnvID: "some-env-id",
+					BOSH: storage.BOSH{
+						DirectorAddress: "10.0.0.6",
+						State: map[string]interface{}{
+							"some-bosh-key": "some-bosh-value",
+						},
+					},
+				}
+			})
+
+			It("copies the BOSH state to the bosh-state.json vars file", func() {
+				state, err := migrator.MigrateDirectorState(incomingState, varsDir)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(fileIO.WriteFileCall.Receives.Contents).To(MatchJSON(`{"some-bosh-key": "some-bosh-value"}`))
+				Expect(fileIO.WriteFileCall.Receives.Filename).To(Equal(filepath.Join(varsDir, "bosh-state.json")))
+				Expect(state.BOSH.State).To(BeNil())
+			})
+
+			Context("failure cases", func() {
+				Context("when the bosh state file cannot be written", func() {
+					BeforeEach(func() {
+						fileIO.WriteFileCall.Returns.Error = errors.New("jackfruit")
+					})
+
+					It("returns an error", func() {
+						_, err := migrator.MigrateDirectorState(incomingState, varsDir)
+						Expect(err).To(MatchError(ContainSubstring("migrating bosh state: ")))
+					})
+				})
+				Context("when the bosh state file cannot be marshalled", func() {
+					BeforeEach(func() {
+						incomingState.BOSH.State["invalid-key"] = func() string { return "invalid" }
+					})
+
+					It("returns an error", func() {
+						_, err := migrator.MigrateDirectorState(incomingState, varsDir)
+						Expect(err).To(MatchError(ContainSubstring("marshalling bosh state: ")))
+					})
+				})
+			})
+		})
+	})
+
+	Describe("MigrateTerraformState", func() {
+		Context("when the state has a populated TFState", func() {
+			BeforeEach(func() {
+				incomingState = storage.State{
+					EnvID:   "some-env-id",
+					TFState: "some-tf-state",
+				}
+			})
+
+			It("writes the TFState to the tfstate file", func() {
+				outgoingState, err := migrator.MigrateTerraformState(incomingState, varsDir)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(outgoingState.TFState).To(Equal(""))
+
+				Expect(fileIO.WriteFileCall.Receives.Contents).To(Equal([]byte("some-tf-state")))
+				Expect(fileIO.WriteFileCall.Receives.Filename).To(Equal(filepath.Join(varsDir, "terraform.tfstate")))
+			})
+
+			Context("failure cases", func() {
+				Context("when the tfstate file cannot be written", func() {
+					BeforeEach(func() {
+						fileIO.WriteFileCall.Returns.Error = errors.New("cherimoya")
+					})
+
+					It("returns an error", func() {
+						_, err := migrator.MigrateTerraformState(incomingState, varsDir)
+						Expect(err).To(MatchError(ContainSubstring("migrating terraform state: ")))
+					})
+				})
+			})
+		})
+	})
+
+	Describe("Migrate", func() {
 		Context("when the state is empty", func() {
 			It("returns the state without changing it", func() {
 				outgoingState, err := migrator.Migrate(storage.State{})
@@ -99,426 +455,5 @@ var _ = Describe("Migrator", func() {
 
 		})
 
-		Context("when the state has a populated TFState", func() {
-			BeforeEach(func() {
-				incomingState = storage.State{
-					EnvID:   "some-env-id",
-					TFState: "some-tf-state",
-				}
-			})
-
-			It("writes the TFState to the tfstate file", func() {
-				outgoingState, err := migrator.Migrate(incomingState)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(outgoingState.TFState).To(BeEmpty())
-
-				contents, err := ioutil.ReadFile(filepath.Join(varsDir, "terraform.tfstate"))
-				Expect(err).NotTo(HaveOccurred())
-				Expect(string(contents)).To(Equal("some-tf-state"))
-
-				By("saving the state after removing the old values", func() {
-					Expect(store.SetCall.CallCount).To(Equal(1))
-					Expect(store.SetCall.Receives[0].State).To(Equal(storage.State{EnvID: "some-env-id"}))
-				})
-
-				By("not writing the bosh state", func() {
-					_, err := os.Stat(filepath.Join(varsDir, "bosh-state.json"))
-					Expect(err).To(HaveOccurred())
-				})
-			})
-
-			Context("failure cases", func() {
-				Context("when the tfstate file cannot be written", func() {
-					BeforeEach(func() {
-						err := os.MkdirAll(filepath.Join(varsDir, "terraform.tfstate"), os.ModePerm)
-						Expect(err).NotTo(HaveOccurred())
-					})
-
-					It("returns an error", func() {
-						_, err := migrator.Migrate(incomingState)
-						Expect(err).To(MatchError(ContainSubstring("migrating terraform state: ")))
-					})
-				})
-			})
-		})
-
-		Context("when the state has a populated BOSH state", func() {
-			BeforeEach(func() {
-				incomingState = storage.State{
-					EnvID: "some-env-id",
-					BOSH: storage.BOSH{
-						DirectorAddress: "10.0.0.6",
-						State: map[string]interface{}{
-							"some-bosh-key": "some-bosh-value",
-						},
-					},
-				}
-			})
-			It("copies the BOSH state to the bosh-state.json vars file", func() {
-				_, err := migrator.Migrate(incomingState)
-				Expect(err).NotTo(HaveOccurred())
-				boshState, err := ioutil.ReadFile(filepath.Join(varsDir, "bosh-state.json"))
-				Expect(err).NotTo(HaveOccurred())
-				Expect(boshState).To(MatchJSON(`{"some-bosh-key": "some-bosh-value"}`))
-
-				By("saving the state after removing the old values", func() {
-					Expect(store.SetCall.CallCount).To(Equal(1))
-					Expect(store.SetCall.Receives[0].State).To(Equal(storage.State{
-						EnvID: "some-env-id",
-						BOSH: storage.BOSH{
-							DirectorAddress: "10.0.0.6",
-						},
-					}))
-				})
-			})
-			Context("failure cases", func() {
-				Context("when the bosh state file cannot be written", func() {
-					BeforeEach(func() {
-						err := os.MkdirAll(filepath.Join(varsDir, "bosh-state.json"), os.ModePerm)
-						Expect(err).NotTo(HaveOccurred())
-					})
-
-					It("returns an error", func() {
-						_, err := migrator.Migrate(incomingState)
-						Expect(err).To(MatchError(ContainSubstring("migrating bosh state: ")))
-					})
-				})
-				Context("when the bosh state file cannot be written", func() {
-					BeforeEach(func() {
-						incomingState.BOSH.State["invalid-key"] = func() string { return "invalid" }
-					})
-
-					It("returns an error", func() {
-						_, err := migrator.Migrate(incomingState)
-						Expect(err).To(MatchError(ContainSubstring("marshalling bosh state: ")))
-					})
-				})
-			})
-		})
-
-		Context("when the state has a populated jumpbox state", func() {
-			BeforeEach(func() {
-				incomingState = storage.State{
-					EnvID: "some-env-id",
-					Jumpbox: storage.Jumpbox{
-						URL: "10.0.0.5",
-						State: map[string]interface{}{
-							"some-jumpbox-key": "some-jumpbox-value",
-						},
-					},
-				}
-			})
-			It("copies the jumpbox state to the jumpbox-state.json vars file", func() {
-				_, err := migrator.Migrate(incomingState)
-				Expect(err).NotTo(HaveOccurred())
-				boshState, err := ioutil.ReadFile(filepath.Join(varsDir, "jumpbox-state.json"))
-				Expect(err).NotTo(HaveOccurred())
-				Expect(boshState).To(MatchJSON(`{"some-jumpbox-key": "some-jumpbox-value"}`))
-
-				By("saving the state after removing the old values", func() {
-					Expect(store.SetCall.CallCount).To(Equal(1))
-					Expect(store.SetCall.Receives[0].State).To(Equal(storage.State{
-						EnvID: "some-env-id",
-						Jumpbox: storage.Jumpbox{
-							URL: "10.0.0.5",
-						},
-					}))
-				})
-			})
-			Context("failure cases", func() {
-				Context("when the jumpbox state file cannot be written", func() {
-					BeforeEach(func() {
-						err := os.MkdirAll(filepath.Join(varsDir, "jumpbox-state.json"), os.ModePerm)
-						Expect(err).NotTo(HaveOccurred())
-					})
-
-					It("returns an error", func() {
-						_, err := migrator.Migrate(incomingState)
-						Expect(err).To(MatchError(ContainSubstring("migrating jumpbox state: ")))
-					})
-				})
-				Context("when the jumpbox state file cannot be written", func() {
-					BeforeEach(func() {
-						incomingState.Jumpbox.State["invalid-key"] = func() string { return "invalid" }
-					})
-
-					It("returns an error", func() {
-						_, err := migrator.Migrate(incomingState)
-						Expect(err).To(MatchError(ContainSubstring("marshalling jumpbox state: ")))
-					})
-				})
-			})
-		})
-
-		Context("when the state has populated BOSH variables", func() {
-			BeforeEach(func() {
-				incomingState = storage.State{
-					EnvID: "some-env-id",
-					BOSH: storage.BOSH{
-						DirectorAddress: "10.0.0.6",
-						Variables:       "some-bosh-vars",
-					},
-				}
-			})
-			AfterEach(func() {
-				os.Remove(filepath.Join(varsDir, "director-vars-store.yml"))
-			})
-			It("copies the BOSH state to the director-vars-store.yml file", func() {
-				_, err := migrator.Migrate(incomingState)
-				Expect(err).NotTo(HaveOccurred())
-				boshVars, err := ioutil.ReadFile(filepath.Join(varsDir, "director-vars-store.yml"))
-				Expect(err).NotTo(HaveOccurred())
-				Expect(string(boshVars)).To(Equal("some-bosh-vars"))
-
-				By("saving the state after removing the old values", func() {
-					Expect(store.SetCall.CallCount).To(Equal(1))
-					Expect(store.SetCall.Receives[0].State).To(Equal(storage.State{
-						EnvID: "some-env-id",
-						BOSH: storage.BOSH{
-							DirectorAddress: "10.0.0.6",
-						},
-					}))
-				})
-			})
-			Context("failure cases", func() {
-				Context("when the director variables file cannot be written", func() {
-					BeforeEach(func() {
-						err := os.MkdirAll(filepath.Join(varsDir, "director-vars-store.yml"), os.ModePerm)
-						Expect(err).NotTo(HaveOccurred())
-					})
-
-					It("returns an error", func() {
-						_, err := migrator.Migrate(incomingState)
-						Expect(err).To(MatchError(ContainSubstring("migrating bosh variables: ")))
-					})
-				})
-			})
-		})
-
-		Context("when BOSH variables are in director-variables.yml", func() {
-			BeforeEach(func() {
-				err := ioutil.WriteFile(filepath.Join(varsDir, "director-variables.yml"), []byte("some-bosh-vars"), os.ModePerm)
-				Expect(err).NotTo(HaveOccurred())
-
-				incomingState = storage.State{EnvID: "some-env"}
-			})
-
-			It("moves director-variables.yml to director-vars-store.yml", func() {
-				_, err := migrator.Migrate(storage.State{EnvID: "some-env"})
-				Expect(err).NotTo(HaveOccurred())
-				boshVars, err := ioutil.ReadFile(filepath.Join(varsDir, "director-vars-store.yml"))
-				Expect(err).NotTo(HaveOccurred())
-				Expect(string(boshVars)).To(Equal("some-bosh-vars"))
-			})
-
-			Context("failure cases", func() {
-				Context("when the director legacy vars-store file cannot be read", func() {
-					BeforeEach(func() {
-						err := os.Remove(filepath.Join(varsDir, "director-variables.yml"))
-						Expect(err).NotTo(HaveOccurred())
-						err = os.MkdirAll(filepath.Join(varsDir, "director-variables.yml"), os.ModePerm)
-						Expect(err).NotTo(HaveOccurred())
-					})
-
-					It("returns an error", func() {
-						_, err := migrator.Migrate(incomingState)
-						Expect(err).To(MatchError(ContainSubstring("reading legacy director vars store: ")))
-					})
-				})
-			})
-		})
-
-		Context("when the state has populated jumpbox variables", func() {
-			BeforeEach(func() {
-				incomingState = storage.State{
-					EnvID: "some-env-id",
-					Jumpbox: storage.Jumpbox{
-						URL:       "10.0.0.5:25555",
-						Variables: "some-jumpbox-vars",
-					},
-				}
-			})
-			It("copies the jumpbox state to the jumpbox-vars-store.yml file", func() {
-				_, err := migrator.Migrate(incomingState)
-				Expect(err).NotTo(HaveOccurred())
-
-				jumpboxVars, err := ioutil.ReadFile(filepath.Join(varsDir, "jumpbox-vars-store.yml"))
-				Expect(err).NotTo(HaveOccurred())
-				Expect(string(jumpboxVars)).To(Equal("some-jumpbox-vars"))
-
-				By("saving the state after removing the old values", func() {
-					Expect(store.SetCall.CallCount).To(Equal(1))
-					Expect(store.SetCall.Receives[0].State).To(Equal(storage.State{
-						EnvID: "some-env-id",
-						Jumpbox: storage.Jumpbox{
-							URL: "10.0.0.5:25555",
-						},
-					}))
-				})
-			})
-			Context("failure cases", func() {
-				Context("when the director variables file cannot be written", func() {
-					BeforeEach(func() {
-						err := os.MkdirAll(filepath.Join(varsDir, "jumpbox-vars-store.yml"), os.ModePerm)
-						Expect(err).NotTo(HaveOccurred())
-					})
-
-					It("returns an error", func() {
-						_, err := migrator.Migrate(incomingState)
-						Expect(err).To(MatchError(ContainSubstring("migrating jumpbox variables: ")))
-					})
-				})
-			})
-		})
-
-		Context("when jumpbox variables are in jumpbox-variables.yml", func() {
-			BeforeEach(func() {
-				err := ioutil.WriteFile(filepath.Join(varsDir, "jumpbox-variables.yml"), []byte("some-jumpbox-vars"), os.ModePerm)
-				Expect(err).NotTo(HaveOccurred())
-
-				incomingState = storage.State{EnvID: "some-env-id"}
-			})
-
-			It("moves jumpbox-variables.yml to jumpbox-vars-store.yml", func() {
-				_, err := migrator.Migrate(incomingState)
-				Expect(err).NotTo(HaveOccurred())
-
-				boshVars, err := ioutil.ReadFile(filepath.Join(varsDir, "jumpbox-vars-store.yml"))
-				Expect(err).NotTo(HaveOccurred())
-				Expect(string(boshVars)).To(Equal("some-jumpbox-vars"))
-			})
-
-			Context("failure cases", func() {
-				Context("when the jumpbox legacy vars-store file cannot be read", func() {
-					BeforeEach(func() {
-						err := os.Remove(filepath.Join(varsDir, "jumpbox-variables.yml"))
-						Expect(err).NotTo(HaveOccurred())
-						err = os.MkdirAll(filepath.Join(varsDir, "jumpbox-variables.yml"), os.ModePerm)
-						Expect(err).NotTo(HaveOccurred())
-					})
-
-					It("returns an error", func() {
-						_, err := migrator.Migrate(incomingState)
-						Expect(err).To(MatchError(ContainSubstring("reading legacy jumpbox vars store: ")))
-					})
-				})
-			})
-		})
-
-		Context("when the state has a populated .bbl directory", func() {
-			var cloudConfigFilePath string
-			BeforeEach(func() {
-				cloudConfigFilePath = filepath.Join(oldCloudConfigDir, "some-config-file")
-				ioutil.WriteFile(cloudConfigFilePath, []byte("some-cloud-config"), os.ModePerm)
-			})
-
-			It("moves the cloud-config directory to the top level", func() {
-				_, err := migrator.Migrate(storage.State{EnvID: "some-env"})
-
-				Expect(err).NotTo(HaveOccurred())
-				configFileContents, err := ioutil.ReadFile(filepath.Join(cloudConfigDir, "some-config-file"))
-				Expect(err).NotTo(HaveOccurred())
-				Expect(string(configFileContents)).To(Equal("some-cloud-config"))
-				_, err = os.Stat(oldBblDir)
-				Expect(err).To(HaveOccurred())
-			})
-
-			Context("failure cases", func() {
-				Context("when the contents of the old .bbl dir cannot be read", func() {
-					BeforeEach(func() {
-						err := os.Chmod(oldCloudConfigDir, 0300)
-						Expect(err).NotTo(HaveOccurred())
-					})
-
-					It("returns an error", func() {
-						_, err := migrator.Migrate(storage.State{EnvID: "some-env"})
-						Expect(err).To(MatchError(ContainSubstring("reading legacy .bbl dir contents: ")))
-					})
-				})
-
-				Context("when the cloud config dir cannot be found or created", func() {
-					BeforeEach(func() {
-						store.GetCloudConfigDirCall.Returns.Error = errors.New("potato")
-					})
-
-					It("returns an error", func() {
-						_, err := migrator.Migrate(storage.State{EnvID: "some-env"})
-						Expect(err).To(MatchError(ContainSubstring("getting cloud-config dir: ")))
-					})
-				})
-
-				Context("when the reading the old cloud config file fails", func() {
-					BeforeEach(func() {
-						err := os.Chmod(cloudConfigFilePath, 0300)
-						Expect(err).NotTo(HaveOccurred())
-					})
-
-					It("returns an error", func() {
-						_, err := migrator.Migrate(storage.State{EnvID: "some-env"})
-						Expect(err).To(MatchError(ContainSubstring("reading")))
-					})
-				})
-
-				Context("when renaming a cloud-config file fails", func() {
-					BeforeEach(func() {
-						err := os.Chmod(cloudConfigDir, 0100)
-						Expect(err).NotTo(HaveOccurred())
-					})
-
-					It("returns an error", func() {
-						_, err := migrator.Migrate(storage.State{EnvID: "some-env"})
-						Expect(err).To(MatchError(ContainSubstring("migrating")))
-					})
-				})
-
-				Context("when removing the old .bbl dir fails", func() {
-					BeforeEach(func() {
-						err := os.Chmod(stateDir, 0100)
-						Expect(err).NotTo(HaveOccurred())
-					})
-
-					It("returns an error", func() {
-						_, err := migrator.Migrate(storage.State{EnvID: "some-env"})
-						Expect(err).To(MatchError(ContainSubstring("removing legacy .bbl dir: ")))
-					})
-				})
-			})
-		})
-
-		Context("when the state has bbl-provided tfvars in the terraform.tfvars file", func() {
-			var (
-				bblVarsPath string
-				tfVarsPath  string
-			)
-			BeforeEach(func() {
-				bblVarsPath = filepath.Join(varsDir, "bbl.tfvars")
-				tfVarsPath = filepath.Join(varsDir, "terraform.tfvars")
-				ioutil.WriteFile(tfVarsPath, []byte("some-tf-vars"), os.ModePerm)
-			})
-
-			AfterEach(func() {
-				os.Remove(tfVarsPath)
-			})
-
-			It("migrates terraform.tfvars to bbl.tfvars", func() {
-				_, err := migrator.Migrate(storage.State{EnvID: "some-env"})
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(fileIO.RenameCall.Receives.Oldpath).To(Equal(tfVarsPath))
-				Expect(fileIO.RenameCall.Receives.Newpath).To(Equal(bblVarsPath))
-			})
-
-			Context("when renaming the tfvars file fails", func() {
-				BeforeEach(func() {
-					fileIO.RenameCall.Returns.Error = errors.New("potatoes aren't a fruit")
-				})
-
-				It("returns an error", func() {
-					_, err := migrator.Migrate(storage.State{EnvID: "some-env"})
-					Expect(err).To(MatchError(ContainSubstring("potatoes")))
-				})
-			})
-
-		})
 	})
 })

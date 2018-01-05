@@ -24,3 +24,15 @@ func (*FileIOAdapter) Stat(name string) (os.FileInfo, error) {
 func (*FileIOAdapter) Rename(oldpath, newpath string) error {
 	return os.Rename(oldpath, newpath)
 }
+
+func (*FileIOAdapter) Remove(name string) error {
+	return os.Remove(name)
+}
+
+func (*FileIOAdapter) ReadDir(dirname string) ([]os.FileInfo, error) {
+	return ioutil.ReadDir(dirname)
+}
+
+func (*FileIOAdapter) RemoveAll(path string) error {
+	return os.RemoveAll(path)
+}
