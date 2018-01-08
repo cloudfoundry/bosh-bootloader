@@ -20,7 +20,6 @@ var _ = Describe("Upgrade", func() {
 	var (
 		oldBBL     actors.BBL
 		newBBL     actors.BBL
-		aws        actors.AWS
 		boshcli    actors.BOSHCLI
 		state      acceptance.State
 		sshSession *gexec.Session
@@ -62,7 +61,6 @@ var _ = Describe("Upgrade", func() {
 		}
 		oldBBL = actors.NewBBL(configuration.StateFileDir, f.Name(), configuration, envName)
 		newBBL = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, envName)
-		aws = actors.NewAWS(configuration)
 		boshcli = actors.NewBOSHCLI()
 		state = acceptance.NewState(configuration.StateFileDir)
 	})

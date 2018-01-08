@@ -10,6 +10,7 @@ import (
 	"golang.org/x/oauth2/google"
 
 	acceptance "github.com/cloudfoundry/bosh-bootloader/acceptance-tests"
+	"github.com/cloudfoundry/bosh-bootloader/testhelpers"
 	compute "google.golang.org/api/compute/v1"
 
 	. "github.com/onsi/gomega"
@@ -92,4 +93,43 @@ func getZoneFromStateFile(path string) string {
 	err = json.Unmarshal(contents, &p)
 	Expect(err).NotTo(HaveOccurred())
 	return p.GCP.Zone
+}
+
+type gcpIaasLbHelper struct {
+	gcp GCP
+}
+
+func (g gcpIaasLbHelper) GetLBArgs() []string {
+	certPath, err := testhelpers.WriteContentsToTempFile(testhelpers.BBL_CERT)
+	Expect(err).NotTo(HaveOccurred())
+	keyPath, err := testhelpers.WriteContentsToTempFile(testhelpers.BBL_KEY)
+	Expect(err).NotTo(HaveOccurred())
+
+	return []string{
+		"--lb-type", "cf",
+		"--lb-cert", certPath,
+		"--lb-key", keyPath,
+	}
+}
+
+func (g gcpIaasLbHelper) ConfirmLBsExist(envID string) {
+	targetPools := []string{envID + "-cf-ssh-proxy", envID + "-cf-tcp-router"}
+	for _, p := range targetPools {
+		targetPool, err := g.gcp.GetTargetPool(p)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(targetPool.Name).NotTo(BeNil())
+		Expect(targetPool.Name).To(Equal(p))
+	}
+
+	targetHTTPSProxy, err := g.gcp.GetTargetHTTPSProxy(envID + "-https-proxy")
+	Expect(err).NotTo(HaveOccurred())
+	Expect(targetHTTPSProxy.SslCertificates).To(HaveLen(1))
+}
+
+func (g gcpIaasLbHelper) ConfirmNoLBsExist(envID string) {
+	targetPools := []string{envID + "-cf-ssh-proxy", envID + "-cf-tcp-router"}
+	for _, p := range targetPools {
+		_, err := g.gcp.GetTargetPool(p)
+		Expect(err).To(MatchError(MatchRegexp(`The resource 'projects\/.+` + p + `' was not found`)))
+	}
 }

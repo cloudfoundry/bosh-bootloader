@@ -22,8 +22,7 @@ var _ = Describe("up", func() {
 		sshSession      *gexec.Session
 		stateDir        string
 		iaas            string
-
-		boshDirectorChecker actors.BOSHDirectorChecker
+		iaasHelper      actors.IAASLBHelper
 	)
 
 	BeforeEach(func() {
@@ -33,11 +32,11 @@ var _ = Describe("up", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		iaas = configuration.IAAS
+		iaasHelper = actors.NewIAASLBHelper(iaas, configuration)
 		stateDir = configuration.StateFileDir
 
 		bbl = actors.NewBBL(stateDir, pathToBBL, configuration, "up-env")
 		boshcli = actors.NewBOSHCLI()
-		boshDirectorChecker = actors.NewBOSHDirectorChecker(configuration)
 	})
 
 	AfterEach(func() {
@@ -51,7 +50,11 @@ var _ = Describe("up", func() {
 	})
 
 	It("bbl's up a new bosh director and jumpbox", func() {
-		session := bbl.Up("--name", bbl.PredefinedEnvID())
+		args := []string{
+			"--name", bbl.PredefinedEnvID(),
+		}
+		args = append(args, iaasHelper.GetLBArgs()...)
+		session := bbl.Up(args...)
 		Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 
 		By("creating an ssh tunnel to the director in print-env", func() {
@@ -105,6 +108,37 @@ var _ = Describe("up", func() {
 		By("checking bbl up is idempotent", func() {
 			session := bbl.Up()
 			Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
+		})
+
+		By("confirming that the load balancers exist", func() {
+			iaasHelper.ConfirmLBsExist(bbl.PredefinedEnvID())
+		})
+
+		By("verifying that vm extensions were added to the cloud config", func() {
+			cloudConfig := bbl.CloudConfig()
+			vmExtensions := acceptance.VmExtensionNames(cloudConfig)
+			Expect(vmExtensions).To(ContainElement("cf-router-network-properties"))
+			Expect(vmExtensions).To(ContainElement("diego-ssh-proxy-network-properties"))
+			Expect(vmExtensions).To(ContainElement("cf-tcp-router-network-properties"))
+		})
+
+		By("verifying the bbl lbs output", func() {
+			stdout := bbl.Lbs()
+			Expect(stdout).To(MatchRegexp("CF Router LB:.*"))
+			Expect(stdout).To(MatchRegexp("CF SSH Proxy LB:.*"))
+			Expect(stdout).To(MatchRegexp("CF TCP Router LB:.*"))
+		})
+
+		By("deleting lbs", func() {
+			session := bbl.Plan("--name", bbl.PredefinedEnvID())
+			Eventually(session, 1*time.Minute).Should(gexec.Exit(0))
+
+			session = bbl.Up()
+			Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
+		})
+
+		By("confirming that the load balancers no longer exist", func() {
+			iaasHelper.ConfirmNoLBsExist(bbl.PredefinedEnvID())
 		})
 
 		By("destroying the director and the jumpbox", func() {

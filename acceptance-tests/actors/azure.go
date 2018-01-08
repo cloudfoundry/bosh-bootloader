@@ -1,6 +1,7 @@
 package actors
 
 import (
+	"encoding/base64"
 	"fmt"
 
 	"github.com/Azure/azure-sdk-for-go/arm/compute"
@@ -10,6 +11,9 @@ import (
 	"github.com/Azure/go-autorest/autorest/adal"
 	"github.com/Azure/go-autorest/autorest/azure"
 	acceptance "github.com/cloudfoundry/bosh-bootloader/acceptance-tests"
+	"github.com/cloudfoundry/bosh-bootloader/testhelpers"
+
+	. "github.com/onsi/gomega"
 )
 
 type Azure struct {
@@ -93,4 +97,36 @@ func (a Azure) NetworkHasBOSHDirector(envID string) bool {
 	}
 
 	return false
+}
+
+type azureIaasLbHelper struct {
+	azure Azure
+}
+
+func (z azureIaasLbHelper) GetLBArgs() []string {
+	pfx_data, err := base64.StdEncoding.DecodeString(testhelpers.PFX_BASE64)
+	Expect(err).NotTo(HaveOccurred())
+
+	certPath, err := testhelpers.WriteByteContentsToTempFile(pfx_data)
+	Expect(err).NotTo(HaveOccurred())
+
+	keyPath, err := testhelpers.WriteContentsToTempFile(testhelpers.PFX_PASSWORD)
+	Expect(err).NotTo(HaveOccurred())
+	return []string{
+		"--lb-type", "cf",
+		"--lb-cert", certPath,
+		"--lb-key", keyPath,
+	}
+}
+
+func (z azureIaasLbHelper) ConfirmLBsExist(envID string) {
+	exists, err := z.azure.GetApplicationGateway(envID, fmt.Sprintf("%s-app-gateway", envID))
+	Expect(err).NotTo(HaveOccurred())
+	Expect(exists).To(BeTrue())
+}
+
+func (z azureIaasLbHelper) ConfirmNoLBsExist(envID string) {
+	exists, err := z.azure.GetApplicationGateway(envID, fmt.Sprintf("%s-app-gateway", envID))
+	Expect(err).NotTo(HaveOccurred())
+	Expect(exists).To(BeFalse())
 }
