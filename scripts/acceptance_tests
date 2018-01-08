@@ -9,7 +9,7 @@ function main() {
 
   if [ -z "${packages}" ]; then
     echo "Usage: ./scripts/acceptance_tests packages...
-Example: ./scripts/acceptance_tests bbl gcp"
+Example: ./scripts/acceptance_tests bbl"
     return
   fi
 

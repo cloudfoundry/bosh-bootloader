@@ -19,12 +19,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/elb"
 )
 
-type AWS struct {
-	client    aws.Client
-	elbClient *elb.ELB
-}
-
-func NewAWS(c acceptance.Config) AWS {
+func NewAWSLBHelper(c acceptance.Config) awsLbHelper {
 	creds := storage.AWS{
 		AccessKeyID:     c.AWSAccessKeyID,
 		SecretAccessKey: c.AWSSecretAccessKey,
@@ -36,16 +31,17 @@ func NewAWS(c acceptance.Config) AWS {
 		Credentials: credentials.NewStaticCredentials(creds.AccessKeyID, creds.SecretAccessKey, ""),
 		Region:      awslib.String(creds.Region),
 	}
-	return AWS{
+	return awsLbHelper{
 		client:    client,
 		elbClient: elb.New(session.New(elbConfig)),
 	}
 }
 
-func (a AWS) LoadBalancers(vpcName string) []string {
+func (a awsLbHelper) loadBalancers(vpcName string) []string {
 	var loadBalancerNames []string
 
-	vpcID := a.GetVPC(vpcName)
+	vpcID, err := a.client.GetVPC(vpcName)
+	Expect(err).NotTo(HaveOccurred())
 
 	loadBalancerOutput, err := a.elbClient.DescribeLoadBalancers(&elb.DescribeLoadBalancersInput{})
 	Expect(err).NotTo(HaveOccurred())
@@ -59,17 +55,12 @@ func (a AWS) LoadBalancers(vpcName string) []string {
 	return loadBalancerNames
 }
 
-func (a AWS) GetVPC(vpcName string) *string {
-	vpc, err := a.client.GetVPC(vpcName)
-	Expect(err).NotTo(HaveOccurred())
-	return vpc
+type awsLbHelper struct {
+	client    aws.Client
+	elbClient *elb.ELB
 }
 
-type awsIaasLbHelper struct {
-	aws AWS
-}
-
-func (a awsIaasLbHelper) GetLBArgs() []string {
+func (a awsLbHelper) GetLBArgs() []string {
 	certPath, err := testhelpers.WriteContentsToTempFile(testhelpers.BBL_CERT)
 	Expect(err).NotTo(HaveOccurred())
 	chainPath, err := testhelpers.WriteContentsToTempFile(testhelpers.BBL_CHAIN)
@@ -85,17 +76,17 @@ func (a awsIaasLbHelper) GetLBArgs() []string {
 	}
 }
 
-func (a awsIaasLbHelper) ConfirmLBsExist(envID string) {
+func (a awsLbHelper) ConfirmLBsExist(envID string) {
 	vpcName := fmt.Sprintf("%s-vpc", envID)
-	Expect(a.aws.LoadBalancers(vpcName)).To(HaveLen(3))
-	Expect(a.aws.LoadBalancers(vpcName)).To(ConsistOf(
+	Expect(a.loadBalancers(vpcName)).To(HaveLen(3))
+	Expect(a.loadBalancers(vpcName)).To(ConsistOf(
 		MatchRegexp(".*-cf-router-lb"),
 		MatchRegexp(".*-cf-ssh-lb"),
 		MatchRegexp(".*-cf-tcp-lb"),
 	))
 }
 
-func (a awsIaasLbHelper) ConfirmNoLBsExist(envID string) {
+func (a awsLbHelper) ConfirmNoLBsExist(envID string) {
 	vpcName := fmt.Sprintf("%s-vpc", envID)
-	Expect(a.aws.LoadBalancers(vpcName)).To(BeEmpty())
+	Expect(a.loadBalancers(vpcName)).To(BeEmpty())
 }

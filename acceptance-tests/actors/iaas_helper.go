@@ -15,19 +15,11 @@ type IAASLBHelper interface {
 func NewIAASLBHelper(iaas string, configuration acceptance.Config) IAASLBHelper {
 	switch iaas {
 	case "aws":
-		return awsIaasLbHelper{
-			aws: NewAWS(configuration),
-		}
-
+		return NewAWSLBHelper(configuration)
 	case "azure":
-		return azureIaasLbHelper{
-			azure: NewAzure(configuration),
-		}
-
+		return NewAzureLBHelper(configuration)
 	case "gcp":
-		return gcpIaasLbHelper{
-			gcp: NewGCP(configuration),
-		}
+		return NewGCPLBHelper(configuration)
 	default:
 		panic(fmt.Sprintf("%s is not a supported iaas", iaas))
 	}
