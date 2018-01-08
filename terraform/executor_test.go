@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
@@ -213,17 +212,19 @@ var _ = Describe("Executor", func() {
 	})
 
 	Describe("Apply", func() {
-		It("runs terraform apply", func() {
-			terraform.SetReadFile(func(filePath string) ([]byte, error) {
-				if strings.Contains(filePath, "tfstate") {
-					return []byte("some-updated-terraform-state"), nil
-				}
-				if strings.Contains(filePath, "tfvars") {
-					return []byte("some-tfvars"), nil
-				}
-				return []byte("some-other-file"), nil
-			})
+		BeforeEach(func() {
+			err := ioutil.WriteFile(tfStatePath, []byte("some-updated-terraform-state"), storage.StateMode)
+			Expect(err).NotTo(HaveOccurred())
 
+			err = ioutil.WriteFile(tfVarsPath, []byte("some-tfvars"), storage.StateMode)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		AfterEach(func() {
+			os.RemoveAll(varsDir)
+		})
+
+		It("runs terraform apply", func() {
 			err := executor.Init("some-template", input) // We need to run the terraform init command.
 			Expect(err).NotTo(HaveOccurred())
 
@@ -242,6 +243,46 @@ var _ = Describe("Executor", func() {
 					"-var-file", relativeVarsPath,
 				}))
 				Expect(cmd.RunCall.Receives.Debug).To(BeTrue())
+			})
+		})
+
+		Context("when other vars files are in the directory", func() {
+			var (
+				relativeUserProvidedVarsPathA string
+				relativeUserProvidedVarsPathC string
+			)
+			BeforeEach(func() {
+				userProvidedVarsPathA := filepath.Join(varsDir, "awesome-user-vars.tfvars")
+				err := ioutil.WriteFile(userProvidedVarsPathA, []byte("user-provided tfvars"), storage.StateMode)
+				Expect(err).NotTo(HaveOccurred())
+				userProvidedVarsPathC := filepath.Join(varsDir, "custom-user-vars.tfvars")
+				err = ioutil.WriteFile(userProvidedVarsPathC, []byte("user-provided tfvars"), storage.StateMode)
+				Expect(err).NotTo(HaveOccurred())
+				err = ioutil.WriteFile(filepath.Join(varsDir, "not-a-tfvars-file.yml"), []byte("definitely not a tfvars file"), storage.StateMode)
+				Expect(err).NotTo(HaveOccurred())
+				relativeUserProvidedVarsPathA, err = filepath.Rel(terraformDir, userProvidedVarsPathA)
+				Expect(err).NotTo(HaveOccurred())
+				relativeUserProvidedVarsPathC, err = filepath.Rel(terraformDir, userProvidedVarsPathC)
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			It("passes all user provided tfvars files to the run command in alphabetic order", func() {
+				err := executor.Init("some-template", input) // We need to run the terraform init command.
+				Expect(err).NotTo(HaveOccurred())
+
+				err = executor.Apply(map[string]string{
+					"some-cert": "some-cert-value",
+				})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(cmd.RunCall.Receives.Args).To(ConsistOf([]string{
+					"apply",
+					"--auto-approve",
+					"-var", "some-cert=some-cert-value",
+					"-state", relativeStatePath,
+					"-var-file", relativeUserProvidedVarsPathA,
+					"-var-file", relativeVarsPath,
+					"-var-file", relativeUserProvidedVarsPathC,
+				}))
 			})
 		})
 
