@@ -112,7 +112,31 @@ func createOp(opType, opPath string, value interface{}) op {
 	}
 }
 
+func (o *OpsGenerator) GetSubnetCidr(cidr string, zone int) (string, error) {
+	parsedCidr, err := bosh.ParseCIDRBlock(cidr)
+	if err != nil {
+		return "", err
+	}
+
+	cidrParts := strings.Split(cidr, "/")
+	mask := cidrParts[1] // If there is no mask, ParseCIDRBlock would have returned an error
+
+	firstIp := parsedCidr.GetFirstIP().Add((zone + 1) * 16 << 8)
+	subnetCidr := fmt.Sprintf("%s/%s", firstIp.String(), mask)
+	return subnetCidr, nil
+}
+
 func (o *OpsGenerator) generateGCPOps(state storage.State) ([]op, error) {
+	terraformOutputs, err := o.terraformManager.GetOutputs()
+	if err != nil {
+		return []op{}, fmt.Errorf("Get terraform outputs: %s", err)
+	}
+	cidr := "10.0.0.0/20"
+	cidrInterface := terraformOutputs.Map["internal_cidr"]
+	if cidrInterface != nil {
+		cidr = cidrInterface.(string)
+	}
+
 	var ops []op
 	for i, zone := range state.GCP.Zones {
 		ops = append(ops, createOp("replace", "/azs/-", az{
@@ -125,10 +149,14 @@ func (o *OpsGenerator) generateGCPOps(state storage.State) ([]op, error) {
 
 	var subnets []networkSubnet
 	for i, _ := range state.GCP.Zones {
-		cidr := fmt.Sprintf("10.0.%d.0/20", 16*(i+1))
+		subnetCidr, err := o.GetSubnetCidr(cidr, i)
+		if err != nil {
+			return []op{}, fmt.Errorf("Generating network subnet cidr: %s", err)
+		}
+
 		subnet, err := generateNetworkSubnet(
 			fmt.Sprintf("z%d", i+1),
-			cidr,
+			subnetCidr,
 			"((network_name))",
 			"((subnetwork_name))",
 			"((internal_tag_name))",

@@ -37,6 +37,7 @@ var _ = Describe("GCPOpsGenerator", func() {
 		}
 
 		terraformManager.GetOutputsCall.Returns.Outputs = terraform.Outputs{Map: map[string]interface{}{
+			"internal_cidr":          "10.0.0.0/20",
 			"network_name":           "some-network-name",
 			"subnetwork_name":        "some-subnetwork-name",
 			"bosh_open_tag_name":     "some-bosh-tag",
@@ -62,6 +63,7 @@ var _ = Describe("GCPOpsGenerator", func() {
 bosh_open_tag_name: some-bosh-tag
 network_name: some-network-name
 subnetwork_name: some-subnetwork-name
+internal_cidr: 10.0.0.0/20
 internal_tag_name: some-internal-tag
 internal_tag_name: some-internal-tag
 router_backend_service: some-backend-service
@@ -128,6 +130,27 @@ credhub_target_pool: some-credhub-target-pool
 					Expect(err).To(MatchError("failed to marshal"))
 					gcp.ResetMarshal()
 				})
+			})
+		})
+	})
+
+	Describe("GetSubnetCidr", func() {
+		DescribeTable("returns a cidr for the given subnet and zone number",
+			func(cidr string, zone int, expectedCidr string) {
+				actualCidr, err := opsGenerator.GetSubnetCidr(cidr, zone)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(actualCidr).To(Equal(expectedCidr))
+			},
+			Entry("default", "10.0.0.0/20", 0, "10.0.16.0/20"),
+			Entry("zone one", "10.0.0.0/20", 1, "10.0.32.0/20"),
+			Entry("zone two", "10.0.0.0/20", 2, "10.0.48.0/20"),
+			Entry("/24", "10.0.0.0/24", 2, "10.0.48.0/24"),
+		)
+
+		Context("failure cases", func() {
+			It("returns an error", func() {
+				_, err := opsGenerator.GetSubnetCidr("not a real cidr block", 0)
+				Expect(err).To(MatchError(ContainSubstring("cannot parse CIDR block")))
 			})
 		})
 	})
