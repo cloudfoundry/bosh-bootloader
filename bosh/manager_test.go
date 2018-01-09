@@ -656,6 +656,7 @@ director_name: bosh-`))
 				vars := boshManager.GetJumpboxDeploymentVars(incomingState, terraform.Outputs{Map: map[string]interface{}{
 					"internal_cidr":     "10.80.30.0/24",
 					"external_ip":       "10.80.30.6",
+					"internal_gw":       "garbage",
 					"network_name":      "plum",
 					"vcenter_cluster":   "fruits",
 					"vcenter_disks":     "plum",
@@ -843,6 +844,7 @@ zone: some-zone
 			It("returns a correct yaml string of bosh deployment variables", func() {
 				vars := boshManager.GetDirectorDeploymentVars(incomingState, terraform.Outputs{Map: map[string]interface{}{
 					"some-key":                  "some-value",
+					"internal_gw":               "garbage",
 					"internal_cidr":             "10.0.1.0/24",
 					"bosh_director_tag_name":    "some-director-tag",
 					"bosh_director_external_ip": "some-external-ip",
