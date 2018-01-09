@@ -90,29 +90,6 @@ var _ = Describe("Plan", func() {
 			Expect(cloudConfigManager.InitializeCall.Receives.State).To(Equal(syncedState))
 		})
 
-		Context("when --no-director is passed", func() {
-			It("sets no director on the state", func() {
-				envIDManager.SyncCall.Returns.State = storage.State{NoDirector: true}
-
-				err := command.Execute([]string{"--no-director"}, storage.State{NoDirector: false})
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(boshManager.InitializeJumpboxCall.CallCount).To(Equal(0))
-				Expect(boshManager.InitializeDirectorCall.CallCount).To(Equal(0))
-			})
-
-			Context("but a director already exists", func() {
-				It("returns a helpful error", func() {
-					err := command.Execute([]string{"--no-director"}, storage.State{
-						BOSH: storage.BOSH{
-							DirectorUsername: "admin",
-						},
-					})
-					Expect(err).To(MatchError(`Director already exists, you must re-create your environment to use "--no-director"`))
-				})
-			})
-		})
-
 		Context("when lb flags are passed", func() {
 			var lb storage.LB
 			BeforeEach(func() {
@@ -188,14 +165,6 @@ var _ = Describe("Plan", func() {
 	})
 
 	Describe("CheckFastFails", func() {
-		Context("when --no-director flag is passed in", func() {
-			It("notifies the user the flag is deprecated", func() {
-				err := command.CheckFastFails([]string{"--no-director"}, storage.State{Version: 9})
-				Expect(err).NotTo(HaveOccurred())
-				Expect(logger.PrintlnCall.Receives.Message).To(Equal(`Deprecation warning: --no-director has been deprecated and will be removed in bbl v6.0.0. Use "bbl plan" to perform advanced configuration of the BOSH director.`))
-			})
-		})
-
 		Context("when terraform manager validate version fails", func() {
 			It("returns an error", func() {
 				terraformManager.ValidateVersionCall.Returns.Error = errors.New("lychee")
@@ -215,22 +184,11 @@ var _ = Describe("Plan", func() {
 		})
 
 		Context("when the version of the bosh-cli is lower than 2.0.24", func() {
-			Context("when there is a bosh director", func() {
-				It("returns an error", func() {
-					boshManager.VersionCall.Returns.Version = "1.9.1"
-					err := command.CheckFastFails([]string{}, storage.State{Version: 999})
+			It("returns an error", func() {
+				boshManager.VersionCall.Returns.Version = "1.9.1"
+				err := command.CheckFastFails([]string{}, storage.State{Version: 999})
 
-					Expect(err).To(MatchError("BOSH version must be at least v2.0.24"))
-				})
-			})
-
-			Context("when there is no director", func() {
-				It("does not return an error", func() {
-					boshManager.VersionCall.Returns.Version = "1.9.1"
-					err := command.CheckFastFails([]string{"--no-director"}, storage.State{Version: 999})
-
-					Expect(err).NotTo(HaveOccurred())
-				})
+				Expect(err).To(MatchError("BOSH version must be at least v2.0.24"))
 			})
 		})
 
@@ -281,28 +239,6 @@ var _ = Describe("Plan", func() {
 				}, storage.State{})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(config.Name).To(Equal("a-better-name"))
-			})
-		})
-
-		Context("when the user provides the no-director flag", func() {
-			It("passes NoDirector as true in the up config", func() {
-				config, err := command.ParseArgs([]string{
-					"--no-director",
-				}, storage.State{})
-				Expect(err).NotTo(HaveOccurred())
-				Expect(config.NoDirector).To(Equal(true))
-			})
-
-			Context("when the --no-director flag was omitted on a subsequent bbl-up", func() {
-				It("passes no-director as true in the up config", func() {
-					config, err := command.ParseArgs([]string{},
-						storage.State{
-							IAAS:       "gcp",
-							NoDirector: true,
-						})
-					Expect(err).NotTo(HaveOccurred())
-					Expect(config.NoDirector).To(Equal(true))
-				})
 			})
 		})
 

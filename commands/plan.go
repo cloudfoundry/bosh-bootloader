@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/cloudfoundry/bosh-bootloader/flags"
@@ -20,9 +19,8 @@ type Plan struct {
 }
 
 type PlanConfig struct {
-	Name       string
-	NoDirector bool
-	LB         storage.LB
+	Name string
+	LB   storage.LB
 }
 
 func NewPlan(boshManager boshManager,
@@ -52,14 +50,8 @@ func (p Plan) CheckFastFails(args []string, state storage.State) error {
 		return err
 	}
 
-	if config.NoDirector {
-		p.logger.Println(`Deprecation warning: --no-director has been deprecated and will be removed in bbl v6.0.0. Use "bbl plan" to perform advanced configuration of the BOSH director.`)
-	}
-
-	if !config.NoDirector && !state.NoDirector {
-		if err := fastFailBOSHVersion(p.boshManager); err != nil {
-			return err
-		}
+	if err := fastFailBOSHVersion(p.boshManager); err != nil {
+		return err
 	}
 
 	if err := p.terraformManager.ValidateVersion(); err != nil {
@@ -79,7 +71,6 @@ func (p Plan) ParseArgs(args []string, state storage.State) (PlanConfig, error) 
 		lbArgs LBArgs
 	)
 	planFlags := flags.New("up")
-	planFlags.Bool(&config.NoDirector, "", "no-director", state.NoDirector)
 	planFlags.String(&config.Name, "name", "")
 	planFlags.String(&lbArgs.LBType, "lb-type", "")
 	planFlags.String(&lbArgs.CertPath, "lb-cert", "")
@@ -116,17 +107,11 @@ func (p Plan) Execute(args []string, state storage.State) error {
 }
 
 func (p Plan) InitializePlan(config PlanConfig, state storage.State) (storage.State, error) {
-	if config.NoDirector {
-		if !state.BOSH.IsEmpty() {
-			return storage.State{}, errors.New(`Director already exists, you must re-create your environment to use "--no-director"`)
-		}
-		state.NoDirector = true
-	}
-
 	var err error
 
 	state.BBLVersion = p.bblVersion
 	state.LB = config.LB
+	state.NoDirector = false
 
 	state, err = p.envIDManager.Sync(state, config.Name)
 	if err != nil {
@@ -144,10 +129,6 @@ func (p Plan) InitializePlan(config PlanConfig, state storage.State) (storage.St
 
 	if err := p.cloudConfigManager.Initialize(state); err != nil {
 		return storage.State{}, fmt.Errorf("Cloud config manager initialize: %s", err)
-	}
-
-	if state.NoDirector {
-		return state, nil
 	}
 
 	if err := p.boshManager.InitializeJumpbox(state); err != nil {

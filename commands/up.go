@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
@@ -50,22 +49,18 @@ func (u Up) Execute(args []string, state storage.State) error {
 		state = planState
 	}
 
-	if config.NoDirector && !state.BOSH.IsEmpty() {
-		return errors.New(`Director already exists, you must re-create your environment to use "--no-director"`)
-	}
-
 	state, err = u.terraformManager.Apply(state)
 	if err != nil {
 		return handleTerraformError(err, state, u.stateStore)
 	}
 
+	if state.NoDirector {
+		state.NoDirector = false
+	}
+
 	err = u.stateStore.Set(state)
 	if err != nil {
 		return fmt.Errorf("Save state after terraform apply: %s", err)
-	}
-
-	if state.NoDirector {
-		return nil
 	}
 
 	terraformOutputs, err := u.terraformManager.GetOutputs()
