@@ -86,10 +86,14 @@ var _ = Describe("up", func() {
 			Eventually(directorExists, "1m", "10s").Should(BeTrue())
 		})
 
-		By("checking that the cloud config exists", func() {
+		By("verifying that vm extensions were added to the cloud config", func() {
 			cloudConfig, err := boshcli.CloudConfig(directorAddress, caCertPath, directorUsername, directorPassword)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(cloudConfig).NotTo(BeEmpty())
+
+			vmExtensions := acceptance.VmExtensionNames(cloudConfig)
+			Expect(vmExtensions).To(ContainElement("cf-router-network-properties"))
+			Expect(vmExtensions).To(ContainElement("diego-ssh-proxy-network-properties"))
+			Expect(vmExtensions).To(ContainElement("cf-tcp-router-network-properties"))
 		})
 
 		By("checking if bbl print-env prints the bosh environment variables", func() {
@@ -120,16 +124,6 @@ var _ = Describe("up", func() {
 
 		By("confirming that the load balancers exist", func() {
 			iaasHelper.ConfirmLBsExist(bbl.PredefinedEnvID())
-		})
-
-		By("verifying that vm extensions were added to the cloud config", func() {
-			cloudConfig, err := boshcli.CloudConfig(directorAddress, caCertPath, directorUsername, directorPassword)
-			Expect(err).NotTo(HaveOccurred())
-
-			vmExtensions := acceptance.VmExtensionNames(cloudConfig)
-			Expect(vmExtensions).To(ContainElement("cf-router-network-properties"))
-			Expect(vmExtensions).To(ContainElement("diego-ssh-proxy-network-properties"))
-			Expect(vmExtensions).To(ContainElement("cf-tcp-router-network-properties"))
 		})
 
 		By("verifying the bbl lbs output", func() {
