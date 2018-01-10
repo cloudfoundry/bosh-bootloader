@@ -84,8 +84,6 @@ const (
 	PrintEnvCommandUsage = "Prints required BOSH environment variables"
 
 	LatestErrorCommandUsage = "Prints the output from the latest call to terraform"
-
-	CloudConfigUsage = "Prints suggested cloud configuration for BOSH environment"
 )
 
 func (Up) Usage() string {
@@ -113,8 +111,6 @@ func (Usage) Usage() string { return UsageCommandUsage }
 func (PrintEnv) Usage() string { return PrintEnvCommandUsage }
 
 func (LatestError) Usage() string { return LatestErrorCommandUsage }
-
-func (CloudConfig) Usage() string { return CloudConfigUsage }
 
 func (s SSHKey) Usage() string {
 	if s.Director {

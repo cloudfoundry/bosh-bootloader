@@ -35,7 +35,6 @@ Maintenance Lifecycle Commands:
   plan                    Populates a state directory with the latest config without applying it
 
 Environmental Detail Commands: Useful for automation and gaining access
-  cloud-config            Prints suggested cloud configuration for BOSH environment
   jumpbox-address         Prints BOSH jumpbox address
   director-address        Prints BOSH director address
   director-username       Prints BOSH director username

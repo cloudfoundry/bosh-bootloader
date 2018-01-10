@@ -198,7 +198,6 @@ func main() {
 	commandSet["env-id"] = commands.NewStateQuery(logger, stateValidator, terraformManager, commands.EnvIDPropertyName)
 	commandSet["latest-error"] = commands.NewLatestError(logger, stateValidator)
 	commandSet["print-env"] = commands.NewPrintEnv(logger, stderrLogger, stateValidator, sshKeyGetter, credhubGetter, terraformManager)
-	commandSet["cloud-config"] = commands.NewCloudConfig(logger, stateValidator, cloudConfigManager)
 
 	app := application.New(commandSet, appConfig, usage)
 

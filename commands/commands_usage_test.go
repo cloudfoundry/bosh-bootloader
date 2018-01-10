@@ -121,7 +121,6 @@ var _ = Describe("Commands Usage", func() {
 		Entry("print-env", commands.PrintEnv{}, "Prints required BOSH environment variables"),
 		Entry("latest-error", commands.LatestError{}, "Prints the output from the latest call to terraform"),
 		Entry("version", commands.Version{}, "Prints version"),
-		Entry("cloud-config", commands.CloudConfig{}, "Prints suggested cloud configuration for BOSH environment"),
 	)
 })
 
