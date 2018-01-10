@@ -412,13 +412,13 @@
     name: private
     subnets:
     - az: z1
-      gateway: 10.0.16.1
-      range: 10.0.16.0/20
+      gateway: ((az1_gateway))
+      range: ((az1_range))
       reserved:
-      - 10.0.16.2-10.0.16.3
-      - 10.0.31.255
+      - ((az1_reserved_1))
+      - ((az1_reserved_2))
       static:
-      - 10.0.31.190-10.0.31.254
+      - ((az1_static))
       cloud_properties:
         ephemeral_external_ip: true
         network_name: ((network_name))
@@ -426,13 +426,13 @@
         tags:
           - ((internal_tag_name))
     - az: z2
-      gateway: 10.0.32.1
-      range: 10.0.32.0/20
+      gateway: ((az2_gateway))
+      range: ((az2_range))
       reserved:
-      - 10.0.32.2-10.0.32.3
-      - 10.0.47.255
+      - ((az2_reserved_1))
+      - ((az2_reserved_2))
       static:
-      - 10.0.47.190-10.0.47.254
+      - ((az2_static))
       cloud_properties:
         ephemeral_external_ip: true
         network_name: ((network_name))
@@ -440,13 +440,13 @@
         tags:
           - ((internal_tag_name))
     - az: z3
-      gateway: 10.0.48.1
-      range: 10.0.48.0/20
+      gateway: ((az3_gateway))
+      range: ((az3_range))
       reserved:
-      - 10.0.48.2-10.0.48.3
-      - 10.0.63.255
+      - ((az3_reserved_1))
+      - ((az3_reserved_2))
       static:
-      - 10.0.63.190-10.0.63.254
+      - ((az3_static))
       cloud_properties:
         ephemeral_external_ip: true
         network_name: ((network_name))
@@ -461,13 +461,13 @@
     name: default
     subnets:
     - az: z1
-      gateway: 10.0.16.1
-      range: 10.0.16.0/20
+      gateway: ((az1_gateway))
+      range: ((az1_range))
       reserved:
-      - 10.0.16.2-10.0.16.3
-      - 10.0.31.255
+      - ((az1_reserved_1))
+      - ((az1_reserved_2))
       static:
-      - 10.0.31.190-10.0.31.254
+      - ((az1_static))
       cloud_properties:
         ephemeral_external_ip: true
         network_name: ((network_name))
@@ -475,13 +475,13 @@
         tags:
           - ((internal_tag_name))
     - az: z2
-      gateway: 10.0.32.1
-      range: 10.0.32.0/20
+      gateway: ((az2_gateway))
+      range: ((az2_range))
       reserved:
-      - 10.0.32.2-10.0.32.3
-      - 10.0.47.255
+      - ((az2_reserved_1))
+      - ((az2_reserved_2))
       static:
-      - 10.0.47.190-10.0.47.254
+      - ((az2_static))
       cloud_properties:
         ephemeral_external_ip: true
         network_name: ((network_name))
@@ -489,13 +489,13 @@
         tags:
           - ((internal_tag_name))
     - az: z3
-      gateway: 10.0.48.1
-      range: 10.0.48.0/20
+      gateway: ((az3_gateway))
+      range: ((az3_range))
       reserved:
-      - 10.0.48.2-10.0.48.3
-      - 10.0.63.255
+      - ((az3_reserved_1))
+      - ((az3_reserved_2))
       static:
-      - 10.0.63.190-10.0.63.254
+      - ((az3_static))
       cloud_properties:
         ephemeral_external_ip: true
         network_name: ((network_name))

@@ -80,11 +80,76 @@ func (o OpsGenerator) GenerateVars(state storage.State) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("Get terraform outputs: %s", err)
 	}
-	varsBytes, err := marshal(terraformOutputs.Map)
+
+	azs, err := generateAZs(state.GCP.Zones, terraformOutputs.Map)
+	if err != nil {
+		return "", err
+	}
+
+	varsYAML := map[string]interface{}{}
+	for k, v := range terraformOutputs.Map {
+		varsYAML[k] = v
+	}
+	for _, az := range azs {
+		for key, value := range az {
+			varsYAML[key] = value
+		}
+	}
+
+	varsBytes, err := marshal(varsYAML)
 	if err != nil {
 		panic(err) // not tested; cannot occur
 	}
 	return string(varsBytes), nil
+}
+
+func generateAZs(zones []string, terraformOutputs map[string]interface{}) ([]map[string]string, error) {
+	var azs []map[string]string
+	for azIndex, azName := range zones {
+		output := fmt.Sprintf("subnet_cidr_%d", azIndex+1)
+
+		cidr, ok := terraformOutputs[output]
+		if !ok {
+			return []map[string]string{}, fmt.Errorf("Missing terraform outputs %s", output)
+		}
+
+		az, err := azify(
+			azIndex+1,
+			azName,
+			cidr.(string),
+		)
+
+		if err != nil {
+			return []map[string]string{}, err
+		}
+
+		azs = append(azs, az)
+	}
+
+	return azs, nil
+}
+
+func azify(az int, azName, cidr string) (map[string]string, error) {
+	parsedCidr, err := bosh.ParseCIDRBlock(cidr)
+	if err != nil {
+		return map[string]string{}, err
+	}
+
+	gateway := parsedCidr.GetNthIP(1).String()
+	firstReserved := parsedCidr.GetNthIP(2).String()
+	secondReserved := parsedCidr.GetNthIP(3).String()
+	lastReserved := parsedCidr.GetLastIP().String()
+	lastStatic := parsedCidr.GetLastIP().Subtract(1).String()
+	firstStatic := parsedCidr.GetLastIP().Subtract(65).String()
+
+	return map[string]string{
+		fmt.Sprintf("az%d_name", az):       azName,
+		fmt.Sprintf("az%d_gateway", az):    gateway,
+		fmt.Sprintf("az%d_range", az):      cidr,
+		fmt.Sprintf("az%d_reserved_1", az): fmt.Sprintf("%s-%s", firstReserved, secondReserved),
+		fmt.Sprintf("az%d_reserved_2", az): lastReserved,
+		fmt.Sprintf("az%d_static", az):     fmt.Sprintf("%s-%s", firstStatic, lastStatic),
+	}, nil
 }
 
 func (o OpsGenerator) Generate(state storage.State) (string, error) {
@@ -112,31 +177,7 @@ func createOp(opType, opPath string, value interface{}) op {
 	}
 }
 
-func (o *OpsGenerator) GetSubnetCidr(cidr string, zone int) (string, error) {
-	parsedCidr, err := bosh.ParseCIDRBlock(cidr)
-	if err != nil {
-		return "", err
-	}
-
-	cidrParts := strings.Split(cidr, "/")
-	mask := cidrParts[1] // If there is no mask, ParseCIDRBlock would have returned an error
-
-	firstIp := parsedCidr.GetFirstIP().Add((zone + 1) * 16 << 8)
-	subnetCidr := fmt.Sprintf("%s/%s", firstIp.String(), mask)
-	return subnetCidr, nil
-}
-
 func (o *OpsGenerator) generateGCPOps(state storage.State) ([]op, error) {
-	terraformOutputs, err := o.terraformManager.GetOutputs()
-	if err != nil {
-		return []op{}, fmt.Errorf("Get terraform outputs: %s", err)
-	}
-	cidr := "10.0.0.0/20"
-	cidrInterface := terraformOutputs.Map["internal_cidr"]
-	if cidrInterface != nil {
-		cidr = cidrInterface.(string)
-	}
-
 	var ops []op
 	for i, zone := range state.GCP.Zones {
 		ops = append(ops, createOp("replace", "/azs/-", az{
@@ -149,22 +190,7 @@ func (o *OpsGenerator) generateGCPOps(state storage.State) ([]op, error) {
 
 	var subnets []networkSubnet
 	for i, _ := range state.GCP.Zones {
-		subnetCidr, err := o.GetSubnetCidr(cidr, i)
-		if err != nil {
-			return []op{}, fmt.Errorf("Generating network subnet cidr: %s", err)
-		}
-
-		subnet, err := generateNetworkSubnet(
-			fmt.Sprintf("z%d", i+1),
-			subnetCidr,
-			"((network_name))",
-			"((subnetwork_name))",
-			"((internal_tag_name))",
-		)
-		if err != nil {
-			return []op{}, fmt.Errorf("Generating network subnet: %s", err)
-		}
-
+		subnet := generateNetworkSubnet(i)
 		subnets = append(subnets, subnet)
 	}
 
@@ -236,35 +262,24 @@ func (o *OpsGenerator) generateGCPOps(state storage.State) ([]op, error) {
 	return ops, nil
 }
 
-func generateNetworkSubnet(az, cidr, networkName, subnetworkName, internalTag string) (networkSubnet, error) {
-	parsedCidr, err := bosh.ParseCIDRBlock(cidr)
-	if err != nil {
-		return networkSubnet{}, err
-	}
-
-	gateway := parsedCidr.GetNthIP(1).String()
-	firstReserved := parsedCidr.GetNthIP(2).String()
-	secondReserved := parsedCidr.GetNthIP(3).String()
-	lastReserved := parsedCidr.GetLastIP().String()
-	lastStatic := parsedCidr.GetLastIP().Subtract(1).String()
-	firstStatic := parsedCidr.GetLastIP().Subtract(65).String()
-
+func generateNetworkSubnet(az int) networkSubnet {
+	az++
 	return networkSubnet{
-		AZ:      az,
-		Gateway: gateway,
-		Range:   cidr,
+		AZ:      fmt.Sprintf("z%d", az),
+		Gateway: fmt.Sprintf("((az%d_gateway))", az),
+		Range:   fmt.Sprintf("((az%d_range))", az),
 		Reserved: []string{
-			fmt.Sprintf("%s-%s", firstReserved, secondReserved),
-			fmt.Sprintf("%s", lastReserved),
+			fmt.Sprintf("((az%d_reserved_1))", az),
+			fmt.Sprintf("((az%d_reserved_2))", az),
 		},
 		Static: []string{
-			fmt.Sprintf("%s-%s", firstStatic, lastStatic),
+			fmt.Sprintf("((az%d_static))", az),
 		},
 		CloudProperties: subnetCloudProperties{
 			EphemeralExternalIP: true,
-			NetworkName:         networkName,
-			SubnetworkName:      subnetworkName,
-			Tags:                []string{internalTag},
+			NetworkName:         "((network_name))",
+			SubnetworkName:      "((subnetwork_name))",
+			Tags:                []string{"((internal_tag_name))"},
 		},
-	}, nil
+	}
 }

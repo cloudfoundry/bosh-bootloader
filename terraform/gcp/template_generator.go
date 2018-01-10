@@ -25,7 +25,8 @@ func NewTemplateGenerator() TemplateGenerator {
 func (t TemplateGenerator) Generate(state storage.State) string {
 	tmpls := readTemplates()
 
-	template := strings.Join([]string{tmpls.vars, tmpls.boshDirector, tmpls.jumpbox}, "\n")
+	cidrs := t.GenerateSubnetCidrs(state.GCP.Zones)
+	template := strings.Join([]string{tmpls.vars, tmpls.boshDirector, tmpls.jumpbox, cidrs}, "\n")
 
 	switch state.LB.Type {
 	case "concourse":
@@ -84,6 +85,17 @@ func (t TemplateGenerator) GenerateInstanceGroups(zoneList []string) string {
 	}
 
 	return strings.Join(groups, "\n")
+}
+
+func (t TemplateGenerator) GenerateSubnetCidrs(zoneList []string) string {
+	var cidrs []string
+	for i := 0; i < len(zoneList); i++ {
+		cidrs = append(cidrs, fmt.Sprintf(`output "subnet_cidr_%d" {
+  value = "${cidrsubnet(var.subnet_cidr, 8, %d)}"
+}
+`, i+1, (i+1)*16))
+	}
+	return strings.Join(cidrs, "\n")
 }
 
 func readTemplates() templates {

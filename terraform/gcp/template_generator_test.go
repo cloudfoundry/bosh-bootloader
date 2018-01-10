@@ -74,4 +74,18 @@ var _ = Describe("TemplateGenerator", func() {
 			Expect(template).To(Equal(string(expectedTemplate)))
 		})
 	})
+
+	Describe("GenerateSubnetCidrs", func() {
+		BeforeEach(func() {
+			var err error
+			expectedTemplate, err = ioutil.ReadFile("fixtures/subnet_cidrs.tf")
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("returns a backend service terraform template", func() {
+			template := templateGenerator.GenerateSubnetCidrs(zones)
+
+			Expect(template).To(Equal(string(expectedTemplate)))
+		})
+	})
 })

@@ -16,7 +16,6 @@ var _ = Describe("state query against a bbl 5.1.0 state file", func() {
 	// Tests all the bbl read commands:
 	//
 	//   lbs                     Prints attached load balancer(s)
-	//   cloud-config            Prints suggested cloud configuration for BOSH environment
 	//   jumpbox-address         Prints BOSH jumpbox address
 	//   director-address        Prints BOSH director address
 	//   director-username       Prints BOSH director username
@@ -45,22 +44,6 @@ CF SSH Proxy LB: 104.196.181.208
 CF TCP Router LB: 35.185.98.78
 CF WebSocket LB: 104.196.197.242
 CF Credhub LB: 35.196.150.246`))
-	})
-
-	It("bbl cloud-config", func() {
-		stdout := bbl.CloudConfig()
-		Expect(stdout).To(ContainSubstring("vm_extensions"))
-		Expect(stdout).To(ContainSubstring("vm_types"))
-		Expect(stdout).To(ContainSubstring("disk_types"))
-		Expect(stdout).To(ContainSubstring("zone: us-east1-b"))
-		Expect(stdout).To(ContainSubstring("zone: us-east1-c"))
-		Expect(stdout).To(ContainSubstring("zone: us-east1-d"))
-		Expect(stdout).To(ContainSubstring("network_name: some-env-bbl5-network"))
-		Expect(stdout).To(ContainSubstring("subnetwork_name: some-env-bbl5-subnet"))
-		Expect(stdout).To(ContainSubstring("backend_service: some-env-bbl5-router-lb"))
-		Expect(stdout).To(ContainSubstring("target_pool: some-env-bbl5-cf-ws"))
-		Expect(stdout).To(ContainSubstring("target_pool: some-env-bbl5-cf-ssh-proxy"))
-		Expect(stdout).To(ContainSubstring("target_pool: some-env-bbl5-cf-tcp-router"))
 	})
 
 	It("bbl jumpbox-address", func() {

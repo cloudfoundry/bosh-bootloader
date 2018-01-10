@@ -15,14 +15,18 @@ import (
 
 var _ = Describe("up", func() {
 	var (
-		bbl             actors.BBL
-		boshcli         actors.BOSHCLI
-		directorAddress string
-		caCertPath      string
-		sshSession      *gexec.Session
-		stateDir        string
-		iaas            string
-		iaasHelper      actors.IAASLBHelper
+		bbl     actors.BBL
+		boshcli actors.BOSHCLI
+
+		directorAddress  string
+		directorUsername string
+		directorPassword string
+		caCertPath       string
+
+		sshSession *gexec.Session
+		stateDir   string
+		iaas       string
+		iaasHelper actors.IAASLBHelper
 	)
 
 	BeforeEach(func() {
@@ -76,8 +80,8 @@ var _ = Describe("up", func() {
 		})
 
 		By("checking that the cloud config exists", func() {
-			directorUsername := bbl.DirectorUsername()
-			directorPassword := bbl.DirectorPassword()
+			directorUsername = bbl.DirectorUsername()
+			directorPassword = bbl.DirectorPassword()
 
 			cloudConfig, err := boshcli.CloudConfig(directorAddress, caCertPath, directorUsername, directorPassword)
 			Expect(err).NotTo(HaveOccurred())
@@ -115,7 +119,9 @@ var _ = Describe("up", func() {
 		})
 
 		By("verifying that vm extensions were added to the cloud config", func() {
-			cloudConfig := bbl.CloudConfig()
+			cloudConfig, err := boshcli.CloudConfig(directorAddress, caCertPath, directorUsername, directorPassword)
+			Expect(err).NotTo(HaveOccurred())
+
 			vmExtensions := acceptance.VmExtensionNames(cloudConfig)
 			Expect(vmExtensions).To(ContainElement("cf-router-network-properties"))
 			Expect(vmExtensions).To(ContainElement("diego-ssh-proxy-network-properties"))
