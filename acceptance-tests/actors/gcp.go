@@ -79,3 +79,11 @@ func (g gcpLBHelper) ConfirmNoLBsExist(envID string) {
 		Expect(err).To(MatchError(MatchRegexp(`The resource 'projects\/.+` + p + `' was not found`)))
 	}
 }
+
+func (g gcpLBHelper) VerifyBblLBOutput(stdout string) {
+	Expect(stdout).To(MatchRegexp("CF Router LB:.*"))
+	Expect(stdout).To(MatchRegexp("CF SSH Proxy LB:.*"))
+	Expect(stdout).To(MatchRegexp("CF TCP Router LB:.*"))
+	Expect(stdout).To(MatchRegexp("CF WebSocket LB:.*"))
+	Expect(stdout).To(MatchRegexp("CF CredHub LB:.*"))
+}

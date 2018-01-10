@@ -130,9 +130,7 @@ var _ = Describe("up", func() {
 
 		By("verifying the bbl lbs output", func() {
 			stdout := bbl.Lbs()
-			Expect(stdout).To(MatchRegexp("CF Router LB:.*"))
-			Expect(stdout).To(MatchRegexp("CF SSH Proxy LB:.*"))
-			Expect(stdout).To(MatchRegexp("CF TCP Router LB:.*"))
+			iaasHelper.VerifyBblLBOutput(stdout)
 		})
 
 		By("deleting lbs", func() {

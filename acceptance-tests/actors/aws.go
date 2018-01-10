@@ -90,3 +90,9 @@ func (a awsLbHelper) ConfirmNoLBsExist(envID string) {
 	vpcName := fmt.Sprintf("%s-vpc", envID)
 	Expect(a.loadBalancers(vpcName)).To(BeEmpty())
 }
+
+func (a awsLbHelper) VerifyBblLBOutput(stdout string) {
+	Expect(stdout).To(MatchRegexp("CF Router LB:.*"))
+	Expect(stdout).To(MatchRegexp("CF SSH Proxy LB:.*"))
+	Expect(stdout).To(MatchRegexp("CF TCP Router LB:.*"))
+}

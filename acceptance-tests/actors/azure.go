@@ -79,3 +79,7 @@ func (z azureLBHelper) ConfirmNoLBsExist(envID string) {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(exists).To(BeFalse())
 }
+
+func (z azureLBHelper) VerifyBblLBOutput(stdout string) {
+	Expect(stdout).To(MatchRegexp("CF LB:.*"))
+}
