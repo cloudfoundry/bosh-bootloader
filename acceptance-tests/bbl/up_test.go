@@ -62,15 +62,22 @@ var _ = Describe("up", func() {
 		Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 
 		By("creating an ssh tunnel to the director in print-env", func() {
+			if iaas == "vsphere" {
+				// make requests directly to the director
+				return
+			}
+
 			sshSession = bbl.StartSSHTunnel()
 		})
 
 		By("checking if the bosh director exists", func() {
 			directorAddress = bbl.DirectorAddress()
+			directorUsername = bbl.DirectorUsername()
+			directorPassword = bbl.DirectorPassword()
 			caCertPath = bbl.SaveDirectorCA()
 
 			directorExists := func() bool {
-				exists, err := boshcli.DirectorExists(directorAddress, caCertPath)
+				exists, err := boshcli.DirectorExists(directorAddress, directorUsername, directorPassword, caCertPath)
 				if err != nil {
 					fmt.Println(string(err.(*exec.ExitError).Stderr))
 				}
@@ -80,9 +87,6 @@ var _ = Describe("up", func() {
 		})
 
 		By("checking that the cloud config exists", func() {
-			directorUsername = bbl.DirectorUsername()
-			directorPassword = bbl.DirectorPassword()
-
 			cloudConfig, err := boshcli.CloudConfig(directorAddress, caCertPath, directorUsername, directorPassword)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(cloudConfig).NotTo(BeEmpty())

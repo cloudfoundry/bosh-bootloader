@@ -97,7 +97,7 @@ var _ = Describe("Upgrade", func() {
 		})
 
 		By("verifying the director exists", func() {
-			exists, err := boshcli.DirectorExists(oldBBL.DirectorAddress(), oldBBL.SaveDirectorCA())
+			exists, err := boshcli.DirectorExists(oldBBL.DirectorAddress(), oldBBL.DirectorUsername(), oldBBL.DirectorPassword(), oldBBL.SaveDirectorCA())
 			Expect(err).NotTo(HaveOccurred())
 			Expect(exists).To(BeTrue())
 		})
@@ -111,12 +111,14 @@ var _ = Describe("Upgrade", func() {
 			sshSession = newBBL.StartSSHTunnel()
 		})
 
+		directorAddress := newBBL.DirectorAddress()
+
 		By("verifying the director has a non-public ip", func() {
-			Expect(newBBL.DirectorAddress()).To(Equal("https://10.0.0.6:25555"))
+			Expect(directorAddress).To(Equal("https://10.0.0.6:25555"))
 		})
 
 		By("verifying the director still exists", func() {
-			exists, err := boshcli.DirectorExists(newBBL.DirectorAddress(), newBBL.SaveDirectorCA())
+			exists, err := boshcli.DirectorExists(directorAddress, newBBL.DirectorUsername(), newBBL.DirectorPassword(), newBBL.SaveDirectorCA())
 			Expect(err).NotTo(HaveOccurred())
 			Expect(exists).To(BeTrue())
 		})
