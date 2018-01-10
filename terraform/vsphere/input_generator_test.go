@@ -34,6 +34,7 @@ var _ = Describe("InputGenerator", func() {
 				"vsphere_subnet":            "10.0.0.0/24",
 				"jumpbox_ip":                "10.0.0.5",
 				"bosh_director_internal_ip": "10.0.0.6",
+				"internal_gw":               "10.0.0.1",
 				"network_name":              "the-network",
 				"vcenter_cluster":           "the-cluster",
 				"vcenter_ip":                "the-ip",
