@@ -1,9 +1,7 @@
 package commands
 
 import (
-	"errors"
 	"fmt"
-	"io/ioutil"
 
 	"github.com/cloudfoundry/bosh-bootloader/flags"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
@@ -21,10 +19,8 @@ type Plan struct {
 }
 
 type PlanConfig struct {
-	Name       string
-	OpsFile    string
-	NoDirector bool
-	LB         storage.LB
+	Name string
+	LB   storage.LB
 }
 
 func NewPlan(boshManager boshManager,
@@ -54,14 +50,8 @@ func (p Plan) CheckFastFails(args []string, state storage.State) error {
 		return err
 	}
 
-	if config.NoDirector {
-		p.logger.Println(`Deprecation warning: --no-director has been deprecated and will be removed in bbl v6.0.0. Use "bbl plan" to perform advanced configuration of the BOSH director.`)
-	}
-
-	if !config.NoDirector && !state.NoDirector {
-		if err := fastFailBOSHVersion(p.boshManager); err != nil {
-			return err
-		}
+	if err := fastFailBOSHVersion(p.boshManager); err != nil {
+		return err
 	}
 
 	if err := p.terraformManager.ValidateVersion(); err != nil {
@@ -77,20 +67,17 @@ func (p Plan) CheckFastFails(args []string, state storage.State) error {
 
 func (p Plan) ParseArgs(args []string, state storage.State) (PlanConfig, error) {
 	var (
-		config      PlanConfig
-		lbConfig    CreateLBsConfig
-		opsFilePath string
+		config PlanConfig
+		lbArgs LBArgs
 	)
 	planFlags := flags.New("up")
 	planFlags.String(&config.Name, "name", "")
-	planFlags.String(&opsFilePath, "ops-file", "")
-	planFlags.Bool(&config.NoDirector, "", "no-director", state.NoDirector)
-	planFlags.String(&lbConfig.LBType, "lb-type", "")
-	planFlags.String(&lbConfig.CertPath, "lb-cert", "")
-	planFlags.String(&lbConfig.KeyPath, "lb-key", "")
-	planFlags.String(&lbConfig.Domain, "lb-domain", "")
+	planFlags.String(&lbArgs.LBType, "lb-type", "")
+	planFlags.String(&lbArgs.CertPath, "lb-cert", "")
+	planFlags.String(&lbArgs.KeyPath, "lb-key", "")
+	planFlags.String(&lbArgs.Domain, "lb-domain", "")
 	if state.IAAS == "aws" {
-		planFlags.String(&lbConfig.ChainPath, "lb-chain", "")
+		planFlags.String(&lbArgs.ChainPath, "lb-chain", "")
 	}
 
 	err := planFlags.Parse(args)
@@ -98,24 +85,12 @@ func (p Plan) ParseArgs(args []string, state storage.State) (PlanConfig, error) 
 		return PlanConfig{}, err
 	}
 
-	if (lbConfig != CreateLBsConfig{}) {
-		lbState, err := p.lbArgsHandler.GetLBState(state.IAAS, lbConfig)
+	if (lbArgs != LBArgs{}) {
+		lbState, err := p.lbArgsHandler.GetLBState(state.IAAS, lbArgs)
 		if err != nil {
 			return PlanConfig{}, err
 		}
 		config.LB = lbState
-	}
-
-	if opsFilePath != "" {
-		p.logger.Println(`Deprecation warning: the --ops-file flag is now deprecated and will be removed in bbl v6.0.0. Use "bbl plan" and modify create-director.sh in your state directory to supply operations files for bosh-deployment.`)
-
-		opsFileContents, err := ioutil.ReadFile(opsFilePath)
-		if err != nil {
-			return PlanConfig{}, fmt.Errorf("Reading ops-file contents: %v", err)
-		}
-		config.OpsFile = string(opsFileContents)
-	} else {
-		config.OpsFile = state.BOSH.UserOpsFile
 	}
 
 	return config, nil
@@ -132,17 +107,11 @@ func (p Plan) Execute(args []string, state storage.State) error {
 }
 
 func (p Plan) InitializePlan(config PlanConfig, state storage.State) (storage.State, error) {
-	if config.NoDirector {
-		if !state.BOSH.IsEmpty() {
-			return storage.State{}, errors.New(`Director already exists, you must re-create your environment to use "--no-director"`)
-		}
-		state.NoDirector = true
-	}
-
 	var err error
 
 	state.BBLVersion = p.bblVersion
 	state.LB = config.LB
+	state.NoDirector = false
 
 	state, err = p.envIDManager.Sync(state, config.Name)
 	if err != nil {
@@ -162,15 +131,10 @@ func (p Plan) InitializePlan(config PlanConfig, state storage.State) (storage.St
 		return storage.State{}, fmt.Errorf("Cloud config manager initialize: %s", err)
 	}
 
-	if state.NoDirector {
-		return state, nil
-	}
-
 	if err := p.boshManager.InitializeJumpbox(state); err != nil {
 		return storage.State{}, fmt.Errorf("Bosh manager initialize jumpbox: %s", err)
 	}
 
-	state.BOSH.UserOpsFile = config.OpsFile
 	if err := p.boshManager.InitializeDirector(state); err != nil {
 		return storage.State{}, fmt.Errorf("Bosh manager initialize director: %s", err)
 	}

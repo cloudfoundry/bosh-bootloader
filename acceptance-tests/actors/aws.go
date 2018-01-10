@@ -3,11 +3,11 @@ package actors
 import (
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/cloudfoundry/bosh-bootloader/application"
 	"github.com/cloudfoundry/bosh-bootloader/aws"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
+	"github.com/cloudfoundry/bosh-bootloader/testhelpers"
 
 	. "github.com/onsi/gomega"
 
@@ -17,16 +17,9 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/elb"
-	"github.com/aws/aws-sdk-go/service/elbv2"
 )
 
-type AWS struct {
-	client      aws.Client
-	elbClient   *elb.ELB
-	elbV2Client *elbv2.ELBV2
-}
-
-func NewAWS(c acceptance.Config) AWS {
+func NewAWSLBHelper(c acceptance.Config) awsLbHelper {
 	creds := storage.AWS{
 		AccessKeyID:     c.AWSAccessKeyID,
 		SecretAccessKey: c.AWSSecretAccessKey,
@@ -38,23 +31,17 @@ func NewAWS(c acceptance.Config) AWS {
 		Credentials: credentials.NewStaticCredentials(creds.AccessKeyID, creds.SecretAccessKey, ""),
 		Region:      awslib.String(creds.Region),
 	}
-	return AWS{
-		client:      client,
-		elbClient:   elb.New(session.New(elbConfig)),
-		elbV2Client: elbv2.New(session.New(elbConfig)),
+	return awsLbHelper{
+		client:    client,
+		elbClient: elb.New(session.New(elbConfig)),
 	}
 }
 
-func (a AWS) Instances(envID string) []string {
-	instances, err := a.client.Instances(envID)
-	Expect(err).NotTo(HaveOccurred())
-	return instances
-}
-
-func (a AWS) LoadBalancers(vpcName string) []string {
+func (a awsLbHelper) loadBalancers(vpcName string) []string {
 	var loadBalancerNames []string
 
-	vpcID := a.GetVPC(vpcName)
+	vpcID, err := a.client.GetVPC(vpcName)
+	Expect(err).NotTo(HaveOccurred())
 
 	loadBalancerOutput, err := a.elbClient.DescribeLoadBalancers(&elb.DescribeLoadBalancersInput{})
 	Expect(err).NotTo(HaveOccurred())
@@ -68,68 +55,44 @@ func (a AWS) LoadBalancers(vpcName string) []string {
 	return loadBalancerNames
 }
 
-func (a AWS) NetworkLoadBalancers(vpcName string) []string {
-	output, err := a.elbV2Client.DescribeLoadBalancers(&elbv2.DescribeLoadBalancersInput{})
-	Expect(err).NotTo(HaveOccurred())
-
-	vpcId := a.GetVPC(vpcName)
-	lbNames := []string{}
-	for _, lb := range output.LoadBalancers {
-		if *lb.VpcId == *vpcId {
-			lbNames = append(lbNames, *lb.LoadBalancerName)
-		}
-	}
-
-	return lbNames
+type awsLbHelper struct {
+	client    aws.Client
+	elbClient *elb.ELB
 }
 
-func (a AWS) GetSSLCertificateNameFromLBs(envID string) string {
-	var retryCount int
-
-retry:
-
-	loadBalancerOutput, err := a.elbClient.DescribeLoadBalancers(&elb.DescribeLoadBalancersInput{})
+func (a awsLbHelper) GetLBArgs() []string {
+	certPath, err := testhelpers.WriteContentsToTempFile(testhelpers.BBL_CERT)
+	Expect(err).NotTo(HaveOccurred())
+	chainPath, err := testhelpers.WriteContentsToTempFile(testhelpers.BBL_CHAIN)
+	Expect(err).NotTo(HaveOccurred())
+	keyPath, err := testhelpers.WriteContentsToTempFile(testhelpers.BBL_KEY)
 	Expect(err).NotTo(HaveOccurred())
 
-	vpcID := a.GetVPC(fmt.Sprintf("%s-vpc", envID))
-
-	var certificateName string
-	for _, lbDescription := range loadBalancerOutput.LoadBalancerDescriptions {
-		if *lbDescription.VPCId == *vpcID {
-			for _, ld := range lbDescription.ListenerDescriptions {
-				if int(*ld.Listener.LoadBalancerPort) == 443 {
-					certificateArn := ld.Listener.SSLCertificateId
-					certificateArnParts := strings.Split(awslib.StringValue(certificateArn), "/")
-					if len(certificateArnParts) != 2 && retryCount <= 5 {
-						retryCount++
-						goto retry
-					}
-					certificateName = certificateArnParts[1]
-					Expect(certificateName).NotTo(BeEmpty())
-
-					return certificateName
-				}
-			}
-		}
+	return []string{
+		"--lb-type", "cf",
+		"--lb-cert", certPath,
+		"--lb-key", keyPath,
+		"--lb-chain", chainPath,
 	}
-
-	return ""
 }
 
-func (a AWS) GetVPC(vpcName string) *string {
-	vpc, err := a.client.GetVPC(vpcName)
-	Expect(err).NotTo(HaveOccurred())
-	return vpc
+func (a awsLbHelper) ConfirmLBsExist(envID string) {
+	vpcName := fmt.Sprintf("%s-vpc", envID)
+	Expect(a.loadBalancers(vpcName)).To(HaveLen(3))
+	Expect(a.loadBalancers(vpcName)).To(ConsistOf(
+		MatchRegexp(".*-cf-router-lb"),
+		MatchRegexp(".*-cf-ssh-lb"),
+		MatchRegexp(".*-cf-tcp-lb"),
+	))
 }
 
-func (a AWS) NetworkHasBOSHDirector(envID string) bool {
-	instances := a.Instances(envID)
+func (a awsLbHelper) ConfirmNoLBsExist(envID string) {
+	vpcName := fmt.Sprintf("%s-vpc", envID)
+	Expect(a.loadBalancers(vpcName)).To(BeEmpty())
+}
 
-	for _, instance := range instances {
-		if instance == "bosh/0" {
-			return true
-		}
-	}
-
-	return false
+func (a awsLbHelper) VerifyBblLBOutput(stdout string) {
+	Expect(stdout).To(MatchRegexp("CF Router LB:.*"))
+	Expect(stdout).To(MatchRegexp("CF SSH Proxy LB:.*"))
+	Expect(stdout).To(MatchRegexp("CF TCP Router LB:.*"))
 }

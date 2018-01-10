@@ -33,8 +33,8 @@ type directorVars struct {
 }
 
 type executor interface {
-	DirectorCreateEnvArgs(InterpolateInput) error
-	JumpboxCreateEnvArgs(InterpolateInput) error
+	PlanDirector(InterpolateInput) error
+	PlanJumpbox(InterpolateInput) error
 	CreateEnv(CreateEnvInput) (string, error)
 	DeleteEnv(DeleteEnvInput) error
 	WriteDeploymentVars(CreateEnvInput) error
@@ -101,7 +101,7 @@ func (m *Manager) InitializeJumpbox(state storage.State) error {
 		IAAS:          state.IAAS,
 	}
 
-	err = m.executor.JumpboxCreateEnvArgs(iaasInputs)
+	err = m.executor.PlanJumpbox(iaasInputs)
 	if err != nil {
 		return fmt.Errorf("Jumpbox interpolate: %s", err)
 	}
@@ -188,10 +188,9 @@ func (m *Manager) InitializeDirector(state storage.State) error {
 		StateDir:      stateDir,
 		VarsDir:       varsDir,
 		IAAS:          state.IAAS,
-		OpsFile:       state.BOSH.UserOpsFile,
 	}
 
-	err = m.executor.DirectorCreateEnvArgs(iaasInputs)
+	err = m.executor.PlanDirector(iaasInputs)
 	if err != nil {
 		return err
 	}
@@ -257,7 +256,6 @@ func (m *Manager) CreateDirector(state storage.State, terraformOutputs terraform
 		DirectorSSLCA:          directorVars.sslCA,
 		DirectorSSLCertificate: directorVars.sslCertificate,
 		DirectorSSLPrivateKey:  directorVars.sslPrivateKey,
-		UserOpsFile:            state.BOSH.UserOpsFile,
 	}
 
 	m.logger.Step("created bosh director")
@@ -364,6 +362,12 @@ func (m *Manager) GetJumpboxDeploymentVars(state storage.State, terraformOutputs
 		}
 		allOutputs[k] = v
 	}
+	// <<<<<<< HEAD
+	// =======
+	// 	delete(allOutputs, "external_ip")
+	// 	delete(allOutputs, "internal_gw")
+	// 	allOutputs["internal_cidr"] = internalCIDR
+	// >>>>>>> master
 
 	vars := sharedDeploymentVarsYAML{
 		TerraformOutputs: allOutputs,
@@ -415,6 +419,12 @@ func (m *Manager) GetDirectorDeploymentVars(state storage.State, terraformOutput
 		}
 		allOutputs[k] = v
 	}
+	// <<<<<<< HEAD
+	// =======
+	// 	delete(allOutputs, "external_ip")
+	// 	delete(allOutputs, "internal_gw")
+	// 	allOutputs["internal_cidr"] = internalCIDR
+	// >>>>>>> master
 
 	vars := sharedDeploymentVarsYAML{
 		TerraformOutputs: allOutputs,

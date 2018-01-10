@@ -15,15 +15,18 @@ import (
 
 var _ = Describe("up", func() {
 	var (
-		bbl             actors.BBL
-		boshcli         actors.BOSHCLI
-		directorAddress string
-		caCertPath      string
-		sshSession      *gexec.Session
-		stateDir        string
-		iaas            string
+		bbl     actors.BBL
+		boshcli actors.BOSHCLI
 
-		boshDirectorChecker actors.BOSHDirectorChecker
+		directorAddress  string
+		directorUsername string
+		directorPassword string
+		caCertPath       string
+
+		sshSession *gexec.Session
+		stateDir   string
+		iaas       string
+		iaasHelper actors.IAASLBHelper
 	)
 
 	BeforeEach(func() {
@@ -33,12 +36,11 @@ var _ = Describe("up", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		iaas = configuration.IAAS
-
+		iaasHelper = actors.NewIAASLBHelper(iaas, configuration)
 		stateDir = configuration.StateFileDir
 
 		bbl = actors.NewBBL(stateDir, pathToBBL, configuration, "up-env")
 		boshcli = actors.NewBOSHCLI()
-		boshDirectorChecker = actors.NewBOSHDirectorChecker(configuration)
 	})
 
 	AfterEach(func() {
@@ -46,24 +48,36 @@ var _ = Describe("up", func() {
 			sshSession.Interrupt()
 			Eventually(sshSession, "5s").Should(gexec.Exit())
 		}
+
 		session := bbl.Down()
 		Eventually(session, 10*time.Minute).Should(gexec.Exit())
 	})
 
 	It("bbl's up a new bosh director and jumpbox", func() {
-		session := bbl.Up("--name", bbl.PredefinedEnvID())
+		args := []string{
+			"--name", bbl.PredefinedEnvID(),
+		}
+		args = append(args, iaasHelper.GetLBArgs()...)
+		session := bbl.Up(args...)
 		Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 
 		By("creating an ssh tunnel to the director in print-env", func() {
+			if iaas == "vsphere" {
+				// make requests directly to the director
+				return
+			}
+
 			sshSession = bbl.StartSSHTunnel()
 		})
 
 		By("checking if the bosh director exists", func() {
 			directorAddress = bbl.DirectorAddress()
+			directorUsername = bbl.DirectorUsername()
+			directorPassword = bbl.DirectorPassword()
 			caCertPath = bbl.SaveDirectorCA()
 
 			directorExists := func() bool {
-				exists, err := boshcli.DirectorExists(directorAddress, caCertPath)
+				exists, err := boshcli.DirectorExists(directorAddress, directorUsername, directorPassword, caCertPath)
 				if err != nil {
 					fmt.Println(string(err.(*exec.ExitError).Stderr))
 				}
@@ -72,13 +86,14 @@ var _ = Describe("up", func() {
 			Eventually(directorExists, "1m", "10s").Should(BeTrue())
 		})
 
-		By("checking that the cloud config exists", func() {
-			directorUsername := bbl.DirectorUsername()
-			directorPassword := bbl.DirectorPassword()
-
+		By("verifying that vm extensions were added to the cloud config", func() {
 			cloudConfig, err := boshcli.CloudConfig(directorAddress, caCertPath, directorUsername, directorPassword)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(cloudConfig).NotTo(BeEmpty())
+
+			vmExtensions := acceptance.VmExtensionNames(cloudConfig)
+			Expect(vmExtensions).To(ContainElement("cf-router-network-properties"))
+			Expect(vmExtensions).To(ContainElement("diego-ssh-proxy-network-properties"))
+			Expect(vmExtensions).To(ContainElement("cf-tcp-router-network-properties"))
 		})
 
 		By("checking if bbl print-env prints the bosh environment variables", func() {
@@ -105,6 +120,27 @@ var _ = Describe("up", func() {
 		By("checking bbl up is idempotent", func() {
 			session := bbl.Up()
 			Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
+		})
+
+		By("confirming that the load balancers exist", func() {
+			iaasHelper.ConfirmLBsExist(bbl.PredefinedEnvID())
+		})
+
+		By("verifying the bbl lbs output", func() {
+			stdout := bbl.Lbs()
+			iaasHelper.VerifyBblLBOutput(stdout)
+		})
+
+		By("deleting lbs", func() {
+			session := bbl.Plan("--name", bbl.PredefinedEnvID())
+			Eventually(session, 1*time.Minute).Should(gexec.Exit(0))
+
+			session = bbl.Up()
+			Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
+		})
+
+		By("confirming that the load balancers no longer exist", func() {
+			iaasHelper.ConfirmNoLBsExist(bbl.PredefinedEnvID())
 		})
 
 		By("destroying the director and the jumpbox", func() {

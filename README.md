@@ -54,7 +54,7 @@ For detailed, IAAS specific instructions see your preferred IAAS's getting start
 
 1. Create an environment and target the BOSH director as described above
 
-1. `bbl create-lbs --type cf` with a certificate and key as flags or environment variables.
+1. `bbl plan --lb-type cf --cert cert --key key && bbl plan` with a certificate and key as flags or environment variables.
 (Continue to provide the IAAS credentials as flags or environment variables.)
 
 1. `bosh deploy cf.yml -o operations/<MY IAAS>` using the [CF deployment manifest!](https://github.com/cloudfoundry/cf-deployment)
@@ -69,12 +69,12 @@ date.
 ------------ | -------------
 ``bbl-state.json`` | Environment name, and bbl version metadata
 ``bosh-deployment`` | The latest [bosh-deployment](http://github.com/cloudfoundry/bosh-deployment) that has been tested with your version of bbl
-``create-director.sh`` | The BOSH cli command bbl will use to create your director when you run `bbl up`. See [docs/advanced]](docs/advanced.md#opsfile) for help with modifying this
+``create-director.sh`` | The BOSH cli command bbl will use to create your director when you run `bbl up`. See [docs/advanced](docs/advanced.md#opsfile) for help with modifying this.
 ``create-jumpbox.sh`` | The BOSH cli command bbl will use to create your jumpbox.
 ``delete-director.sh`` |The BOSH cli command bbl will use to delete your director.
 ``delete-jumpbox.sh`` | The BOSH cli command bbl will use to delete your jumpbox.
 ``jumpbox-deployment`` | The latest [jumpbox-deployment](http://github.com/cppforlife/jumpbox-deployment) that has been tested with your version of bbl.
-``terraform`` | The terraform templates bbl used to pave your IaaS. See [docs/advanced#terraform]() for information on modifying this.
+``terraform`` | The terraform templates bbl used to pave your IaaS. See [docs/advanced](docs/advanced.md#terraform) for information on modifying this.
 ``vars `` | This is where bbl will store environment specific variables. Consider storing this outside of version control.
 
 ### Tearing down an environment

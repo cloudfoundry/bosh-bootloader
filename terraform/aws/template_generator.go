@@ -16,6 +16,7 @@ type templates struct {
 	concourseLB    string
 	sslCertificate string
 	isoSeg         string
+	vpc            string
 }
 
 func NewTemplateGenerator() TemplateGenerator {
@@ -24,7 +25,7 @@ func NewTemplateGenerator() TemplateGenerator {
 
 func (tg TemplateGenerator) Generate(state storage.State) string {
 	tmpls := readTemplates()
-	template := tmpls.base
+	template := strings.Join([]string{tmpls.base, tmpls.vpc}, "\n")
 
 	switch state.LB.Type {
 	case "concourse":
@@ -49,6 +50,7 @@ func readTemplates() templates {
 	tmpls.cfLB = string(MustAsset("templates/cf_lb.tf"))
 	tmpls.cfDNS = string(MustAsset("templates/cf_dns.tf"))
 	tmpls.isoSeg = string(MustAsset("templates/iso_segments.tf"))
+	tmpls.vpc = string(MustAsset("templates/vpc.tf"))
 
 	return tmpls
 }

@@ -27,7 +27,6 @@ type InterpolateInput struct {
 	StateDir      string
 	VarsDir       string
 	IAAS          string
-	OpsFile       string
 }
 
 type CreateEnvInput struct {
@@ -53,8 +52,6 @@ type setupFile struct {
 	dest     string
 	contents []byte
 }
-
-const VERSION_DEV_BUILD = "[DEV BUILD]"
 
 var (
 	jumpboxDeploymentRepo = "vendor/github.com/cppforlife/jumpbox-deployment"
@@ -90,7 +87,7 @@ func (e Executor) getSetupFiles(sourcePath, destPath string) []setupFile {
 	return files
 }
 
-func (e Executor) JumpboxCreateEnvArgs(input InterpolateInput) error {
+func (e Executor) PlanJumpbox(input InterpolateInput) error {
 	setupFiles := e.getSetupFiles(jumpboxDeploymentRepo, input.DeploymentDir)
 
 	for _, f := range setupFiles {
@@ -193,13 +190,8 @@ func (e Executor) getDirectorOpsFiles(input InterpolateInput) []string {
 	return files
 }
 
-func (e Executor) DirectorCreateEnvArgs(input InterpolateInput) error {
+func (e Executor) PlanDirector(input InterpolateInput) error {
 	setupFiles := e.getDirectorSetupFiles(input)
-	userOpsFile := setupFile{
-		dest:     filepath.Join(input.VarsDir, "user-ops-file.yml"),
-		contents: []byte(input.OpsFile),
-	}
-	setupFiles = append(setupFiles, userOpsFile)
 
 	for _, f := range setupFiles {
 		if f.source != "" {
@@ -221,10 +213,6 @@ func (e Executor) DirectorCreateEnvArgs(input InterpolateInput) error {
 
 	if input.IAAS == "vsphere" {
 		sharedArgs = append(sharedArgs, "-o", filepath.Join(input.DeploymentDir, "vsphere", "resource-pool.yml"))
-	}
-
-	if input.OpsFile != "" {
-		sharedArgs = append(sharedArgs, "-o", filepath.Join(input.VarsDir, "user-ops-file.yml"))
 	}
 
 	boshState := filepath.Join(input.VarsDir, "bosh-state.json")
@@ -278,13 +266,17 @@ func (e Executor) WriteDeploymentVars(createEnvInput CreateEnvInput) error {
 
 func (e Executor) CreateEnv(createEnvInput CreateEnvInput) (string, error) {
 	os.Setenv("BBL_STATE_DIR", createEnvInput.StateDir)
-	createEnvScript := filepath.Join(createEnvInput.StateDir, fmt.Sprintf("create-%s.sh", createEnvInput.Deployment))
+	createEnvScript := filepath.Join(createEnvInput.StateDir, fmt.Sprintf("create-%s-override.sh", createEnvInput.Deployment))
+	_, err := os.Stat(createEnvScript)
+	if err != nil {
+		createEnvScript = strings.Replace(createEnvScript, "-override", "", -1)
+	}
 
 	cmd := exec.Command(createEnvScript)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
-	err := cmd.Run()
+	err = cmd.Run()
 	if err != nil {
 		return "", fmt.Errorf("Run bosh create-env: %s", err)
 	}
@@ -300,13 +292,17 @@ func (e Executor) CreateEnv(createEnvInput CreateEnvInput) (string, error) {
 
 func (e Executor) DeleteEnv(deleteEnvInput DeleteEnvInput) error {
 	os.Setenv("BBL_STATE_DIR", deleteEnvInput.StateDir)
-	deleteEnvScript := filepath.Join(deleteEnvInput.StateDir, fmt.Sprintf("delete-%s.sh", deleteEnvInput.Deployment))
+	deleteEnvScript := filepath.Join(deleteEnvInput.StateDir, fmt.Sprintf("delete-%s-override.sh", deleteEnvInput.Deployment))
+	_, err := os.Stat(deleteEnvScript)
+	if err != nil {
+		deleteEnvScript = strings.Replace(deleteEnvScript, "-override", "", -1)
+	}
 
 	cmd := exec.Command(deleteEnvScript)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
-	err := cmd.Run()
+	err = cmd.Run()
 	if err != nil {
 		return fmt.Errorf("Run bosh delete-env: %s", err)
 	}

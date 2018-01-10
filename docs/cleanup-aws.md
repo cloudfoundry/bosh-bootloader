@@ -29,7 +29,7 @@ If you have BOSH deployments in your VPC and your BOSH director is still working
 and accessible, it is recommended that you use `bosh delete-deployment` to clean
 these up, as it is easier and less error-prone than cleaning them up manually in the AWS console.
 
-In order to delete load balancers, you may try `bbl delete-lbs`, although if
+In order to delete load balancers, you may try `bbl plan` withtout `lb` flags, although if
 `bbl` has failed previously on this environment, it's likely that this won't
 work properly. If it doesn't, you can delete them in the EC2/Load Balancing
 section of the AWS console.

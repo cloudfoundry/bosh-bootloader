@@ -46,9 +46,10 @@ func main() {
 		log.Fatalf("\n\n%s\n", err)
 	}
 
+	fileIO := &fileio.FileIOAdapter{}
 	stateStore := storage.NewStore(globals.StateDir)
-	stateMigrator := storage.NewMigrator(stateStore)
-	newConfig := config.NewConfig(stateBootstrap, stateMigrator, stderrLogger, &fileio.FileIOAdapter{})
+	stateMigrator := storage.NewMigrator(stateStore, fileIO)
+	newConfig := config.NewConfig(stateBootstrap, stateMigrator, stderrLogger, fileIO)
 
 	appConfig, err := newConfig.Bootstrap(os.Args)
 	if err != nil {
@@ -142,7 +143,6 @@ func main() {
 	credhubGetter := bosh.NewCredhubGetter(stateStore)
 	boshManager := bosh.NewManager(boshExecutor, logger, socks5Proxy, stateStore, sshKeyGetter)
 	boshClientProvider := bosh.NewClientProvider(socks5Proxy, sshKeyGetter)
-	environmentValidator := application.NewEnvironmentValidator(boshClientProvider)
 
 	var cloudConfigOpsGenerator cloudconfig.OpsGenerator
 	switch appConfig.State.IAAS {
@@ -187,9 +187,6 @@ func main() {
 	commandSet["rotate"] = commands.NewRotate(stateValidator, sshKeyDeleter, up)
 	commandSet["destroy"] = commands.NewDestroy(plan, logger, os.Stdin, boshManager, stateStore, stateValidator, terraformManager, networkDeletionValidator)
 	commandSet["down"] = commandSet["destroy"]
-	commandSet["create-lbs"] = commands.NewCreateLBs(logger, stateValidator, boshManager, lbArgsHandler, cloudConfigManager, terraformManager, stateStore, environmentValidator)
-	commandSet["update-lbs"] = commandSet["create-lbs"]
-	commandSet["delete-lbs"] = commands.NewDeleteLBs(logger, stateValidator, boshManager, cloudConfigManager, stateStore, environmentValidator, terraformManager)
 	commandSet["lbs"] = commands.NewLBs(lbsCmd, stateValidator)
 	commandSet["jumpbox-address"] = commands.NewStateQuery(logger, stateValidator, terraformManager, commands.JumpboxAddressPropertyName)
 	commandSet["director-address"] = commands.NewStateQuery(logger, stateValidator, terraformManager, commands.DirectorAddressPropertyName)
@@ -201,9 +198,6 @@ func main() {
 	commandSet["env-id"] = commands.NewStateQuery(logger, stateValidator, terraformManager, commands.EnvIDPropertyName)
 	commandSet["latest-error"] = commands.NewLatestError(logger, stateValidator)
 	commandSet["print-env"] = commands.NewPrintEnv(logger, stderrLogger, stateValidator, sshKeyGetter, credhubGetter, terraformManager)
-	commandSet["cloud-config"] = commands.NewCloudConfig(logger, stateValidator, cloudConfigManager)
-	commandSet["jumpbox-deployment-vars"] = commands.NewJumpboxDeploymentVars(logger, boshManager, stateValidator, terraformManager)
-	commandSet["bosh-deployment-vars"] = commands.NewBOSHDeploymentVars(logger, boshManager, stateValidator, terraformManager)
 
 	app := application.New(commandSet, appConfig, usage)
 

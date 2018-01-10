@@ -29,7 +29,6 @@ var _ = Describe("plan", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		iaas = configuration.IAAS
-
 		stateDir = configuration.StateFileDir
 
 		bbl = actors.NewBBL(stateDir, pathToBBL, configuration, "plan-env")
@@ -54,7 +53,6 @@ var _ = Describe("plan", func() {
 			filepath.Join(stateDir, "jumpbox-deployment", "jumpbox.yml"),
 			filepath.Join(stateDir, "jumpbox-deployment", iaas, "cpi.yml"),
 			filepath.Join(stateDir, "terraform", "template.tf"),
-			filepath.Join(stateDir, "vars", "user-ops-file.yml"),
 		}
 
 		By("verifying that artifacts are created in state dir", func() {

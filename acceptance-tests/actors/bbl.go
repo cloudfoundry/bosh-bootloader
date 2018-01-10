@@ -92,40 +92,6 @@ func (b BBL) Down() *gexec.Session {
 	}, os.Stdout, os.Stderr)
 }
 
-func (b BBL) CreateLB(loadBalancerType string, cert string, key string, chain string) *gexec.Session {
-	args := []string{
-		"--state-dir", b.stateDirectory,
-		"--debug",
-		"create-lbs",
-		"--type", loadBalancerType,
-	}
-
-	if loadBalancerType == "cf" || b.configuration.IAAS == "aws" {
-		args = append(args,
-			"--cert", cert,
-			"--key", key,
-		)
-	}
-
-	if b.configuration.IAAS == "aws" {
-		args = append(args,
-			"--chain", chain,
-		)
-	}
-
-	return b.execute(args, os.Stdout, os.Stderr)
-}
-
-func (b BBL) DeleteLBs() *gexec.Session {
-	args := []string{
-		"--state-dir", b.stateDirectory,
-		"--debug",
-		"delete-lbs",
-	}
-
-	return b.execute(args, os.Stdout, os.Stderr)
-}
-
 func (b BBL) Lbs() string {
 	return b.fetchValue("lbs")
 }
@@ -160,18 +126,6 @@ func (b BBL) DirectorSSHKey() string {
 
 func (b BBL) EnvID() string {
 	return b.fetchValue("env-id")
-}
-
-func (b BBL) BOSHDeploymentVars() string {
-	return b.fetchValue("bosh-deployment-vars")
-}
-
-func (b BBL) JumpboxDeploymentVars() string {
-	return b.fetchValue("jumpbox-deployment-vars")
-}
-
-func (b BBL) CloudConfig() string {
-	return b.fetchValue("cloud-config")
 }
 
 func (b BBL) PrintEnv() string {

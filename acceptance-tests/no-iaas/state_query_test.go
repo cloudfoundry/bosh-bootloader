@@ -4,8 +4,6 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
-	yaml "gopkg.in/yaml.v2"
-
 	acceptance "github.com/cloudfoundry/bosh-bootloader/acceptance-tests"
 	"github.com/cloudfoundry/bosh-bootloader/acceptance-tests/actors"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
@@ -18,9 +16,6 @@ var _ = Describe("state query against a bbl 5.1.0 state file", func() {
 	// Tests all the bbl read commands:
 	//
 	//   lbs                     Prints attached load balancer(s)
-	//   bosh-deployment-vars    Prints required variables for BOSH deployment
-	//   jumpbox-deployment-vars Prints required variables for jumpbox deployment
-	//   cloud-config            Prints suggested cloud configuration for BOSH environment
 	//   jumpbox-address         Prints BOSH jumpbox address
 	//   director-address        Prints BOSH director address
 	//   director-username       Prints BOSH director username
@@ -49,62 +44,6 @@ CF SSH Proxy LB: 104.196.181.208
 CF TCP Router LB: 35.185.98.78
 CF WebSocket LB: 104.196.197.242
 CF Credhub LB: 35.196.150.246`))
-	})
-
-	// this no longer works with an old state file
-	// due to the changes to make terraform outputs "just work".
-	// also, this whole command will be deprecated soon
-	PIt("bbl bosh-deployment-vars", func() {
-		stdout := bbl.BOSHDeploymentVars()
-		var boshDeploymentVars map[string]interface{}
-		err := yaml.Unmarshal([]byte(stdout), &boshDeploymentVars)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(boshDeploymentVars["internal_cidr"].(string)).To(Equal("10.0.0.0/24"))
-		Expect(boshDeploymentVars["internal_gw"].(string)).To(Equal("10.0.0.1"))
-		Expect(boshDeploymentVars["internal_ip"].(string)).To(Equal("10.0.0.6"))
-		Expect(boshDeploymentVars["director_name"].(string)).To(Equal("bosh-some-env-bbl5"))
-		Expect(boshDeploymentVars["zone"].(string)).To(Equal("us-east1-b"))
-		Expect(boshDeploymentVars["network"].(string)).To(Equal("some-env-bbl5-network"))
-		Expect(boshDeploymentVars["subnetwork"].(string)).To(Equal("some-env-bbl5-subnet"))
-		Expect(boshDeploymentVars["tags"].([]interface{})[0].(string)).To(Equal("some-env-bbl5-bosh-director"))
-	})
-
-	// this no longer works with an old state file
-	// due to the changes to make terraform outputs "just work".
-	// also, this whole command will be deprecated soon
-	PIt("bbl jumpbox-deployment vars", func() {
-		stdout := bbl.JumpboxDeploymentVars()
-		var jumpboxDeploymentVars map[string]interface{}
-		err := yaml.Unmarshal([]byte(stdout), &jumpboxDeploymentVars)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(jumpboxDeploymentVars["internal_cidr"].(string)).To(Equal("10.0.0.0/24"))
-		Expect(jumpboxDeploymentVars["internal_gw"].(string)).To(Equal("10.0.0.1"))
-		Expect(jumpboxDeploymentVars["internal_ip"].(string)).To(Equal("10.0.0.5"))
-		Expect(jumpboxDeploymentVars["external_ip"].(string)).To(Equal("35.185.60.196"))
-		Expect(jumpboxDeploymentVars["director_name"].(string)).To(Equal("bosh-some-env-bbl5"))
-		Expect(jumpboxDeploymentVars["zone"].(string)).To(Equal("us-east1-b"))
-		Expect(jumpboxDeploymentVars["network"].(string)).To(Equal("some-env-bbl5-network"))
-		Expect(jumpboxDeploymentVars["subnetwork"].(string)).To(Equal("some-env-bbl5-subnet"))
-		Expect(jumpboxDeploymentVars["tags"].([]interface{})[0].(string)).To(Equal("some-env-bbl5-bosh-open"))
-		Expect(jumpboxDeploymentVars["tags"].([]interface{})[1].(string)).To(Equal("some-env-bbl5-jumpbox"))
-	})
-
-	// this no longer works with an old state file
-	// due to the changes to make terraform outputs "just work".
-	PIt("bbl cloud-config", func() {
-		stdout := bbl.CloudConfig()
-		Expect(stdout).To(ContainSubstring("vm_extensions"))
-		Expect(stdout).To(ContainSubstring("vm_types"))
-		Expect(stdout).To(ContainSubstring("disk_types"))
-		Expect(stdout).To(ContainSubstring("zone: us-east1-b"))
-		Expect(stdout).To(ContainSubstring("zone: us-east1-c"))
-		Expect(stdout).To(ContainSubstring("zone: us-east1-d"))
-		Expect(stdout).To(ContainSubstring("network_name: some-env-bbl5-network"))
-		Expect(stdout).To(ContainSubstring("subnetwork_name: some-env-bbl5-subnet"))
-		Expect(stdout).To(ContainSubstring("backend_service: some-env-bbl5-router-lb"))
-		Expect(stdout).To(ContainSubstring("target_pool: some-env-bbl5-cf-ws"))
-		Expect(stdout).To(ContainSubstring("target_pool: some-env-bbl5-cf-ssh-proxy"))
-		Expect(stdout).To(ContainSubstring("target_pool: some-env-bbl5-cf-tcp-router"))
 	})
 
 	It("bbl jumpbox-address", func() {
@@ -207,7 +146,7 @@ const BBL_STATE_5_1_0 = `
 		"variables": "jumpbox_ssh:\n  private_key: |\n    -----BEGIN RSA PRIVATE KEY-----\n    director-ssh-key\n    -----END RSA PRIVATE KEY-----",
 		"state": {},
 		"manifest": "some-manifest",
-		"userOpsFile": "some-ops-file"
+		"userOpsFile": ""
 	},
 	"envID": "some-env-bbl5",
 	"tfState": "{\n    \"version\": 3,\n    \"terraform_version\": \"0.10.7\",\n    \"serial\": 2,\n    \"lineage\": \"\",\n    \"modules\": [\n        {\n            \"path\": [\n                \"root\"\n            ],\n            \"outputs\": {\n                \"bosh_director_tag_name\": {\n                    \"sensitive\": false,\n                    \"type\": \"string\",\n                    \"value\": \"some-env-bbl5-bosh-director\"\n                },\n                \"bosh_open_tag_name\": {\n                    \"sensitive\": false,\n                    \"type\": \"string\",\n                    \"value\": \"some-env-bbl5-bosh-open\"\n                },\n                \"credhub_lb_ip\": {\n                    \"sensitive\": false,\n                    \"type\": \"string\",\n                    \"value\": \"35.196.150.246\"\n                },\n                \"credhub_target_pool\": {\n                    \"sensitive\": false,\n                    \"type\": \"string\",\n                    \"value\": \"some-env-bbl5-credhub\"\n                },\n                \"credhub_target_tags\": {\n                    \"sensitive\": false,\n                    \"type\": \"list\",\n                    \"value\": [\n                        \"some-env-bbl5-credhub\"\n                    ]\n                },\n                \"director_address\": {\n                    \"sensitive\": false,\n                    \"type\": \"string\",\n                    \"value\": \"https://35.185.125.178:25555\"\n                },\n                \"external_ip\": {\n                    \"sensitive\": false,\n                    \"type\": \"string\",\n                    \"value\": \"35.185.60.196\"\n                },\n                \"internal_tag_name\": {\n                    \"sensitive\": false,\n                    \"type\": \"string\",\n                    \"value\": \"some-env-bbl5-internal\"\n                },\n                \"jumpbox_tag_name\": {\n                    \"sensitive\": false,\n                    \"type\": \"string\",\n                    \"value\": \"some-env-bbl5-jumpbox\"\n                },\n                \"jumpbox_url\": {\n                    \"sensitive\": false,\n                    \"type\": \"string\",\n                    \"value\": \"35.185.60.196:22\"\n                },\n                \"network_name\": {\n                    \"sensitive\": false,\n                    \"type\": \"string\",\n                    \"value\": \"some-env-bbl5-network\"\n                },\n                \"router_backend_service\": {\n                    \"sensitive\": false,\n                    \"type\": \"string\",\n                    \"value\": \"some-env-bbl5-router-lb\"\n                },\n                \"router_lb_ip\": {\n                    \"sensitive\": false,\n                    \"type\": \"string\",\n                    \"value\": \"35.201.97.214\"\n                },\n                \"ssh_proxy_lb_ip\": {\n                    \"sensitive\": false,\n                    \"type\": \"string\",\n                    \"value\": \"104.196.181.208\"\n                },\n                \"ssh_proxy_target_pool\": {\n                    \"sensitive\": false,\n                    \"type\": \"string\",\n                    \"value\": \"some-env-bbl5-cf-ssh-proxy\"\n                },\n                \"subnetwork_name\": {\n                    \"sensitive\": false,\n                    \"type\": \"string\",\n                    \"value\": \"some-env-bbl5-subnet\"\n                },\n                \"tcp_router_lb_ip\": {\n                    \"sensitive\": false,\n                    \"type\": \"string\",\n                    \"value\": \"35.185.98.78\"\n                },\n                \"tcp_router_target_pool\": {\n                    \"sensitive\": false,\n                    \"type\": \"string\",\n                    \"value\": \"some-env-bbl5-cf-tcp-router\"\n                },\n                \"ws_lb_ip\": {\n                    \"sensitive\": false,\n                    \"type\": \"string\",\n                    \"value\": \"104.196.197.242\"\n                },\n                \"ws_target_pool\": {\n                    \"sensitive\": false,\n                    \"type\": \"string\",\n                    \"value\": \"some-env-bbl5-cf-ws\"\n                }\n            },\n            \"resources\": {},\n            \"depends_on\": []\n        }\n    ]\n}\n",

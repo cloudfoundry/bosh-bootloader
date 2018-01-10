@@ -18,7 +18,7 @@ import (
 )
 
 var _ = Describe("Executor", func() {
-	Describe("JumpboxCreateEnvArgs", func() {
+	Describe("PlanJumpbox", func() {
 		var (
 			cmd *fakes.BOSHCommand
 
@@ -59,14 +59,13 @@ var _ = Describe("Executor", func() {
 				DeploymentDir: deploymentDir,
 				VarsDir:       varsDir,
 				StateDir:      stateDir,
-				OpsFile:       "some-ops-file",
 			}
 
 			executor = bosh.NewExecutor(cmd, ioutil.ReadFile, json.Unmarshal, json.Marshal, ioutil.WriteFile)
 		})
 
 		It("writes bosh-deployment assets to the deployment dir", func() {
-			err := executor.JumpboxCreateEnvArgs(interpolateInput)
+			err := executor.PlanJumpbox(interpolateInput)
 			Expect(err).NotTo(HaveOccurred())
 
 			simplePath := filepath.Join(deploymentDir, "no-external-ip.yml")
@@ -85,9 +84,7 @@ var _ = Describe("Executor", func() {
 		})
 
 		It("generates create-env args for jumpbox", func() {
-			interpolateInput.OpsFile = ""
-
-			err := executor.JumpboxCreateEnvArgs(interpolateInput)
+			err := executor.PlanJumpbox(interpolateInput)
 			Expect(err).NotTo(HaveOccurred())
 
 			expectedArgs := []string{
@@ -129,11 +126,10 @@ var _ = Describe("Executor", func() {
 		Context("when the iaas is vsphere", func() {
 			BeforeEach(func() {
 				interpolateInput.IAAS = "vsphere"
-				interpolateInput.OpsFile = ""
 			})
 
 			It("generates create-env args for jumpbox", func() {
-				err := executor.JumpboxCreateEnvArgs(interpolateInput)
+				err := executor.PlanJumpbox(interpolateInput)
 				Expect(err).NotTo(HaveOccurred())
 
 				expectedArgs := []string{
@@ -172,7 +168,7 @@ var _ = Describe("Executor", func() {
 		})
 	})
 
-	Describe("DirectorCreateEnvArgs", func() {
+	Describe("PlanDirector", func() {
 		var (
 			cmd *fakes.BOSHCommand
 
@@ -210,7 +206,6 @@ var _ = Describe("Executor", func() {
 				DeploymentDir: deploymentDir,
 				StateDir:      stateDir,
 				VarsDir:       varsDir,
-				OpsFile:       "some-ops-file",
 			}
 
 			executor = bosh.NewExecutor(cmd, ioutil.ReadFile, json.Unmarshal, json.Marshal, ioutil.WriteFile)
@@ -218,7 +213,7 @@ var _ = Describe("Executor", func() {
 
 		It("writes bosh-deployment assets to the deployment dir", func() {
 			interpolateInput.IAAS = "warden"
-			err := executor.DirectorCreateEnvArgs(interpolateInput)
+			err := executor.PlanDirector(interpolateInput)
 			Expect(err).NotTo(HaveOccurred())
 
 			simplePath := filepath.Join(deploymentDir, "LICENSE")
@@ -255,16 +250,15 @@ var _ = Describe("Executor", func() {
 					"-o", filepath.Join(relativeStateDir, "bbl-ops-files", "aws", "bosh-director-ephemeral-ip-ops.yml"),
 					"-o", filepath.Join(relativeDeploymentDir, "aws", "iam-instance-profile.yml"),
 					"-o", filepath.Join(relativeStateDir, "bbl-ops-files", "aws", "bosh-director-encrypt-disk-ops.yml"),
-					"-o", filepath.Join(relativeVarsDir, "user-ops-file.yml"),
 				}
 			})
 
 			It("writes create-director.sh and delete-director.sh", func() {
-				behavesLikeCreateEnvArgs(expectedArgs, cmd, executor, awsInterpolateInput, stateDir)
+				behavesLikePlan(expectedArgs, cmd, executor, awsInterpolateInput, stateDir)
 			})
 
 			It("writes aws-specific ops files", func() {
-				err := executor.DirectorCreateEnvArgs(awsInterpolateInput)
+				err := executor.PlanDirector(awsInterpolateInput)
 				Expect(err).NotTo(HaveOccurred())
 
 				ipOpsFile := filepath.Join(stateDir, "bbl-ops-files", "aws", "bosh-director-ephemeral-ip-ops.yml")
@@ -307,16 +301,15 @@ var _ = Describe("Executor", func() {
 					"-o", filepath.Join(relativeDeploymentDir, "uaa.yml"),
 					"-o", filepath.Join(relativeDeploymentDir, "credhub.yml"),
 					"-o", filepath.Join(relativeStateDir, "bbl-ops-files", "gcp", "bosh-director-ephemeral-ip-ops.yml"),
-					"-o", filepath.Join(relativeVarsDir, "user-ops-file.yml"),
 				}
 			})
 
 			It("writes create-director.sh and delete-director.sh", func() {
-				behavesLikeCreateEnvArgs(expectedArgs, cmd, executor, gcpInterpolateInput, stateDir)
+				behavesLikePlan(expectedArgs, cmd, executor, gcpInterpolateInput, stateDir)
 			})
 
 			It("writes gcp-specific ops files", func() {
-				err := executor.DirectorCreateEnvArgs(gcpInterpolateInput)
+				err := executor.PlanDirector(gcpInterpolateInput)
 				Expect(err).NotTo(HaveOccurred())
 
 				ipOpsFile := filepath.Join(stateDir, "bbl-ops-files", "gcp", "bosh-director-ephemeral-ip-ops.yml")
@@ -347,12 +340,11 @@ var _ = Describe("Executor", func() {
 					"-o", filepath.Join(relativeDeploymentDir, "jumpbox-user.yml"),
 					"-o", filepath.Join(relativeDeploymentDir, "uaa.yml"),
 					"-o", filepath.Join(relativeDeploymentDir, "credhub.yml"),
-					"-o", filepath.Join(relativeVarsDir, "user-ops-file.yml"),
 				}
 			})
 
 			It("writes create-director.sh and delete-director.sh", func() {
-				behavesLikeCreateEnvArgs(expectedArgs, cmd, executor, azureInterpolateInput, stateDir)
+				behavesLikePlan(expectedArgs, cmd, executor, azureInterpolateInput, stateDir)
 			})
 		})
 
@@ -373,12 +365,11 @@ var _ = Describe("Executor", func() {
 					"-o", filepath.Join(relativeDeploymentDir, "uaa.yml"),
 					"-o", filepath.Join(relativeDeploymentDir, "credhub.yml"),
 					"-o", filepath.Join(relativeDeploymentDir, "vsphere", "resource-pool.yml"),
-					"-o", filepath.Join(relativeVarsDir, "user-ops-file.yml"),
 				}
 			})
 
 			It("writes create-director.sh and delete-director.sh", func() {
-				behavesLikeCreateEnvArgs(expectedArgs, cmd, executor, input, stateDir)
+				behavesLikePlan(expectedArgs, cmd, executor, input, stateDir)
 			})
 		})
 	})
@@ -458,8 +449,26 @@ var _ = Describe("Executor", func() {
 
 		AfterEach(func() {
 			os.Remove(filepath.Join(varsDir, "some-deployment-vars-store.yml"))
-			os.Remove(filepath.Join(stateDir, "create-some-deployment.sh"))
+			os.Remove(createEnvPath)
+			os.Remove(filepath.Join(stateDir, "create-some-deployment-override.sh"))
 			os.Unsetenv("BBL_STATE_DIR")
+		})
+
+		Context("when the user provides a create-env override", func() {
+			BeforeEach(func() {
+				overridePath := filepath.Join(stateDir, "create-some-deployment-override.sh")
+				overrideContents := fmt.Sprintf("#!/bin/bash\necho 'override-vars-store-contents' > %s/some-deployment-vars-store.yml\n", varsDir)
+
+				ioutil.WriteFile(overridePath, []byte(overrideContents), storage.ScriptMode)
+			})
+
+			It("runs the create-env-override.sh script", func() {
+				vars, err := executor.CreateEnv(createEnvInput)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(cmd.RunCallCount()).To(Equal(0))
+				Expect(vars).To(ContainSubstring("override-vars-store-contents"))
+			})
 		})
 
 		It("runs the create-env script and returns the resulting vars-store contents", func() {
@@ -526,6 +535,31 @@ var _ = Describe("Executor", func() {
 		AfterEach(func() {
 			os.Unsetenv("BBL_STATE_DIR")
 			os.Remove(filepath.Join(stateDir, "delete-some-deployment.sh"))
+		})
+
+		Context("when the user provides a delete-env override", func() {
+			BeforeEach(func() {
+				overridePath := filepath.Join(stateDir, "delete-some-deployment-override.sh")
+				overrideContents := fmt.Sprintf("#!/bin/bash\necho 'override' > %s/delete-env-output\n", varsDir)
+
+				ioutil.WriteFile(overridePath, []byte(overrideContents), storage.ScriptMode)
+			})
+
+			AfterEach(func() {
+				os.Remove(filepath.Join(varsDir, "delete-env-output"))
+				os.Remove(filepath.Join(stateDir, "delete-some-deployment-override.sh"))
+			})
+
+			It("runs the delete-env-override.sh script", func() {
+				err := executor.DeleteEnv(deleteEnvInput)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(cmd.RunCallCount()).To(Equal(0))
+
+				overrideOut, err := ioutil.ReadFile(filepath.Join(varsDir, "delete-env-output"))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(overrideOut).To(ContainSubstring("override"))
+			})
 		})
 
 		It("deletes a bosh environment with the delete-env script", func() {
@@ -627,13 +661,13 @@ func formatScript(command string, stateDir string, args []string) string {
 	return fmt.Sprintf("%s\n", script[:len(script)-2])
 }
 
-func behavesLikeCreateEnvArgs(expectedArgs []string, cmd *fakes.BOSHCommand, executor bosh.Executor, input bosh.InterpolateInput, stateDir string) {
+func behavesLikePlan(expectedArgs []string, cmd *fakes.BOSHCommand, executor bosh.Executor, input bosh.InterpolateInput, stateDir string) {
 	cmd.RunStub = func(stdout io.Writer, workingDirectory string, args []string) error {
 		stdout.Write([]byte("some-manifest"))
 		return nil
 	}
 
-	err := executor.DirectorCreateEnvArgs(input)
+	err := executor.PlanDirector(input)
 	Expect(err).NotTo(HaveOccurred())
 	Expect(cmd.RunCallCount()).To(Equal(0))
 

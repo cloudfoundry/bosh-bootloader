@@ -48,14 +48,12 @@ func NewDestroy(plan plan, logger logger, stdin io.Reader,
 }
 
 func (d Destroy) CheckFastFails(subcommandFlags []string, state storage.State) error {
-	if !state.NoDirector {
-		err := fastFailBOSHVersion(d.boshManager)
-		if err != nil {
-			return err
-		}
+	err := fastFailBOSHVersion(d.boshManager)
+	if err != nil {
+		return err
 	}
 
-	err := d.terraformManager.ValidateVersion()
+	err = d.terraformManager.ValidateVersion()
 	if err != nil {
 		return err
 	}
@@ -130,10 +128,8 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
 
 	if !d.plan.IsInitialized(state) {
 		planConfig := PlanConfig{
-			Name:       state.EnvID,
-			OpsFile:    state.BOSH.UserOpsFile,
-			NoDirector: state.NoDirector,
-			LB:         state.LB,
+			Name: state.EnvID,
+			LB:   state.LB,
 		}
 
 		state, err = d.plan.InitializePlan(planConfig, state)

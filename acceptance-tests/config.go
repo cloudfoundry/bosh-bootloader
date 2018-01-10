@@ -24,7 +24,6 @@ type Config struct {
 
 	GCPServiceAccountKey string
 	GCPRegion            string
-	GCPZone              string
 
 	VSphereNetwork          string
 	VSphereSubnet           string

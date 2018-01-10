@@ -17,7 +17,7 @@ type globalFlags struct {
 	Help     bool   `short:"h" long:"help"`
 	Debug    bool   `short:"d" long:"debug"     env:"BBL_DEBUG"`
 	Version  bool   `short:"v" long:"version"`
-	StateDir string `short:"s" long:"state-dir"`
+	StateDir string `short:"s" long:"state-dir" env:"BBL_STATE_DIRECTORY"`
 	IAAS     string `          long:"iaas"      env:"BBL_IAAS"`
 
 	AWSAccessKeyID     string `long:"aws-access-key-id"       env:"BBL_AWS_ACCESS_KEY_ID"`
@@ -31,8 +31,6 @@ type globalFlags struct {
 	AzureTenantID       string `long:"azure-tenant-id"        env:"BBL_AZURE_TENANT_ID"`
 
 	GCPServiceAccountKey string `long:"gcp-service-account-key" env:"BBL_GCP_SERVICE_ACCOUNT_KEY"`
-	GCPProjectID         string `long:"gcp-project-id"          env:"BBL_GCP_PROJECT_ID"`
-	GCPZone              string `long:"gcp-zone"                env:"BBL_GCP_ZONE"`
 	GCPRegion            string `long:"gcp-region"              env:"BBL_GCP_REGION"`
 
 	VSphereCluster         string `long:"vsphere-vcenter-cluster"  env:"BBL_VSPHERE_VCENTER_CLUSTER"`
@@ -143,30 +141,6 @@ func (c Config) Bootstrap(args []string) (application.Configuration, error) {
 			ShowCommandHelp: true,
 			Command:         command,
 		}, nil
-	}
-
-	if globalFlags.GCPProjectID != "" {
-		c.logger.Println("Deprecation warning: the --gcp-project-id flag (BBL_GCP_PROJECT_ID) is now ignored.")
-	}
-
-	if globalFlags.GCPZone != "" {
-		c.logger.Println("Deprecation warning: the --gcp-zone flag (BBL_GCP_ZONE) is now ignored.")
-	}
-
-	if command == "bosh-deployment-vars" {
-		c.logger.Println(`Deprecation warning: the bosh-deployment-vars command has been deprecated and will be removed in bbl v6.0.0. The bosh deployment vars are stored in the vars directory.`)
-	}
-
-	if command == "jumpbox-deployment-vars" {
-		c.logger.Println(`Deprecation warning: the jumpbox-deployment-vars command has been deprecated and will be removed in bbl v6.0.0. The jumpbox deployment vars are stored in the vars directory.`)
-	}
-
-	if command == "create-lbs" {
-		c.logger.Println(`Deprecation warning: the create-lbs command has been deprecated and will be removed in bbl v6.0.0. Create load balancers with "plan" or "up" e.g. "bbl up --lb-type <type> --lb-cert <cert> --lb-key <key>" or "bbl up --lb-type <type> --lb-cert <cert> --lb-key <key>".`)
-	}
-
-	if command == "delete-lbs" {
-		c.logger.Println(`Deprecation warning: the delete-lbs command has been deprecated and will be removed in bbl v6.0.0. Delete load balancers by calling "plan" without the lb flags.`)
 	}
 
 	state, err := c.stateBootstrap.GetState(globalFlags.StateDir)
@@ -411,14 +385,11 @@ func ValidateIAAS(state storage.State) error {
 
 func NeedsIAASCreds(command string) bool {
 	_, ok := map[string]struct{}{
-		"up":         struct{}{},
-		"down":       struct{}{},
-		"plan":       struct{}{},
-		"destroy":    struct{}{},
-		"create-lbs": struct{}{},
-		"delete-lbs": struct{}{},
-		"update-lbs": struct{}{},
-		"rotate":     struct{}{},
+		"up":      struct{}{},
+		"down":    struct{}{},
+		"plan":    struct{}{},
+		"destroy": struct{}{},
+		"rotate":  struct{}{},
 	}[command]
 	return ok
 }

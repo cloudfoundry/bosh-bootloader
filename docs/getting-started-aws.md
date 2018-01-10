@@ -23,18 +23,33 @@ The user must have the following `policy`:
     "Version": "2012-10-17",
     "Statement": [
         {
+            "Sid": "VisualEditor0",
             "Effect": "Allow",
             "Action": [
-                "ec2:*",
-                "elasticloadbalancing:*",
-                "route53:*",
-                "iam:*",
                 "logs:*",
-                "kms:*"
+                "elasticloadbalancing:*",
+                "cloudformation:*",
+                "iam:CreateInstanceProfile",
+                "iam:DeleteInstanceProfile",
+                "iam:GetRole",
+                "iam:GetPolicyVersion",
+                "iam:GetInstanceProfile",
+                "iam:GetPolicy",
+                "iam:DeletePolicy",
+                "iam:DeleteRole",
+                "iam:CreateRole",
+                "iam:AttachRolePolicy",
+                "iam:AddRoleToInstanceProfile",
+                "iam:CreatePolicy",
+                "iam:DetachRolePolicy",
+                "iam:ListAttachedRolePolicies",
+                "iam:ListInstanceProfilesForRole",
+                "iam:ListPolicyVersions",
+                "kms:*",
+                "route53:*",
+                "ec2:*"
             ],
-            "Resource": [
-                "*"
-            ]
+            "Resource": "*"
         }
     ]
 }

@@ -3,10 +3,10 @@ package storage
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"os"
 	"path/filepath"
 	"reflect"
+
+	"github.com/cloudfoundry/bosh-bootloader/fileio"
 )
 
 type store interface {
@@ -17,11 +17,12 @@ type store interface {
 }
 
 type Migrator struct {
-	store store
+	store  store
+	fileIO fileio.FileIO
 }
 
-func NewMigrator(store store) Migrator {
-	return Migrator{store: store}
+func NewMigrator(store store, fileIO fileio.FileIO) Migrator {
+	return Migrator{store: store, fileIO: fileIO}
 }
 
 func (m Migrator) Migrate(state State) (State, error) {
@@ -33,111 +34,45 @@ func (m Migrator) Migrate(state State) (State, error) {
 	if err != nil {
 		return State{}, fmt.Errorf("migrating state: %s", err)
 	}
-	if state.TFState != "" {
-		err = ioutil.WriteFile(filepath.Join(varsDir, "terraform.tfstate"), []byte(state.TFState), StateMode)
-		if err != nil {
-			return State{}, fmt.Errorf("migrating terraform state: %s", err)
-		}
-		state.TFState = ""
+
+	state, err = m.MigrateTerraformState(state, varsDir)
+	if err != nil {
+		return State{}, err
 	}
 
-	if len(state.BOSH.State) > 0 {
-		stateJSON, err := json.Marshal(state.BOSH.State)
-		if err != nil {
-			return State{}, fmt.Errorf("marshalling bosh state: %s", err)
-		}
-		err = ioutil.WriteFile(filepath.Join(varsDir, "bosh-state.json"), stateJSON, StateMode)
-		if err != nil {
-			return State{}, fmt.Errorf("migrating bosh state: %s", err)
-		}
-		state.BOSH.State = nil
+	state, err = m.MigrateDirectorState(state, varsDir)
+	if err != nil {
+		return State{}, err
 	}
 
-	if len(state.Jumpbox.State) > 0 {
-		stateJSON, err := json.Marshal(state.Jumpbox.State)
-		if err != nil {
-			return State{}, fmt.Errorf("marshalling jumpbox state: %s", err)
-		}
-		err = ioutil.WriteFile(filepath.Join(varsDir, "jumpbox-state.json"), stateJSON, StateMode)
-		if err != nil {
-			return State{}, fmt.Errorf("migrating jumpbox state: %s", err)
-		}
-		state.Jumpbox.State = nil
+	state, err = m.MigrateJumpboxState(state, varsDir)
+	if err != nil {
+		return State{}, err
 	}
 
-	if _, err := os.Stat(m.store.GetOldBblDir()); err == nil {
-		oldCloudConfigDir := filepath.Join(m.store.GetOldBblDir(), "cloudconfig")
-		files, err := ioutil.ReadDir(oldCloudConfigDir)
-		if err != nil {
-			return State{}, fmt.Errorf("reading legacy .bbl dir contents: %s", err)
-		}
-
-		cloudConfigDir, err := m.store.GetCloudConfigDir()
-		if err != nil {
-			return State{}, fmt.Errorf("getting cloud-config dir: %s", err)
-		}
-		for _, file := range files {
-			oldFile := filepath.Join(oldCloudConfigDir, file.Name())
-			oldFileContent, err := ioutil.ReadFile(oldFile)
-			if err != nil {
-				return State{}, fmt.Errorf("reading %s: %s", oldFile, err)
-			}
-
-			newFile := filepath.Join(cloudConfigDir, file.Name())
-			err = ioutil.WriteFile(newFile, oldFileContent, StateMode)
-			if err != nil {
-				return State{}, fmt.Errorf("migrating %s to %s: %s", oldFile, newFile, err)
-			}
-		}
-
-		err = os.RemoveAll(m.store.GetOldBblDir())
-		if err != nil {
-			return State{}, fmt.Errorf("removing legacy .bbl dir: %s", err)
-		}
+	bblDir := m.store.GetOldBblDir()
+	cloudConfigDir, err := m.store.GetCloudConfigDir()
+	if err != nil {
+		return State{}, fmt.Errorf("getting cloud-config dir: %s", err)
+	}
+	err = m.MigrateCloudConfigDir(bblDir, cloudConfigDir)
+	if err != nil {
+		return State{}, err
 	}
 
-	legacyDirectorVarsStore := filepath.Join(varsDir, "director-variables.yml")
-	if _, err := os.Stat(legacyDirectorVarsStore); err == nil {
-		boshVars, err := ioutil.ReadFile(legacyDirectorVarsStore)
-		if err != nil {
-			return State{}, fmt.Errorf("reading legacy director vars store: %s", err)
-		}
-
-		state.BOSH.Variables = string(boshVars)
-
-		if err := os.Remove(legacyDirectorVarsStore); err != nil {
-			return State{}, fmt.Errorf("removing legacy director vars store: %s", err) //not tested
-		}
+	err = m.MigrateTerraformVars(varsDir)
+	if err != nil {
+		return State{}, err
 	}
 
-	if state.BOSH.Variables != "" {
-		err = ioutil.WriteFile(filepath.Join(varsDir, "director-vars-store.yml"), []byte(state.BOSH.Variables), StateMode)
-		if err != nil {
-			return State{}, fmt.Errorf("migrating bosh variables: %s", err)
-		}
-		state.BOSH.Variables = ""
+	state, err = m.MigrateDirectorVars(state, varsDir)
+	if err != nil {
+		return State{}, err
 	}
 
-	legacyJumpboxVarsStore := filepath.Join(varsDir, "jumpbox-variables.yml")
-	if _, err := os.Stat(legacyJumpboxVarsStore); err == nil {
-		jumpboxVars, err := ioutil.ReadFile(legacyJumpboxVarsStore)
-		if err != nil {
-			return State{}, fmt.Errorf("reading legacy jumpbox vars store: %s", err)
-		}
-
-		state.Jumpbox.Variables = string(jumpboxVars)
-
-		if err := os.Remove(legacyJumpboxVarsStore); err != nil {
-			return State{}, fmt.Errorf("removing legacy jumpbox vars store: %s", err) //not tested
-		}
-	}
-
-	if state.Jumpbox.Variables != "" {
-		err = ioutil.WriteFile(filepath.Join(varsDir, "jumpbox-vars-store.yml"), []byte(state.Jumpbox.Variables), StateMode)
-		if err != nil {
-			return State{}, fmt.Errorf("migrating jumpbox variables: %s", err)
-		}
-		state.Jumpbox.Variables = ""
+	state, err = m.MigrateJumpboxVars(state, varsDir)
+	if err != nil {
+		return State{}, err
 	}
 
 	err = m.store.Set(state)
@@ -146,4 +81,144 @@ func (m Migrator) Migrate(state State) (State, error) {
 	}
 
 	return state, nil
+}
+
+func (m Migrator) MigrateTerraformState(state State, varsDir string) (State, error) {
+	if state.TFState != "" {
+		err := m.fileIO.WriteFile(filepath.Join(varsDir, "terraform.tfstate"), []byte(state.TFState), StateMode)
+		if err != nil {
+			return State{}, fmt.Errorf("migrating terraform state: %s", err)
+		}
+		state.TFState = ""
+	}
+	return state, nil
+}
+
+func (m Migrator) migrateStateFile(state map[string]interface{}, deployment, varsDir string) error {
+	if len(state) > 0 {
+		stateJSON, err := json.Marshal(state)
+		if err != nil {
+			return fmt.Errorf("marshalling %s state: %s", deployment, err)
+		}
+		err = m.fileIO.WriteFile(filepath.Join(varsDir, fmt.Sprintf("%s-state.json", deployment)), stateJSON, StateMode)
+		if err != nil {
+			return fmt.Errorf("migrating %s state: %s", deployment, err)
+		}
+	}
+	return nil
+}
+
+func (m Migrator) MigrateDirectorState(state State, varsDir string) (State, error) {
+	err := m.migrateStateFile(state.BOSH.State, "bosh", varsDir)
+	if err != nil {
+		return State{}, err
+	}
+	state.BOSH.State = nil
+	return state, nil
+}
+
+func (m Migrator) MigrateJumpboxState(state State, varsDir string) (State, error) {
+	err := m.migrateStateFile(state.Jumpbox.State, "jumpbox", varsDir)
+	if err != nil {
+		return State{}, err
+	}
+	state.Jumpbox.State = nil
+	return state, nil
+}
+
+func (m Migrator) MigrateCloudConfigDir(bblDir, cloudConfigDir string) error {
+	if _, err := m.fileIO.Stat(bblDir); err == nil {
+		oldCloudConfigDir := filepath.Join(bblDir, "cloudconfig")
+		files, err := m.fileIO.ReadDir(oldCloudConfigDir)
+		if err != nil {
+			return fmt.Errorf("reading legacy .bbl dir contents: %s", err)
+		}
+
+		for _, file := range files {
+			oldFile := filepath.Join(oldCloudConfigDir, file.Name())
+			oldFileContent, err := m.fileIO.ReadFile(oldFile)
+			if err != nil {
+				return fmt.Errorf("reading %s: %s", oldFile, err)
+			}
+
+			newFile := filepath.Join(cloudConfigDir, file.Name())
+			err = m.fileIO.WriteFile(newFile, oldFileContent, StateMode)
+			if err != nil {
+				return fmt.Errorf("migrating %s to %s: %s", oldFile, newFile, err)
+			}
+		}
+
+		err = m.fileIO.RemoveAll(m.store.GetOldBblDir())
+		if err != nil {
+			return fmt.Errorf("removing legacy .bbl dir: %s", err)
+		}
+	}
+	return nil
+}
+
+func (m Migrator) MigrateTerraformVars(varsDir string) error {
+	tfVarsPath := filepath.Join(varsDir, "terraform.tfvars")
+	bblVarsPath := filepath.Join(varsDir, "bbl.tfvars")
+	if _, err := m.fileIO.Stat(tfVarsPath); err == nil {
+		err = m.fileIO.Rename(tfVarsPath, bblVarsPath)
+		if err != nil {
+			return fmt.Errorf("migrating tfvars: %s", err)
+		}
+	}
+	return nil
+}
+
+func (m Migrator) burnAfterReadingLegacyVarsStore(varsDir, deployment string) (string, error) {
+	legacyVarsStore := filepath.Join(varsDir, fmt.Sprintf("%s-variables.yml", deployment))
+	if _, err := m.fileIO.Stat(legacyVarsStore); err == nil {
+		boshVars, err := m.fileIO.ReadFile(legacyVarsStore)
+		if err != nil {
+			return "", fmt.Errorf("reading legacy %s vars store: %s", deployment, err)
+		}
+		if err := m.fileIO.Remove(legacyVarsStore); err != nil {
+			return "", fmt.Errorf("removing legacy %s vars store: %s", deployment, err) //not tested
+		}
+
+		return string(boshVars), nil
+	} else {
+		return "", nil
+	}
+}
+
+func (m Migrator) MigrateDirectorVars(state State, varsDir string) (State, error) {
+	err := m.migrateVarsStore(state.BOSH.Variables, "director", varsDir)
+	if err != nil {
+		return State{}, err
+	}
+	state.BOSH.Variables = ""
+	return state, nil
+}
+
+func (m Migrator) MigrateJumpboxVars(state State, varsDir string) (State, error) {
+	err := m.migrateVarsStore(state.Jumpbox.Variables, "jumpbox", varsDir)
+	if err != nil {
+		return State{}, err
+	}
+	state.Jumpbox.Variables = ""
+	return state, nil
+}
+
+func (m Migrator) migrateVarsStore(variables, deployment, varsDir string) error {
+	boshVars, err := m.burnAfterReadingLegacyVarsStore(varsDir, deployment)
+	if err != nil {
+		return err
+	}
+
+	if variables == "" {
+		variables = boshVars
+	}
+
+	if variables != "" {
+		err := m.fileIO.WriteFile(filepath.Join(varsDir, fmt.Sprintf("%s-vars-store.yml", deployment)), []byte(variables), StateMode)
+		if err != nil {
+			return fmt.Errorf("migrating %s variables: %s", deployment, err)
+		}
+	}
+
+	return nil
 }

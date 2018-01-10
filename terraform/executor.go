@@ -74,7 +74,7 @@ func (e Executor) Init(template string, input map[string]interface{}) error {
 		return fmt.Errorf("Write .gitignore for terraform binaries: %s", err)
 	}
 
-	tfVarsPath := filepath.Join(varsDir, "terraform.tfvars")
+	tfVarsPath := filepath.Join(varsDir, "bbl.tfvars")
 	formattedVars := formatVars(input)
 	err = writeFile(tfVarsPath, []byte(formattedVars), storage.StateMode)
 	if err != nil {
@@ -121,15 +121,26 @@ func (e Executor) runTFCommand(args []string) error {
 	if err != nil {
 		return fmt.Errorf("Get relative terraform state path: %s", err) //not tested
 	}
-	relativeVarsPath, err := filepath.Rel(terraformDir, filepath.Join(varsDir, "terraform.tfvars"))
-	if err != nil {
-		return fmt.Errorf("Get relative terraform vars path: %s", err) //not tested
-	}
 
 	args = append(args,
 		"-state", relativeStatePath,
-		"-var-file", relativeVarsPath,
 	)
+
+	varsFiles, err := ioutil.ReadDir(varsDir)
+	if err != nil {
+		return fmt.Errorf("Read contents of vars directory: %s", err) // not tested
+	}
+	for _, file := range varsFiles {
+		if strings.HasSuffix(file.Name(), ".tfvars") {
+			relativeFilePath, err := filepath.Rel(terraformDir, filepath.Join(varsDir, file.Name()))
+			if err != nil {
+				return fmt.Errorf("Get relative terraform vars path: %s", err) //not tested
+			}
+			args = append(args,
+				"-var-file", relativeFilePath,
+			)
+		}
+	}
 
 	err = e.cmd.Run(os.Stdout, terraformDir, args, e.debug)
 	if err != nil {

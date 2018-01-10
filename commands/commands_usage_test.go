@@ -68,38 +68,6 @@ var _ = Describe("Commands Usage", func() {
 		})
 	})
 
-	Describe("Create LBs", func() {
-		Describe("Usage", func() {
-			It("returns string describing usage", func() {
-				command := commands.CreateLBs{}
-				usageText := command.Usage()
-				Expect(usageText).To(Equal(fmt.Sprintf(`Attaches load balancer(s) with a certificate, key, and optional chain
-
-  --type              Load balancer(s) type: "concourse" or "cf"
-  [--cert]            Path to SSL certificate (supported when type="cf")
-  [--key]             Path to SSL certificate key (supported when type="cf")
-  [--chain]           Path to SSL certificate chain (supported when iaas="aws")
-  [--domain]          Creates a DNS zone and records for the given domain (supported when type="cf")
-
-  Credentials for your IaaS are required:%s`, commands.Credentials)))
-			})
-		})
-	})
-
-	Describe("Delete LBs", func() {
-		Describe("Usage", func() {
-			It("returns string describing usage", func() {
-				command := commands.DeleteLBs{}
-				usageText := command.Usage()
-				Expect(usageText).To(Equal(fmt.Sprintf(`Deletes load balancer(s)
-
-  [--skip-if-missing]  Skips deleting load balancer(s) if it is not attached (optional)
-
-  Credentials for your IaaS are required:%s`, commands.Credentials)))
-			})
-		})
-	})
-
 	Describe("Destroy", func() {
 		Describe("Usage", func() {
 			It("returns string describing usage", func() {
@@ -152,10 +120,7 @@ var _ = Describe("Commands Usage", func() {
 		Entry("director-ssh-key", commands.SSHKey{Director: true}, "Prints SSH private key for the director."),
 		Entry("print-env", commands.PrintEnv{}, "Prints required BOSH environment variables"),
 		Entry("latest-error", commands.LatestError{}, "Prints the output from the latest call to terraform"),
-		Entry("bosh-deployment-vars", commands.BOSHDeploymentVars{}, "Prints required variables for BOSH deployment"),
-		Entry("jumpbox-deployment-vars", commands.JumpboxDeploymentVars{}, "Prints required variables for jumpbox deployment"),
 		Entry("version", commands.Version{}, "Prints version"),
-		Entry("cloud-config", commands.CloudConfig{}, "Prints suggested cloud configuration for BOSH environment"),
 	)
 })
 

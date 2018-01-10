@@ -13,8 +13,8 @@ type LBArgsHandler struct {
 			Error error
 		}
 		Receives struct {
-			IAAS   string
-			Config commands.CreateLBsConfig
+			IAAS string
+			Args commands.LBArgs
 		}
 	}
 	MergeCall struct {
@@ -29,9 +29,9 @@ type LBArgsHandler struct {
 	}
 }
 
-func (c *LBArgsHandler) GetLBState(iaas string, config commands.CreateLBsConfig) (storage.LB, error) {
+func (c *LBArgsHandler) GetLBState(iaas string, args commands.LBArgs) (storage.LB, error) {
 	c.GetLBStateCall.CallCount++
-	c.GetLBStateCall.Receives.Config = config
+	c.GetLBStateCall.Receives.Args = args
 	c.GetLBStateCall.Receives.IAAS = iaas
 	return c.GetLBStateCall.Returns.LB, c.GetLBStateCall.Returns.Error
 }

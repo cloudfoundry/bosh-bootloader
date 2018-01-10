@@ -158,24 +158,6 @@ var _ = Describe("Up", func() {
 			})
 		})
 
-		Context("when the config or state has the no-director flag set", func() {
-			BeforeEach(func() {
-				terraformManager.ApplyCall.Returns.BBLState.NoDirector = true
-			})
-
-			It("does not create a bosh or cloud config", func() {
-				err := command.Execute([]string{}, incomingState)
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(terraformManager.ApplyCall.CallCount).To(Equal(1))
-				Expect(terraformManager.GetOutputsCall.CallCount).To(Equal(0))
-				Expect(boshManager.InitializeDirectorCall.CallCount).To(Equal(0))
-				Expect(stateStore.SetCall.CallCount).To(Equal(1))
-				Expect(stateStore.SetCall.Receives[0].State.NoDirector).To(BeTrue())
-				Expect(cloudConfigManager.UpdateCall.CallCount).To(Equal(0))
-			})
-		})
-
 		Describe("failure cases", func() {
 			Context("when parse args fails", func() {
 				BeforeEach(func() {
@@ -185,18 +167,6 @@ var _ = Describe("Up", func() {
 				It("returns an error", func() {
 					err := command.Execute([]string{}, storage.State{})
 					Expect(err).To(MatchError("apple"))
-				})
-			})
-
-			Context("when the config has the no-director flag set and the bbl state has a bosh director", func() {
-				BeforeEach(func() {
-					incomingState = storage.State{BOSH: storage.BOSH{DirectorName: "some-director"}}
-					plan.ParseArgsCall.Returns.Config = commands.PlanConfig{NoDirector: true}
-				})
-
-				It("fast fails", func() {
-					err := command.Execute([]string{}, incomingState)
-					Expect(err).To(MatchError(`Director already exists, you must re-create your environment to use "--no-director"`))
 				})
 			})
 
@@ -355,13 +325,13 @@ var _ = Describe("Up", func() {
 
 	Describe("ParseArgs", func() {
 		It("returns ParseArgs on Plan", func() {
-			plan.ParseArgsCall.Returns.Config = commands.PlanConfig{OpsFile: "some-path"}
-			config, err := command.ParseArgs([]string{"--ops-file", "some-path"}, storage.State{ID: "some-state-id"})
+			plan.ParseArgsCall.Returns.Config = commands.PlanConfig{Name: "environment name"}
+			config, err := command.ParseArgs([]string{"--name", "environment name"}, storage.State{ID: "some-state-id"})
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(plan.ParseArgsCall.Receives.Args).To(Equal([]string{"--ops-file", "some-path"}))
+			Expect(plan.ParseArgsCall.Receives.Args).To(Equal([]string{"--name", "environment name"}))
 			Expect(plan.ParseArgsCall.Receives.State).To(Equal(storage.State{ID: "some-state-id"}))
-			Expect(config.OpsFile).To(Equal("some-path"))
+			Expect(config.Name).To(Equal("environment name"))
 		})
 	})
 })

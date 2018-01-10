@@ -37,6 +37,10 @@ var _ = Describe("GCPOpsGenerator", func() {
 		}
 
 		terraformManager.GetOutputsCall.Returns.Outputs = terraform.Outputs{Map: map[string]interface{}{
+			"internal_cidr":          "10.0.0.0/20",
+			"subnet_cidr_1":          "10.0.16.0/24",
+			"subnet_cidr_2":          "10.0.32.0/24",
+			"subnet_cidr_3":          "10.0.48.0/24",
 			"network_name":           "some-network-name",
 			"subnetwork_name":        "some-subnetwork-name",
 			"bosh_open_tag_name":     "some-bosh-tag",
@@ -59,14 +63,36 @@ var _ = Describe("GCPOpsGenerator", func() {
 
 			Expect(terraformManager.GetOutputsCall.CallCount).To(Equal(1))
 			Expect(varsYAML).To(MatchYAML(`
+az1_gateway: 10.0.16.1
+az1_name: us-east1-b
+az1_range: 10.0.16.0/24
+az1_reserved_1: 10.0.16.2-10.0.16.3
+az1_reserved_2: 10.0.16.255
+az1_static: 10.0.16.190-10.0.16.254
+az2_gateway: 10.0.32.1
+az2_name: us-east1-c
+az2_range: 10.0.32.0/24
+az2_reserved_1: 10.0.32.2-10.0.32.3
+az2_reserved_2: 10.0.32.255
+az2_static: 10.0.32.190-10.0.32.254
+az3_gateway: 10.0.48.1
+az3_name: us-east1-d
+az3_range: 10.0.48.0/24
+az3_reserved_1: 10.0.48.2-10.0.48.3
+az3_reserved_2: 10.0.48.255
+az3_static: 10.0.48.190-10.0.48.254
 bosh_open_tag_name: some-bosh-tag
 network_name: some-network-name
 subnetwork_name: some-subnetwork-name
+internal_cidr: 10.0.0.0/20
 internal_tag_name: some-internal-tag
 internal_tag_name: some-internal-tag
 router_backend_service: some-backend-service
 ws_target_pool: some-ws-target-pool
 ssh_proxy_target_pool: some-proxy-target-pool
+subnet_cidr_1: 10.0.16.0/24
+subnet_cidr_2: 10.0.32.0/24
+subnet_cidr_3: 10.0.48.0/24
 tcp_router_target_pool: some-tcp-router-target-pool
 concourse_target_pool: some-concourse-target-pool
 credhub_target_pool: some-credhub-target-pool

@@ -11,14 +11,6 @@ install to AWS using `bbl` and `bosh`.
 
 ## Create load balancer
 
-This:
-
-```
-bbl create-lbs --type concourse
-```
-
-Or this:
-
 ```
 bbl plan --lb-type concourse && bbl up
 ```
@@ -26,7 +18,7 @@ bbl plan --lb-type concourse && bbl up
 ## Create a bosh deployment manifest
 
 Scale instance types, disks and instance count based on your needs.
-Other sizes are available, see `bbl cloud-config`.
+Other sizes are available, see `bosh cloud-config`.
 
 1. Start with the sample manifest from the
 [Concourse documentation](http://concourse.ci/clusters-with-bosh.html)

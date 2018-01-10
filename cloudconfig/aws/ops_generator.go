@@ -229,11 +229,7 @@ func (o OpsGenerator) generateOps(state storage.State) ([]op, error) {
 		})
 		ops = append(ops, azOp)
 
-		subnet, err := generateNetworkSubnet(i, "internal_security_group")
-		if err != nil {
-			return []op{}, err
-		}
-
+		subnet := generateNetworkSubnet(i)
 		subnets = append(subnets, subnet)
 	}
 
@@ -313,7 +309,7 @@ func azify(az int, azName, cidr, subnet string) (map[string]string, error) {
 	}, nil
 }
 
-func generateNetworkSubnet(az int, securityGroup string) (networkSubnet, error) {
+func generateNetworkSubnet(az int) networkSubnet {
 	az++
 	return networkSubnet{
 		AZ:      fmt.Sprintf("z%d", az),
@@ -328,7 +324,7 @@ func generateNetworkSubnet(az int, securityGroup string) (networkSubnet, error) 
 		},
 		CloudProperties: networkSubnetCloudProperties{
 			Subnet:         fmt.Sprintf("((az%d_subnet))", az),
-			SecurityGroups: []string{fmt.Sprintf("((%s))", securityGroup)},
+			SecurityGroups: []string{"((internal_security_group))"},
 		},
-	}, nil
+	}
 }

@@ -9,6 +9,9 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strings"
+
+	"golang.org/x/crypto/pkcs12"
 
 	"github.com/cloudfoundry/multierror"
 )
@@ -46,16 +49,16 @@ func (v Validator) Read(certPath, keyPath, chainPath string) (CertData, error) {
 	var chainBytes []byte
 	validateErrors := multierror.NewMultiError("")
 
-	if certBytes, err = readFile("certificate", "--cert", certPath); err != nil {
+	if certBytes, err = readFile("certificate", "--lb-cert", certPath); err != nil {
 		validateErrors.Add(err)
 	}
 
-	if keyBytes, err = readFile("key", "--key", keyPath); err != nil {
+	if keyBytes, err = readFile("key", "--lb-key", keyPath); err != nil {
 		validateErrors.Add(err)
 	}
 
 	if chainPath != "" {
-		if chainBytes, err = readFile("chain", "--chain", chainPath); err != nil {
+		if chainBytes, err = readFile("chain", "--lb-chain", chainPath); err != nil {
 			validateErrors.Add(err)
 		}
 	}
@@ -134,6 +137,60 @@ func (v Validator) Validate(cert, key, chain []byte) error {
 		return validateErrors
 	}
 
+	return nil
+}
+
+func (v Validator) ReadAndValidatePKCS12(certPath, passwordPath string) (CertData, error) {
+	certData, readErrors := v.ReadPKCS12(certPath, passwordPath)
+	if readErrors != nil {
+		return CertData{}, readErrors
+	}
+
+	validateErrors := v.ValidatePKCS12(certData.Cert, certData.Key)
+	if validateErrors != nil {
+		return CertData{}, validateErrors
+	}
+
+	return certData, nil
+}
+
+func (v Validator) ReadPKCS12(certPath, passwordPath string) (CertData, error) {
+	var err error
+	var certBytes []byte
+	var passwordBytes []byte
+	validateErrors := multierror.NewMultiError("")
+
+	if certBytes, err = readFile("certificate", "--lb-cert", certPath); err != nil {
+		validateErrors.Add(err)
+	}
+
+	if passwordBytes, err = readFile("key", "--lb-key", passwordPath); err != nil {
+		validateErrors.Add(err)
+	}
+
+	if validateErrors.Length() > 0 {
+		return CertData{}, validateErrors
+	}
+
+	passwordString := strings.TrimSuffix(string(passwordBytes), "\n")
+
+	return CertData{
+		Cert: certBytes,
+		Key:  []byte(passwordString),
+	}, nil
+}
+
+func (v Validator) ValidatePKCS12(cert, password []byte) error {
+	validateErrors := multierror.NewMultiError("")
+
+	_, err := pkcs12.ToPEM(cert, string(password))
+	if err != nil {
+		validateErrors.Add(fmt.Errorf("failed to parse certificate: %s", err))
+	}
+
+	if validateErrors.Length() > 0 {
+		return validateErrors
+	}
 	return nil
 }
 

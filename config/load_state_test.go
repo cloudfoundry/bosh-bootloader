@@ -81,7 +81,7 @@ var _ = Describe("LoadState", func() {
 				Entry("bbl help help", []string{"bbl", "help", "help"}, "help"),
 				Entry("bbl help version", []string{"bbl", "help", "version"}, "version"),
 				Entry("bbl version --help", []string{"bbl", "version", "--help"}, "version"),
-				Entry("bbl help create-lbs", []string{"bbl", "help", "create-lbs"}, "create-lbs"),
+				Entry("bbl help rotate", []string{"bbl", "help", "rotate"}, "rotate"),
 			)
 		})
 
@@ -152,6 +152,23 @@ var _ = Describe("LoadState", func() {
 					Expect(appConfig.Global.Debug).To(BeTrue())
 				})
 			})
+
+			Context("when state dir flag is passed in through environment variable", func() {
+				BeforeEach(func() {
+					os.Setenv("BBL_STATE_DIRECTORY", "/path/to/state")
+				})
+
+				AfterEach(func() {
+					os.Unsetenv("BBL_STATE_DIRECTORY")
+				})
+
+				It("returns global flags", func() {
+					appConfig, err := c.Bootstrap([]string{"bbl", "up"})
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(appConfig.Global.StateDir).To(Equal("/path/to/state"))
+				})
+			})
 		})
 
 		Describe("reading a previous state file", func() {
@@ -176,7 +193,7 @@ var _ = Describe("LoadState", func() {
 			It("returns the existing state", func() {
 				appConfig, err := c.Bootstrap([]string{
 					"bbl",
-					"create-lbs",
+					"rotate",
 				})
 				Expect(err).NotTo(HaveOccurred())
 
@@ -192,7 +209,7 @@ var _ = Describe("LoadState", func() {
 			It("uses the working directory", func() {
 				appConfig, err := c.Bootstrap([]string{
 					"bbl",
-					"create-lbs",
+					"rotate",
 				})
 				Expect(err).NotTo(HaveOccurred())
 
@@ -215,7 +232,7 @@ var _ = Describe("LoadState", func() {
 				It("uses the absolute path of the state dir", func() {
 					appConfig, err := c.Bootstrap([]string{
 						"bbl",
-						"create-lbs",
+						"rotate",
 						"--state-dir", "some-state-dir",
 					})
 					Expect(err).NotTo(HaveOccurred())
@@ -241,7 +258,7 @@ var _ = Describe("LoadState", func() {
 				It("does not modify the path of the state dir", func() {
 					appConfig, err := c.Bootstrap([]string{
 						"bbl",
-						"create-lbs",
+						"rotate",
 						"--state-dir", stateDir,
 					})
 					Expect(err).NotTo(HaveOccurred())
@@ -265,7 +282,7 @@ var _ = Describe("LoadState", func() {
 				It("returns an error", func() {
 					_, err := c.Bootstrap([]string{
 						"bbl",
-						"create-lbs",
+						"rotate",
 						"--state-dir", "/this/will/not/work",
 					})
 
@@ -280,7 +297,7 @@ var _ = Describe("LoadState", func() {
 				It("returns an error", func() {
 					_, err := c.Bootstrap([]string{
 						"bbl",
-						"create-lbs",
+						"rotate",
 						"--state-dir", "some-state-dir",
 					})
 					Expect(err).To(MatchError("coconut"))
@@ -291,7 +308,7 @@ var _ = Describe("LoadState", func() {
 				It("returns an error", func() {
 					_, err := c.Bootstrap([]string{
 						"bbl",
-						"create-lbs",
+						"rotate",
 						"--state-dir",
 						"--help",
 					})
@@ -430,8 +447,7 @@ var _ = Describe("LoadState", func() {
 				Context("when valid matching configuration is passed in", func() {
 					It("returns state with existing configuration", func() {
 						appConfig, err := c.Bootstrap([]string{
-							"bbl",
-							"create-lbs",
+							"bbl", "up",
 							"--iaas", "vsphere",
 							"--vsphere-vcenter-user", "user",
 							"--vsphere-vcenter-password", "password",
@@ -455,7 +471,7 @@ var _ = Describe("LoadState", func() {
 
 						Expect(err).To(MatchError(expected))
 					},
-					Entry("returns an error for non-matching IAAS", []string{"bbl", "create-lbs", "--iaas", "gcp"},
+					Entry("returns an error for non-matching IAAS", []string{"bbl", "up", "--iaas", "gcp"},
 						"The iaas type cannot be changed for an existing environment. The current iaas type is vsphere."),
 				)
 			})
@@ -504,8 +520,7 @@ var _ = Describe("LoadState", func() {
 
 					BeforeEach(func() {
 						args = []string{
-							"bbl",
-							"up",
+							"bbl", "up",
 						}
 
 						os.Setenv("BBL_IAAS", "aws")
@@ -557,8 +572,7 @@ var _ = Describe("LoadState", func() {
 				Context("when valid matching configuration is passed in", func() {
 					It("returns state with existing configuration", func() {
 						appConfig, err := c.Bootstrap([]string{
-							"bbl",
-							"create-lbs",
+							"bbl", "up",
 							"--iaas", "aws",
 							"--aws-access-key-id", "some-access-key-id",
 							"--aws-secret-access-key", "some-secret-access-key",
@@ -576,9 +590,9 @@ var _ = Describe("LoadState", func() {
 
 						Expect(err).To(MatchError(expected))
 					},
-					Entry("returns an error for non-matching IAAS", []string{"bbl", "create-lbs", "--iaas", "gcp"},
+					Entry("returns an error for non-matching IAAS", []string{"bbl", "up", "--iaas", "gcp"},
 						"The iaas type cannot be changed for an existing environment. The current iaas type is aws."),
-					Entry("returns an error for non-matching region", []string{"bbl", "create-lbs", "--aws-region", "some-other-region"},
+					Entry("returns an error for non-matching region", []string{"bbl", "up", "--aws-region", "some-other-region"},
 						"The region cannot be changed for an existing environment. The current region is some-region."),
 				)
 			})
@@ -645,7 +659,6 @@ var _ = Describe("LoadState", func() {
 								"bbl", "up", "--name", "some-env-id",
 								"--iaas", "gcp",
 								"--gcp-service-account-key", serviceAccountKey,
-								"--gcp-zone", "some-availability-zone",
 								"--gcp-region", "some-region",
 							}
 						})
@@ -670,7 +683,6 @@ var _ = Describe("LoadState", func() {
 									"up",
 									"--iaas", "gcp",
 									"--gcp-service-account-key", "/this/file/isn't/real",
-									"--gcp-zone", "some-availability-zone",
 									"--gcp-region", "some-region",
 								}
 								fakeFileIO.StatCall.Returns.Error = errors.New("no file found")
@@ -689,7 +701,6 @@ var _ = Describe("LoadState", func() {
 									"bbl", "up", "--name", "some-env-id",
 									"--iaas", "gcp",
 									"--gcp-service-account-key", "some-key",
-									"--gcp-zone", "some-availability-zone",
 									"--gcp-region", "some-region",
 								}
 								fakeFileIO.ReadFileCall.Returns.Contents = []byte("not-json")
@@ -708,7 +719,6 @@ var _ = Describe("LoadState", func() {
 								"bbl", "up", "--name", "some-env-id",
 								"--iaas", "gcp",
 								"--gcp-service-account-key", "some-key",
-								"--gcp-zone", "some-availability-zone",
 								"--gcp-region", "some-region",
 							}
 							fakeFileIO.ReadFileCall.Returns.Contents = []byte("{}")
@@ -726,7 +736,6 @@ var _ = Describe("LoadState", func() {
 								"bbl", "up", "--name", "some-env-id",
 								"--iaas", "gcp",
 								"--gcp-service-account-key", "some-key",
-								"--gcp-zone", "some-availability-zone",
 								"--gcp-region", "some-region",
 							}
 							fakeFileIO.StatCall.Returns.Error = errors.New("no file found")
@@ -745,7 +754,6 @@ var _ = Describe("LoadState", func() {
 								"bbl", "up", "--name", "some-env-id",
 								"--iaas", "gcp",
 								"--gcp-service-account-key", "some-key",
-								"--gcp-zone", "some-availability-zone",
 								"--gcp-region", "some-region",
 							}
 							fakeFileIO.StatCall.Returns.Error = errors.New("no file found")
@@ -815,8 +823,7 @@ var _ = Describe("LoadState", func() {
 				Context("when valid matching configuration is passed in", func() {
 					It("returns state with existing configuration", func() {
 						appConfig, err := c.Bootstrap([]string{
-							"bbl",
-							"create-lbs",
+							"bbl", "up",
 							"--iaas", "gcp",
 							"--gcp-service-account-key", serviceAccountKey,
 							"--gcp-region", "some-region",
@@ -835,94 +842,13 @@ var _ = Describe("LoadState", func() {
 
 						Expect(err).To(MatchError(expected))
 					},
-					Entry("returns an error for non-matching IAAS", []string{"bbl", "create-lbs", "--iaas", "aws"},
+					Entry("returns an error for non-matching IAAS", []string{"bbl", "up", "--iaas", "aws"},
 						"The iaas type cannot be changed for an existing environment. The current iaas type is gcp."),
-					Entry("returns an error for non-matching region", []string{"bbl", "create-lbs", "--gcp-region", "some-other-region"},
+					Entry("returns an error for non-matching region", []string{"bbl", "up", "--gcp-region", "some-other-region"},
 						"The region cannot be changed for an existing environment. The current region is some-region."),
-					Entry("returns an error for non-matching project id", []string{"bbl", "create-lbs", "--gcp-service-account-key", `{"project_id": "some-other-project-id"}`},
+					Entry("returns an error for non-matching project id", []string{"bbl", "up", "--gcp-service-account-key", `{"project_id": "some-other-project-id"}`},
 						"The project ID cannot be changed for an existing environment. The current project ID is some-project-id."),
 				)
-			})
-
-			Describe("deprecated flags", func() {
-				var args []string
-				Context("when the deprecated --gcp-project-id is passed in", func() {
-					BeforeEach(func() {
-						args = []string{
-							"bbl", "up",
-							"--iaas", "gcp",
-							"--gcp-project-id", "ignored-project-id",
-							"--gcp-service-account-key", serviceAccountKey,
-						}
-					})
-					It("ignores the flag and prints a warning", func() {
-						appConfig, err := c.Bootstrap(args)
-						Expect(err).NotTo(HaveOccurred())
-
-						Expect(appConfig.State.GCP.ProjectID).To(Equal("some-project-id"))
-						Expect(fakeLogger.PrintlnCall.Receives.Message).To(Equal("Deprecation warning: the --gcp-project-id flag (BBL_GCP_PROJECT_ID) is now ignored."))
-					})
-				})
-
-				Context("when the deprecated --gcp-zone is passed in", func() {
-					BeforeEach(func() {
-						args = []string{
-							"bbl", "up",
-							"--iaas", "gcp",
-							"--gcp-zone", "some-zone",
-							"--gcp-service-account-key", serviceAccountKey,
-						}
-					})
-					It("ignores the flag and prints a warning", func() {
-						appConfig, err := c.Bootstrap(args)
-						Expect(err).NotTo(HaveOccurred())
-
-						Expect(appConfig.State.GCP.Zone).To(Equal(""))
-						Expect(fakeLogger.PrintlnCall.Receives.Message).To(Equal("Deprecation warning: the --gcp-zone flag (BBL_GCP_ZONE) is now ignored."))
-					})
-				})
-			})
-
-			Describe("deprecated commands", func() {
-				Context("when the command is bosh-deployment-vars", func() {
-					It("prints a warning", func() {
-						appConfig, err := c.Bootstrap([]string{"bbl", "bosh-deployment-vars"})
-						Expect(err).NotTo(HaveOccurred())
-
-						Expect(appConfig.Command).To(Equal("bosh-deployment-vars"))
-						Expect(fakeLogger.PrintlnCall.Receives.Message).To(Equal(`Deprecation warning: the bosh-deployment-vars command has been deprecated and will be removed in bbl v6.0.0. The bosh deployment vars are stored in the vars directory.`))
-					})
-				})
-
-				Context("when the command is jumpbox-deployment-vars", func() {
-					It("prints a warning", func() {
-						appConfig, err := c.Bootstrap([]string{"bbl", "jumpbox-deployment-vars"})
-						Expect(err).NotTo(HaveOccurred())
-
-						Expect(appConfig.Command).To(Equal("jumpbox-deployment-vars"))
-						Expect(fakeLogger.PrintlnCall.Receives.Message).To(Equal(`Deprecation warning: the jumpbox-deployment-vars command has been deprecated and will be removed in bbl v6.0.0. The jumpbox deployment vars are stored in the vars directory.`))
-					})
-				})
-
-				Context("when the command is create-lbs", func() {
-					It("prints a warning", func() {
-						appConfig, err := c.Bootstrap([]string{"bbl", "create-lbs"})
-						Expect(err).NotTo(HaveOccurred())
-
-						Expect(appConfig.Command).To(Equal("create-lbs"))
-						Expect(fakeLogger.PrintlnCall.Receives.Message).To(Equal(`Deprecation warning: the create-lbs command has been deprecated and will be removed in bbl v6.0.0. Create load balancers with "plan" or "up" e.g. "bbl up --lb-type <type> --lb-cert <cert> --lb-key <key>" or "bbl up --lb-type <type> --lb-cert <cert> --lb-key <key>".`))
-					})
-				})
-
-				Context("when the command is delete-lbs", func() {
-					It("prints a warning", func() {
-						appConfig, err := c.Bootstrap([]string{"bbl", "delete-lbs"})
-						Expect(err).NotTo(HaveOccurred())
-
-						Expect(appConfig.Command).To(Equal("delete-lbs"))
-						Expect(fakeLogger.PrintlnCall.Receives.Message).To(Equal(`Deprecation warning: the delete-lbs command has been deprecated and will be removed in bbl v6.0.0. Delete load balancers by calling "plan" without the lb flags.`))
-					})
-				})
 			})
 		})
 
@@ -1025,8 +951,7 @@ var _ = Describe("LoadState", func() {
 				Context("when no configuration is passed in", func() {
 					It("returns state with existing configuration", func() {
 						appConfig, err := c.Bootstrap([]string{
-							"bbl",
-							"create-lbs",
+							"bbl", "up",
 						})
 						Expect(err).NotTo(HaveOccurred())
 
@@ -1042,8 +967,7 @@ var _ = Describe("LoadState", func() {
 				Context("when valid matching configuration is passed in", func() {
 					It("returns state with existing configuration", func() {
 						appConfig, err := c.Bootstrap([]string{
-							"bbl",
-							"create-lbs",
+							"bbl", "up",
 							"--iaas", "azure",
 							"--azure-client-id", "client-id",
 							"--azure-client-secret", "client-secret",
@@ -1063,7 +987,7 @@ var _ = Describe("LoadState", func() {
 
 						Expect(err).To(MatchError(expected))
 					},
-					Entry("returns an error for non-matching IAAS", []string{"bbl", "create-lbs", "--iaas", "aws"},
+					Entry("returns an error for non-matching IAAS", []string{"bbl", "up", "--iaas", "aws"},
 						"The iaas type cannot be changed for an existing environment. The current iaas type is azure."),
 				)
 			})

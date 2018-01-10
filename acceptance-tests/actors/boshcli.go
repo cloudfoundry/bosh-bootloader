@@ -10,10 +10,12 @@ func NewBOSHCLI() BOSHCLI {
 	return BOSHCLI{}
 }
 
-func (BOSHCLI) DirectorExists(address, caCertPath string) (bool, error) {
+func (BOSHCLI) DirectorExists(address, username, password, caCertPath string) (bool, error) {
 	_, err := exec.Command("bosh",
 		"--ca-cert", caCertPath,
 		"-e", address,
+		"--client", username,
+		"--client-secret", password,
 		"env",
 	).Output()
 

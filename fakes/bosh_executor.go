@@ -24,7 +24,7 @@ type BOSHExecutor struct {
 		}
 	}
 
-	JumpboxCreateEnvArgsCall struct {
+	PlanJumpboxCall struct {
 		CallCount int
 		Receives  struct {
 			InterpolateInput bosh.InterpolateInput
@@ -34,7 +34,7 @@ type BOSHExecutor struct {
 		}
 	}
 
-	DirectorCreateEnvArgsCall struct {
+	PlanDirectorCall struct {
 		CallCount int
 		Receives  struct {
 			InterpolateInput bosh.InterpolateInput
@@ -84,18 +84,18 @@ func (e *BOSHExecutor) DeleteEnv(input bosh.DeleteEnvInput) error {
 	return e.DeleteEnvCall.Returns.Error
 }
 
-func (e *BOSHExecutor) JumpboxCreateEnvArgs(input bosh.InterpolateInput) error {
-	e.JumpboxCreateEnvArgsCall.CallCount++
-	e.JumpboxCreateEnvArgsCall.Receives.InterpolateInput = input
+func (e *BOSHExecutor) PlanJumpbox(input bosh.InterpolateInput) error {
+	e.PlanJumpboxCall.CallCount++
+	e.PlanJumpboxCall.Receives.InterpolateInput = input
 
-	return e.JumpboxCreateEnvArgsCall.Returns.Error
+	return e.PlanJumpboxCall.Returns.Error
 }
 
-func (e *BOSHExecutor) DirectorCreateEnvArgs(input bosh.InterpolateInput) error {
-	e.DirectorCreateEnvArgsCall.CallCount++
-	e.DirectorCreateEnvArgsCall.Receives.InterpolateInput = input
+func (e *BOSHExecutor) PlanDirector(input bosh.InterpolateInput) error {
+	e.PlanDirectorCall.CallCount++
+	e.PlanDirectorCall.Receives.InterpolateInput = input
 
-	return e.DirectorCreateEnvArgsCall.Returns.Error
+	return e.PlanDirectorCall.Returns.Error
 }
 
 func (e *BOSHExecutor) Version() (string, error) {

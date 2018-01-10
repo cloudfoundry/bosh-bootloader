@@ -59,17 +59,6 @@ var _ = Describe("Destroy", func() {
 			})
 		})
 
-		Context("when the BOSH version is less than 2.0.24 and there is no director", func() {
-			It("does not fast fail", func() {
-				boshManager.VersionCall.Returns.Version = "1.9.0"
-				err := destroy.CheckFastFails([]string{"--skip-if-missing"}, storage.State{
-					IAAS:       "aws",
-					NoDirector: true,
-				})
-				Expect(err).NotTo(HaveOccurred())
-			})
-		})
-
 		Context("if validating terraform version returns an error", func() {
 			BeforeEach(func() {
 				terraformManager.ValidateVersionCall.Returns.Error = errors.New("failed to validate version")
@@ -337,11 +326,7 @@ var _ = Describe("Destroy", func() {
 				stdin.Write([]byte("yes\n"))
 				state := storage.State{
 					EnvID: "unintialized",
-					BOSH: storage.BOSH{
-						UserOpsFile: "some ops file contents",
-					},
-					NoDirector: true,
-					LB:         storage.LB{Type: "lb-type", Domain: "lb-domain"},
+					LB:    storage.LB{Type: "lb-type", Domain: "lb-domain"},
 				}
 				err := destroy.Execute([]string{}, state)
 				Expect(err).NotTo(HaveOccurred())
@@ -351,10 +336,8 @@ var _ = Describe("Destroy", func() {
 				Expect(plan.InitializePlanCall.CallCount).To(Equal(1))
 				Expect(plan.InitializePlanCall.Receives.State).To(Equal(state))
 				Expect(plan.InitializePlanCall.Receives.Plan).To(Equal(commands.PlanConfig{
-					Name:       "unintialized",
-					OpsFile:    "some ops file contents",
-					NoDirector: true,
-					LB:         storage.LB{Type: "lb-type", Domain: "lb-domain"},
+					Name: "unintialized",
+					LB:   storage.LB{Type: "lb-type", Domain: "lb-domain"},
 				}))
 			})
 		})
