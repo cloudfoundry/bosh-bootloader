@@ -1,11 +1,11 @@
 resource "google_compute_firewall" "bosh-director-lite" {
-  name = "${var.env_id}-bosh-director-lite"
+  name    = "${var.env_id}-bosh-director-lite"
   network = "${google_compute_network.bbl-network.name}"
 
   source_ranges = ["0.0.0.0/0"]
 
   allow {
-    ports = ["80", "443", "2222"]
+    ports    = ["80", "443", "2222"]
     protocol = "tcp"
   }
 
@@ -23,9 +23,9 @@ resource "google_compute_route" "bosh-lite-vms" {
   next_hop_ip = "10.0.0.6"
   priority    = 1
 
-  depends_on  = ["google_compute_subnetwork.bbl-subnet"]
+  depends_on = ["google_compute_subnetwork.bbl-subnet"]
 }
 
-output "director_external_ip" {
-    value = "${google_compute_address.bosh-director-ip.address}"
+output "director__external_ip" {
+  value = "${google_compute_address.bosh-director-ip.address}"
 }
