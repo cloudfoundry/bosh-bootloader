@@ -105,17 +105,17 @@ resource "google_compute_firewall" "internal" {
 }
 
 locals {
-  network = "${google_compute_network.bbl-network.name}"
-  subnetwork = "${google_compute_subnetwork.bbl-subnet.name}"
-  director_name = "bosh-${var.env_id}"
-  internal_cidr = "${cidrsubnet(var.subnet_cidr, 8, 0)}"
-  internal_gw = "${cidrhost(local.internal_cidr, 1)}"
-  jumpbox_internal_ip = "${cidrhost(local.internal_cidr, 5)}"
-  director_internal_ip = "${cidrhost(local.internal_cidr, 6)}"
-  bosh_open_tag_name = "${google_compute_firewall.bosh-open.name}"
+  network                = "${google_compute_network.bbl-network.name}"
+  subnetwork             = "${google_compute_subnetwork.bbl-subnet.name}"
+  director_name          = "bosh-${var.env_id}"
+  internal_cidr          = "${cidrsubnet(var.subnet_cidr, 8, 0)}"
+  internal_gw            = "${cidrhost(local.internal_cidr, 1)}"
+  jumpbox_internal_ip    = "${cidrhost(local.internal_cidr, 5)}"
+  director_internal_ip   = "${cidrhost(local.internal_cidr, 6)}"
+  bosh_open_tag_name     = "${google_compute_firewall.bosh-open.name}"
   bosh_director_tag_name = "${google_compute_firewall.bosh-director.name}"
-  jumpbox_tag_name = "${var.env_id}-jumpbox"
-  internal_tag_name = "${google_compute_firewall.internal.name}"
+  jumpbox_tag_name       = "${var.env_id}-jumpbox"
+  internal_tag_name      = "${google_compute_firewall.internal.name}"
 }
 
 output "network" {
@@ -149,13 +149,13 @@ output "director__internal_ip" {
 output "jumpbox__tags" {
   value = [
     "${local.bosh_open_tag_name}",
-    "${local.jumpbox_tag_name}"
+    "${local.jumpbox_tag_name}",
   ]
 }
 
 output "director__tags" {
   value = [
-    "${local.bosh_director_tag_name}"
+    "${local.bosh_director_tag_name}",
   ]
 }
 
