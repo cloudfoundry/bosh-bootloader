@@ -243,7 +243,7 @@ func (m *Manager) CreateDirector(state storage.State, terraformOutputs terraform
 		parsedInternalCIDR, _ = ParseCIDRBlock(internalCIDR)
 	}
 
-	internalIP := terraformOutputs.GetString("bosh_director_internal_ip")
+	internalIP := terraformOutputs.GetString("director__internal_ip")
 	if internalIP == "" {
 		internalIP = parsedInternalCIDR.GetNthIP(6).String()
 	}

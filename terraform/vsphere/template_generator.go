@@ -15,7 +15,7 @@ func NewTemplateGenerator() TemplateGenerator {
 func (t TemplateGenerator) Generate(state storage.State) string {
 	return fmt.Sprintf(`
 variable "env_id" {}
-variable "bosh_director_internal_ip" {}
+variable "director__internal_ip" {}
 variable "internal_gw" {}
 variable "jumpbox_ip" {}
 variable "network_name" {}
@@ -35,7 +35,7 @@ output "vcenter_cluster" { value = "${var.vcenter_cluster}" }
 output "jumpbox_url" { value = "${var.jumpbox_ip}:22" }
 output "external_ip" { value = "${var.jumpbox_ip}" }
 output "jumpbox__internal_ip" { value = "${var.jumpbox_ip}" }
-output "director__internal_ip" { value = "${var.bosh_director_internal_ip}" }
+output "director__internal_ip" { value = "${var.director__internal_ip}" }
 output "director_name" { value = "bosh-${var.env_id}" }
 output "vcenter_disks" { value = "${var.network_name}" }
 output "vcenter_vms" { value = "${var.network_name}_vms" }
