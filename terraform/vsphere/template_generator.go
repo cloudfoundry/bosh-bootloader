@@ -15,7 +15,7 @@ func NewTemplateGenerator() TemplateGenerator {
 func (t TemplateGenerator) Generate(state storage.State) string {
 	return fmt.Sprintf(`
 variable "env_id" {}
-variable "director__internal_ip" {}
+variable "director_internal_ip" {}
 variable "internal_gw" {}
 variable "jumpbox_ip" {}
 variable "network_name" {}
