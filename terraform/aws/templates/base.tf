@@ -523,16 +523,6 @@ resource "aws_route_table_association" "route_internal_subnets" {
   route_table_id = "${aws_route_table.internal_route_table.id}"
 }
 
-resource "aws_vpc" "vpc" {
-  cidr_block           = "${var.vpc_cidr}"
-  instance_tenancy     = "default"
-  enable_dns_hostnames = true
-
-  tags {
-    Name = "${var.env_id}-vpc"
-  }
-}
-
 resource "aws_internet_gateway" "ig" {
   vpc_id = "${local.vpc_id}"
 }
@@ -662,7 +652,7 @@ output "az" {
 }
 
 output "vpc_id" {
-  value = "${aws_vpc.vpc.id}"
+  value = "${local.vpc_id}"
 }
 
 output "region" {
