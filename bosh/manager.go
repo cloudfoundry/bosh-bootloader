@@ -362,12 +362,6 @@ func (m *Manager) GetJumpboxDeploymentVars(state storage.State, terraformOutputs
 		}
 		allOutputs[k] = v
 	}
-	// <<<<<<< HEAD
-	// =======
-	// 	delete(allOutputs, "external_ip")
-	// 	delete(allOutputs, "internal_gw")
-	// 	allOutputs["internal_cidr"] = internalCIDR
-	// >>>>>>> master
 
 	vars := sharedDeploymentVarsYAML{
 		TerraformOutputs: allOutputs,
@@ -419,12 +413,6 @@ func (m *Manager) GetDirectorDeploymentVars(state storage.State, terraformOutput
 		}
 		allOutputs[k] = v
 	}
-	// <<<<<<< HEAD
-	// =======
-	// 	delete(allOutputs, "external_ip")
-	// 	delete(allOutputs, "internal_gw")
-	// 	allOutputs["internal_cidr"] = internalCIDR
-	// >>>>>>> master
 
 	vars := sharedDeploymentVarsYAML{
 		TerraformOutputs: allOutputs,
