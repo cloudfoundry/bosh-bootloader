@@ -20,6 +20,7 @@ var _ = Describe("Migrator", func() {
 		incomingState     storage.State
 		stateDir          string
 		varsDir           string
+		terraformDir      string
 		oldBblDir         string
 		oldCloudConfigDir string
 		cloudConfigDir    string
@@ -40,6 +41,10 @@ var _ = Describe("Migrator", func() {
 
 		varsDir = filepath.Join(stateDir, "vars")
 		err = os.Mkdir(varsDir, os.ModePerm)
+		Expect(err).NotTo(HaveOccurred())
+
+		terraformDir = filepath.Join(stateDir, "terraform")
+		err = os.Mkdir(terraformDir, os.ModePerm)
 		Expect(err).NotTo(HaveOccurred())
 
 		oldBblDir = filepath.Join(stateDir, ".bbl")
@@ -407,6 +412,31 @@ var _ = Describe("Migrator", func() {
 						_, err := migrator.MigrateTerraformState(incomingState, varsDir)
 						Expect(err).To(MatchError(ContainSubstring("migrating terraform state: ")))
 					})
+				})
+			})
+		})
+	})
+
+	Describe("MigrateTerraformTemplate", func() {
+		Context("when a template.tf file exists", func() {
+			It("writes the TFState to the tfstate file", func() {
+				err := migrator.MigrateTerraformTemplate(terraformDir)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(fileIO.RenameCall.Receives.Oldpath).To(Equal(filepath.Join(terraformDir, "template.tf")))
+				Expect(fileIO.RenameCall.Receives.Newpath).To(Equal(filepath.Join(terraformDir, "bbl-template.tf")))
+			})
+		})
+
+		Context("failure cases", func() {
+			Context("when the template file cannot be renamed", func() {
+				BeforeEach(func() {
+					fileIO.RenameCall.Returns.Error = errors.New("apple")
+				})
+
+				It("returns an error", func() {
+					err := migrator.MigrateTerraformTemplate(terraformDir)
+					Expect(err).To(MatchError(ContainSubstring("migrating terraform template: ")))
 				})
 			})
 		})

@@ -52,7 +52,7 @@ var _ = Describe("plan", func() {
 			filepath.Join(stateDir, "bosh-deployment", "uaa.yml"),
 			filepath.Join(stateDir, "jumpbox-deployment", "jumpbox.yml"),
 			filepath.Join(stateDir, "jumpbox-deployment", iaas, "cpi.yml"),
-			filepath.Join(stateDir, "terraform", "template.tf"),
+			filepath.Join(stateDir, "terraform", "bbl-template.tf"),
 		}
 
 		By("verifying that artifacts are created in state dir", func() {
