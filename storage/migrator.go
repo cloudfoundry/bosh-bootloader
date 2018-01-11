@@ -12,6 +12,7 @@ import (
 type store interface {
 	Set(state State) error
 	GetVarsDir() (string, error)
+	GetTerraformDir() (string, error)
 	GetOldBblDir() string
 	GetCloudConfigDir() (string, error)
 }
@@ -36,6 +37,16 @@ func (m Migrator) Migrate(state State) (State, error) {
 	}
 
 	state, err = m.MigrateTerraformState(state, varsDir)
+	if err != nil {
+		return State{}, err
+	}
+
+	terraformDir, err := m.store.GetTerraformDir()
+	if err != nil {
+		return State{}, fmt.Errorf("migrating terraform: %s", err)
+	}
+
+	err = m.MigrateTerraformTemplate(terraformDir)
 	if err != nil {
 		return State{}, err
 	}
@@ -92,6 +103,18 @@ func (m Migrator) MigrateTerraformState(state State, varsDir string) (State, err
 		state.TFState = ""
 	}
 	return state, nil
+}
+
+func (m Migrator) MigrateTerraformTemplate(terraformDir string) error {
+	oldTemplatePath := filepath.Join(terraformDir, "template.tf")
+	_, err := m.fileIO.Stat(oldTemplatePath)
+	if err == nil {
+		err = m.fileIO.Rename(oldTemplatePath, filepath.Join(terraformDir, "bbl-template.tf"))
+		if err != nil {
+			return fmt.Errorf("migrating terraform template: %s", err)
+		}
+	}
+	return nil
 }
 
 func (m Migrator) migrateStateFile(state map[string]interface{}, deployment, varsDir string) error {

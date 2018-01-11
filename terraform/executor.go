@@ -54,7 +54,7 @@ func (e Executor) Init(template string, input map[string]interface{}) error {
 		return fmt.Errorf("Get terraform dir: %s", err)
 	}
 
-	err = writeFile(filepath.Join(terraformDir, "template.tf"), []byte(template), storage.StateMode)
+	err = writeFile(filepath.Join(terraformDir, "bbl-template.tf"), []byte(template), storage.StateMode)
 	if err != nil {
 		return fmt.Errorf("Write terraform template: %s", err)
 	}

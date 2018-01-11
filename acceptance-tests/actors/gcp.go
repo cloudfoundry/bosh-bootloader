@@ -85,5 +85,5 @@ func (g gcpLBHelper) VerifyBblLBOutput(stdout string) {
 	Expect(stdout).To(MatchRegexp("CF SSH Proxy LB:.*"))
 	Expect(stdout).To(MatchRegexp("CF TCP Router LB:.*"))
 	Expect(stdout).To(MatchRegexp("CF WebSocket LB:.*"))
-	Expect(stdout).To(MatchRegexp("CF CredHub LB:.*"))
+	Expect(stdout).To(MatchRegexp("CF Credhub LB:.*"))
 }

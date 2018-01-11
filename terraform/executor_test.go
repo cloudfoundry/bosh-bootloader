@@ -85,7 +85,7 @@ var _ = Describe("Executor", func() {
 
 			Expect(stateStore.GetTerraformDirCall.CallCount).To(Equal(1))
 
-			terraformTemplate, err := ioutil.ReadFile(filepath.Join(terraformDir, "template.tf"))
+			terraformTemplate, err := ioutil.ReadFile(filepath.Join(terraformDir, "bbl-template.tf"))
 			Expect(err).NotTo(HaveOccurred())
 			Expect(string(terraformTemplate)).To(Equal("some-template"))
 
@@ -130,7 +130,7 @@ var _ = Describe("Executor", func() {
 			Context("when writing the template file fails", func() {
 				BeforeEach(func() {
 					terraform.SetWriteFile(func(file string, data []byte, perm os.FileMode) error {
-						if file == filepath.Join(terraformDir, "template.tf") {
+						if file == filepath.Join(terraformDir, "bbl-template.tf") {
 							return errors.New("pear")
 						}
 						return nil
