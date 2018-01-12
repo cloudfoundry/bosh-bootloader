@@ -26,6 +26,10 @@ resource "google_compute_route" "bosh-lite-vms" {
   depends_on = ["google_compute_subnetwork.bbl-subnet"]
 }
 
-output "director__external_ip" {
+output "external_ip" {
   value = "${google_compute_address.bosh-director-ip.address}"
+}
+
+output "jumpbox__external_ip" {
+  value = "${google_compute_address.jumpbox-ip.address}"
 }
