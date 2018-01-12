@@ -19,9 +19,10 @@ type Manager struct {
 
 type executor interface {
 	Version() (string, error)
-	Destroy(credentials map[string]string) error
-	Init(terraformTemplate string, inputs map[string]interface{}) error
+	Setup(terraformTemplate string, inputs map[string]interface{}) error
+	Init() error
 	Apply(credentials map[string]string) error
+	Destroy(credentials map[string]string) error
 	Outputs() (map[string]interface{}, error)
 	Output(string) (string, error)
 }
@@ -86,8 +87,12 @@ func (m Manager) Init(bblState storage.State) error {
 		return fmt.Errorf("Input generator generate: %s", err)
 	}
 
-	err = m.executor.Init(template, input)
-	if err != nil {
+	if err := m.executor.Setup(template, input); err != nil {
+		return fmt.Errorf("Executor setup: %s", err)
+	}
+
+	m.logger.Step("terraform init")
+	if err := m.executor.Init(); err != nil {
 		return fmt.Errorf("Executor init: %s", err)
 	}
 
@@ -95,6 +100,11 @@ func (m Manager) Init(bblState storage.State) error {
 }
 
 func (m Manager) Apply(bblState storage.State) (storage.State, error) {
+	m.logger.Step("terraform init")
+	if err := m.executor.Init(); err != nil {
+		return bblState, fmt.Errorf("Executor init: %s", err)
+	}
+
 	m.logger.Step("terraform apply")
 	err := m.executor.Apply(m.inputGenerator.Credentials(bblState))
 
@@ -116,8 +126,8 @@ func (m Manager) Destroy(bblState storage.State) (storage.State, error) {
 	if err != nil {
 		return bblState, fmt.Errorf("Executor destroy: %s", err)
 	}
-	m.logger.Step("finished destroying infrastructure")
 
+	m.logger.Step("finished destroying infrastructure")
 	return bblState, nil
 }
 

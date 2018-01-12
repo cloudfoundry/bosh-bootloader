@@ -79,8 +79,40 @@ var _ = Describe("Executor", func() {
 	})
 
 	Describe("Init", func() {
-		It("writes existing terraform state and runs terraform init", func() {
-			err := executor.Init("some-template", input)
+		It("runs terraform init", func() {
+			err := executor.Init()
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(cmd.RunCall.CallCount).To(Equal(1))
+			Expect(cmd.RunCall.Receives.Args).To(Equal([]string{"init"}))
+		})
+
+		Context("when getting terraform dir fails", func() {
+			BeforeEach(func() {
+				stateStore.GetTerraformDirCall.Returns.Error = errors.New("canteloupe")
+			})
+
+			It("returns an error", func() {
+				err := executor.Init()
+				Expect(err).To(MatchError("Get terraform dir: canteloupe"))
+			})
+		})
+
+		Context("when terraform init fails", func() {
+			BeforeEach(func() {
+				cmd.RunCall.Returns.Errors = []error{errors.New("guava")}
+			})
+
+			It("returns an error", func() {
+				err := executor.Init()
+				Expect(err).To(MatchError("Run terraform init: guava"))
+			})
+		})
+	})
+
+	Describe("Setup", func() {
+		It("writes existing terraform state", func() {
+			err := executor.Setup("some-template", input)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(stateStore.GetTerraformDirCall.CallCount).To(Equal(1))
@@ -103,10 +135,12 @@ var _ = Describe("Executor", func() {
 			Expect(string(terraformVars)).To(ContainSubstring(`system_domain="some-domain"`))
 			Expect(string(terraformVars)).To(ContainSubstring(`ssl_certificate="-----BEGIN CERTIFICATE-----\nsome-certificate\n-----END CERTIFICATE-----\n"`))
 			Expect(string(terraformVars)).To(ContainSubstring(`ssl_certificate_private_key="-----BEGIN RSA PRIVATE KEY-----\nsome-private-key\n-----END RSA PRIVATE KEY-----\n"`))
+
+			Expect(cmd.RunCall.CallCount).To(Equal(0))
 		})
 
 		It("writes a .gitignore file to .terraform so that plugin binaries are not committed", func() {
-			err := executor.Init("some-template", input)
+			err := executor.Setup("some-template", input)
 			Expect(err).NotTo(HaveOccurred())
 
 			contents, err := ioutil.ReadFile(filepath.Join(terraformDir, ".terraform", ".gitignore"))
@@ -122,7 +156,7 @@ var _ = Describe("Executor", func() {
 				})
 
 				It("returns an error", func() {
-					err := executor.Init("some-template", input)
+					err := executor.Setup("some-template", input)
 					Expect(err).To(MatchError("Get terraform dir: canteloupe"))
 				})
 			})
@@ -138,7 +172,7 @@ var _ = Describe("Executor", func() {
 				})
 
 				It("returns an error", func() {
-					err := executor.Init("some-template", input)
+					err := executor.Setup("some-template", input)
 					Expect(err).To(MatchError("Write terraform template: pear"))
 				})
 			})
@@ -149,7 +183,7 @@ var _ = Describe("Executor", func() {
 				})
 
 				It("returns an error", func() {
-					err := executor.Init("", input)
+					err := executor.Setup("", input)
 					Expect(err).To(MatchError("Get vars dir: coconut"))
 				})
 			})
@@ -165,7 +199,7 @@ var _ = Describe("Executor", func() {
 				})
 
 				It("returns an error", func() {
-					err := executor.Init("some-template", input)
+					err := executor.Setup("some-template", input)
 					Expect(err).To(MatchError("Write terraform vars: apple"))
 				})
 			})
@@ -177,7 +211,7 @@ var _ = Describe("Executor", func() {
 				})
 
 				It("returns an error", func() {
-					err := executor.Init("some-template", input)
+					err := executor.Setup("some-template", input)
 					Expect(err.Error()).To(ContainSubstring("Create .terraform directory: "))
 				})
 			})
@@ -193,19 +227,8 @@ var _ = Describe("Executor", func() {
 				})
 
 				It("returns an error", func() {
-					err := executor.Init("some-template", input)
+					err := executor.Setup("some-template", input)
 					Expect(err).To(MatchError("Write .gitignore for terraform binaries: nectarine"))
-				})
-			})
-
-			Context("when terraform init fails", func() {
-				BeforeEach(func() {
-					cmd.RunCall.Returns.Errors = []error{errors.New("guava")}
-				})
-
-				It("returns an error", func() {
-					err := executor.Init("some-template", input)
-					Expect(err).To(MatchError("Run terraform init: guava"))
 				})
 			})
 		})
@@ -218,6 +241,9 @@ var _ = Describe("Executor", func() {
 
 			err = ioutil.WriteFile(tfVarsPath, []byte("some-tfvars"), storage.StateMode)
 			Expect(err).NotTo(HaveOccurred())
+
+			err = executor.Init() // We need to run the terraform init command.
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		AfterEach(func() {
@@ -225,10 +251,7 @@ var _ = Describe("Executor", func() {
 		})
 
 		It("runs terraform apply", func() {
-			err := executor.Init("some-template", input) // We need to run the terraform init command.
-			Expect(err).NotTo(HaveOccurred())
-
-			err = executor.Apply(map[string]string{
+			err := executor.Apply(map[string]string{
 				"some-cert": "some-cert-value",
 			})
 			Expect(err).NotTo(HaveOccurred())
@@ -267,13 +290,11 @@ var _ = Describe("Executor", func() {
 			})
 
 			It("passes all user provided tfvars files to the run command in alphabetic order", func() {
-				err := executor.Init("some-template", input) // We need to run the terraform init command.
-				Expect(err).NotTo(HaveOccurred())
-
-				err = executor.Apply(map[string]string{
+				err := executor.Apply(map[string]string{
 					"some-cert": "some-cert-value",
 				})
 				Expect(err).NotTo(HaveOccurred())
+
 				Expect(cmd.RunCall.Receives.Args).To(ConsistOf([]string{
 					"apply",
 					"--auto-approve",
@@ -292,7 +313,6 @@ var _ = Describe("Executor", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				cmd.RunCall.Returns.Errors = []error{nil, errors.New("the-executor-error")}
-				_ = executor.Init("some-template", input)
 			})
 
 			It("returns the error", func() {
@@ -324,7 +344,9 @@ var _ = Describe("Executor", func() {
 			err := ioutil.WriteFile(tfStatePath, []byte("some-tf-state"), storage.StateMode)
 			Expect(err).NotTo(HaveOccurred())
 
-			err = executor.Init("some-template", input) // We need to run the terraform init command.
+			err = executor.Init()
+			Expect(err).NotTo(HaveOccurred())
+			err = executor.Setup("some-template", input)
 			Expect(err).NotTo(HaveOccurred())
 		})
 

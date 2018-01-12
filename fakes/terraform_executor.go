@@ -12,13 +12,20 @@ type TerraformExecutor struct {
 			IsInitialized bool
 		}
 	}
-	InitCall struct {
+	SetupCall struct {
 		CallCount int
 		Receives  struct {
 			Template string
 			Inputs   map[string]interface{}
 		}
 		Returns struct {
+			Error error
+		}
+	}
+	InitCall struct {
+		CallCount int
+		Receives  struct{}
+		Returns   struct {
 			Error error
 		}
 	}
@@ -73,10 +80,15 @@ func (t *TerraformExecutor) IsInitialized() bool {
 	return t.IsInitializedCall.Returns.IsInitialized
 }
 
-func (t *TerraformExecutor) Init(template string, inputs map[string]interface{}) error {
+func (t *TerraformExecutor) Setup(template string, inputs map[string]interface{}) error {
+	t.SetupCall.CallCount++
+	t.SetupCall.Receives.Template = template
+	t.SetupCall.Receives.Inputs = inputs
+	return t.SetupCall.Returns.Error
+}
+
+func (t *TerraformExecutor) Init() error {
 	t.InitCall.CallCount++
-	t.InitCall.Receives.Template = template
-	t.InitCall.Receives.Inputs = inputs
 	return t.InitCall.Returns.Error
 }
 

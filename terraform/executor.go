@@ -48,7 +48,7 @@ func NewExecutor(cmd terraformCmd, stateStore stateStore, debug bool) Executor {
 	}
 }
 
-func (e Executor) Init(template string, input map[string]interface{}) error {
+func (e Executor) Setup(template string, input map[string]interface{}) error {
 	terraformDir, err := e.stateStore.GetTerraformDir()
 	if err != nil {
 		return fmt.Errorf("Get terraform dir: %s", err)
@@ -79,11 +79,6 @@ func (e Executor) Init(template string, input map[string]interface{}) error {
 	err = writeFile(tfVarsPath, []byte(formattedVars), storage.StateMode)
 	if err != nil {
 		return fmt.Errorf("Write terraform vars: %s", err)
-	}
-
-	err = e.cmd.Run(os.Stdout, terraformDir, []string{"init"}, e.debug)
-	if err != nil {
-		return fmt.Errorf("Run terraform init: %s", err)
 	}
 
 	return nil
@@ -149,6 +144,20 @@ func (e Executor) runTFCommand(args []string) error {
 		} else {
 			return fmt.Errorf(redactedError)
 		}
+	}
+
+	return nil
+}
+
+func (e Executor) Init() error {
+	terraformDir, err := e.stateStore.GetTerraformDir()
+	if err != nil {
+		return fmt.Errorf("Get terraform dir: %s", err)
+	}
+
+	err = e.cmd.Run(os.Stdout, terraformDir, []string{"init"}, e.debug)
+	if err != nil {
+		return fmt.Errorf("Run terraform init: %s", err)
 	}
 
 	return nil

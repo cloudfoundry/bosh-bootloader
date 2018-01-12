@@ -67,8 +67,9 @@ var _ = Describe("Manager", func() {
 			Expect(inputGenerator.GenerateCall.Receives.State).To(Equal(incomingState))
 
 			Expect(executor.InitCall.CallCount).To(Equal(1))
-			Expect(executor.InitCall.Receives.Template).To(Equal(string("some-terraform-template")))
-			Expect(executor.InitCall.Receives.Inputs).To(Equal(map[string]interface{}{
+			Expect(executor.SetupCall.CallCount).To(Equal(1))
+			Expect(executor.SetupCall.Receives.Template).To(Equal(string("some-terraform-template")))
+			Expect(executor.SetupCall.Receives.Inputs).To(Equal(map[string]interface{}{
 				"env_id":        incomingState.EnvID,
 				"project_id":    incomingState.GCP.ProjectID,
 				"region":        incomingState.GCP.Region,
@@ -80,6 +81,7 @@ var _ = Describe("Manager", func() {
 			Expect(logger.StepCall.Messages).To(gomegamatchers.ContainSequence([]string{
 				"generating terraform template",
 				"generating terraform variables",
+				"terraform init",
 			}))
 		})
 
@@ -103,6 +105,17 @@ var _ = Describe("Manager", func() {
 				It("returns the bblState with latest terraform output and a ManagerError", func() {
 					err := manager.Init(incomingState)
 					Expect(err).To(MatchError("Executor init: canteloupe"))
+				})
+			})
+
+			Context("when the executor setup causes an executor error", func() {
+				BeforeEach(func() {
+					executor.SetupCall.Returns.Error = errors.New("canteloupe")
+				})
+
+				It("returns the bbl state with latest terraform output and a ManagerError", func() {
+					err := manager.Init(incomingState)
+					Expect(err).To(MatchError("Executor setup: canteloupe"))
 				})
 			})
 		})
