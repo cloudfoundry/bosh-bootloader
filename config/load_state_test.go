@@ -668,8 +668,8 @@ var _ = Describe("LoadState", func() {
 
 							Expect(err).NotTo(HaveOccurred())
 							Expect(appConfig.State.GCP.ProjectID).To(Equal("some-project-id"))
-							Expect(fakeFileIO.WriteFileCall.Receives.Filename).To(Equal(tempFile.Name()))
-							Expect(fakeFileIO.WriteFileCall.Receives.Contents).To(Equal([]byte(serviceAccountKey)))
+							Expect(fakeFileIO.WriteFileCall.Receives[0].Filename).To(Equal(tempFile.Name()))
+							Expect(fakeFileIO.WriteFileCall.Receives[0].Contents).To(Equal([]byte(serviceAccountKey)))
 						})
 					})
 
@@ -757,7 +757,7 @@ var _ = Describe("LoadState", func() {
 								"--gcp-region", "some-region",
 							}
 							fakeFileIO.StatCall.Returns.Error = errors.New("no file found")
-							fakeFileIO.WriteFileCall.Returns.Error = errors.New("coconut")
+							fakeFileIO.WriteFileCall.Returns = []fakes.WriteFileReturn{{Error: errors.New("coconut")}}
 						})
 
 						It("returns an error", func() {

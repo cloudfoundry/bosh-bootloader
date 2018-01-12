@@ -12,16 +12,17 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/cloudfoundry/bosh-bootloader/fileio"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
-var writeFile func(file string, data []byte, perm os.FileMode) error = ioutil.WriteFile
 var readFile func(filename string) ([]byte, error) = ioutil.ReadFile
 var redactedError = "Some output has been redacted, use `bbl latest-error` to see it or run again with --debug for additional debug output"
 
 type Executor struct {
 	cmd        terraformCmd
 	stateStore stateStore
+	fileio     fileio.FileWriter
 	debug      bool
 }
 
@@ -40,10 +41,11 @@ type stateStore interface {
 	GetVarsDir() (string, error)
 }
 
-func NewExecutor(cmd terraformCmd, stateStore stateStore, debug bool) Executor {
+func NewExecutor(cmd terraformCmd, stateStore stateStore, fileio fileio.FileWriter, debug bool) Executor {
 	return Executor{
 		cmd:        cmd,
 		stateStore: stateStore,
+		fileio:     fileio,
 		debug:      debug,
 	}
 }
@@ -54,7 +56,7 @@ func (e Executor) Setup(template string, input map[string]interface{}) error {
 		return fmt.Errorf("Get terraform dir: %s", err)
 	}
 
-	err = writeFile(filepath.Join(terraformDir, "bbl-template.tf"), []byte(template), storage.StateMode)
+	err = e.fileio.WriteFile(filepath.Join(terraformDir, "bbl-template.tf"), []byte(template), storage.StateMode)
 	if err != nil {
 		return fmt.Errorf("Write terraform template: %s", err)
 	}
@@ -69,14 +71,12 @@ func (e Executor) Setup(template string, input map[string]interface{}) error {
 		return fmt.Errorf("Create .terraform directory: %s", err)
 	}
 
-	err = writeFile(filepath.Join(terraformDir, ".terraform", ".gitignore"), []byte("*\n"), storage.StateMode)
+	err = e.fileio.WriteFile(filepath.Join(terraformDir, ".terraform", ".gitignore"), []byte("*\n"), storage.StateMode)
 	if err != nil {
 		return fmt.Errorf("Write .gitignore for terraform binaries: %s", err)
 	}
 
-	tfVarsPath := filepath.Join(varsDir, "bbl.tfvars")
-	formattedVars := formatVars(input)
-	err = writeFile(tfVarsPath, []byte(formattedVars), storage.StateMode)
+	err = e.fileio.WriteFile(filepath.Join(varsDir, "bbl.tfvars"), []byte(formatVars(input)), storage.StateMode)
 	if err != nil {
 		return fmt.Errorf("Write terraform vars: %s", err)
 	}

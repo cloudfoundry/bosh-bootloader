@@ -20,6 +20,7 @@ var _ = Describe("Executor", func() {
 	var (
 		cmd        *fakes.TerraformCmd
 		stateStore *fakes.StateStore
+		fileIO     *fakes.FileIO
 		executor   terraform.Executor
 
 		tempDir      string
@@ -37,8 +38,9 @@ var _ = Describe("Executor", func() {
 	BeforeEach(func() {
 		cmd = &fakes.TerraformCmd{}
 		stateStore = &fakes.StateStore{}
+		fileIO = &fakes.FileIO{}
 
-		executor = terraform.NewExecutor(cmd, stateStore, true)
+		executor = terraform.NewExecutor(cmd, stateStore, fileIO, true)
 
 		var err error
 		tempDir, err = ioutil.TempDir("", "")
@@ -60,22 +62,11 @@ var _ = Describe("Executor", func() {
 		relativeVarsPath, err = filepath.Rel(terraformDir, tfVarsPath)
 		Expect(err).NotTo(HaveOccurred())
 
-		input = map[string]interface{}{
-			"availability_zones":          []string{"z1", "z2"},
-			"env_id":                      "some-env-id",
-			"project_id":                  "some-project-id",
-			"region":                      "some-region",
-			"zone":                        "some-zone",
-			"credentials":                 "some/credentials/path",
-			"system_domain":               "some-domain",
-			"ssl_certificate":             "-----BEGIN CERTIFICATE-----\nsome-certificate\n-----END CERTIFICATE-----\n",
-			"ssl_certificate_private_key": "-----BEGIN RSA PRIVATE KEY-----\nsome-private-key\n-----END RSA PRIVATE KEY-----\n",
-		}
+		input = map[string]interface{}{"project_id": "some-project-id"}
 	})
 
 	AfterEach(func() {
 		terraform.ResetReadFile()
-		terraform.ResetWriteFile()
 	})
 
 	Describe("Init", func() {
@@ -117,36 +108,16 @@ var _ = Describe("Executor", func() {
 
 			Expect(stateStore.GetTerraformDirCall.CallCount).To(Equal(1))
 
-			terraformTemplate, err := ioutil.ReadFile(filepath.Join(terraformDir, "bbl-template.tf"))
-			Expect(err).NotTo(HaveOccurred())
-			Expect(string(terraformTemplate)).To(Equal("some-template"))
+			Expect(fileIO.WriteFileCall.Receives[0].Filename).To(Equal(filepath.Join(terraformDir, "bbl-template.tf")))
+			Expect(string(fileIO.WriteFileCall.Receives[0].Contents)).To(Equal("some-template"))
 
-			_, err = os.Stat(tfStatePath)
-			Expect(err).To(HaveOccurred())
+			Expect(fileIO.WriteFileCall.Receives[1].Filename).To(Equal(filepath.Join(terraformDir, ".terraform", ".gitignore")))
+			Expect(string(fileIO.WriteFileCall.Receives[1].Contents)).To(Equal("*\n"))
 
-			terraformVars, err := ioutil.ReadFile(tfVarsPath)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(string(terraformVars)).To(ContainSubstring(`availability_zones=["z1","z2"]`))
-			Expect(string(terraformVars)).To(ContainSubstring(`env_id="some-env-id"`))
-			Expect(string(terraformVars)).To(ContainSubstring(`project_id="some-project-id"`))
-			Expect(string(terraformVars)).To(ContainSubstring(`region="some-region"`))
-			Expect(string(terraformVars)).To(ContainSubstring(`zone="some-zone"`))
-			Expect(string(terraformVars)).To(ContainSubstring(`credentials="some/credentials/path"`))
-			Expect(string(terraformVars)).To(ContainSubstring(`system_domain="some-domain"`))
-			Expect(string(terraformVars)).To(ContainSubstring(`ssl_certificate="-----BEGIN CERTIFICATE-----\nsome-certificate\n-----END CERTIFICATE-----\n"`))
-			Expect(string(terraformVars)).To(ContainSubstring(`ssl_certificate_private_key="-----BEGIN RSA PRIVATE KEY-----\nsome-private-key\n-----END RSA PRIVATE KEY-----\n"`))
+			Expect(fileIO.WriteFileCall.Receives[2].Filename).To(Equal(tfVarsPath))
+			Expect(string(fileIO.WriteFileCall.Receives[2].Contents)).To(ContainSubstring(`project_id="some-project-id"`))
 
 			Expect(cmd.RunCall.CallCount).To(Equal(0))
-		})
-
-		It("writes a .gitignore file to .terraform so that plugin binaries are not committed", func() {
-			err := executor.Setup("some-template", input)
-			Expect(err).NotTo(HaveOccurred())
-
-			contents, err := ioutil.ReadFile(filepath.Join(terraformDir, ".terraform", ".gitignore"))
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(string(contents)).To(Equal("*\n"))
 		})
 
 		Context("when an error occurs", func() {
@@ -163,12 +134,7 @@ var _ = Describe("Executor", func() {
 
 			Context("when writing the template file fails", func() {
 				BeforeEach(func() {
-					terraform.SetWriteFile(func(file string, data []byte, perm os.FileMode) error {
-						if file == filepath.Join(terraformDir, "bbl-template.tf") {
-							return errors.New("pear")
-						}
-						return nil
-					})
+					fileIO.WriteFileCall.Returns = []fakes.WriteFileReturn{{Error: errors.New("pear")}}
 				})
 
 				It("returns an error", func() {
@@ -190,12 +156,7 @@ var _ = Describe("Executor", func() {
 
 			Context("when writing the vars file fails", func() {
 				BeforeEach(func() {
-					terraform.SetWriteFile(func(file string, data []byte, perm os.FileMode) error {
-						if file == tfVarsPath {
-							return errors.New("apple")
-						}
-						return nil
-					})
+					fileIO.WriteFileCall.Returns = []fakes.WriteFileReturn{{}, {}, {Error: errors.New("apple")}}
 				})
 
 				It("returns an error", func() {
@@ -218,12 +179,7 @@ var _ = Describe("Executor", func() {
 
 			Context("when writing the .gitignore for terraform binaries fails", func() {
 				BeforeEach(func() {
-					terraform.SetWriteFile(func(file string, data []byte, perm os.FileMode) error {
-						if file == filepath.Join(terraformDir, ".terraform", ".gitignore") {
-							return errors.New("nectarine")
-						}
-						return nil
-					})
+					fileIO.WriteFileCall.Returns = []fakes.WriteFileReturn{{}, {Error: errors.New("nectarine")}}
 				})
 
 				It("returns an error", func() {
@@ -322,7 +278,7 @@ var _ = Describe("Executor", func() {
 
 			Context("and --debug is false", func() {
 				BeforeEach(func() {
-					executor = terraform.NewExecutor(cmd, stateStore, false)
+					executor = terraform.NewExecutor(cmd, stateStore, fileIO, false)
 				})
 
 				It("returns a redacted error message", func() {
@@ -344,9 +300,10 @@ var _ = Describe("Executor", func() {
 			err := ioutil.WriteFile(tfStatePath, []byte("some-tf-state"), storage.StateMode)
 			Expect(err).NotTo(HaveOccurred())
 
-			err = executor.Init()
+			err = ioutil.WriteFile(tfVarsPath, []byte("some-tf-vars"), storage.StateMode)
 			Expect(err).NotTo(HaveOccurred())
-			err = executor.Setup("some-template", input)
+
+			err = executor.Init()
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -404,7 +361,7 @@ var _ = Describe("Executor", func() {
 
 				Context("when --debug is false", func() {
 					BeforeEach(func() {
-						executor = terraform.NewExecutor(cmd, stateStore, false)
+						executor = terraform.NewExecutor(cmd, stateStore, fileIO, false)
 						err := ioutil.WriteFile(tfStatePath, []byte("some-tf-state"), storage.StateMode)
 						Expect(err).NotTo(HaveOccurred())
 
