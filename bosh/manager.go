@@ -359,6 +359,7 @@ func (m *Manager) GetJumpboxDeploymentVars(state storage.State, terraformOutputs
 	for k, v := range terraformOutputs.Map {
 		if strings.HasPrefix(k, "jumpbox__") {
 			k = strings.Replace(k, "jumpbox__", "", 1)
+			delete(terraformOutputs.Map, k)
 		}
 		allOutputs[k] = v
 	}
@@ -410,6 +411,7 @@ func (m *Manager) GetDirectorDeploymentVars(state storage.State, terraformOutput
 	for k, v := range terraformOutputs.Map {
 		if strings.HasPrefix(k, "director__") {
 			k = strings.Replace(k, "director__", "", 1)
+			delete(terraformOutputs.Map, k)
 		}
 		allOutputs[k] = v
 	}

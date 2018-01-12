@@ -614,6 +614,7 @@ jumpbox_url: some-jumpbox-url
 			vars := boshManager.GetJumpboxDeploymentVars(incomingState, terraform.Outputs{Map: map[string]interface{}{
 				"some-key":     "some-value",
 				"jumpbox__key": "some-jumpbox-value",
+				"key":          "some-ignored-value",
 			}})
 			Expect(vars).To(MatchYAML(`---
 some-key: some-value
@@ -734,6 +735,7 @@ vcenter_password: some-password
 			vars := boshManager.GetDirectorDeploymentVars(incomingState, terraform.Outputs{Map: map[string]interface{}{
 				"some-key":      "some-value",
 				"director__key": "some-director-value",
+				"key":           "some-ignored-value",
 			}})
 			Expect(vars).To(MatchYAML(`---
 some-key: some-value
