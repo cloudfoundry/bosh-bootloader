@@ -357,9 +357,15 @@ func (m *Manager) DeleteJumpbox(state storage.State, terraformOutputs terraform.
 func (m *Manager) GetJumpboxDeploymentVars(state storage.State, terraformOutputs terraform.Outputs) string {
 	allOutputs := map[string]interface{}{}
 	for k, v := range terraformOutputs.Map {
+		if strings.HasPrefix(k, "director__") || strings.HasPrefix(k, "jumpbox__") {
+			break
+		}
+		allOutputs[k] = v
+	}
+
+	for k, v := range terraformOutputs.Map {
 		if strings.HasPrefix(k, "jumpbox__") {
 			k = strings.Replace(k, "jumpbox__", "", 1)
-			delete(terraformOutputs.Map, k)
 		}
 		allOutputs[k] = v
 	}
@@ -409,9 +415,15 @@ func mustMarshal(yamlStruct interface{}) []byte {
 func (m *Manager) GetDirectorDeploymentVars(state storage.State, terraformOutputs terraform.Outputs) string {
 	allOutputs := map[string]interface{}{}
 	for k, v := range terraformOutputs.Map {
+		if strings.HasPrefix(k, "director__") || strings.HasPrefix(k, "jumpbox__") {
+			break
+		}
+		allOutputs[k] = v
+	}
+
+	for k, v := range terraformOutputs.Map {
 		if strings.HasPrefix(k, "director__") {
 			k = strings.Replace(k, "director__", "", 1)
-			delete(terraformOutputs.Map, k)
 		}
 		allOutputs[k] = v
 	}
