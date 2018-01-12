@@ -358,7 +358,7 @@ func (m *Manager) GetJumpboxDeploymentVars(state storage.State, terraformOutputs
 	allOutputs := map[string]interface{}{}
 	for k, v := range terraformOutputs.Map {
 		if strings.HasPrefix(k, "director__") || strings.HasPrefix(k, "jumpbox__") {
-			break
+			continue
 		}
 		allOutputs[k] = v
 	}
@@ -366,8 +366,8 @@ func (m *Manager) GetJumpboxDeploymentVars(state storage.State, terraformOutputs
 	for k, v := range terraformOutputs.Map {
 		if strings.HasPrefix(k, "jumpbox__") {
 			k = strings.Replace(k, "jumpbox__", "", 1)
+			allOutputs[k] = v
 		}
-		allOutputs[k] = v
 	}
 
 	vars := sharedDeploymentVarsYAML{
@@ -416,7 +416,7 @@ func (m *Manager) GetDirectorDeploymentVars(state storage.State, terraformOutput
 	allOutputs := map[string]interface{}{}
 	for k, v := range terraformOutputs.Map {
 		if strings.HasPrefix(k, "director__") || strings.HasPrefix(k, "jumpbox__") {
-			break
+			continue
 		}
 		allOutputs[k] = v
 	}
@@ -424,8 +424,8 @@ func (m *Manager) GetDirectorDeploymentVars(state storage.State, terraformOutput
 	for k, v := range terraformOutputs.Map {
 		if strings.HasPrefix(k, "director__") {
 			k = strings.Replace(k, "director__", "", 1)
+			allOutputs[k] = v
 		}
-		allOutputs[k] = v
 	}
 
 	vars := sharedDeploymentVarsYAML{
