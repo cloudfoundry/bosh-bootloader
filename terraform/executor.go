@@ -16,7 +16,6 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
-var readFile func(filename string) ([]byte, error) = ioutil.ReadFile
 var redactedError = "Some output has been redacted, use `bbl latest-error` to see it or run again with --debug for additional debug output"
 
 type Executor struct {

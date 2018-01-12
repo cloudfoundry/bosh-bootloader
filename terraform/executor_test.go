@@ -65,10 +65,6 @@ var _ = Describe("Executor", func() {
 		input = map[string]interface{}{"project_id": "some-project-id"}
 	})
 
-	AfterEach(func() {
-		terraform.ResetReadFile()
-	})
-
 	Describe("Init", func() {
 		It("runs terraform init", func() {
 			err := executor.Init()
@@ -239,6 +235,7 @@ var _ = Describe("Executor", func() {
 				Expect(err).NotTo(HaveOccurred())
 				err = ioutil.WriteFile(filepath.Join(varsDir, "not-a-tfvars-file.yml"), []byte("definitely not a tfvars file"), storage.StateMode)
 				Expect(err).NotTo(HaveOccurred())
+
 				relativeUserProvidedVarsPathA, err = filepath.Rel(terraformDir, userProvidedVarsPathA)
 				Expect(err).NotTo(HaveOccurred())
 				relativeUserProvidedVarsPathC, err = filepath.Rel(terraformDir, userProvidedVarsPathC)
