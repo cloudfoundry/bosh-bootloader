@@ -1,12 +1,16 @@
 package fakes
 
-import "github.com/cloudfoundry/bosh-bootloader/bosh"
+import (
+	"github.com/cloudfoundry/bosh-bootloader/bosh"
+	"github.com/cloudfoundry/bosh-bootloader/storage"
+)
 
 type BOSHExecutor struct {
 	CreateEnvCall struct {
 		CallCount int
 		Receives  struct {
-			Input bosh.CreateEnvInput
+			DirInput bosh.DirInput
+			State    storage.State
 		}
 		Returns struct {
 			Variables string
@@ -17,7 +21,8 @@ type BOSHExecutor struct {
 	DeleteEnvCall struct {
 		CallCount int
 		Receives  struct {
-			Input bosh.DeleteEnvInput
+			DirInput bosh.DirInput
+			State    storage.State
 		}
 		Returns struct {
 			Error error
@@ -27,7 +32,9 @@ type BOSHExecutor struct {
 	PlanJumpboxCall struct {
 		CallCount int
 		Receives  struct {
-			InterpolateInput bosh.InterpolateInput
+			DirInput      bosh.DirInput
+			DeploymentDir string
+			Iaas          string
 		}
 		Returns struct {
 			Error error
@@ -37,7 +44,9 @@ type BOSHExecutor struct {
 	PlanDirectorCall struct {
 		CallCount int
 		Receives  struct {
-			InterpolateInput bosh.InterpolateInput
+			DirInput      bosh.DirInput
+			DeploymentDir string
+			Iaas          string
 		}
 		Returns struct {
 			Error error
@@ -47,7 +56,8 @@ type BOSHExecutor struct {
 	WriteDeploymentVarsCall struct {
 		CallCount int
 		Receives  struct {
-			Input bosh.CreateEnvInput
+			DirInput       bosh.DirInput
+			DeploymentVars string
 		}
 		Returns struct {
 			Error error
@@ -63,37 +73,44 @@ type BOSHExecutor struct {
 	}
 }
 
-func (e *BOSHExecutor) WriteDeploymentVars(input bosh.CreateEnvInput) error {
+func (e *BOSHExecutor) WriteDeploymentVars(input bosh.DirInput, deploymentVars string) error {
 	e.WriteDeploymentVarsCall.CallCount++
-	e.WriteDeploymentVarsCall.Receives.Input = input
+	e.WriteDeploymentVarsCall.Receives.DirInput = input
+	e.WriteDeploymentVarsCall.Receives.DeploymentVars = deploymentVars
 
 	return e.WriteDeploymentVarsCall.Returns.Error
 }
 
-func (e *BOSHExecutor) CreateEnv(input bosh.CreateEnvInput) (string, error) {
+func (e *BOSHExecutor) CreateEnv(input bosh.DirInput, state storage.State) (string, error) {
 	e.CreateEnvCall.CallCount++
-	e.CreateEnvCall.Receives.Input = input
+	e.CreateEnvCall.Receives.DirInput = input
+	e.CreateEnvCall.Receives.State = state
 
 	return e.CreateEnvCall.Returns.Variables, e.CreateEnvCall.Returns.Error
 }
 
-func (e *BOSHExecutor) DeleteEnv(input bosh.DeleteEnvInput) error {
+func (e *BOSHExecutor) DeleteEnv(input bosh.DirInput, state storage.State) error {
 	e.DeleteEnvCall.CallCount++
-	e.DeleteEnvCall.Receives.Input = input
+	e.DeleteEnvCall.Receives.DirInput = input
+	e.DeleteEnvCall.Receives.State = state
 
 	return e.DeleteEnvCall.Returns.Error
 }
 
-func (e *BOSHExecutor) PlanJumpbox(input bosh.InterpolateInput) error {
+func (e *BOSHExecutor) PlanJumpbox(input bosh.DirInput, deploymentDir, iaas string) error {
 	e.PlanJumpboxCall.CallCount++
-	e.PlanJumpboxCall.Receives.InterpolateInput = input
+	e.PlanJumpboxCall.Receives.DirInput = input
+	e.PlanJumpboxCall.Receives.DeploymentDir = deploymentDir
+	e.PlanJumpboxCall.Receives.Iaas = iaas
 
 	return e.PlanJumpboxCall.Returns.Error
 }
 
-func (e *BOSHExecutor) PlanDirector(input bosh.InterpolateInput) error {
+func (e *BOSHExecutor) PlanDirector(input bosh.DirInput, deploymentDir, iaas string) error {
 	e.PlanDirectorCall.CallCount++
-	e.PlanDirectorCall.Receives.InterpolateInput = input
+	e.PlanDirectorCall.Receives.DirInput = input
+	e.PlanDirectorCall.Receives.DeploymentDir = deploymentDir
+	e.PlanDirectorCall.Receives.Iaas = iaas
 
 	return e.PlanDirectorCall.Returns.Error
 }

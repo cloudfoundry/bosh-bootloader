@@ -27,8 +27,9 @@ var _ = Describe("Executor", func() {
 			relativeDeploymentDir string
 			relativeVarsDir       string
 
-			executor         bosh.Executor
-			interpolateInput bosh.InterpolateInput
+			executor bosh.Executor
+			dirInput bosh.DirInput
+			state    storage.State
 		)
 
 		BeforeEach(func() {
@@ -54,18 +55,20 @@ var _ = Describe("Executor", func() {
 			relativeDeploymentDir = "${BBL_STATE_DIR}/deployment"
 			relativeVarsDir = "${BBL_STATE_DIR}/vars"
 
-			interpolateInput = bosh.InterpolateInput{
-				IAAS:          "aws",
-				DeploymentDir: deploymentDir,
-				VarsDir:       varsDir,
-				StateDir:      stateDir,
+			dirInput = bosh.DirInput{
+				VarsDir:  varsDir,
+				StateDir: stateDir,
+			}
+
+			state = storage.State{
+				IAAS: "aws",
 			}
 
 			executor = bosh.NewExecutor(cmd, ioutil.ReadFile, json.Unmarshal, json.Marshal, ioutil.WriteFile)
 		})
 
 		It("writes bosh-deployment assets to the deployment dir", func() {
-			err := executor.PlanJumpbox(interpolateInput)
+			err := executor.PlanJumpbox(dirInput, deploymentDir, "aws")
 			Expect(err).NotTo(HaveOccurred())
 
 			simplePath := filepath.Join(deploymentDir, "no-external-ip.yml")
@@ -84,7 +87,7 @@ var _ = Describe("Executor", func() {
 		})
 
 		It("generates create-env args for jumpbox", func() {
-			err := executor.PlanJumpbox(interpolateInput)
+			err := executor.PlanJumpbox(dirInput, deploymentDir, "aws")
 			Expect(err).NotTo(HaveOccurred())
 
 			expectedArgs := []string{
@@ -124,12 +127,8 @@ var _ = Describe("Executor", func() {
 		})
 
 		Context("when the iaas is vsphere", func() {
-			BeforeEach(func() {
-				interpolateInput.IAAS = "vsphere"
-			})
-
 			It("generates create-env args for jumpbox", func() {
-				err := executor.PlanJumpbox(interpolateInput)
+				err := executor.PlanJumpbox(dirInput, deploymentDir, "vsphere")
 				Expect(err).NotTo(HaveOccurred())
 
 				expectedArgs := []string{
@@ -178,8 +177,9 @@ var _ = Describe("Executor", func() {
 			relativeVarsDir       string
 			relativeStateDir      string
 
-			executor         bosh.Executor
-			interpolateInput bosh.InterpolateInput
+			executor bosh.Executor
+			dirInput bosh.DirInput
+			state    storage.State
 		)
 
 		BeforeEach(func() {
@@ -202,18 +202,20 @@ var _ = Describe("Executor", func() {
 			relativeVarsDir = "${BBL_STATE_DIR}/vars"
 			relativeStateDir = "${BBL_STATE_DIR}"
 
-			interpolateInput = bosh.InterpolateInput{
-				DeploymentDir: deploymentDir,
-				StateDir:      stateDir,
-				VarsDir:       varsDir,
+			dirInput = bosh.DirInput{
+				VarsDir:  varsDir,
+				StateDir: stateDir,
+			}
+
+			state = storage.State{
+				IAAS: "aws",
 			}
 
 			executor = bosh.NewExecutor(cmd, ioutil.ReadFile, json.Unmarshal, json.Marshal, ioutil.WriteFile)
 		})
 
 		It("writes bosh-deployment assets to the deployment dir", func() {
-			interpolateInput.IAAS = "warden"
-			err := executor.PlanDirector(interpolateInput)
+			err := executor.PlanDirector(dirInput, deploymentDir, "warden")
 			Expect(err).NotTo(HaveOccurred())
 
 			simplePath := filepath.Join(deploymentDir, "LICENSE")
@@ -232,12 +234,9 @@ var _ = Describe("Executor", func() {
 		})
 
 		Context("aws", func() {
-			var awsInterpolateInput bosh.InterpolateInput
 			var expectedArgs []string
 
 			BeforeEach(func() {
-				awsInterpolateInput = interpolateInput
-				awsInterpolateInput.IAAS = "aws"
 				expectedArgs = []string{
 					filepath.Join(relativeDeploymentDir, "bosh.yml"),
 					"--state", filepath.Join(relativeVarsDir, "bosh-state.json"),
@@ -254,11 +253,11 @@ var _ = Describe("Executor", func() {
 			})
 
 			It("writes create-director.sh and delete-director.sh", func() {
-				behavesLikePlan(expectedArgs, cmd, executor, awsInterpolateInput, stateDir)
+				behavesLikePlan(expectedArgs, cmd, executor, dirInput, deploymentDir, "aws", stateDir)
 			})
 
 			It("writes aws-specific ops files", func() {
-				err := executor.PlanDirector(awsInterpolateInput)
+				err := executor.PlanDirector(dirInput, deploymentDir, "aws")
 				Expect(err).NotTo(HaveOccurred())
 
 				ipOpsFile := filepath.Join(stateDir, "bbl-ops-files", "aws", "bosh-director-ephemeral-ip-ops.yml")
@@ -285,12 +284,9 @@ var _ = Describe("Executor", func() {
 		})
 
 		Context("gcp", func() {
-			var gcpInterpolateInput bosh.InterpolateInput
 			var expectedArgs []string
 
 			BeforeEach(func() {
-				gcpInterpolateInput = interpolateInput
-				gcpInterpolateInput.IAAS = "gcp"
 				expectedArgs = []string{
 					filepath.Join(relativeDeploymentDir, "bosh.yml"),
 					"--state", filepath.Join(relativeVarsDir, "bosh-state.json"),
@@ -305,11 +301,11 @@ var _ = Describe("Executor", func() {
 			})
 
 			It("writes create-director.sh and delete-director.sh", func() {
-				behavesLikePlan(expectedArgs, cmd, executor, gcpInterpolateInput, stateDir)
+				behavesLikePlan(expectedArgs, cmd, executor, dirInput, deploymentDir, "gcp", stateDir)
 			})
 
 			It("writes gcp-specific ops files", func() {
-				err := executor.PlanDirector(gcpInterpolateInput)
+				err := executor.PlanDirector(dirInput, deploymentDir, "gcp")
 				Expect(err).NotTo(HaveOccurred())
 
 				ipOpsFile := filepath.Join(stateDir, "bbl-ops-files", "gcp", "bosh-director-ephemeral-ip-ops.yml")
@@ -325,12 +321,9 @@ var _ = Describe("Executor", func() {
 		})
 
 		Context("azure", func() {
-			var azureInterpolateInput bosh.InterpolateInput
 			var expectedArgs []string
 
 			BeforeEach(func() {
-				azureInterpolateInput = interpolateInput
-				azureInterpolateInput.IAAS = "azure"
 				expectedArgs = []string{
 					filepath.Join(relativeDeploymentDir, "bosh.yml"),
 					"--state", filepath.Join(relativeVarsDir, "bosh-state.json"),
@@ -344,17 +337,14 @@ var _ = Describe("Executor", func() {
 			})
 
 			It("writes create-director.sh and delete-director.sh", func() {
-				behavesLikePlan(expectedArgs, cmd, executor, azureInterpolateInput, stateDir)
+				behavesLikePlan(expectedArgs, cmd, executor, dirInput, deploymentDir, "azure", stateDir)
 			})
 		})
 
 		Context("vsphere", func() {
-			var input bosh.InterpolateInput
 			var expectedArgs []string
 
 			BeforeEach(func() {
-				input = interpolateInput
-				input.IAAS = "vsphere"
 				expectedArgs = []string{
 					filepath.Join(relativeDeploymentDir, "bosh.yml"),
 					"--state", filepath.Join(relativeVarsDir, "bosh-state.json"),
@@ -369,16 +359,16 @@ var _ = Describe("Executor", func() {
 			})
 
 			It("writes create-director.sh and delete-director.sh", func() {
-				behavesLikePlan(expectedArgs, cmd, executor, input, stateDir)
+				behavesLikePlan(expectedArgs, cmd, executor, dirInput, deploymentDir, "vsphere", stateDir)
 			})
 		})
 	})
 
 	Describe("WriteDeploymentVars", func() {
 		var (
-			executor       bosh.Executor
-			varsDir        string
-			createEnvInput bosh.CreateEnvInput
+			executor bosh.Executor
+			varsDir  string
+			dirInput bosh.DirInput
 		)
 
 		BeforeEach(func() {
@@ -391,17 +381,16 @@ var _ = Describe("Executor", func() {
 
 			executor = bosh.NewExecutor(cmd, ioutil.ReadFile, json.Unmarshal, json.Marshal, ioutil.WriteFile)
 
-			createEnvInput = bosh.CreateEnvInput{
-				DeploymentVars: "some-deployment-vars",
-				Deployment:     "some-deployment",
-				StateDir:       stateDir,
-				VarsDir:        varsDir,
+			dirInput = bosh.DirInput{
+				Deployment: "some-deployment",
+				StateDir:   stateDir,
+				VarsDir:    varsDir,
 			}
 		})
 
 		It("writes the deployment vars yml file", func() {
 			By("writing deployment vars to the state dir", func() {
-				err := executor.WriteDeploymentVars(createEnvInput)
+				err := executor.WriteDeploymentVars(dirInput, "some-deployment-vars")
 				Expect(err).NotTo(HaveOccurred())
 				deploymentVars, err := ioutil.ReadFile(filepath.Join(varsDir, "some-deployment-vars-file.yml"))
 				Expect(err).NotTo(HaveOccurred())
@@ -420,7 +409,8 @@ var _ = Describe("Executor", func() {
 			varsDir       string
 			stateDir      string
 
-			createEnvInput bosh.CreateEnvInput
+			dirInput bosh.DirInput
+			state    storage.State
 		)
 
 		BeforeEach(func() {
@@ -434,11 +424,14 @@ var _ = Describe("Executor", func() {
 
 			executor = bosh.NewExecutor(cmd, ioutil.ReadFile, json.Unmarshal, json.Marshal, ioutil.WriteFile)
 
-			createEnvInput = bosh.CreateEnvInput{
-				DeploymentVars: "some-deployment-vars",
-				Deployment:     "some-deployment",
-				StateDir:       stateDir,
-				VarsDir:        varsDir,
+			dirInput = bosh.DirInput{
+				Deployment: "some-deployment",
+				StateDir:   stateDir,
+				VarsDir:    varsDir,
+			}
+
+			state = storage.State{
+				IAAS: "some-iaas",
 			}
 
 			createEnvPath = filepath.Join(stateDir, "create-some-deployment.sh")
@@ -463,7 +456,7 @@ var _ = Describe("Executor", func() {
 			})
 
 			It("runs the create-env-override.sh script", func() {
-				vars, err := executor.CreateEnv(createEnvInput)
+				vars, err := executor.CreateEnv(dirInput, state)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(cmd.RunCallCount()).To(Equal(0))
@@ -472,7 +465,7 @@ var _ = Describe("Executor", func() {
 		})
 
 		It("runs the create-env script and returns the resulting vars-store contents", func() {
-			vars, err := executor.CreateEnv(createEnvInput)
+			vars, err := executor.CreateEnv(dirInput, state)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(cmd.RunCallCount()).To(Equal(0))
@@ -491,7 +484,7 @@ var _ = Describe("Executor", func() {
 			})
 
 			It("returns an error", func() {
-				vars, err := executor.CreateEnv(createEnvInput)
+				vars, err := executor.CreateEnv(dirInput, state)
 				Expect(err).To(MatchError("Run bosh create-env: exit status 1"))
 				Expect(vars).To(Equal(""))
 			})
@@ -507,7 +500,8 @@ var _ = Describe("Executor", func() {
 			varsDir       string
 			stateDir      string
 
-			deleteEnvInput bosh.DeleteEnvInput
+			dirInput bosh.DirInput
+			state    storage.State
 		)
 
 		BeforeEach(func() {
@@ -520,10 +514,14 @@ var _ = Describe("Executor", func() {
 
 			executor = bosh.NewExecutor(cmd, ioutil.ReadFile, json.Unmarshal, json.Marshal, ioutil.WriteFile)
 
-			deleteEnvInput = bosh.DeleteEnvInput{
+			dirInput = bosh.DirInput{
 				Deployment: "some-deployment",
 				VarsDir:    varsDir,
 				StateDir:   stateDir,
+			}
+
+			state = storage.State{
+				IAAS: "some-iaas",
 			}
 
 			deleteEnvPath = filepath.Join(stateDir, "delete-some-deployment.sh")
@@ -551,7 +549,7 @@ var _ = Describe("Executor", func() {
 			})
 
 			It("runs the delete-env-override.sh script", func() {
-				err := executor.DeleteEnv(deleteEnvInput)
+				err := executor.DeleteEnv(dirInput, state)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(cmd.RunCallCount()).To(Equal(0))
@@ -563,7 +561,7 @@ var _ = Describe("Executor", func() {
 		})
 
 		It("deletes a bosh environment with the delete-env script", func() {
-			err := executor.DeleteEnv(deleteEnvInput)
+			err := executor.DeleteEnv(dirInput, state)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(cmd.RunCallCount()).To(Equal(0))
@@ -581,7 +579,7 @@ var _ = Describe("Executor", func() {
 			})
 
 			It("returns an error", func() {
-				err := executor.DeleteEnv(deleteEnvInput)
+				err := executor.DeleteEnv(dirInput, state)
 				Expect(err).To(MatchError("Run bosh delete-env: exit status 1"))
 			})
 		})
@@ -661,13 +659,13 @@ func formatScript(command string, stateDir string, args []string) string {
 	return fmt.Sprintf("%s\n", script[:len(script)-2])
 }
 
-func behavesLikePlan(expectedArgs []string, cmd *fakes.BOSHCommand, executor bosh.Executor, input bosh.InterpolateInput, stateDir string) {
+func behavesLikePlan(expectedArgs []string, cmd *fakes.BOSHCommand, executor bosh.Executor, input bosh.DirInput, deploymentDir, iaas, stateDir string) {
 	cmd.RunStub = func(stdout io.Writer, workingDirectory string, args []string) error {
 		stdout.Write([]byte("some-manifest"))
 		return nil
 	}
 
-	err := executor.PlanDirector(input)
+	err := executor.PlanDirector(input, deploymentDir, iaas)
 	Expect(err).NotTo(HaveOccurred())
 	Expect(cmd.RunCallCount()).To(Equal(0))
 

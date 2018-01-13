@@ -22,21 +22,7 @@ type Executor struct {
 	writeFile     func(string, []byte, os.FileMode) error
 }
 
-type InterpolateInput struct {
-	DeploymentDir string
-	StateDir      string
-	VarsDir       string
-	IAAS          string
-}
-
-type CreateEnvInput struct {
-	StateDir       string
-	VarsDir        string
-	Deployment     string
-	DeploymentVars string
-}
-
-type DeleteEnvInput struct {
+type DirInput struct {
 	StateDir   string
 	VarsDir    string
 	Deployment string
@@ -87,8 +73,8 @@ func (e Executor) getSetupFiles(sourcePath, destPath string) []setupFile {
 	return files
 }
 
-func (e Executor) PlanJumpbox(input InterpolateInput) error {
-	setupFiles := e.getSetupFiles(jumpboxDeploymentRepo, input.DeploymentDir)
+func (e Executor) PlanJumpbox(input DirInput, deploymentDir, iaas string) error {
+	setupFiles := e.getSetupFiles(jumpboxDeploymentRepo, deploymentDir)
 
 	for _, f := range setupFiles {
 		os.MkdirAll(filepath.Dir(f.dest), os.ModePerm)
@@ -101,12 +87,12 @@ func (e Executor) PlanJumpbox(input InterpolateInput) error {
 	sharedArgs := []string{
 		"--vars-store", filepath.Join(input.VarsDir, "jumpbox-vars-store.yml"),
 		"--vars-file", filepath.Join(input.VarsDir, "jumpbox-vars-file.yml"),
-		"-o", filepath.Join(input.DeploymentDir, input.IAAS, "cpi.yml"),
+		"-o", filepath.Join(deploymentDir, iaas, "cpi.yml"),
 	}
 
-	if input.IAAS == "vsphere" {
-		sharedArgs = append(sharedArgs, "-o", filepath.Join(input.DeploymentDir, "vsphere", "resource-pool.yml"))
-		vSphereJumpboxNetworkOpsPath := filepath.Join(input.DeploymentDir, "vsphere-jumpbox-network.yml")
+	if iaas == "vsphere" {
+		sharedArgs = append(sharedArgs, "-o", filepath.Join(deploymentDir, "vsphere", "resource-pool.yml"))
+		vSphereJumpboxNetworkOpsPath := filepath.Join(deploymentDir, "vsphere-jumpbox-network.yml")
 		sharedArgs = append(sharedArgs, "-o", vSphereJumpboxNetworkOpsPath)
 		err := e.writeFile(vSphereJumpboxNetworkOpsPath, []byte(VSphereJumpboxNetworkOps), os.ModePerm)
 		if err != nil {
@@ -117,7 +103,7 @@ func (e Executor) PlanJumpbox(input InterpolateInput) error {
 	jumpboxState := filepath.Join(input.VarsDir, "jumpbox-state.json")
 
 	boshArgs := append([]string{
-		filepath.Join(input.DeploymentDir, "jumpbox.yml"),
+		filepath.Join(deploymentDir, "jumpbox.yml"),
 		"--state", jumpboxState,
 	}, sharedArgs...)
 
@@ -143,20 +129,20 @@ func (e Executor) PlanJumpbox(input InterpolateInput) error {
 	return nil
 }
 
-func (e Executor) getDirectorSetupFiles(input InterpolateInput) []setupFile {
-	files := e.getSetupFiles(boshDeploymentRepo, input.DeploymentDir)
+func (e Executor) getDirectorSetupFiles(stateDir, deploymentDir, iaas string) []setupFile {
+	files := e.getSetupFiles(boshDeploymentRepo, deploymentDir)
 
-	statePath := filepath.Join(input.StateDir, "bbl-ops-files", input.IAAS)
-	assetPath := filepath.Join(boshDeploymentRepo, input.IAAS)
+	statePath := filepath.Join(stateDir, "bbl-ops-files", iaas)
+	assetPath := filepath.Join(boshDeploymentRepo, iaas)
 
-	if input.IAAS == "gcp" {
+	if iaas == "gcp" {
 		files = append(files, setupFile{
 			source:   filepath.Join(assetPath, "bosh-director-ephemeral-ip-ops.yml"),
 			dest:     filepath.Join(statePath, "bosh-director-ephemeral-ip-ops.yml"),
 			contents: []byte(GCPBoshDirectorEphemeralIPOps),
 		})
 	}
-	if input.IAAS == "aws" {
+	if iaas == "aws" {
 		files = append(files, setupFile{
 			source:   filepath.Join(assetPath, "bosh-director-ephemeral-ip-ops.yml"),
 			dest:     filepath.Join(statePath, "bosh-director-ephemeral-ip-ops.yml"),
@@ -172,26 +158,26 @@ func (e Executor) getDirectorSetupFiles(input InterpolateInput) []setupFile {
 	return files
 }
 
-func (e Executor) getDirectorOpsFiles(input InterpolateInput) []string {
+func (e Executor) getDirectorOpsFiles(stateDir, deploymentDir, iaas string) []string {
 	files := []string{
-		filepath.Join(input.DeploymentDir, input.IAAS, "cpi.yml"),
-		filepath.Join(input.DeploymentDir, "jumpbox-user.yml"),
-		filepath.Join(input.DeploymentDir, "uaa.yml"),
-		filepath.Join(input.DeploymentDir, "credhub.yml"),
+		filepath.Join(deploymentDir, iaas, "cpi.yml"),
+		filepath.Join(deploymentDir, "jumpbox-user.yml"),
+		filepath.Join(deploymentDir, "uaa.yml"),
+		filepath.Join(deploymentDir, "credhub.yml"),
 	}
-	if input.IAAS == "gcp" {
-		files = append(files, filepath.Join(input.StateDir, "bbl-ops-files", input.IAAS, "bosh-director-ephemeral-ip-ops.yml"))
+	if iaas == "gcp" {
+		files = append(files, filepath.Join(stateDir, "bbl-ops-files", iaas, "bosh-director-ephemeral-ip-ops.yml"))
 	}
-	if input.IAAS == "aws" {
-		files = append(files, filepath.Join(input.StateDir, "bbl-ops-files", input.IAAS, "bosh-director-ephemeral-ip-ops.yml"))
-		files = append(files, filepath.Join(input.DeploymentDir, input.IAAS, "iam-instance-profile.yml"))
-		files = append(files, filepath.Join(input.StateDir, "bbl-ops-files", input.IAAS, "bosh-director-encrypt-disk-ops.yml"))
+	if iaas == "aws" {
+		files = append(files, filepath.Join(stateDir, "bbl-ops-files", iaas, "bosh-director-ephemeral-ip-ops.yml"))
+		files = append(files, filepath.Join(deploymentDir, iaas, "iam-instance-profile.yml"))
+		files = append(files, filepath.Join(stateDir, "bbl-ops-files", iaas, "bosh-director-encrypt-disk-ops.yml"))
 	}
 	return files
 }
 
-func (e Executor) PlanDirector(input InterpolateInput) error {
-	setupFiles := e.getDirectorSetupFiles(input)
+func (e Executor) PlanDirector(input DirInput, deploymentDir, iaas string) error {
+	setupFiles := e.getDirectorSetupFiles(input.StateDir, deploymentDir, iaas)
 
 	for _, f := range setupFiles {
 		if f.source != "" {
@@ -207,12 +193,12 @@ func (e Executor) PlanDirector(input InterpolateInput) error {
 		"--vars-file", filepath.Join(input.VarsDir, "director-vars-file.yml"),
 	}
 
-	for _, f := range e.getDirectorOpsFiles(input) {
+	for _, f := range e.getDirectorOpsFiles(input.StateDir, deploymentDir, iaas) {
 		sharedArgs = append(sharedArgs, "-o", f)
 	}
 
-	if input.IAAS == "vsphere" {
-		sharedArgs = append(sharedArgs, "-o", filepath.Join(input.DeploymentDir, "vsphere", "resource-pool.yml"))
+	if iaas == "vsphere" {
+		sharedArgs = append(sharedArgs, "-o", filepath.Join(deploymentDir, "vsphere", "resource-pool.yml"))
 	}
 
 	boshState := filepath.Join(input.VarsDir, "bosh-state.json")
@@ -223,7 +209,7 @@ func (e Executor) PlanDirector(input InterpolateInput) error {
 	}
 
 	boshArgs := append([]string{
-		filepath.Join(input.DeploymentDir, "bosh.yml"),
+		filepath.Join(deploymentDir, "bosh.yml"),
 		"--state", boshState,
 	}, sharedArgs...)
 
@@ -255,18 +241,18 @@ func formatScript(boshPath, stateDir, command string, args []string) string {
 	return fmt.Sprintf("%s\n", script[:len(script)-2])
 }
 
-func (e Executor) WriteDeploymentVars(createEnvInput CreateEnvInput) error {
-	varsFilePath := filepath.Join(createEnvInput.VarsDir, fmt.Sprintf("%s-vars-file.yml", createEnvInput.Deployment))
-	err := e.writeFile(varsFilePath, []byte(createEnvInput.DeploymentVars), storage.StateMode)
+func (e Executor) WriteDeploymentVars(input DirInput, deploymentVars string) error {
+	varsFilePath := filepath.Join(input.VarsDir, fmt.Sprintf("%s-vars-file.yml", input.Deployment))
+	err := e.writeFile(varsFilePath, []byte(deploymentVars), storage.StateMode)
 	if err != nil {
 		return fmt.Errorf("Write vars file: %s", err) // not tested
 	}
 	return nil
 }
 
-func (e Executor) CreateEnv(createEnvInput CreateEnvInput) (string, error) {
-	os.Setenv("BBL_STATE_DIR", createEnvInput.StateDir)
-	createEnvScript := filepath.Join(createEnvInput.StateDir, fmt.Sprintf("create-%s-override.sh", createEnvInput.Deployment))
+func (e Executor) CreateEnv(input DirInput, state storage.State) (string, error) {
+	os.Setenv("BBL_STATE_DIR", input.StateDir)
+	createEnvScript := filepath.Join(input.StateDir, fmt.Sprintf("create-%s-override.sh", input.Deployment))
 	_, err := os.Stat(createEnvScript)
 	if err != nil {
 		createEnvScript = strings.Replace(createEnvScript, "-override", "", -1)
@@ -281,18 +267,18 @@ func (e Executor) CreateEnv(createEnvInput CreateEnvInput) (string, error) {
 		return "", fmt.Errorf("Run bosh create-env: %s", err)
 	}
 
-	varsStoreFileName := fmt.Sprintf("%s-vars-store.yml", createEnvInput.Deployment)
-	varsStoreContents, err := e.readFile(filepath.Join(createEnvInput.VarsDir, varsStoreFileName))
+	varsStoreFileName := fmt.Sprintf("%s-vars-store.yml", input.Deployment)
+	varsStoreContents, err := e.readFile(filepath.Join(input.VarsDir, varsStoreFileName))
 	if err != nil {
-		return "", fmt.Errorf("Reading vars file for %s deployment: %s", createEnvInput.Deployment, err) // not tested
+		return "", fmt.Errorf("Reading vars file for %s deployment: %s", input.Deployment, err) // not tested
 	}
 
 	return string(varsStoreContents), nil
 }
 
-func (e Executor) DeleteEnv(deleteEnvInput DeleteEnvInput) error {
-	os.Setenv("BBL_STATE_DIR", deleteEnvInput.StateDir)
-	deleteEnvScript := filepath.Join(deleteEnvInput.StateDir, fmt.Sprintf("delete-%s-override.sh", deleteEnvInput.Deployment))
+func (e Executor) DeleteEnv(input DirInput, state storage.State) error {
+	os.Setenv("BBL_STATE_DIR", input.StateDir)
+	deleteEnvScript := filepath.Join(input.StateDir, fmt.Sprintf("delete-%s-override.sh", input.Deployment))
 	_, err := os.Stat(deleteEnvScript)
 	if err != nil {
 		deleteEnvScript = strings.Replace(deleteEnvScript, "-override", "", -1)

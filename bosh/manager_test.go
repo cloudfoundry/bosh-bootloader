@@ -95,9 +95,9 @@ director_ssl:
 			It("Calls PlanDirector", func() {
 				err := boshManager.InitializeDirector(state)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(boshExecutor.PlanDirectorCall.Receives.InterpolateInput.VarsDir).To(Equal("some-bbl-vars-dir"))
-				Expect(boshExecutor.PlanDirectorCall.Receives.InterpolateInput.StateDir).To(Equal("some-state-dir"))
-				Expect(boshExecutor.PlanDirectorCall.Receives.InterpolateInput.DeploymentDir).To(Equal("some-director-deployment-dir"))
+				Expect(boshExecutor.PlanDirectorCall.Receives.DirInput.VarsDir).To(Equal("some-bbl-vars-dir"))
+				Expect(boshExecutor.PlanDirectorCall.Receives.DirInput.StateDir).To(Equal("some-state-dir"))
+				Expect(boshExecutor.PlanDirectorCall.Receives.DeploymentDir).To(Equal("some-director-deployment-dir"))
 				Expect(boshExecutor.PlanJumpboxCall.CallCount).To(Equal(0))
 
 				Expect(boshExecutor.CreateEnvCall.CallCount).To(Equal(0))
@@ -148,20 +148,10 @@ director_ssl:
 
 				Expect(logger.StepCall.Messages).To(gomegamatchers.ContainSequence([]string{"creating bosh director", "created bosh director"}))
 
-				Expect(boshExecutor.CreateEnvCall.Receives.Input.DeploymentVars).To(MatchYAML(`---
-internal_cidr: 10.2.0.0/24
-zone: some-zone
-tags:
-- some-tag
-- some-other-tag
-project_id: some-project-id
-gcp_credentials_json: some-credential-json
-some-key: some-value
-`))
 				Expect(boshExecutor.CreateEnvCall.CallCount).To(Equal(1))
-				Expect(boshExecutor.CreateEnvCall.Receives.Input.Deployment).To(Equal("director"))
-				Expect(boshExecutor.CreateEnvCall.Receives.Input.VarsDir).To(Equal("some-bbl-vars-dir"))
-				Expect(boshExecutor.CreateEnvCall.Receives.Input.StateDir).To(Equal("some-state-dir"))
+				Expect(boshExecutor.CreateEnvCall.Receives.DirInput.Deployment).To(Equal("director"))
+				Expect(boshExecutor.CreateEnvCall.Receives.DirInput.VarsDir).To(Equal("some-bbl-vars-dir"))
+				Expect(boshExecutor.CreateEnvCall.Receives.DirInput.StateDir).To(Equal("some-state-dir"))
 
 				Expect(socks5Proxy.StartCall.CallCount).To(Equal(0))
 
@@ -259,9 +249,9 @@ gcp_credentials_json: some-credential-json
 				err := boshManager.InitializeJumpbox(state)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(boshExecutor.PlanJumpboxCall.Receives.InterpolateInput.DeploymentDir).To(Equal("some-jumpbox-deployment-dir"))
-				Expect(boshExecutor.PlanJumpboxCall.Receives.InterpolateInput.VarsDir).To(Equal("some-bbl-vars-dir"))
-				Expect(boshExecutor.PlanJumpboxCall.Receives.InterpolateInput.StateDir).To(Equal("some-state-dir"))
+				Expect(boshExecutor.PlanJumpboxCall.Receives.DeploymentDir).To(Equal("some-jumpbox-deployment-dir"))
+				Expect(boshExecutor.PlanJumpboxCall.Receives.DirInput.VarsDir).To(Equal("some-bbl-vars-dir"))
+				Expect(boshExecutor.PlanJumpboxCall.Receives.DirInput.StateDir).To(Equal("some-state-dir"))
 			})
 
 			Context("when an error occurs", func() {
@@ -312,17 +302,9 @@ gcp_credentials_json: some-credential-json
 				state, err := boshManager.CreateJumpbox(state, terraformOutputs)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(boshExecutor.CreateEnvCall.Receives.Input.VarsDir).To(Equal("some-bbl-vars-dir"))
-				Expect(boshExecutor.CreateEnvCall.Receives.Input.StateDir).To(Equal("some-state-dir"))
-				Expect(boshExecutor.CreateEnvCall.Receives.Input.Deployment).To(Equal("jumpbox"))
-				Expect(boshExecutor.CreateEnvCall.Receives.Input.DeploymentVars).To(MatchYAML(`
-internal_cidr: 10.0.0.0/24
-zone: some-zone
-project_id: some-project-id
-gcp_credentials_json: some-credential-json
-some-key: some-value
-jumpbox_url: some-jumpbox-url
-`))
+				Expect(boshExecutor.CreateEnvCall.Receives.DirInput.VarsDir).To(Equal("some-bbl-vars-dir"))
+				Expect(boshExecutor.CreateEnvCall.Receives.DirInput.StateDir).To(Equal("some-state-dir"))
+				Expect(boshExecutor.CreateEnvCall.Receives.DirInput.Deployment).To(Equal("jumpbox"))
 
 				Expect(state).To(Equal(storage.State{
 					IAAS:  "gcp",
@@ -433,14 +415,14 @@ jumpbox_url: some-jumpbox-url
 			}})
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(boshExecutor.WriteDeploymentVarsCall.Receives.Input.Deployment).To(Equal("jumpbox"))
-			Expect(boshExecutor.WriteDeploymentVarsCall.Receives.Input.StateDir).To(Equal("some-state-dir"))
-			Expect(boshExecutor.WriteDeploymentVarsCall.Receives.Input.VarsDir).To(Equal("some-bbl-vars-dir"))
-			Expect(boshExecutor.WriteDeploymentVarsCall.Receives.Input.DeploymentVars).To(MatchYAML("some-key: some-value"))
+			Expect(boshExecutor.WriteDeploymentVarsCall.Receives.DirInput.Deployment).To(Equal("jumpbox"))
+			Expect(boshExecutor.WriteDeploymentVarsCall.Receives.DirInput.StateDir).To(Equal("some-state-dir"))
+			Expect(boshExecutor.WriteDeploymentVarsCall.Receives.DirInput.VarsDir).To(Equal("some-bbl-vars-dir"))
+			Expect(boshExecutor.WriteDeploymentVarsCall.Receives.DeploymentVars).To(MatchYAML("some-key: some-value"))
 
-			Expect(boshExecutor.DeleteEnvCall.Receives.Input.Deployment).To(Equal("jumpbox"))
-			Expect(boshExecutor.DeleteEnvCall.Receives.Input.VarsDir).To(Equal("some-bbl-vars-dir"))
-			Expect(boshExecutor.DeleteEnvCall.Receives.Input.StateDir).To(Equal("some-state-dir"))
+			Expect(boshExecutor.DeleteEnvCall.Receives.DirInput.Deployment).To(Equal("jumpbox"))
+			Expect(boshExecutor.DeleteEnvCall.Receives.DirInput.VarsDir).To(Equal("some-bbl-vars-dir"))
+			Expect(boshExecutor.DeleteEnvCall.Receives.DirInput.StateDir).To(Equal("some-state-dir"))
 		})
 
 		Context("when an error occurs", func() {
@@ -506,10 +488,10 @@ jumpbox_url: some-jumpbox-url
 			}, terraform.Outputs{Map: map[string]interface{}{"some-key": "some-value"}})
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(boshExecutor.WriteDeploymentVarsCall.Receives.Input.Deployment).To(Equal("director"))
-			Expect(boshExecutor.WriteDeploymentVarsCall.Receives.Input.StateDir).To(Equal("some-state-dir"))
-			Expect(boshExecutor.WriteDeploymentVarsCall.Receives.Input.VarsDir).To(Equal(varsDir))
-			Expect(boshExecutor.WriteDeploymentVarsCall.Receives.Input.DeploymentVars).To(MatchYAML("some-key: some-value"))
+			Expect(boshExecutor.WriteDeploymentVarsCall.Receives.DirInput.Deployment).To(Equal("director"))
+			Expect(boshExecutor.WriteDeploymentVarsCall.Receives.DirInput.StateDir).To(Equal("some-state-dir"))
+			Expect(boshExecutor.WriteDeploymentVarsCall.Receives.DirInput.VarsDir).To(Equal(varsDir))
+			Expect(boshExecutor.WriteDeploymentVarsCall.Receives.DeploymentVars).To(MatchYAML("some-key: some-value"))
 
 			Expect(socks5Proxy.StartCall.CallCount).To(Equal(1))
 			Expect(socks5Proxy.StartCall.Receives.JumpboxPrivateKey).To(Equal("some-jumpbox-private-key"))
@@ -518,7 +500,7 @@ jumpbox_url: some-jumpbox-url
 			Expect(osSetenvKey).To(Equal("BOSH_ALL_PROXY"))
 			Expect(osSetenvValue).To(Equal(fmt.Sprintf("socks5://%s", socks5ProxyAddr)))
 
-			Expect(boshExecutor.DeleteEnvCall.Receives.Input).To(Equal(bosh.DeleteEnvInput{
+			Expect(boshExecutor.DeleteEnvCall.Receives.DirInput).To(Equal(bosh.DirInput{
 				Deployment: "director",
 				StateDir:   "some-state-dir",
 				VarsDir:    varsDir,
