@@ -96,6 +96,8 @@ var _ = Describe("Executor", func() {
 				"--vars-store", fmt.Sprintf("%s/jumpbox-vars-store.yml", relativeVarsDir),
 				"--vars-file", fmt.Sprintf("%s/jumpbox-vars-file.yml", relativeVarsDir),
 				"-o", fmt.Sprintf("%s/aws/cpi.yml", relativeDeploymentDir),
+				"-v", `access_key_id="${BBL_AWS_ACCESS_KEY_ID}"`,
+				"-v", `secret_access_key="${BBL_AWS_SECRET_ACCESS_KEY}"`,
 			}
 
 			By("writing the create-env args to a shell script", func() {
@@ -126,6 +128,75 @@ var _ = Describe("Executor", func() {
 			})
 		})
 
+		Context("on azure", func() {
+			It("generates create-env args for jumpbox", func() {
+				err := executor.PlanJumpbox(dirInput, deploymentDir, "azure")
+				Expect(err).NotTo(HaveOccurred())
+
+				expectedArgs := []string{
+					fmt.Sprintf("%s/jumpbox.yml", relativeDeploymentDir),
+					"--state", fmt.Sprintf("%s/jumpbox-state.json", relativeVarsDir),
+					"--vars-store", fmt.Sprintf("%s/jumpbox-vars-store.yml", relativeVarsDir),
+					"--vars-file", fmt.Sprintf("%s/jumpbox-vars-file.yml", relativeVarsDir),
+					"-o", fmt.Sprintf("%s/azure/cpi.yml", relativeDeploymentDir),
+					"-v", `subscription_id="${BBL_AZURE_SUBSCRIPTION_ID}"`,
+					"-v", `client_id="${BBL_AZURE_CLIENT_ID}"`,
+					"-v", `client_secret="${BBL_AZURE_CLIENT_SECRET}"`,
+					"-v", `tenant_id="${BBL_AZURE_TENANT_ID}"`,
+				}
+
+				By("writing the create-env args to a shell script", func() {
+					expectedScript := formatScript("create-env", stateDir, expectedArgs)
+					shellScript, err := ioutil.ReadFile(fmt.Sprintf("%s/create-jumpbox.sh", stateDir))
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(string(shellScript)).To(Equal(expectedScript))
+				})
+
+				By("writing the delete-env args to a shell script", func() {
+					expectedScript := formatScript("delete-env", stateDir, expectedArgs)
+					shellScript, err := ioutil.ReadFile(fmt.Sprintf("%s/delete-jumpbox.sh", stateDir))
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(string(shellScript)).To(Equal(expectedScript))
+				})
+			})
+		})
+
+		Context("on gcp", func() {
+			It("generates create-env args for jumpbox", func() {
+				err := executor.PlanJumpbox(dirInput, deploymentDir, "gcp")
+				Expect(err).NotTo(HaveOccurred())
+
+				expectedArgs := []string{
+					fmt.Sprintf("%s/jumpbox.yml", relativeDeploymentDir),
+					"--state", fmt.Sprintf("%s/jumpbox-state.json", relativeVarsDir),
+					"--vars-store", fmt.Sprintf("%s/jumpbox-vars-store.yml", relativeVarsDir),
+					"--vars-file", fmt.Sprintf("%s/jumpbox-vars-file.yml", relativeVarsDir),
+					"-o", fmt.Sprintf("%s/gcp/cpi.yml", relativeDeploymentDir),
+					"--var-file", `gcp_credentials_json="${BBL_GCP_SERVICE_ACCOUNT_KEY_PATH}"`,
+					"-v", `project_id="${BBL_GCP_PROJECT_ID}"`,
+					"-v", `zone="${BBL_GCP_ZONE}"`,
+				}
+
+				By("writing the create-env args to a shell script", func() {
+					expectedScript := formatScript("create-env", stateDir, expectedArgs)
+					shellScript, err := ioutil.ReadFile(fmt.Sprintf("%s/create-jumpbox.sh", stateDir))
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(string(shellScript)).To(Equal(expectedScript))
+				})
+
+				By("writing the delete-env args to a shell script", func() {
+					expectedScript := formatScript("delete-env", stateDir, expectedArgs)
+					shellScript, err := ioutil.ReadFile(fmt.Sprintf("%s/delete-jumpbox.sh", stateDir))
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(string(shellScript)).To(Equal(expectedScript))
+				})
+			})
+		})
+
 		Context("when the iaas is vsphere", func() {
 			It("generates create-env args for jumpbox", func() {
 				err := executor.PlanJumpbox(dirInput, deploymentDir, "vsphere")
@@ -139,6 +210,8 @@ var _ = Describe("Executor", func() {
 					"-o", fmt.Sprintf("%s/vsphere/cpi.yml", relativeDeploymentDir),
 					"-o", fmt.Sprintf("%s/vsphere/resource-pool.yml", relativeDeploymentDir),
 					"-o", fmt.Sprintf("%s/vsphere-jumpbox-network.yml", relativeDeploymentDir),
+					"-v", `vcenter_user="${BBL_VSPHERE_VCENTER_USER}"`,
+					"-v", `vcenter_password="${BBL_VSPHERE_VCENTER_PASSWORD}"`,
 				}
 
 				By("writing the jumpbox-network ops-file", func() {
@@ -249,6 +322,8 @@ var _ = Describe("Executor", func() {
 					"-o", filepath.Join(relativeStateDir, "bbl-ops-files", "aws", "bosh-director-ephemeral-ip-ops.yml"),
 					"-o", filepath.Join(relativeDeploymentDir, "aws", "iam-instance-profile.yml"),
 					"-o", filepath.Join(relativeStateDir, "bbl-ops-files", "aws", "bosh-director-encrypt-disk-ops.yml"),
+					"-v", `access_key_id="${BBL_AWS_ACCESS_KEY_ID}"`,
+					"-v", `secret_access_key="${BBL_AWS_SECRET_ACCESS_KEY}"`,
 				}
 			})
 
@@ -297,6 +372,9 @@ var _ = Describe("Executor", func() {
 					"-o", filepath.Join(relativeDeploymentDir, "uaa.yml"),
 					"-o", filepath.Join(relativeDeploymentDir, "credhub.yml"),
 					"-o", filepath.Join(relativeStateDir, "bbl-ops-files", "gcp", "bosh-director-ephemeral-ip-ops.yml"),
+					"--var-file", `gcp_credentials_json="${BBL_GCP_SERVICE_ACCOUNT_KEY_PATH}"`,
+					"-v", `project_id="${BBL_GCP_PROJECT_ID}"`,
+					"-v", `zone="${BBL_GCP_ZONE}"`,
 				}
 			})
 
@@ -333,6 +411,10 @@ var _ = Describe("Executor", func() {
 					"-o", filepath.Join(relativeDeploymentDir, "jumpbox-user.yml"),
 					"-o", filepath.Join(relativeDeploymentDir, "uaa.yml"),
 					"-o", filepath.Join(relativeDeploymentDir, "credhub.yml"),
+					"-v", `subscription_id="${BBL_AZURE_SUBSCRIPTION_ID}"`,
+					"-v", `client_id="${BBL_AZURE_CLIENT_ID}"`,
+					"-v", `client_secret="${BBL_AZURE_CLIENT_SECRET}"`,
+					"-v", `tenant_id="${BBL_AZURE_TENANT_ID}"`,
 				}
 			})
 
@@ -355,6 +437,8 @@ var _ = Describe("Executor", func() {
 					"-o", filepath.Join(relativeDeploymentDir, "uaa.yml"),
 					"-o", filepath.Join(relativeDeploymentDir, "credhub.yml"),
 					"-o", filepath.Join(relativeDeploymentDir, "vsphere", "resource-pool.yml"),
+					"-v", `vcenter_user="${BBL_VSPHERE_VCENTER_USER}"`,
+					"-v", `vcenter_password="${BBL_VSPHERE_VCENTER_PASSWORD}"`,
 				}
 			})
 
@@ -477,6 +561,86 @@ var _ = Describe("Executor", func() {
 			})
 		})
 
+		Context("when iaas credentials are provided", func() {
+			Context("on aws", func() {
+				BeforeEach(func() {
+					state.IAAS = "aws"
+					state.AWS = storage.AWS{
+						AccessKeyID:     "some-access-key-id",
+						SecretAccessKey: "some-secret-access-key",
+					}
+				})
+
+				It("sets credentials in environment variables", func() {
+					_, err := executor.CreateEnv(dirInput, state)
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(os.Getenv("BBL_AWS_ACCESS_KEY_ID")).To(Equal("some-access-key-id"))
+					Expect(os.Getenv("BBL_AWS_SECRET_ACCESS_KEY")).To(Equal("some-secret-access-key"))
+				})
+			})
+
+			Context("on azure", func() {
+				BeforeEach(func() {
+					state.IAAS = "azure"
+					state.Azure = storage.Azure{
+						ClientID:       "some-client-id",
+						ClientSecret:   "some-client-secret",
+						SubscriptionID: "some-subscription-id",
+						TenantID:       "some-tenant-id",
+					}
+				})
+
+				It("sets credentials in environment variables", func() {
+					_, err := executor.CreateEnv(dirInput, state)
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(os.Getenv("BBL_AZURE_CLIENT_ID")).To(Equal("some-client-id"))
+					Expect(os.Getenv("BBL_AZURE_CLIENT_SECRET")).To(Equal("some-client-secret"))
+					Expect(os.Getenv("BBL_AZURE_SUBSCRIPTION_ID")).To(Equal("some-subscription-id"))
+					Expect(os.Getenv("BBL_AZURE_TENANT_ID")).To(Equal("some-tenant-id"))
+				})
+			})
+
+			Context("on gcp", func() {
+				BeforeEach(func() {
+					state.IAAS = "gcp"
+					state.GCP = storage.GCP{
+						ServiceAccountKeyPath: "some-service-account-key-path",
+						Zone:      "some-zone",
+						ProjectID: "some-project-id",
+					}
+				})
+
+				It("sets credentials in environment variables", func() {
+					_, err := executor.CreateEnv(dirInput, state)
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(os.Getenv("BBL_GCP_SERVICE_ACCOUNT_KEY_PATH")).To(Equal("some-service-account-key-path"))
+					Expect(os.Getenv("BBL_GCP_ZONE")).To(Equal("some-zone"))
+					Expect(os.Getenv("BBL_GCP_PROJECT_ID")).To(Equal("some-project-id"))
+				})
+			})
+
+			Context("on vsphere", func() {
+				BeforeEach(func() {
+					state.IAAS = "vsphere"
+					state.VSphere = storage.VSphere{
+						VCenterUser:     "some-user",
+						VCenterPassword: "some-password",
+					}
+				})
+
+				It("sets credentials in environment variables", func() {
+					_, err := executor.CreateEnv(dirInput, state)
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(os.Getenv("BBL_VSPHERE_VCENTER_USER")).To(Equal("some-user"))
+					Expect(os.Getenv("BBL_VSPHERE_VCENTER_PASSWORD")).To(Equal("some-password"))
+				})
+			})
+		})
+
 		Context("when the create-env script returns an error", func() {
 			BeforeEach(func() {
 				createEnvContents := "#!/bin/bash\nexit 1\n"
@@ -569,6 +733,86 @@ var _ = Describe("Executor", func() {
 			By("setting BBL_STATE_DIR environment variable", func() {
 				bblStateDirEnv := os.Getenv("BBL_STATE_DIR")
 				Expect(bblStateDirEnv).To(Equal(stateDir))
+			})
+		})
+
+		Context("when iaas credentials are provided", func() {
+			Context("on aws", func() {
+				BeforeEach(func() {
+					state.IAAS = "aws"
+					state.AWS = storage.AWS{
+						AccessKeyID:     "some-access-key-id",
+						SecretAccessKey: "some-secret-access-key",
+					}
+				})
+
+				It("sets credentials in environment variables", func() {
+					err := executor.DeleteEnv(dirInput, state)
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(os.Getenv("BBL_AWS_ACCESS_KEY_ID")).To(Equal("some-access-key-id"))
+					Expect(os.Getenv("BBL_AWS_SECRET_ACCESS_KEY")).To(Equal("some-secret-access-key"))
+				})
+			})
+
+			Context("on azure", func() {
+				BeforeEach(func() {
+					state.IAAS = "azure"
+					state.Azure = storage.Azure{
+						ClientID:       "some-client-id",
+						ClientSecret:   "some-client-secret",
+						SubscriptionID: "some-subscription-id",
+						TenantID:       "some-tenant-id",
+					}
+				})
+
+				It("sets credentials in environment variables", func() {
+					err := executor.DeleteEnv(dirInput, state)
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(os.Getenv("BBL_AZURE_CLIENT_ID")).To(Equal("some-client-id"))
+					Expect(os.Getenv("BBL_AZURE_CLIENT_SECRET")).To(Equal("some-client-secret"))
+					Expect(os.Getenv("BBL_AZURE_SUBSCRIPTION_ID")).To(Equal("some-subscription-id"))
+					Expect(os.Getenv("BBL_AZURE_TENANT_ID")).To(Equal("some-tenant-id"))
+				})
+			})
+
+			Context("on gcp", func() {
+				BeforeEach(func() {
+					state.IAAS = "gcp"
+					state.GCP = storage.GCP{
+						ServiceAccountKeyPath: "some-service-account-key-path",
+						Zone:      "some-zone",
+						ProjectID: "some-project-id",
+					}
+				})
+
+				It("sets credentials in environment variables", func() {
+					err := executor.DeleteEnv(dirInput, state)
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(os.Getenv("BBL_GCP_SERVICE_ACCOUNT_KEY_PATH")).To(Equal("some-service-account-key-path"))
+					Expect(os.Getenv("BBL_GCP_ZONE")).To(Equal("some-zone"))
+					Expect(os.Getenv("BBL_GCP_PROJECT_ID")).To(Equal("some-project-id"))
+				})
+			})
+
+			Context("on vsphere", func() {
+				BeforeEach(func() {
+					state.IAAS = "vsphere"
+					state.VSphere = storage.VSphere{
+						VCenterUser:     "some-user",
+						VCenterPassword: "some-password",
+					}
+				})
+
+				It("sets credentials in environment variables", func() {
+					err := executor.DeleteEnv(dirInput, state)
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(os.Getenv("BBL_VSPHERE_VCENTER_USER")).To(Equal("some-user"))
+					Expect(os.Getenv("BBL_VSPHERE_VCENTER_PASSWORD")).To(Equal("some-password"))
+				})
 			})
 		})
 

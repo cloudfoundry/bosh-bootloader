@@ -594,117 +594,15 @@ gcp_credentials_json: some-credential-json
 		})
 		It("removes the jumpbox__ prefix from variable names", func() {
 			vars := boshManager.GetJumpboxDeploymentVars(incomingState, terraform.Outputs{Map: map[string]interface{}{
-				"some-key":     "some-value",
-				"jumpbox__key": "some-jumpbox-value",
-				"key":          "some-ignored-value",
+				"some-key":      "some-value",
+				"director__key": "some-director-value",
+				"jumpbox__key":  "some-jumpbox-value",
+				"key":           "some-ignored-value",
 			}})
 			Expect(vars).To(MatchYAML(`---
 some-key: some-value
 key: some-jumpbox-value
 `))
-		})
-
-		Context("gcp", func() {
-			var incomingState storage.State
-			BeforeEach(func() {
-				incomingState = storage.State{
-					IAAS: "gcp",
-					GCP: storage.GCP{
-						Zone:              "some-zone",
-						ProjectID:         "some-project-id",
-						ServiceAccountKey: "some-credential-json",
-					},
-				}
-			})
-
-			It("returns a correct yaml string of bosh deployment variables", func() {
-				vars := boshManager.GetJumpboxDeploymentVars(incomingState, terraform.Outputs{Map: map[string]interface{}{
-					"some-key": "some-value",
-				}})
-				Expect(vars).To(MatchYAML(`---
-some-key: some-value
-gcp_credentials_json: some-credential-json
-project_id: some-project-id
-zone: some-zone
-`))
-			})
-		})
-
-		Context("aws", func() {
-			var incomingState storage.State
-			BeforeEach(func() {
-				incomingState = storage.State{
-					IAAS: "aws",
-					AWS: storage.AWS{
-						Region:          "some-region",
-						AccessKeyID:     "some-access-key-id",
-						SecretAccessKey: "some-secret-access-key",
-					},
-				}
-			})
-
-			It("returns a correct yaml string of bosh deployment variables", func() {
-				vars := boshManager.GetJumpboxDeploymentVars(incomingState, terraform.Outputs{Map: map[string]interface{}{
-					"some-key": "some-value",
-				}})
-				Expect(vars).To(MatchYAML(`---
-some-key: some-value
-access_key_id: some-access-key-id
-secret_access_key: some-secret-access-key
-`))
-			})
-		})
-
-		Context("azure", func() {
-			var incomingState storage.State
-			BeforeEach(func() {
-				incomingState = storage.State{
-					IAAS: "azure",
-					Azure: storage.Azure{
-						ClientID:       "some-client-id",
-						ClientSecret:   "some-client-secret",
-						SubscriptionID: "some-subscription-id",
-						TenantID:       "some-tentant-id",
-						Region:         "some-region",
-					},
-				}
-			})
-
-			It("returns a correct yaml string of bosh deployment variables", func() {
-				vars := boshManager.GetJumpboxDeploymentVars(incomingState, terraform.Outputs{Map: map[string]interface{}{
-					"some-key": "some-value",
-				}})
-				Expect(vars).To(MatchYAML(`---
-some-key: some-value
-client_id: some-client-id
-client_secret: some-client-secret
-subscription_id: some-subscription-id
-tenant_id: some-tentant-id
-`))
-			})
-		})
-
-		Context("vsphere", func() {
-			BeforeEach(func() {
-				incomingState = storage.State{
-					IAAS:  "vsphere",
-					EnvID: "some-env-id",
-					VSphere: storage.VSphere{
-						VCenterUser:     "some-user",
-						VCenterPassword: "some-password",
-					},
-				}
-			})
-			It("passes through the terraform outputs and adds the vsphere credentials", func() {
-				vars := boshManager.GetJumpboxDeploymentVars(incomingState, terraform.Outputs{Map: map[string]interface{}{
-					"some-key": "some-value",
-				}})
-				Expect(vars).To(MatchYAML(`---
-some-key: some-value
-vcenter_user: some-user
-vcenter_password: some-password
-`))
-			})
 		})
 	})
 
@@ -717,117 +615,13 @@ vcenter_password: some-password
 			vars := boshManager.GetDirectorDeploymentVars(incomingState, terraform.Outputs{Map: map[string]interface{}{
 				"some-key":      "some-value",
 				"director__key": "some-director-value",
+				"jumpbox__key":  "some-jumpbox-value",
 				"key":           "some-ignored-value",
 			}})
 			Expect(vars).To(MatchYAML(`---
 some-key: some-value
 key: some-director-value
 `))
-		})
-		Context("gcp", func() {
-			BeforeEach(func() {
-				incomingState = storage.State{
-					IAAS: "gcp",
-					GCP: storage.GCP{
-						Zone:              "some-zone",
-						ProjectID:         "some-project-id",
-						ServiceAccountKey: "some-credential-json",
-					},
-				}
-			})
-
-			It("passes terraform outputs through and adds GCP credentials", func() {
-				vars := boshManager.GetDirectorDeploymentVars(incomingState, terraform.Outputs{Map: map[string]interface{}{
-					"some-key":  "some-value",
-					"other-key": "other-value",
-				}})
-				Expect(vars).To(MatchYAML(`---
-some-key: some-value
-other-key: other-value
-gcp_credentials_json: some-credential-json
-zone: some-zone
-project_id: some-project-id
-`))
-			})
-		})
-
-		Context("aws", func() {
-			BeforeEach(func() {
-				incomingState = storage.State{
-					IAAS: "aws",
-					AWS: storage.AWS{
-						AccessKeyID:     "some-access-key-id",
-						SecretAccessKey: "some-secret-access-key",
-						Region:          "some-region",
-					},
-				}
-			})
-
-			It("passes terraform outputs through and adds AWS credentials", func() {
-				vars := boshManager.GetDirectorDeploymentVars(incomingState, terraform.Outputs{Map: map[string]interface{}{
-					"some-key":  "some-value",
-					"other-key": "other-value",
-				}})
-				Expect(vars).To(MatchYAML(`---
-some-key: some-value
-other-key: other-value
-access_key_id: some-access-key-id
-secret_access_key: some-secret-access-key
-`))
-			})
-		})
-
-		Context("azure", func() {
-			BeforeEach(func() {
-				incomingState = storage.State{
-					IAAS: "azure",
-					Azure: storage.Azure{
-						ClientID:       "some-client-id",
-						ClientSecret:   "some-client-secret",
-						SubscriptionID: "some-subscription-id",
-						TenantID:       "some-tentant-id",
-						Region:         "some-region",
-					},
-				}
-			})
-
-			It("passes terraform outputs through and adds azure credentials", func() {
-				vars := boshManager.GetDirectorDeploymentVars(incomingState, terraform.Outputs{Map: map[string]interface{}{
-					"some-key":  "some-value",
-					"other-key": "other-value",
-				}})
-				Expect(vars).To(MatchYAML(`---
-some-key: some-value
-other-key: other-value
-client_id: some-client-id
-client_secret: some-client-secret
-subscription_id: some-subscription-id
-tenant_id: some-tentant-id
-`))
-			})
-		})
-
-		Context("vsphere", func() {
-			BeforeEach(func() {
-				incomingState = storage.State{
-					IAAS:  "vsphere",
-					EnvID: "some-env-id",
-					VSphere: storage.VSphere{
-						VCenterUser:     "some-user",
-						VCenterPassword: "some-password",
-					},
-				}
-			})
-			It("passes through the terraform outputs and adds the vsphere credentials", func() {
-				vars := boshManager.GetDirectorDeploymentVars(incomingState, terraform.Outputs{Map: map[string]interface{}{
-					"some-key": "some-value",
-				}})
-				Expect(vars).To(MatchYAML(`---
-some-key: some-value
-vcenter_user: some-user
-vcenter_password: some-password
-`))
-			})
 		})
 	})
 

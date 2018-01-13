@@ -107,6 +107,32 @@ func (e Executor) PlanJumpbox(input DirInput, deploymentDir, iaas string) error 
 		"--state", jumpboxState,
 	}, sharedArgs...)
 
+	switch iaas {
+	case "aws":
+		boshArgs = append(boshArgs,
+			"-v", `access_key_id="${BBL_AWS_ACCESS_KEY_ID}"`,
+			"-v", `secret_access_key="${BBL_AWS_SECRET_ACCESS_KEY}"`,
+		)
+	case "azure":
+		boshArgs = append(boshArgs,
+			"-v", `subscription_id="${BBL_AZURE_SUBSCRIPTION_ID}"`,
+			"-v", `client_id="${BBL_AZURE_CLIENT_ID}"`,
+			"-v", `client_secret="${BBL_AZURE_CLIENT_SECRET}"`,
+			"-v", `tenant_id="${BBL_AZURE_TENANT_ID}"`,
+		)
+	case "gcp":
+		boshArgs = append(boshArgs,
+			"--var-file", `gcp_credentials_json="${BBL_GCP_SERVICE_ACCOUNT_KEY_PATH}"`,
+			"-v", `project_id="${BBL_GCP_PROJECT_ID}"`,
+			"-v", `zone="${BBL_GCP_ZONE}"`,
+		)
+	case "vsphere":
+		boshArgs = append(boshArgs,
+			"-v", `vcenter_user="${BBL_VSPHERE_VCENTER_USER}"`,
+			"-v", `vcenter_password="${BBL_VSPHERE_VCENTER_PASSWORD}"`,
+		)
+	}
+
 	boshPath, err := e.command.GetBOSHPath()
 	if err != nil {
 		return fmt.Errorf("Jumpbox get BOSH path: %s", err) //not tested
@@ -213,6 +239,32 @@ func (e Executor) PlanDirector(input DirInput, deploymentDir, iaas string) error
 		"--state", boshState,
 	}, sharedArgs...)
 
+	switch iaas {
+	case "aws":
+		boshArgs = append(boshArgs,
+			"-v", `access_key_id="${BBL_AWS_ACCESS_KEY_ID}"`,
+			"-v", `secret_access_key="${BBL_AWS_SECRET_ACCESS_KEY}"`,
+		)
+	case "azure":
+		boshArgs = append(boshArgs,
+			"-v", `subscription_id="${BBL_AZURE_SUBSCRIPTION_ID}"`,
+			"-v", `client_id="${BBL_AZURE_CLIENT_ID}"`,
+			"-v", `client_secret="${BBL_AZURE_CLIENT_SECRET}"`,
+			"-v", `tenant_id="${BBL_AZURE_TENANT_ID}"`,
+		)
+	case "gcp":
+		boshArgs = append(boshArgs,
+			"--var-file", `gcp_credentials_json="${BBL_GCP_SERVICE_ACCOUNT_KEY_PATH}"`,
+			"-v", `project_id="${BBL_GCP_PROJECT_ID}"`,
+			"-v", `zone="${BBL_GCP_ZONE}"`,
+		)
+	case "vsphere":
+		boshArgs = append(boshArgs,
+			"-v", `vcenter_user="${BBL_VSPHERE_VCENTER_USER}"`,
+			"-v", `vcenter_password="${BBL_VSPHERE_VCENTER_PASSWORD}"`,
+		)
+	}
+
 	createEnvCmd := []byte(formatScript(boshPath, input.StateDir, "create-env", boshArgs))
 	err = e.writeFile(filepath.Join(input.StateDir, "create-director.sh"), createEnvCmd, 0750)
 	if err != nil {
@@ -258,6 +310,24 @@ func (e Executor) CreateEnv(input DirInput, state storage.State) (string, error)
 		createEnvScript = strings.Replace(createEnvScript, "-override", "", -1)
 	}
 
+	switch state.IAAS {
+	case "aws":
+		os.Setenv("BBL_AWS_ACCESS_KEY_ID", state.AWS.AccessKeyID)
+		os.Setenv("BBL_AWS_SECRET_ACCESS_KEY", state.AWS.SecretAccessKey)
+	case "azure":
+		os.Setenv("BBL_AZURE_CLIENT_ID", state.Azure.ClientID)
+		os.Setenv("BBL_AZURE_CLIENT_SECRET", state.Azure.ClientSecret)
+		os.Setenv("BBL_AZURE_SUBSCRIPTION_ID", state.Azure.SubscriptionID)
+		os.Setenv("BBL_AZURE_TENANT_ID", state.Azure.TenantID)
+	case "gcp":
+		os.Setenv("BBL_GCP_SERVICE_ACCOUNT_KEY_PATH", state.GCP.ServiceAccountKeyPath)
+		os.Setenv("BBL_GCP_ZONE", state.GCP.Zone)
+		os.Setenv("BBL_GCP_PROJECT_ID", state.GCP.ProjectID)
+	case "vsphere":
+		os.Setenv("BBL_VSPHERE_VCENTER_USER", state.VSphere.VCenterUser)
+		os.Setenv("BBL_VSPHERE_VCENTER_PASSWORD", state.VSphere.VCenterPassword)
+	}
+
 	cmd := exec.Command(createEnvScript)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -282,6 +352,24 @@ func (e Executor) DeleteEnv(input DirInput, state storage.State) error {
 	_, err := os.Stat(deleteEnvScript)
 	if err != nil {
 		deleteEnvScript = strings.Replace(deleteEnvScript, "-override", "", -1)
+	}
+
+	switch state.IAAS {
+	case "aws":
+		os.Setenv("BBL_AWS_ACCESS_KEY_ID", state.AWS.AccessKeyID)
+		os.Setenv("BBL_AWS_SECRET_ACCESS_KEY", state.AWS.SecretAccessKey)
+	case "azure":
+		os.Setenv("BBL_AZURE_CLIENT_ID", state.Azure.ClientID)
+		os.Setenv("BBL_AZURE_CLIENT_SECRET", state.Azure.ClientSecret)
+		os.Setenv("BBL_AZURE_SUBSCRIPTION_ID", state.Azure.SubscriptionID)
+		os.Setenv("BBL_AZURE_TENANT_ID", state.Azure.TenantID)
+	case "gcp":
+		os.Setenv("BBL_GCP_SERVICE_ACCOUNT_KEY_PATH", state.GCP.ServiceAccountKeyPath)
+		os.Setenv("BBL_GCP_ZONE", state.GCP.Zone)
+		os.Setenv("BBL_GCP_PROJECT_ID", state.GCP.ProjectID)
+	case "vsphere":
+		os.Setenv("BBL_VSPHERE_VCENTER_USER", state.VSphere.VCenterUser)
+		os.Setenv("BBL_VSPHERE_VCENTER_PASSWORD", state.VSphere.VCenterPassword)
 	}
 
 	cmd := exec.Command(deleteEnvScript)

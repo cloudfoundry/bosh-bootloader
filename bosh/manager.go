@@ -358,32 +358,6 @@ func (m *Manager) GetJumpboxDeploymentVars(state storage.State, terraformOutputs
 		TerraformOutputs: allOutputs,
 	}
 
-	switch state.IAAS {
-	case "gcp":
-		vars.GCPYAML = GCPYAML{
-			Zone:           state.GCP.Zone,
-			ProjectID:      state.GCP.ProjectID,
-			CredentialJSON: state.GCP.ServiceAccountKey,
-		}
-	case "aws":
-		vars.AWSYAML = AWSYAML{
-			AccessKeyID:     state.AWS.AccessKeyID,
-			SecretAccessKey: state.AWS.SecretAccessKey,
-		}
-	case "azure":
-		vars.AzureYAML = AzureYAML{
-			SubscriptionID: state.Azure.SubscriptionID,
-			TenantID:       state.Azure.TenantID,
-			ClientID:       state.Azure.ClientID,
-			ClientSecret:   state.Azure.ClientSecret,
-		}
-	case "vsphere":
-		vars.VSphereYAML = VSphereYAML{
-			VCenterUser:     state.VSphere.VCenterUser,
-			VCenterPassword: state.VSphere.VCenterPassword,
-		}
-	}
-
 	return string(mustMarshal(vars))
 }
 
@@ -414,32 +388,6 @@ func (m *Manager) GetDirectorDeploymentVars(state storage.State, terraformOutput
 
 	vars := sharedDeploymentVarsYAML{
 		TerraformOutputs: allOutputs,
-	}
-
-	switch state.IAAS {
-	case "gcp":
-		vars.GCPYAML = GCPYAML{
-			Zone:           state.GCP.Zone,
-			ProjectID:      state.GCP.ProjectID,
-			CredentialJSON: state.GCP.ServiceAccountKey,
-		}
-	case "aws":
-		vars.AWSYAML = AWSYAML{
-			AccessKeyID:     state.AWS.AccessKeyID,
-			SecretAccessKey: state.AWS.SecretAccessKey,
-		}
-	case "azure":
-		vars.AzureYAML = AzureYAML{
-			SubscriptionID: state.Azure.SubscriptionID,
-			TenantID:       state.Azure.TenantID,
-			ClientID:       state.Azure.ClientID,
-			ClientSecret:   state.Azure.ClientSecret,
-		}
-	case "vsphere":
-		vars.VSphereYAML = VSphereYAML{
-			VCenterUser:     state.VSphere.VCenterUser,
-			VCenterPassword: state.VSphere.VCenterPassword,
-		}
 	}
 
 	return string(mustMarshal(vars))
