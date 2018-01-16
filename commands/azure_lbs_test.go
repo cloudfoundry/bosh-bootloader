@@ -39,7 +39,7 @@ var _ = Describe("Azure LBs", func() {
 					},
 				}
 				terraformManager.GetOutputsCall.Returns.Outputs = terraform.Outputs{Map: map[string]interface{}{
-					"application_gateway": "some-application-gateway-name",
+					"cf_app_gateway_name": "some-app-gateway-name",
 				}}
 			})
 
@@ -49,7 +49,32 @@ var _ = Describe("Azure LBs", func() {
 
 				Expect(terraformManager.GetOutputsCall.CallCount).To(Equal(1))
 				Expect(logger.PrintfCall.Messages).To(ConsistOf([]string{
-					"CF LB: some-application-gateway-name\n",
+					"CF LB: some-app-gateway-name\n",
+				}))
+			})
+		})
+
+		Context("when the lb type is concourse", func() {
+			BeforeEach(func() {
+				incomingState = storage.State{
+					IAAS: "azure",
+					LB: storage.LB{
+						Type: "concourse",
+					},
+				}
+				terraformManager.GetOutputsCall.Returns.Outputs = terraform.Outputs{Map: map[string]interface{}{
+					"concourse_lb_name": "some-load-balancer-name",
+					"concourse_lb_ip":   "5.6.7.8",
+				}}
+			})
+
+			It("prints LB name", func() {
+				err := command.Execute([]string{}, incomingState)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(terraformManager.GetOutputsCall.CallCount).To(Equal(1))
+				Expect(logger.PrintfCall.Messages).To(ConsistOf([]string{
+					"Concourse LB: some-load-balancer-name (5.6.7.8)\n",
 				}))
 			})
 		})

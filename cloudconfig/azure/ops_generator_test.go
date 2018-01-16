@@ -79,7 +79,7 @@ some-key: some-value
 				incomingState.LB.Type = "cf"
 
 				terraformManager.GetOutputsCall.Returns.Outputs = terraform.Outputs{Map: map[string]interface{}{
-					"application_gateway": "some-app-gateway-name",
+					"cf_app_gateway_name": "some-app-gateway-name",
 				}}
 			})
 
@@ -87,7 +87,7 @@ some-key: some-value
 				ops, err := opsGenerator.GenerateVars(incomingState)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(terraformManager.GetOutputsCall.CallCount).To(Equal(1))
-				Expect(ops).To(ContainSubstring(`application_gateway: some-app-gateway-name`))
+				Expect(ops).To(ContainSubstring(`cf_app_gateway_name: some-app-gateway-name`))
 			})
 		})
 
@@ -96,7 +96,7 @@ some-key: some-value
 				incomingState.LB.Type = "concourse"
 
 				terraformManager.GetOutputsCall.Returns.Outputs = terraform.Outputs{Map: map[string]interface{}{
-					"load_balancer": "some-load-balancer-name",
+					"concourse_lb_name": "some-load-balancer-name",
 				}}
 			})
 
@@ -104,7 +104,7 @@ some-key: some-value
 				ops, err := opsGenerator.GenerateVars(incomingState)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(terraformManager.GetOutputsCall.CallCount).To(Equal(1))
-				Expect(ops).To(ContainSubstring(`load_balancer: some-load-balancer-name`))
+				Expect(ops).To(ContainSubstring(`concourse_lb_name: some-load-balancer-name`))
 			})
 		})
 

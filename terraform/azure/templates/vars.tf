@@ -17,7 +17,7 @@ variable "network_cidr" {
 }
 
 variable "internal_cidr" {
-  default = "10.0.0.0/24"
+  default = "10.0.0.0/16"
 }
 
 provider "azurerm" {

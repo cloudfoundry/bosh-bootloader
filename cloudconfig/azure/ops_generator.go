@@ -129,7 +129,7 @@ func (o OpsGenerator) Generate(state storage.State) (string, error) {
 			Value: lb{
 				Name: "cf-router-network-properties",
 				CloudProperties: cloudProperties{
-					ApplicationGateway: "((application_gateway))",
+					ApplicationGateway: "((cf_app_gateway_name))",
 				},
 			},
 		}
@@ -141,7 +141,7 @@ func (o OpsGenerator) Generate(state storage.State) (string, error) {
 			Value: lb{
 				Name: "lb",
 				CloudProperties: cloudProperties{
-					LoadBalancer: "((load_balancer))",
+					LoadBalancer: "((concourse_lb_name))",
 				},
 			},
 		}

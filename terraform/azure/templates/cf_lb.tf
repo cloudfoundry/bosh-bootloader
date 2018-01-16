@@ -6,7 +6,7 @@ variable "pfx_password" {}
 
 resource "azurerm_subnet" "cf-sn" {
   name                 = "${var.env_id}-cf-sn"
-  address_prefix       = "${cidrsubnet(var.network_cidr, 8, 1)}"
+  address_prefix       = "${var.network_cidr}"
   resource_group_name  = "${azurerm_resource_group.bosh.name}"
   virtual_network_name = "${azurerm_virtual_network.bosh.name}"
 }
@@ -133,6 +133,6 @@ resource "azurerm_application_gateway" "network" {
   }
 }
 
-output "application_gateway" {
+output "cf_app_gateway_name" {
   value = "${azurerm_application_gateway.network.name}"
 }

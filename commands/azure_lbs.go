@@ -24,9 +24,12 @@ func (l AzureLBs) Execute(subcommandFlags []string, state storage.State) error {
 		return err
 	}
 
-	if state.LB.Type == "cf" {
-		l.logger.Printf("CF LB: %s\n", terraformOutputs.GetString("application_gateway"))
-	} else {
+	switch state.LB.Type {
+	case "cf":
+		l.logger.Printf("CF LB: %s\n", terraformOutputs.GetString("cf_app_gateway_name"))
+	case "concourse":
+		l.logger.Printf("Concourse LB: %s (%s)\n", terraformOutputs.GetString("concourse_lb_name"), terraformOutputs.GetString("concourse_lb_ip"))
+	default:
 		return errors.New("no lbs found")
 	}
 
