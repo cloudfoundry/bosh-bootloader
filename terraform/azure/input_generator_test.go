@@ -65,6 +65,15 @@ var _ = Describe("InputGenerator", func() {
 			})
 		})
 
+		Context("given an LB system domain", func() {
+			It("returns sytem domain as input", func() {
+				state.LB.Domain = "example.com"
+				inputs, err := inputGenerator.Generate(state)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(inputs).To(HaveKeyWithValue("system_domain", "example.com"))
+			})
+		})
+
 		Context("given a LB", func() {
 			BeforeEach(func() {
 				state.LB.Cert = "Cert content"

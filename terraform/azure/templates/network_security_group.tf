@@ -8,16 +8,6 @@ resource "azurerm_network_security_group" "bosh" {
   }
 }
 
-resource "azurerm_network_security_group" "cf" {
-  name                = "${var.env_id}-cf"
-  location            = "${var.region}"
-  resource_group_name = "${azurerm_resource_group.bosh.name}"
-
-  tags {
-    environment = "${var.env_id}"
-  }
-}
-
 resource "azurerm_network_security_rule" "ssh" {
   name                        = "${var.env_id}-ssh"
   priority                    = 200
@@ -86,32 +76,4 @@ resource "azurerm_network_security_rule" "credhub" {
   destination_address_prefix  = "*"
   resource_group_name         = "${azurerm_resource_group.bosh.name}"
   network_security_group_name = "${azurerm_network_security_group.bosh.name}"
-}
-
-resource "azurerm_network_security_rule" "cf-https" {
-  name                        = "${var.env_id}-dns"
-  priority                    = 201
-  direction                   = "Inbound"
-  access                      = "Allow"
-  protocol                    = "Tcp"
-  source_port_range           = "*"
-  destination_port_range      = "443"
-  source_address_prefix       = "*"
-  destination_address_prefix  = "*"
-  resource_group_name         = "${azurerm_resource_group.bosh.name}"
-  network_security_group_name = "${azurerm_network_security_group.cf.name}"
-}
-
-resource "azurerm_network_security_rule" "cf-log" {
-  name                        = "${var.env_id}-cf-log"
-  priority                    = 202
-  direction                   = "Inbound"
-  access                      = "Allow"
-  protocol                    = "Tcp"
-  source_port_range           = "*"
-  destination_port_range      = "4443"
-  source_address_prefix       = "*"
-  destination_address_prefix  = "*"
-  resource_group_name         = "${azurerm_resource_group.bosh.name}"
-  network_security_group_name = "${azurerm_network_security_group.cf.name}"
 }

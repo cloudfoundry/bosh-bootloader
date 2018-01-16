@@ -27,6 +27,9 @@ func (i InputGenerator) Generate(state storage.State) (map[string]interface{}, e
 	if state.LB.Cert != "" && state.LB.Key != "" {
 		input["pfx_cert_base64"] = state.LB.Cert
 		input["pfx_password"] = state.LB.Key
+	}
+
+	if state.LB.Domain != "" {
 		input["system_domain"] = state.LB.Domain
 	}
 

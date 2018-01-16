@@ -33,7 +33,6 @@ var _ = Describe("AzureOpsGenerator", func() {
 			"bosh_network_name":           "some-virtual-network-name",
 			"bosh_subnet_name":            "some-subnet-name",
 			"bosh_default_security_group": "some-security-group",
-			"application_gateway":         "some-app-gateway-name",
 			"some-key":                    "some-value",
 		}}
 
@@ -69,16 +68,19 @@ az3_static: 10.0.63.190-10.0.63.254
 bosh_network_name: some-virtual-network-name
 bosh_subnet_name: some-subnet-name
 bosh_default_security_group: some-security-group
-application_gateway: some-app-gateway-name
 some-key: some-value
 `))
 
 			Expect(terraformManager.GetOutputsCall.CallCount).To(Equal(1))
 		})
 
-		Context("with a load balancer", func() {
+		Context("with a cf load balancer", func() {
 			BeforeEach(func() {
 				incomingState.LB.Type = "cf"
+
+				terraformManager.GetOutputsCall.Returns.Outputs = terraform.Outputs{Map: map[string]interface{}{
+					"application_gateway": "some-app-gateway-name",
+				}}
 			})
 
 			It("returns an ops file with the cloud properties for the LB", func() {
@@ -86,6 +88,23 @@ some-key: some-value
 				Expect(err).ToNot(HaveOccurred())
 				Expect(terraformManager.GetOutputsCall.CallCount).To(Equal(1))
 				Expect(ops).To(ContainSubstring(`application_gateway: some-app-gateway-name`))
+			})
+		})
+
+		Context("with a concourse load balancer", func() {
+			BeforeEach(func() {
+				incomingState.LB.Type = "concourse"
+
+				terraformManager.GetOutputsCall.Returns.Outputs = terraform.Outputs{Map: map[string]interface{}{
+					"load_balancer": "some-load-balancer-name",
+				}}
+			})
+
+			It("returns an ops file with the cloud properties for the LB", func() {
+				ops, err := opsGenerator.GenerateVars(incomingState)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(terraformManager.GetOutputsCall.CallCount).To(Equal(1))
+				Expect(ops).To(ContainSubstring(`load_balancer: some-load-balancer-name`))
 			})
 		})
 

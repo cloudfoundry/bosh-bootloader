@@ -25,8 +25,14 @@ type op struct {
 	Value interface{}
 }
 
+type lb struct {
+	Name            string
+	CloudProperties cloudProperties `yaml:"cloud_properties"`
+}
+
 type cloudProperties struct {
-	ApplicationGateway string `json:"application_gateway"`
+	ApplicationGateway string `yaml:"application_gateway,omitempty"`
+	LoadBalancer       string `yaml:"load_balancer,omitempty"`
 }
 
 type network struct {
@@ -115,12 +121,28 @@ func (o OpsGenerator) Generate(state storage.State) (string, error) {
 		},
 	}
 
-	if state.LB.Type == "cf" {
+	switch state.LB.Type {
+	case "cf":
 		lbOp := op{
 			Type: "replace",
 			Path: "/vm_extensions/-",
-			Value: cloudProperties{
-				ApplicationGateway: "((application_gateway))",
+			Value: lb{
+				Name: "cf-router-network-properties",
+				CloudProperties: cloudProperties{
+					ApplicationGateway: "((application_gateway))",
+				},
+			},
+		}
+		cloudConfigOps = append(cloudConfigOps, lbOp)
+	case "concourse":
+		lbOp := op{
+			Type: "replace",
+			Path: "/vm_extensions/-",
+			Value: lb{
+				Name: "lb",
+				CloudProperties: cloudProperties{
+					LoadBalancer: "((load_balancer))",
+				},
 			},
 		}
 		cloudConfigOps = append(cloudConfigOps, lbOp)

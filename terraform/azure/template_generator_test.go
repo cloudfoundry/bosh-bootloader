@@ -46,6 +46,20 @@ var _ = Describe("TemplateGenerator", func() {
 				checkTemplate(template, expectedTemplate)
 			})
 		})
+
+		Context("when a concourse lb type is provided", func() {
+			BeforeEach(func() {
+				expectedTemplate = expectTemplate("vars", "resource_group", "network", "storage", "network_security_group", "output", "tls", "concourse_lb")
+				lb = storage.LB{
+					Type: "concourse",
+				}
+			})
+
+			It("adds the lb subnet, concourse lb and iso seg to the base template", func() {
+				template := templateGenerator.Generate(storage.State{LB: lb})
+				checkTemplate(template, expectedTemplate)
+			})
+		})
 	})
 })
 
