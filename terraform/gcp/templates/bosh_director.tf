@@ -1,8 +1,3 @@
-variable "subnet_cidr" {
-  type    = "string"
-  default = "10.0.0.0/16"
-}
-
 resource "google_compute_network" "bbl-network" {
   name                    = "${var.env_id}-network"
   auto_create_subnetworks = false

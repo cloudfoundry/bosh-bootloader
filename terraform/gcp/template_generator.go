@@ -8,12 +8,13 @@ import (
 )
 
 type templates struct {
-	vars         string
-	jumpbox      string
-	boshDirector string
-	cfLB         string
-	cfDNS        string
-	concourseLB  string
+	vars             string
+	jumpbox          string
+	boshDirector     string
+	cfLB             string
+	cfDNS            string
+	cfInstanceGroups string
+	concourseLB      string
 }
 
 type TemplateGenerator struct{}
@@ -25,32 +26,47 @@ func NewTemplateGenerator() TemplateGenerator {
 func (t TemplateGenerator) Generate(state storage.State) string {
 	tmpls := readTemplates()
 
-	template := strings.Join([]string{tmpls.vars, tmpls.boshDirector, tmpls.jumpbox}, "\n")
+	cidrs := t.GenerateSubnetCidrs(state.GCP.Zones)
+	template := strings.Join([]string{tmpls.vars, tmpls.boshDirector, tmpls.jumpbox, cidrs}, "\n")
 
 	switch state.LB.Type {
 	case "concourse":
 		template = strings.Join([]string{template, tmpls.concourseLB}, "\n")
 	case "cf":
-		instanceGroups := t.GenerateInstanceGroups(state.GCP.Zones)
 		backendService := t.GenerateBackendService(state.GCP.Zones)
-
-		template = strings.Join([]string{template, tmpls.cfLB, instanceGroups, backendService}, "\n")
+		template = strings.Join([]string{template, tmpls.cfLB, tmpls.cfInstanceGroups, backendService}, "\n")
 
 		if state.LB.Domain != "" {
 			template = strings.Join([]string{template, tmpls.cfDNS}, "\n")
 		}
 	}
 
-	cidrs := t.GenerateSubnetCidrs(state.GCP.Zones)
-	if len(cidrs) > 0 {
-		template = strings.Join([]string{template, cidrs}, "\n")
-	}
-
 	return template
 }
 
 func (t TemplateGenerator) GenerateBackendService(zoneList []string) string {
+	backendBaseRestricted := `resource "google_compute_backend_service" "router-lb-backend-service-restricted" {
+  count       = "${var.restrict_instance_groups}"
+  name        = "${var.env_id}-router-lb"
+  port_name   = "https"
+  protocol    = "HTTPS"
+  timeout_sec = 900
+  enable_cdn  = false
+
+  backend {
+    group = "${google_compute_instance_group.router-lb-0.self_link}"
+  }
+
+  backend {
+    group = "${google_compute_instance_group.router-lb-1.self_link}"
+  }
+
+  health_checks = ["${google_compute_health_check.cf-public-health-check.self_link}"]
+}
+`
+
 	backendBase := `resource "google_compute_backend_service" "router-lb-backend-service" {
+  count       = "${1 - var.restrict_instance_groups}"
   name        = "${var.env_id}-router-lb"
   port_name   = "https"
   protocol    = "HTTPS"
@@ -69,26 +85,7 @@ func (t TemplateGenerator) GenerateBackendService(zoneList []string) string {
 `, backends, i)
 	}
 
-	return fmt.Sprintf(backendBase, backends)
-}
-
-func (t TemplateGenerator) GenerateInstanceGroups(zoneList []string) string {
-	var groups []string
-	for i, zone := range zoneList {
-		groups = append(groups, fmt.Sprintf(`resource "google_compute_instance_group" "router-lb-%[1]d" {
-  name        = "${var.env_id}-router-lb-%[1]d-%[2]s"
-  description = "terraform generated instance group that is multi-zone for https loadbalancing"
-  zone        = "%[2]s"
-
-  named_port {
-    name = "https"
-    port = "443"
-  }
-}
-`, i, zone))
-	}
-
-	return strings.Join(groups, "\n")
+	return strings.Join([]string{backendBaseRestricted, fmt.Sprintf(backendBase, backends)}, "\n")
 }
 
 func (t TemplateGenerator) GenerateSubnetCidrs(zoneList []string) string {
@@ -109,6 +106,7 @@ func readTemplates() templates {
 	tmpls.boshDirector = string(MustAsset("templates/bosh_director.tf"))
 	tmpls.cfLB = string(MustAsset("templates/cf_lb.tf"))
 	tmpls.cfDNS = string(MustAsset("templates/cf_dns.tf"))
+	tmpls.cfInstanceGroups = string(MustAsset("templates/cf_instance_groups.tf"))
 	tmpls.concourseLB = string(MustAsset("templates/concourse_lb.tf"))
 
 	return tmpls
