@@ -69,7 +69,14 @@ func (u Up) Execute(args []string, state storage.State) error {
 	}
 
 	state, err = u.boshManager.CreateJumpbox(state, terraformOutputs)
-	if err != nil {
+	switch err.(type) {
+	case bosh.ManagerCreateError:
+		bcErr := err.(bosh.ManagerCreateError)
+		if setErr := u.stateStore.Set(bcErr.State()); setErr != nil {
+			return fmt.Errorf("Save state after jumpbox create error: %s, %s", err, setErr)
+		}
+		return fmt.Errorf("Create jumpbox: %s", err)
+	case error:
 		return fmt.Errorf("Create jumpbox: %s", err)
 	}
 

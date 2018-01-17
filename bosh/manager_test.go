@@ -177,14 +177,15 @@ director_ssl:
 					})
 				})
 
-				Context("when the executor's create env call fails with non create env error", func() {
+				Context("when the executor's create env call fails", func() {
 					BeforeEach(func() {
 						boshExecutor.CreateEnvCall.Returns.Error = errors.New("lychee")
 					})
 
 					It("returns an error", func() {
 						_, err := boshManager.CreateDirector(storage.State{}, terraformOutputs)
-						Expect(err).To(MatchError("Create director env: lychee"))
+						Expect(err).To(BeAssignableToTypeOf(bosh.ManagerCreateError{}))
+						Expect(err).To(MatchError("lychee"))
 					})
 				})
 			})
@@ -342,21 +343,13 @@ gcp_credentials_json: some-credential-json
 					})
 				})
 
-				Context("when create env returns a typed error", func() {
-					It("returns an error", func() {
-						boshExecutor.CreateEnvCall.Returns.Error = bosh.NewCreateEnvError(map[string]interface{}{"foo": "bar"}, errors.New("apple"))
-
-						_, err := boshManager.CreateJumpbox(state, terraformOutputs)
-						Expect(err).To(MatchError("Create jumpbox env: apple"))
-					})
-				})
-
-				Context("when create env returns an untyped error", func() {
-					It("returns an error", func() {
+				Context("when create env returns an error", func() {
+					It("returns a ManagerCreateError", func() {
 						boshExecutor.CreateEnvCall.Returns.Error = errors.New("banana")
 
 						_, err := boshManager.CreateJumpbox(state, terraformOutputs)
-						Expect(err).To(MatchError("Create jumpbox env: banana"))
+						Expect(err).To(BeAssignableToTypeOf(bosh.ManagerCreateError{}))
+						Expect(err).To(MatchError("banana"))
 					})
 				})
 

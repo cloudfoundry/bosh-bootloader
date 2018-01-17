@@ -129,16 +129,11 @@ func (m *Manager) CreateJumpbox(state storage.State, terraformOutputs terraform.
 	}
 
 	variables, err := m.executor.CreateEnv(dirInput, state)
-	switch err.(type) {
-	case CreateEnvError:
-		ceErr := err.(CreateEnvError)
+	if err != nil {
 		state.Jumpbox = storage.Jumpbox{
 			Variables: variables,
-			State:     ceErr.BOSHState(),
 		}
-		return storage.State{}, fmt.Errorf("Create jumpbox env: %s", NewManagerCreateError(state, err))
-	case error:
-		return storage.State{}, fmt.Errorf("Create jumpbox env: %s", err)
+		return storage.State{}, NewManagerCreateError(state, err)
 	}
 	m.logger.Step("created jumpbox")
 
@@ -215,17 +210,11 @@ func (m *Manager) CreateDirector(state storage.State, terraformOutputs terraform
 	}
 
 	variables, err := m.executor.CreateEnv(dirInput, state)
-
-	switch err.(type) {
-	case CreateEnvError:
-		ceErr := err.(CreateEnvError)
+	if err != nil {
 		state.BOSH = storage.BOSH{
 			Variables: variables,
-			State:     ceErr.BOSHState(),
 		}
 		return storage.State{}, NewManagerCreateError(state, err)
-	case error:
-		return storage.State{}, fmt.Errorf("Create director env: %s", err)
 	}
 
 	directorVars := getDirectorVars(variables)
@@ -305,8 +294,6 @@ func (m *Manager) DeleteDirector(state storage.State, terraformOutputs terraform
 }
 
 func (m *Manager) DeleteJumpbox(state storage.State, terraformOutputs terraform.Outputs) error {
-	m.logger.Step("destroying jumpbox")
-
 	varsDir, err := m.stateStore.GetVarsDir()
 	if err != nil {
 		return fmt.Errorf("Get vars dir: %s", err)

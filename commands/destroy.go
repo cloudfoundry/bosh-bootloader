@@ -212,6 +212,8 @@ func (d Destroy) deleteBOSH(state storage.State, terraformOutputs terraform.Outp
 	}
 
 	if !state.Jumpbox.IsEmpty() {
+		d.logger.Step("destroying jumpbox")
+
 		err := d.boshManager.DeleteJumpbox(state, terraformOutputs)
 		if err != nil {
 			return state, err
