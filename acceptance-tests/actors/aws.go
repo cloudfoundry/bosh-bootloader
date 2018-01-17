@@ -19,7 +19,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/elb"
 )
 
-func NewAWSLBHelper(c acceptance.Config) awsLbHelper {
+func NewAWSLBHelper(c acceptance.Config) awsLBHelper {
 	creds := storage.AWS{
 		AccessKeyID:     c.AWSAccessKeyID,
 		SecretAccessKey: c.AWSSecretAccessKey,
@@ -31,13 +31,13 @@ func NewAWSLBHelper(c acceptance.Config) awsLbHelper {
 		Credentials: credentials.NewStaticCredentials(creds.AccessKeyID, creds.SecretAccessKey, ""),
 		Region:      awslib.String(creds.Region),
 	}
-	return awsLbHelper{
+	return awsLBHelper{
 		client:    client,
 		elbClient: elb.New(session.New(elbConfig)),
 	}
 }
 
-func (a awsLbHelper) loadBalancers(vpcName string) []string {
+func (a awsLBHelper) loadBalancers(vpcName string) []string {
 	var loadBalancerNames []string
 
 	vpcID, err := a.client.GetVPC(vpcName)
@@ -55,12 +55,12 @@ func (a awsLbHelper) loadBalancers(vpcName string) []string {
 	return loadBalancerNames
 }
 
-type awsLbHelper struct {
+type awsLBHelper struct {
 	client    aws.Client
 	elbClient *elb.ELB
 }
 
-func (a awsLbHelper) GetLBArgs() []string {
+func (a awsLBHelper) GetLBArgs() []string {
 	certPath, err := testhelpers.WriteContentsToTempFile(testhelpers.BBL_CERT)
 	Expect(err).NotTo(HaveOccurred())
 	chainPath, err := testhelpers.WriteContentsToTempFile(testhelpers.BBL_CHAIN)
@@ -76,7 +76,13 @@ func (a awsLbHelper) GetLBArgs() []string {
 	}
 }
 
-func (a awsLbHelper) ConfirmLBsExist(envID string) {
+func (a awsLBHelper) VerifyCloudConfigExtensions(vmExtensions []string) {
+	Expect(vmExtensions).To(ContainElement("cf-router-network-properties"))
+	Expect(vmExtensions).To(ContainElement("diego-ssh-proxy-network-properties"))
+	Expect(vmExtensions).To(ContainElement("cf-tcp-router-network-properties"))
+}
+
+func (a awsLBHelper) ConfirmLBsExist(envID string) {
 	vpcName := fmt.Sprintf("%s-vpc", envID)
 	Expect(a.loadBalancers(vpcName)).To(HaveLen(3))
 	Expect(a.loadBalancers(vpcName)).To(ConsistOf(
@@ -86,12 +92,12 @@ func (a awsLbHelper) ConfirmLBsExist(envID string) {
 	))
 }
 
-func (a awsLbHelper) ConfirmNoLBsExist(envID string) {
+func (a awsLBHelper) ConfirmNoLBsExist(envID string) {
 	vpcName := fmt.Sprintf("%s-vpc", envID)
 	Expect(a.loadBalancers(vpcName)).To(BeEmpty())
 }
 
-func (a awsLbHelper) VerifyBblLBOutput(stdout string) {
+func (a awsLBHelper) VerifyBblLBOutput(stdout string) {
 	Expect(stdout).To(MatchRegexp("CF Router LB:.*"))
 	Expect(stdout).To(MatchRegexp("CF SSH Proxy LB:.*"))
 	Expect(stdout).To(MatchRegexp("CF TCP Router LB:.*"))

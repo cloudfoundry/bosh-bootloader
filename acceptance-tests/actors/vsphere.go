@@ -1,21 +1,24 @@
 package actors
 
-func NewVSphereLBHelper() vSphereLbHelper {
-	return vSphereLbHelper{}
+func NewVSphereLBHelper() vSphereLBHelper {
+	return vSphereLBHelper{}
 }
 
-type vSphereLbHelper struct {
+type vSphereLBHelper struct {
 }
 
-func (v vSphereLbHelper) GetLBArgs() []string {
+func (v vSphereLBHelper) GetLBArgs() []string {
 	return []string{}
 }
 
-func (v vSphereLbHelper) ConfirmLBsExist(envID string) {
+func (z vSphereLBHelper) VerifyCloudConfigExtensions(vmExtensions []string) {
 }
 
-func (v vSphereLbHelper) ConfirmNoLBsExist(envID string) {
+func (v vSphereLBHelper) ConfirmLBsExist(envID string) {
 }
 
-func (v vSphereLbHelper) VerifyBblLBOutput(stdout string) {
+func (v vSphereLBHelper) ConfirmNoLBsExist(envID string) {
+}
+
+func (v vSphereLBHelper) VerifyBblLBOutput(stdout string) {
 }

@@ -91,9 +91,7 @@ var _ = Describe("up", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			vmExtensions := acceptance.VmExtensionNames(cloudConfig)
-			Expect(vmExtensions).To(ContainElement("cf-router-network-properties"))
-			Expect(vmExtensions).To(ContainElement("diego-ssh-proxy-network-properties"))
-			Expect(vmExtensions).To(ContainElement("cf-tcp-router-network-properties"))
+			iaasHelper.VerifyCloudConfigExtensions(vmExtensions)
 		})
 
 		By("checking if bbl print-env prints the bosh environment variables", func() {

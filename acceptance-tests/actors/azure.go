@@ -1,7 +1,6 @@
 package actors
 
 import (
-	"encoding/base64"
 	"fmt"
 
 	"github.com/Azure/azure-sdk-for-go/arm/network"
@@ -9,13 +8,13 @@ import (
 	"github.com/Azure/go-autorest/autorest/adal"
 	"github.com/Azure/go-autorest/autorest/azure"
 	acceptance "github.com/cloudfoundry/bosh-bootloader/acceptance-tests"
-	"github.com/cloudfoundry/bosh-bootloader/testhelpers"
 
 	. "github.com/onsi/gomega"
 )
 
 type azureLBHelper struct {
 	applicationGatewaysClient *network.ApplicationGatewaysClient
+	loadBalancersClient       *network.LoadBalancersClient
 }
 
 func NewAzureLBHelper(config acceptance.Config) azureLBHelper {
@@ -33,9 +32,28 @@ func NewAzureLBHelper(config acceptance.Config) azureLBHelper {
 	agc.ManagementClient.Authorizer = autorest.NewBearerAuthorizer(servicePrincipalToken)
 	agc.ManagementClient.Sender = autorest.CreateSender(autorest.AsIs())
 
+	lbc := network.NewLoadBalancersClient(config.AzureSubscriptionID)
+	lbc.ManagementClient.Authorizer = autorest.NewBearerAuthorizer(servicePrincipalToken)
+	lbc.ManagementClient.Sender = autorest.CreateSender(autorest.AsIs())
+
 	return azureLBHelper{
+		loadBalancersClient:       &lbc,
 		applicationGatewaysClient: &agc,
 	}
+}
+
+func (z azureLBHelper) getLoadBalancer(resourceGroupName, loadBalancerName string) (bool, error) {
+	_, err := z.loadBalancersClient.Get(fmt.Sprintf("%s-bosh", resourceGroupName), loadBalancerName, "")
+	if err != nil {
+		if aerr, ok := err.(autorest.DetailedError); ok {
+			if aerr.StatusCode.(int) == 404 {
+				return false, nil
+			}
+		}
+		return false, err
+	}
+
+	return true, nil
 }
 
 func (z azureLBHelper) getApplicationGateway(resourceGroupName, applicationGatewayName string) (bool, error) {
@@ -53,33 +71,27 @@ func (z azureLBHelper) getApplicationGateway(resourceGroupName, applicationGatew
 }
 
 func (z azureLBHelper) GetLBArgs() []string {
-	pfx_data, err := base64.StdEncoding.DecodeString(testhelpers.PFX_BASE64)
-	Expect(err).NotTo(HaveOccurred())
-
-	certPath, err := testhelpers.WriteByteContentsToTempFile(pfx_data)
-	Expect(err).NotTo(HaveOccurred())
-
-	keyPath, err := testhelpers.WriteContentsToTempFile(testhelpers.PFX_PASSWORD)
-	Expect(err).NotTo(HaveOccurred())
 	return []string{
-		"--lb-type", "cf",
-		"--lb-cert", certPath,
-		"--lb-key", keyPath,
+		"--lb-type", "concourse",
 	}
 }
 
+func (z azureLBHelper) VerifyCloudConfigExtensions(vmExtensions []string) {
+	Expect(vmExtensions).To(ContainElement("lb"))
+}
+
 func (z azureLBHelper) ConfirmLBsExist(envID string) {
-	exists, err := z.getApplicationGateway(envID, fmt.Sprintf("%s-app-gateway", envID))
+	exists, err := z.getLoadBalancer(envID, fmt.Sprintf("%s-concourse-lb", envID))
 	Expect(err).NotTo(HaveOccurred())
 	Expect(exists).To(BeTrue())
 }
 
 func (z azureLBHelper) ConfirmNoLBsExist(envID string) {
-	exists, err := z.getApplicationGateway(envID, fmt.Sprintf("%s-app-gateway", envID))
+	exists, err := z.getLoadBalancer(envID, fmt.Sprintf("%s-concourse-lb", envID))
 	Expect(err).NotTo(HaveOccurred())
 	Expect(exists).To(BeFalse())
 }
 
 func (z azureLBHelper) VerifyBblLBOutput(stdout string) {
-	Expect(stdout).To(MatchRegexp("CF LB:.*"))
+	Expect(stdout).To(MatchRegexp("Concourse LB:.*"))
 }

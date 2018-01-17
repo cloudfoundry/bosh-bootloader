@@ -58,6 +58,12 @@ func (g gcpLBHelper) GetLBArgs() []string {
 	}
 }
 
+func (g gcpLBHelper) VerifyCloudConfigExtensions(vmExtensions []string) {
+	Expect(vmExtensions).To(ContainElement("cf-router-network-properties"))
+	Expect(vmExtensions).To(ContainElement("diego-ssh-proxy-network-properties"))
+	Expect(vmExtensions).To(ContainElement("cf-tcp-router-network-properties"))
+}
+
 func (g gcpLBHelper) ConfirmLBsExist(envID string) {
 	targetPools := []string{envID + "-cf-ssh-proxy", envID + "-cf-tcp-router"}
 	for _, p := range targetPools {
