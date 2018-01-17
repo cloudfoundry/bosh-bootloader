@@ -16,6 +16,12 @@ resource "azurerm_lb" "concourse" {
   }
 }
 
+resource "azurerm_lb_backend_address_pool" "concourse" {
+  name                = "${var.env_id}-concourse-backend-pool"
+  resource_group_name = "${azurerm_resource_group.bosh.name}"
+  loadbalancer_id     = "${azurerm_lb.concourse.id}"
+}
+
 output "concourse_lb_name" {
   value = "${azurerm_lb.concourse.name}"
 }
