@@ -108,12 +108,10 @@ should never be modified by hand.
 
 `bbl-state.json` contains the following:
 
-- AWS access key ID, secret access key, region
 - Environment ID (unique ID for tag on all resources bbl deploys)
 - BOSH director username and password
 - BOSH director IP
 - BOSH director SSL CA, certificate, private key
-- bosh-init state and manifest (for the currently deployed director)
 
 The best way to extract this info is by issuing commands like
 
