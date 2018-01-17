@@ -246,6 +246,12 @@ func (m *Manager) CreateDirector(state storage.State, terraformOutputs terraform
 }
 
 func (m *Manager) DeleteDirector(state storage.State, terraformOutputs terraform.Outputs) error {
+	if state.BOSH.IsEmpty() {
+		return nil
+	}
+
+	m.logger.Step("destroying bosh director")
+
 	varsDir, err := m.stateStore.GetVarsDir()
 	if err != nil {
 		return fmt.Errorf("Get vars dir: %s", err)
@@ -294,6 +300,12 @@ func (m *Manager) DeleteDirector(state storage.State, terraformOutputs terraform
 }
 
 func (m *Manager) DeleteJumpbox(state storage.State, terraformOutputs terraform.Outputs) error {
+	if state.Jumpbox.IsEmpty() {
+		return nil
+	}
+
+	m.logger.Step("destroying jumpbox")
+
 	varsDir, err := m.stateStore.GetVarsDir()
 	if err != nil {
 		return fmt.Errorf("Get vars dir: %s", err)

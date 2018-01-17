@@ -418,6 +418,15 @@ gcp_credentials_json: some-credential-json
 			Expect(boshExecutor.DeleteEnvCall.Receives.DirInput.StateDir).To(Equal("some-state-dir"))
 		})
 
+		Context("when state.Jumpbox is empty", func() {
+			It("does not attempt to delete the bosh director", func() {
+				err := boshManager.DeleteJumpbox(storage.State{}, terraform.Outputs{Map: map[string]interface{}{}})
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(boshExecutor.DeleteEnvCall.CallCount).To(Equal(0))
+			})
+		})
+
 		Context("when an error occurs", func() {
 			Context("when the executor's delete env call fails with delete env error", func() {
 				var expectedError bosh.ManagerDeleteError
@@ -446,7 +455,7 @@ gcp_credentials_json: some-credential-json
 				})
 
 				It("returns an error", func() {
-					err := boshManager.DeleteJumpbox(storage.State{}, terraform.Outputs{})
+					err := boshManager.DeleteJumpbox(incomingState, terraform.Outputs{})
 					Expect(err).To(MatchError("Delete jumpbox env: passionfruit"))
 				})
 			})
@@ -498,6 +507,15 @@ gcp_credentials_json: some-credential-json
 				StateDir:   "some-state-dir",
 				VarsDir:    varsDir,
 			}))
+		})
+
+		Context("when state.BOSH is empty", func() {
+			It("does not attempt to delete the bosh director", func() {
+				err := boshManager.DeleteDirector(storage.State{}, terraform.Outputs{Map: map[string]interface{}{}})
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(boshExecutor.DeleteEnvCall.CallCount).To(Equal(0))
+			})
 		})
 
 		Context("when an error occurs", func() {

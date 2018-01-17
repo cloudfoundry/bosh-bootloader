@@ -200,27 +200,19 @@ func (d Destroy) deleteBOSH(state storage.State, terraformOutputs terraform.Outp
 		return state, nil
 	}
 
-	if !state.BOSH.IsEmpty() {
-		d.logger.Step("destroying bosh director")
-
-		err := d.boshManager.DeleteDirector(state, terraformOutputs)
-		if err != nil {
-			return state, err
-		}
-
-		state.BOSH = storage.BOSH{}
+	err := d.boshManager.DeleteDirector(state, terraformOutputs)
+	if err != nil {
+		return state, err
 	}
 
-	if !state.Jumpbox.IsEmpty() {
-		d.logger.Step("destroying jumpbox")
+	state.BOSH = storage.BOSH{}
 
-		err := d.boshManager.DeleteJumpbox(state, terraformOutputs)
-		if err != nil {
-			return state, err
-		}
-
-		state.Jumpbox = storage.Jumpbox{}
+	err = d.boshManager.DeleteJumpbox(state, terraformOutputs)
+	if err != nil {
+		return state, err
 	}
+
+	state.Jumpbox = storage.Jumpbox{}
 
 	return state, nil
 }

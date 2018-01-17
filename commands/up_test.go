@@ -289,7 +289,39 @@ var _ = Describe("Up", func() {
 				})
 			})
 
-			Context("when the bosh manager fails with BOSHManagerCreate error", func() {
+			Context("when the bosh manager fails to create a jumpbox with ManagerCreateError", func() {
+				var partialState storage.State
+
+				BeforeEach(func() {
+					partialState = storage.State{LatestTFOutput: "some terraform error"}
+					expectedError := bosh.NewManagerCreateError(partialState, errors.New("rambutan"))
+					boshManager.CreateJumpboxCall.Returns.Error = expectedError
+				})
+
+				It("returns the error and saves the state", func() {
+					err := command.Execute([]string{}, storage.State{})
+					Expect(err).To(MatchError("Create jumpbox: rambutan"))
+
+					Expect(stateStore.SetCall.CallCount).To(Equal(2))
+					Expect(stateStore.SetCall.Receives[1].State).To(Equal(partialState))
+				})
+
+				Context("when it fails to save the state", func() {
+					BeforeEach(func() {
+						stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {errors.New("lychee")}}
+					})
+
+					It("returns a compound error", func() {
+						err := command.Execute([]string{}, storage.State{})
+						Expect(err).To(MatchError("Save state after jumpbox create error: rambutan, lychee"))
+
+						Expect(stateStore.SetCall.CallCount).To(Equal(2))
+						Expect(stateStore.SetCall.Receives[1].State).To(Equal(partialState))
+					})
+				})
+			})
+
+			Context("when the bosh manager fails to create the director with ManagerCreateError", func() {
 				var partialState storage.State
 
 				BeforeEach(func() {

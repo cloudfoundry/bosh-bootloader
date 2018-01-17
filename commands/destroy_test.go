@@ -467,13 +467,6 @@ var _ = Describe("Destroy", func() {
 				})
 			})
 
-			It("logs the bosh deletion", func() {
-				err := destroy.Execute([]string{}, state)
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(logger.StepCall.Messages).To(ContainElement("destroying bosh director"))
-			})
-
 			Context("reentrance", func() {
 				Context("when NoDirector is true", func() {
 					It("does not attempt to delete the bosh director", func() {
@@ -487,30 +480,6 @@ var _ = Describe("Destroy", func() {
 					})
 				})
 
-				Context("when state.BOSH is empty", func() {
-					It("does not attempt to delete the bosh director", func() {
-						state.BOSH = storage.BOSH{}
-						err := destroy.Execute([]string{}, state)
-						Expect(err).NotTo(HaveOccurred())
-
-						Expect(logger.PrintlnCall.Receives.Message).NotTo(Equal("no BOSH director, skipping..."))
-						Expect(logger.StepCall.Messages).NotTo(ContainElement("destroying bosh director"))
-						Expect(boshManager.DeleteDirectorCall.CallCount).To(Equal(0))
-					})
-				})
-
-				Context("when state.Jumpbox is empty", func() {
-					It("does not attempt to delete the jumpbox", func() {
-						state.Jumpbox = storage.Jumpbox{}
-						err := destroy.Execute([]string{}, state)
-						Expect(err).NotTo(HaveOccurred())
-
-						Expect(logger.StepCall.Messages).To(ContainElement("destroying bosh director"))
-						Expect(logger.StepCall.Messages).NotTo(ContainElement("destroying jumpbox"))
-						Expect(boshManager.DeleteDirectorCall.CallCount).To(Equal(1))
-						Expect(boshManager.DeleteJumpboxCall.CallCount).To(Equal(0))
-					})
-				})
 			})
 		})
 
