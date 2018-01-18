@@ -347,9 +347,11 @@ func (e Executor) CreateEnv(input DirInput, state storage.State) (string, error)
 }
 
 func (e Executor) DeleteEnv(input DirInput, state storage.State) error {
-	stateJson := filepath.Join(input.VarsDir, fmt.Sprintf("%s-state.json", input.Deployment))
-	_, err := os.Stat(stateJson)
+	isDeletable, err := deploymentExists(input.VarsDir, input.Deployment)
 	if err != nil {
+		return err
+	}
+	if !isDeletable {
 		return nil
 	}
 
@@ -389,6 +391,23 @@ func (e Executor) DeleteEnv(input DirInput, state storage.State) error {
 	}
 
 	return nil
+}
+
+func deploymentExists(varsDir, deployment string) (bool, error) {
+	var deploymentBoshState string
+	switch deployment {
+	case "director":
+		deploymentBoshState = filepath.Join(varsDir, "bosh-state.json")
+	case "jumpbox":
+		deploymentBoshState = filepath.Join(varsDir, "jumpbox-state.json")
+	default:
+		return false, fmt.Errorf("Executor doesn't know how to delete a deployed %s", deployment)
+	}
+	_, err := os.Stat(deploymentBoshState)
+	if err != nil {
+		return false, nil
+	}
+	return true, nil
 }
 
 func (e Executor) Version() (string, error) {

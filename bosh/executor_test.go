@@ -679,7 +679,7 @@ var _ = Describe("Executor", func() {
 			executor = bosh.NewExecutor(cmd, ioutil.ReadFile, json.Unmarshal, json.Marshal, ioutil.WriteFile)
 
 			dirInput = bosh.DirInput{
-				Deployment: "some-deployment",
+				Deployment: "director",
 				VarsDir:    varsDir,
 				StateDir:   stateDir,
 			}
@@ -688,22 +688,22 @@ var _ = Describe("Executor", func() {
 				IAAS: "some-iaas",
 			}
 
-			deleteEnvPath = filepath.Join(stateDir, "delete-some-deployment.sh")
+			deleteEnvPath = filepath.Join(stateDir, "delete-director.sh")
 			deleteEnvContents := "#!/bin/bash\necho delete-env > /dev/null\n"
 			ioutil.WriteFile(deleteEnvPath, []byte(deleteEnvContents), storage.ScriptMode)
 
-			deploymentStateJson := filepath.Join(varsDir, "some-deployment-state.json")
+			deploymentStateJson := filepath.Join(varsDir, "bosh-state.json")
 			ioutil.WriteFile(deploymentStateJson, []byte("some: deployment"), storage.StateMode)
 		})
 
 		AfterEach(func() {
 			os.Unsetenv("BBL_STATE_DIR")
-			os.Remove(filepath.Join(stateDir, "delete-some-deployment.sh"))
+			os.Remove(filepath.Join(stateDir, "delete-director.sh"))
 		})
 
 		Context("when the user provides a delete-env override", func() {
 			BeforeEach(func() {
-				overridePath := filepath.Join(stateDir, "delete-some-deployment-override.sh")
+				overridePath := filepath.Join(stateDir, "delete-director-override.sh")
 				overrideContents := fmt.Sprintf("#!/bin/bash\necho 'override' > %s/delete-env-output\n", varsDir)
 
 				ioutil.WriteFile(overridePath, []byte(overrideContents), storage.ScriptMode)
@@ -711,7 +711,7 @@ var _ = Describe("Executor", func() {
 
 			AfterEach(func() {
 				os.Remove(filepath.Join(varsDir, "delete-env-output"))
-				os.Remove(filepath.Join(stateDir, "delete-some-deployment-override.sh"))
+				os.Remove(filepath.Join(stateDir, "delete-director-override.sh"))
 			})
 
 			It("runs the delete-env-override.sh script", func() {
@@ -723,6 +723,46 @@ var _ = Describe("Executor", func() {
 				overrideOut, err := ioutil.ReadFile(filepath.Join(varsDir, "delete-env-output"))
 				Expect(err).NotTo(HaveOccurred())
 				Expect(overrideOut).To(ContainSubstring("override"))
+			})
+		})
+
+		Context("when the user tries to delete a jumpbox", func() {
+			BeforeEach(func() {
+				dirInput.Deployment = "jumpbox"
+				deleteEnvPath = filepath.Join(stateDir, "delete-jumpbox.sh")
+				deleteEnvContents := "#!/bin/bash\necho delete-env > /dev/null\n"
+				ioutil.WriteFile(deleteEnvPath, []byte(deleteEnvContents), storage.ScriptMode)
+
+				deploymentStateJson := filepath.Join(varsDir, "jumpbox-state.json")
+				ioutil.WriteFile(deploymentStateJson, []byte("some: deployment"), storage.StateMode)
+			})
+
+			AfterEach(func() {
+				os.Remove(filepath.Join(stateDir, "delete-jumpbox.sh"))
+				os.Remove(filepath.Join(stateDir, "jumpbox-state.json"))
+			})
+
+			It("deletes a bosh environment with the delete-env script", func() {
+				err := executor.DeleteEnv(dirInput, state)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(cmd.RunCallCount()).To(Equal(0))
+
+				By("setting BBL_STATE_DIR environment variable", func() {
+					bblStateDirEnv := os.Getenv("BBL_STATE_DIR")
+					Expect(bblStateDirEnv).To(Equal(stateDir))
+				})
+			})
+		})
+
+		Context("when the user tries to delete an unfamiliar deployment-type-thing", func() {
+			BeforeEach(func() {
+				dirInput.Deployment = "garbaggio-deployment"
+			})
+
+			It("errors reasonably", func() {
+				err := executor.DeleteEnv(dirInput, state)
+				Expect(err).To(HaveOccurred())
 			})
 		})
 
@@ -826,7 +866,7 @@ var _ = Describe("Executor", func() {
 
 			It("returns an error", func() {
 				err := executor.DeleteEnv(dirInput, state)
-				Expect(err).To(MatchError("Run bosh delete-env some-deployment: exit status 1"))
+				Expect(err).To(MatchError("Run bosh delete-env director: exit status 1"))
 			})
 		})
 	})
