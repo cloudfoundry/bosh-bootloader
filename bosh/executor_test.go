@@ -690,8 +690,10 @@ var _ = Describe("Executor", func() {
 
 			deleteEnvPath = filepath.Join(stateDir, "delete-some-deployment.sh")
 			deleteEnvContents := "#!/bin/bash\necho delete-env > /dev/null\n"
-
 			ioutil.WriteFile(deleteEnvPath, []byte(deleteEnvContents), storage.ScriptMode)
+
+			deploymentStateJson := filepath.Join(varsDir, "some-deployment-state.json")
+			ioutil.WriteFile(deploymentStateJson, []byte("some: deployment"), storage.StateMode)
 		})
 
 		AfterEach(func() {
@@ -824,7 +826,7 @@ var _ = Describe("Executor", func() {
 
 			It("returns an error", func() {
 				err := executor.DeleteEnv(dirInput, state)
-				Expect(err).To(MatchError("Run bosh delete-env: exit status 1"))
+				Expect(err).To(MatchError("Run bosh delete-env some-deployment: exit status 1"))
 			})
 		})
 	})

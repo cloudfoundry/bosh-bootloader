@@ -418,46 +418,18 @@ gcp_credentials_json: some-credential-json
 			Expect(boshExecutor.DeleteEnvCall.Receives.DirInput.StateDir).To(Equal("some-state-dir"))
 		})
 
-		Context("when state.Jumpbox is empty", func() {
-			It("does not attempt to delete the bosh director", func() {
-				err := boshManager.DeleteJumpbox(storage.State{}, terraform.Outputs{Map: map[string]interface{}{}})
-				Expect(err).NotTo(HaveOccurred())
+		Context("when the executor's delete env call fails with delete env error", func() {
+			var expectedError bosh.ManagerDeleteError
 
-				Expect(boshExecutor.DeleteEnvCall.CallCount).To(Equal(0))
-			})
-		})
-
-		Context("when an error occurs", func() {
-			Context("when the executor's delete env call fails with delete env error", func() {
-				var expectedError bosh.ManagerDeleteError
-
-				BeforeEach(func() {
-					jumpboxState := map[string]interface{}{
-						"partial": "jumpbox-state",
-					}
-					deleteEnvError := bosh.NewDeleteEnvError(jumpboxState, errors.New("failed to delete env"))
-					boshExecutor.DeleteEnvCall.Returns.Error = deleteEnvError
-
-					expectedState := incomingState
-					expectedState.Jumpbox.State = jumpboxState
-					expectedError = bosh.NewManagerDeleteError(expectedState, deleteEnvError)
-				})
-
-				It("returns a bosh manager delete error with a valid state", func() {
-					err := boshManager.DeleteJumpbox(incomingState, terraform.Outputs{})
-					Expect(err).To(MatchError(expectedError))
-				})
+			BeforeEach(func() {
+				deleteEnvError := errors.New("failed to delete env")
+				boshExecutor.DeleteEnvCall.Returns.Error = deleteEnvError
+				expectedError = bosh.NewManagerDeleteError(incomingState, deleteEnvError)
 			})
 
-			Context("when the delete env fails", func() {
-				BeforeEach(func() {
-					boshExecutor.DeleteEnvCall.Returns.Error = errors.New("passionfruit")
-				})
-
-				It("returns an error", func() {
-					err := boshManager.DeleteJumpbox(incomingState, terraform.Outputs{})
-					Expect(err).To(MatchError("Delete jumpbox env: passionfruit"))
-				})
+			It("returns a bosh manager delete error with a valid state", func() {
+				err := boshManager.DeleteJumpbox(incomingState, terraform.Outputs{})
+				Expect(err).To(MatchError(expectedError))
 			})
 		})
 	})
@@ -509,15 +481,6 @@ gcp_credentials_json: some-credential-json
 			}))
 		})
 
-		Context("when state.BOSH is empty", func() {
-			It("does not attempt to delete the bosh director", func() {
-				err := boshManager.DeleteDirector(storage.State{}, terraform.Outputs{Map: map[string]interface{}{}})
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(boshExecutor.DeleteEnvCall.CallCount).To(Equal(0))
-			})
-		})
-
 		Context("when an error occurs", func() {
 			var incomingState storage.State
 
@@ -545,30 +508,14 @@ gcp_credentials_json: some-credential-json
 			})
 
 			Context("when the executor's delete env call fails with delete env error", func() {
-				It("returns a bosh manager delete error with a valid state", func() {
-					boshState := map[string]interface{}{"partial": "bosh-state"}
-					deleteEnvError := bosh.NewDeleteEnvError(boshState, errors.New("failed to delete env"))
+				It("returns a bosh manager delete error", func() {
+					deleteEnvError := errors.New("Run bosh delete-env director: some error")
 					boshExecutor.DeleteEnvCall.Returns.Error = deleteEnvError
 
-					expectedState := incomingState
-					expectedState.BOSH = storage.BOSH{
-						Manifest: "some-manifest",
-						State:    boshState,
-					}
-					expectedError := bosh.NewManagerDeleteError(expectedState, deleteEnvError)
+					expectedError := bosh.NewManagerDeleteError(incomingState, deleteEnvError)
+
 					err := boshManager.DeleteDirector(incomingState, terraform.Outputs{})
 					Expect(err).To(MatchError(expectedError))
-				})
-			})
-
-			Context("when the delete env fails", func() {
-				BeforeEach(func() {
-					boshExecutor.DeleteEnvCall.Returns.Error = errors.New("coconut")
-				})
-
-				It("returns an error", func() {
-					err := boshManager.DeleteDirector(incomingState, terraform.Outputs{})
-					Expect(err).To(MatchError("Delete director env: coconut"))
 				})
 			})
 

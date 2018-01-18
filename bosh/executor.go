@@ -347,9 +347,16 @@ func (e Executor) CreateEnv(input DirInput, state storage.State) (string, error)
 }
 
 func (e Executor) DeleteEnv(input DirInput, state storage.State) error {
+	stateJson := filepath.Join(input.VarsDir, fmt.Sprintf("%s-state.json", input.Deployment))
+	_, err := os.Stat(stateJson)
+	if err != nil {
+		return nil
+	}
+
 	os.Setenv("BBL_STATE_DIR", input.StateDir)
+
 	deleteEnvScript := filepath.Join(input.StateDir, fmt.Sprintf("delete-%s-override.sh", input.Deployment))
-	_, err := os.Stat(deleteEnvScript)
+	_, err = os.Stat(deleteEnvScript)
 	if err != nil {
 		deleteEnvScript = strings.Replace(deleteEnvScript, "-override", "", -1)
 	}
@@ -378,7 +385,7 @@ func (e Executor) DeleteEnv(input DirInput, state storage.State) error {
 
 	err = cmd.Run()
 	if err != nil {
-		return fmt.Errorf("Run bosh delete-env: %s", err)
+		return fmt.Errorf("Run bosh delete-env %s: %s", input.Deployment, err)
 	}
 
 	return nil

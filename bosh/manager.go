@@ -128,11 +128,8 @@ func (m *Manager) CreateJumpbox(state storage.State, terraformOutputs terraform.
 		return storage.State{}, fmt.Errorf("Write deployment vars: %s", err)
 	}
 
-	variables, err := m.executor.CreateEnv(dirInput, state)
+	_, err = m.executor.CreateEnv(dirInput, state)
 	if err != nil {
-		state.Jumpbox = storage.Jumpbox{
-			Variables: variables,
-		}
 		return storage.State{}, NewManagerCreateError(state, err)
 	}
 	m.logger.Step("created jumpbox")
@@ -284,26 +281,18 @@ func (m *Manager) DeleteDirector(state storage.State, terraformOutputs terraform
 	if err != nil {
 		return fmt.Errorf("Get proxy address: %s", err)
 	}
+
 	osSetenv("BOSH_ALL_PROXY", fmt.Sprintf("socks5://%s", addr))
 
 	err = m.executor.DeleteEnv(dirInput, state)
-	switch err.(type) {
-	case DeleteEnvError:
-		deErr := err.(DeleteEnvError)
-		state.BOSH.State = deErr.BOSHState()
+	if err != nil {
 		return NewManagerDeleteError(state, err)
-	case error:
-		return fmt.Errorf("Delete director env: %s", err)
 	}
 
 	return nil
 }
 
 func (m *Manager) DeleteJumpbox(state storage.State, terraformOutputs terraform.Outputs) error {
-	if state.Jumpbox.IsEmpty() {
-		return nil
-	}
-
 	m.logger.Step("destroying jumpbox")
 
 	varsDir, err := m.stateStore.GetVarsDir()
@@ -325,13 +314,8 @@ func (m *Manager) DeleteJumpbox(state storage.State, terraformOutputs terraform.
 	}
 
 	err = m.executor.DeleteEnv(dirInput, state)
-	switch err.(type) {
-	case DeleteEnvError:
-		deErr := err.(DeleteEnvError)
-		state.Jumpbox.State = deErr.BOSHState()
+	if err != nil {
 		return NewManagerDeleteError(state, err)
-	case error:
-		return fmt.Errorf("Delete jumpbox env: %s", err)
 	}
 
 	return nil
