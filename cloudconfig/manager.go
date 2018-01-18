@@ -4,19 +4,19 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
-	"os"
 	"path/filepath"
 
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
+	"github.com/cloudfoundry/bosh-bootloader/fileio"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/cloudfoundry/bosh-bootloader/terraform"
 )
 
-var (
-	tempDir   func(string, string) (string, error)    = ioutil.TempDir
-	writeFile func(string, []byte, os.FileMode) error = ioutil.WriteFile
-)
+type fs interface {
+	fileio.FileWriter
+	fileio.DirReader
+	fileio.Stater
+}
 
 type Manager struct {
 	logger             logger
@@ -26,6 +26,7 @@ type Manager struct {
 	boshClientProvider boshClientProvider
 	terraformManager   terraformManager
 	sshKeyGetter       sshKeyGetter
+	fs                 fs
 }
 
 type logger interface {
@@ -59,7 +60,7 @@ type stateStore interface {
 }
 
 func NewManager(logger logger, cmd command, stateStore stateStore, opsGenerator OpsGenerator, boshClientProvider boshClientProvider,
-	terraformManager terraformManager, sshKeyGetter sshKeyGetter) Manager {
+	terraformManager terraformManager, sshKeyGetter sshKeyGetter, fs fs) Manager {
 	return Manager{
 		logger:             logger,
 		command:            cmd,
@@ -68,6 +69,7 @@ func NewManager(logger logger, cmd command, stateStore stateStore, opsGenerator 
 		boshClientProvider: boshClientProvider,
 		terraformManager:   terraformManager,
 		sshKeyGetter:       sshKeyGetter,
+		fs:                 fs,
 	}
 }
 
@@ -77,7 +79,7 @@ func (m Manager) Initialize(state storage.State) error {
 		return fmt.Errorf("Get cloud config dir: %s", err)
 	}
 
-	err = writeFile(filepath.Join(cloudConfigDir, "cloud-config.yml"), []byte(BaseCloudConfig), storage.StateMode)
+	err = m.fs.WriteFile(filepath.Join(cloudConfigDir, "cloud-config.yml"), []byte(BaseCloudConfig), storage.StateMode)
 	if err != nil {
 		return err
 	}
@@ -87,7 +89,7 @@ func (m Manager) Initialize(state storage.State) error {
 		return err
 	}
 
-	err = writeFile(filepath.Join(cloudConfigDir, "ops.yml"), []byte(ops), storage.StateMode)
+	err = m.fs.WriteFile(filepath.Join(cloudConfigDir, "ops.yml"), []byte(ops), storage.StateMode)
 	if err != nil {
 		return err
 	}
@@ -106,7 +108,7 @@ func (m Manager) GenerateVars(state storage.State) error {
 		return fmt.Errorf("Generate cloud config vars: %s", err)
 	}
 
-	err = writeFile(filepath.Join(varsDir, "cloud-config-vars.yml"), []byte(vars), storage.StateMode)
+	err = m.fs.WriteFile(filepath.Join(varsDir, "cloud-config-vars.yml"), []byte(vars), storage.StateMode)
 	if err != nil {
 		return fmt.Errorf("Write cloud config vars: %s", err)
 	}
@@ -120,8 +122,8 @@ func (m Manager) IsPresentCloudConfig() bool {
 		return false
 	}
 
-	_, err1 := os.Stat(filepath.Join(cloudConfigDir, "cloud-config.yml"))
-	_, err2 := os.Stat(filepath.Join(cloudConfigDir, "ops.yml"))
+	_, err1 := m.fs.Stat(filepath.Join(cloudConfigDir, "cloud-config.yml"))
+	_, err2 := m.fs.Stat(filepath.Join(cloudConfigDir, "ops.yml"))
 	if err1 != nil || err2 != nil {
 		return false
 	}
@@ -135,7 +137,7 @@ func (m Manager) IsPresentCloudConfigVars() bool {
 		return false
 	}
 
-	_, err = os.Stat(filepath.Join(varsDir, "cloud-config-vars.yml"))
+	_, err = m.fs.Stat(filepath.Join(varsDir, "cloud-config-vars.yml"))
 	if err != nil {
 		return false
 	}
@@ -160,7 +162,7 @@ func (m Manager) Interpolate() (string, error) {
 		"-o", filepath.Join(cloudConfigDir, "ops.yml"),
 	}
 
-	files, err := ioutil.ReadDir(cloudConfigDir)
+	files, err := m.fs.ReadDir(cloudConfigDir)
 	if err != nil {
 		return "", fmt.Errorf("Read cloud config dir: %s", err)
 	}

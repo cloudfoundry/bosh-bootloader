@@ -1,6 +1,10 @@
 package fileio
 
-import "os"
+import (
+	"os"
+
+	"github.com/spf13/afero"
+)
 
 type FileWriter interface {
 	WriteFile(filename string, data []byte, perm os.FileMode) error
@@ -11,7 +15,11 @@ type FileReader interface {
 }
 
 type TempFiler interface {
-	TempFile(dir, prefix string) (f *os.File, err error)
+	TempFile(dir, prefix string) (f afero.File, err error)
+}
+
+type TempDirer interface {
+	TempDir(dir, prefix string) (name string, err error)
 }
 
 type Stater interface {
@@ -34,13 +42,6 @@ type AllRemover interface {
 	RemoveAll(path string) error
 }
 
-type FileIO interface {
-	FileWriter
-	FileReader
-	DirReader
-	TempFiler
-	Stater
-	Renamer
-	Remover
-	AllRemover
+type AllMkdirer interface {
+	MkdirAll(dir string, perm os.FileMode) error
 }

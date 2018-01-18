@@ -2,19 +2,22 @@ package bosh
 
 import (
 	"fmt"
-	"io/ioutil"
 	"path/filepath"
+
+	"github.com/cloudfoundry/bosh-bootloader/fileio"
 
 	yaml "gopkg.in/yaml.v2"
 )
 
 type CredhubGetter struct {
 	stateStore stateStore
+	reader     fileio.FileReader
 }
 
-func NewCredhubGetter(stateStore stateStore) CredhubGetter {
+func NewCredhubGetter(stateStore stateStore, fileIO fileio.FileReader) CredhubGetter {
 	return CredhubGetter{
 		stateStore: stateStore,
+		reader:     fileIO,
 	}
 }
 
@@ -28,7 +31,7 @@ func (c CredhubGetter) GetServer() (string, error) {
 		return "", fmt.Errorf("Get vars directory: %s", err)
 	}
 
-	varsFile, err := ioutil.ReadFile(filepath.Join(varsDir, "director-vars-file.yml"))
+	varsFile, err := c.reader.ReadFile(filepath.Join(varsDir, "director-vars-file.yml"))
 	if err != nil {
 		return "", fmt.Errorf("Read director-vars-file.yml file: %s", err)
 	}
@@ -56,7 +59,7 @@ func (c CredhubGetter) GetCerts() (string, error) {
 		return "", fmt.Errorf("Get vars directory: %s", err)
 	}
 
-	varsStore, err := ioutil.ReadFile(filepath.Join(varsDir, "director-vars-store.yml"))
+	varsStore, err := c.reader.ReadFile(filepath.Join(varsDir, "director-vars-store.yml"))
 	if err != nil {
 		return "", fmt.Errorf("Read director-vars-store.yml file: %s", err)
 	}
@@ -79,7 +82,7 @@ func (c CredhubGetter) GetPassword() (string, error) {
 		return "", fmt.Errorf("Get vars directory: %s", err)
 	}
 
-	varsStore, err := ioutil.ReadFile(filepath.Join(varsDir, "director-vars-store.yml"))
+	varsStore, err := c.reader.ReadFile(filepath.Join(varsDir, "director-vars-store.yml"))
 	if err != nil {
 		return "", fmt.Errorf("Read director-vars-store.yml file: %s", err)
 	}

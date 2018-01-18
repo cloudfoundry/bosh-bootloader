@@ -2,21 +2,28 @@ package bosh
 
 import (
 	"fmt"
-	"io/ioutil"
 	"path/filepath"
 
+	"github.com/cloudfoundry/bosh-bootloader/fileio"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 
 	yaml "gopkg.in/yaml.v2"
 )
 
-type SSHKeyDeleter struct {
-	stateStore stateStore
+type fs interface {
+	fileio.FileReader
+	fileio.FileWriter
 }
 
-func NewSSHKeyDeleter(stateStore stateStore) SSHKeyDeleter {
+type SSHKeyDeleter struct {
+	stateStore stateStore
+	fs         fs
+}
+
+func NewSSHKeyDeleter(stateStore stateStore, fs fs) SSHKeyDeleter {
 	return SSHKeyDeleter{
 		stateStore: stateStore,
+		fs:         fs,
 	}
 }
 
@@ -28,13 +35,16 @@ func (s SSHKeyDeleter) Delete() error {
 	}
 
 	varsStore := filepath.Join(varsDir, "jumpbox-vars-store.yml")
-	variables, err := ioutil.ReadFile(varsStore)
+	variables, err := s.fs.ReadFile(varsStore)
 	if err == nil {
 		varString, err := deleteJumpboxSSHKey(string(variables))
 		if err != nil {
 			return fmt.Errorf("Jumpbox variables: %s", err)
 		}
-		err = ioutil.WriteFile(varsStore, []byte(varString), storage.StateMode)
+		if string(variables) == varString {
+			return nil
+		}
+		err = s.fs.WriteFile(varsStore, []byte(varString), storage.StateMode)
 		if err != nil {
 			return fmt.Errorf("Writing jumpbox vars store: %s", err) //not tested
 		}

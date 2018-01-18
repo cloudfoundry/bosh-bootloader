@@ -56,12 +56,19 @@ type migrator interface {
 	Migrate(storage.State) (storage.State, error)
 }
 
-func NewConfig(bootstrap StateBootstrap, migrator migrator, logger logger, fileIO fileio.FileIO) Config {
+type fs interface {
+	fileio.Stater
+	fileio.TempFiler
+	fileio.FileReader
+	fileio.FileWriter
+}
+
+func NewConfig(bootstrap StateBootstrap, migrator migrator, logger logger, fs fs) Config {
 	return Config{
 		stateBootstrap: bootstrap,
 		migrator:       migrator,
 		logger:         logger,
-		fileIO:         fileIO,
+		fs:             fs,
 	}
 }
 
@@ -69,7 +76,7 @@ type Config struct {
 	stateBootstrap StateBootstrap
 	migrator       migrator
 	logger         logger
-	fileIO         fileio.FileIO
+	fs             fs
 }
 
 func ParseArgs(args []string) (globalFlags, []string, error) {
@@ -267,18 +274,18 @@ func (c Config) updateGCPState(globalFlags globalFlags, state storage.State) (st
 }
 
 func (c Config) getGCPServiceAccountKey(key string) (string, string, error) {
-	if _, err := c.fileIO.Stat(key); err != nil {
+	if _, err := c.fs.Stat(key); err != nil {
 		return c.writeGCPServiceAccountKey(key)
 	}
 	return c.readGCPServiceAccountKey(key)
 }
 
 func (c Config) writeGCPServiceAccountKey(contents string) (string, string, error) {
-	tempFile, err := c.fileIO.TempFile("", "gcpServiceAccountKey.json")
+	tempFile, err := c.fs.TempFile("", "gcpServiceAccountKey.json")
 	if err != nil {
 		return "", "", fmt.Errorf("Creating temp file for credentials: %s", err)
 	}
-	err = c.fileIO.WriteFile(tempFile.Name(), []byte(contents), storage.StateMode)
+	err = c.fs.WriteFile(tempFile.Name(), []byte(contents), storage.StateMode)
 	if err != nil {
 		return "", "", fmt.Errorf("Writing credentials to temp file: %s", err)
 	}
@@ -286,7 +293,7 @@ func (c Config) writeGCPServiceAccountKey(contents string) (string, string, erro
 }
 
 func (c Config) readGCPServiceAccountKey(path string) (string, string, error) {
-	keyBytes, err := c.fileIO.ReadFile(path)
+	keyBytes, err := c.fs.ReadFile(path)
 	if err != nil {
 		return "", "", fmt.Errorf("Reading service account key: %v", err)
 	}

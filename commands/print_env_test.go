@@ -2,7 +2,7 @@ package commands_test
 
 import (
 	"errors"
-	"io/ioutil"
+	"path/filepath"
 	"strings"
 
 	"github.com/cloudfoundry/bosh-bootloader/commands"
@@ -21,6 +21,7 @@ var _ = Describe("PrintEnv", func() {
 		terraformManager *fakes.TerraformManager
 		sshKeyGetter     *fakes.SSHKeyGetter
 		credhubGetter    *fakes.CredhubGetter
+		fileIO           *fakes.FileIO
 		printEnv         commands.PrintEnv
 		state            storage.State
 	)
@@ -37,6 +38,8 @@ var _ = Describe("PrintEnv", func() {
 		credhubGetter.GetCertsCall.Returns.Certs = "some-credhub-certs"
 		credhubGetter.GetPasswordCall.Returns.Password = "some-credhub-password"
 
+		fileIO = &fakes.FileIO{}
+
 		state = storage.State{
 			BOSH: storage.BOSH{
 				DirectorUsername: "some-director-username",
@@ -49,7 +52,7 @@ var _ = Describe("PrintEnv", func() {
 			},
 		}
 
-		printEnv = commands.NewPrintEnv(logger, stderrLogger, stateValidator, sshKeyGetter, credhubGetter, terraformManager)
+		printEnv = commands.NewPrintEnv(logger, stderrLogger, stateValidator, sshKeyGetter, credhubGetter, terraformManager, fileIO)
 	})
 	Describe("CheckFastFails", func() {
 		Context("when the state does not exist", func() {
@@ -65,6 +68,10 @@ var _ = Describe("PrintEnv", func() {
 	})
 
 	Describe("Execute", func() {
+		BeforeEach(func() {
+			fileIO.TempDirCall.Returns.Name = "some-temp-dir"
+		})
+
 		It("prints the correct environment variables for the bosh cli", func() {
 			err := printEnv.Execute([]string{}, state)
 			Expect(err).NotTo(HaveOccurred())
@@ -94,10 +101,10 @@ var _ = Describe("PrintEnv", func() {
 				if strings.HasPrefix(line, "export JUMPBOX_PRIVATE_KEY=") {
 					privateKeyFilename := strings.TrimPrefix(line, "export JUMPBOX_PRIVATE_KEY=")
 
-					privateKey, err := ioutil.ReadFile(privateKeyFilename)
-					Expect(err).NotTo(HaveOccurred())
+					Expect(privateKeyFilename).To(Equal(filepath.Join("some-temp-dir", "bosh_jumpbox_private.key")))
 
-					Expect(string(privateKey)).To(Equal("some-private-key"))
+					Expect(fileIO.WriteFileCall.Receives[0].Filename).To(Equal(privateKeyFilename))
+					Expect(fileIO.WriteFileCall.Receives[0].Contents).To(Equal([]byte("some-private-key")))
 				}
 			}
 		})
@@ -146,6 +153,21 @@ var _ = Describe("PrintEnv", func() {
 				It("returns an error", func() {
 					err := printEnv.Execute([]string{}, storage.State{})
 					Expect(err).To(MatchError("papaya"))
+				})
+			})
+
+			Context("when the private key can't be written", func() {
+				BeforeEach(func() {
+					fileIO.WriteFileCall.Returns = []fakes.WriteFileReturn{
+						{
+							Error: errors.New("mango"),
+						},
+					}
+				})
+
+				It("returns an error", func() {
+					err := printEnv.Execute([]string{}, storage.State{})
+					Expect(err).To(MatchError("mango"))
 				})
 			})
 

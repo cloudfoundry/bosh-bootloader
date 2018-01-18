@@ -27,6 +27,7 @@ var _ = Describe("Manager", func() {
 		boshClient         *fakes.BOSHClient
 		terraformManager   *fakes.TerraformManager
 		sshKeyGetter       *fakes.SSHKeyGetter
+		fileIO             *fakes.FileIO
 		manager            cloudconfig.Manager
 
 		cloudConfigDir string
@@ -45,16 +46,14 @@ var _ = Describe("Manager", func() {
 		boshClientProvider = &fakes.BOSHClientProvider{}
 		terraformManager = &fakes.TerraformManager{}
 		sshKeyGetter = &fakes.SSHKeyGetter{}
+		fileIO = &fakes.FileIO{}
 
 		boshClientProvider.ClientCall.Returns.Client = boshClient
 
-		var err error
-		cloudConfigDir, err = ioutil.TempDir("", "")
-		Expect(err).NotTo(HaveOccurred())
+		cloudConfigDir = "some-cloud-config-dir"
 		stateStore.GetCloudConfigDirCall.Returns.Directory = cloudConfigDir
 
-		varsDir, err = ioutil.TempDir("", "")
-		Expect(err).NotTo(HaveOccurred())
+		varsDir = "some-vars-dir"
 		stateStore.GetVarsDirCall.Returns.Directory = varsDir
 
 		cmd.RunStub = func(stdout io.Writer, workingDirectory string, args []string) error {
@@ -74,10 +73,11 @@ var _ = Describe("Manager", func() {
 		opsGenerator.GenerateCall.Returns.OpsYAML = "some-ops"
 		opsGenerator.GenerateVarsCall.Returns.VarsYAML = "some-vars"
 
+		var err error
 		baseCloudConfig, err = ioutil.ReadFile("fixtures/base-cloud-config.yml")
 		Expect(err).NotTo(HaveOccurred())
 
-		manager = cloudconfig.NewManager(logger, cmd, stateStore, opsGenerator, boshClientProvider, terraformManager, sshKeyGetter)
+		manager = cloudconfig.NewManager(logger, cmd, stateStore, opsGenerator, boshClientProvider, terraformManager, sshKeyGetter, fileIO)
 	})
 
 	Describe("Initialize", func() {
@@ -85,15 +85,13 @@ var _ = Describe("Manager", func() {
 			err := manager.Initialize(incomingState)
 			Expect(err).NotTo(HaveOccurred())
 
-			cloudConfig, err := ioutil.ReadFile(fmt.Sprintf("%s/cloud-config.yml", cloudConfigDir))
-			Expect(err).NotTo(HaveOccurred())
-			Expect(cloudConfig).To(MatchYAML(baseCloudConfig))
+			Expect(fileIO.WriteFileCall.Receives[0].Filename).To(Equal(filepath.Join("some-cloud-config-dir", "cloud-config.yml")))
+			Expect(fileIO.WriteFileCall.Receives[0].Contents).To(MatchYAML(baseCloudConfig))
 
 			Expect(opsGenerator.GenerateCall.Receives.State).To(Equal(incomingState))
 
-			ops, err := ioutil.ReadFile(fmt.Sprintf("%s/ops.yml", cloudConfigDir))
-			Expect(err).NotTo(HaveOccurred())
-			Expect(string(ops)).To(Equal("some-ops"))
+			Expect(fileIO.WriteFileCall.Receives[1].Filename).To(Equal(filepath.Join("some-cloud-config-dir", "ops.yml")))
+			Expect(fileIO.WriteFileCall.Receives[1].Contents).To(Equal([]byte("some-ops")))
 		})
 
 		Context("failure cases", func() {
@@ -110,21 +108,14 @@ var _ = Describe("Manager", func() {
 
 			Context("when write file fails to write cloud-config.yml", func() {
 				BeforeEach(func() {
-					cloudconfig.SetWriteFile(func(filename string, body []byte, mode os.FileMode) error {
-						if strings.Contains(filename, "cloud-config.yml") {
-							return errors.New("failed to write file")
-						}
-						return nil
-					})
-				})
-
-				AfterEach(func() {
-					cloudconfig.ResetWriteFile()
+					fileIO.WriteFileCall.Returns = []fakes.WriteFileReturn{{
+						Error: errors.New("apple"),
+					}}
 				})
 
 				It("returns an error", func() {
 					err := manager.Initialize(storage.State{})
-					Expect(err).To(MatchError("failed to write file"))
+					Expect(err).To(MatchError("apple"))
 				})
 			})
 
@@ -141,21 +132,14 @@ var _ = Describe("Manager", func() {
 
 			Context("when write file fails to write the ops files", func() {
 				BeforeEach(func() {
-					cloudconfig.SetWriteFile(func(filename string, body []byte, mode os.FileMode) error {
-						if strings.Contains(filename, "ops.yml") {
-							return errors.New("failed to write file")
-						}
-						return nil
-					})
-				})
-
-				AfterEach(func() {
-					cloudconfig.ResetWriteFile()
+					fileIO.WriteFileCall.Returns = []fakes.WriteFileReturn{{
+						Error: errors.New("apple"),
+					}}
 				})
 
 				It("returns an error", func() {
 					err := manager.Initialize(storage.State{})
-					Expect(err).To(MatchError("failed to write file"))
+					Expect(err).To(MatchError("apple"))
 				})
 			})
 		})
@@ -168,9 +152,9 @@ var _ = Describe("Manager", func() {
 
 			Expect(opsGenerator.GenerateVarsCall.Receives.State).To(Equal(incomingState))
 
-			vars, err := ioutil.ReadFile(fmt.Sprintf("%s/cloud-config-vars.yml", varsDir))
+			Expect(fileIO.WriteFileCall.Receives[0].Filename).To(Equal(filepath.Join("some-vars-dir", "cloud-config-vars.yml")))
+			Expect(fileIO.WriteFileCall.Receives[0].Contents).To(MatchYAML([]byte("some-vars")))
 			Expect(err).NotTo(HaveOccurred())
-			Expect(string(vars)).To(Equal("some-vars"))
 		})
 
 		Context("failure cases", func() {
@@ -198,21 +182,14 @@ var _ = Describe("Manager", func() {
 
 			Context("when write file fails to write the vars file", func() {
 				BeforeEach(func() {
-					cloudconfig.SetWriteFile(func(filename string, body []byte, mode os.FileMode) error {
-						if strings.Contains(filename, "cloud-config-vars.yml") {
-							return errors.New("coconut")
-						}
-						return nil
-					})
-				})
-
-				AfterEach(func() {
-					cloudconfig.ResetWriteFile()
+					fileIO.WriteFileCall.Returns = []fakes.WriteFileReturn{{
+						Error: errors.New("apple"),
+					}}
 				})
 
 				It("returns an error", func() {
 					err := manager.GenerateVars(storage.State{})
-					Expect(err).To(MatchError("Write cloud config vars: coconut"))
+					Expect(err).To(MatchError("Write cloud config vars: apple"))
 				})
 			})
 		})
@@ -221,11 +198,7 @@ var _ = Describe("Manager", func() {
 	Describe("IsPresentCloudConfig", func() {
 		Context("when cloud config files exist in the state dir", func() {
 			BeforeEach(func() {
-				err := ioutil.WriteFile(filepath.Join(cloudConfigDir, "cloud-config.yml"), []byte("some existing cloud config"), storage.StateMode)
-				Expect(err).NotTo(HaveOccurred())
-
-				err = ioutil.WriteFile(filepath.Join(cloudConfigDir, "ops.yml"), []byte("some existing ops"), storage.StateMode)
-				Expect(err).NotTo(HaveOccurred())
+				fileIO.StatCall.Returns.Error = nil
 			})
 
 			It("returns true", func() {
@@ -233,7 +206,29 @@ var _ = Describe("Manager", func() {
 			})
 		})
 
-		Context("when cloud config files do not exist in the state dir", func() {
+		Context("when base cloud config does not exist in the state dir", func() {
+			BeforeEach(func() {
+				fileIO.StatCall.Fake = func(name string) (os.FileInfo, error) {
+					if strings.Contains(name, "cloud-config.yml") {
+						return fakes.FileInfo{}, errors.New("nope")
+					}
+					return fakes.FileInfo{}, nil
+				}
+			})
+			It("returns false", func() {
+				Expect(manager.IsPresentCloudConfig()).To(BeFalse())
+			})
+		})
+
+		Context("when bbl-defined ops file does not exist in the state dir", func() {
+			BeforeEach(func() {
+				fileIO.StatCall.Fake = func(name string) (os.FileInfo, error) {
+					if strings.Contains(name, "ops.yml") {
+						return fakes.FileInfo{}, errors.New("nope")
+					}
+					return fakes.FileInfo{}, nil
+				}
+			})
 			It("returns false", func() {
 				Expect(manager.IsPresentCloudConfig()).To(BeFalse())
 			})
@@ -255,8 +250,7 @@ var _ = Describe("Manager", func() {
 	Describe("IsPresentCloudConfigVars", func() {
 		Context("when cloud config vars file exists in the vars dir", func() {
 			BeforeEach(func() {
-				err := ioutil.WriteFile(filepath.Join(varsDir, "cloud-config-vars.yml"), []byte("some existing vars"), storage.StateMode)
-				Expect(err).NotTo(HaveOccurred())
+				fileIO.StatCall.Returns.Error = nil
 			})
 
 			It("returns true", func() {
@@ -265,6 +259,15 @@ var _ = Describe("Manager", func() {
 		})
 
 		Context("when cloud config vars file does not exist in the vars dir", func() {
+			BeforeEach(func() {
+				fileIO.StatCall.Fake = func(name string) (os.FileInfo, error) {
+					if strings.Contains(name, "cloud-config-vars.yml") {
+						return fakes.FileInfo{}, errors.New("nope")
+					}
+					return fakes.FileInfo{}, nil
+				}
+			})
+
 			It("returns false", func() {
 				Expect(manager.IsPresentCloudConfigVars()).To(BeFalse())
 			})
@@ -285,12 +288,17 @@ var _ = Describe("Manager", func() {
 
 	Describe("Interpolate", func() {
 		BeforeEach(func() {
-			err := ioutil.WriteFile(filepath.Join(cloudConfigDir, "shenanigans-ops.yml"), []byte("shenanigans"), storage.StateMode)
-			Expect(err).NotTo(HaveOccurred())
-			err = ioutil.WriteFile(filepath.Join(cloudConfigDir, "ops.yml"), []byte("base-operations"), storage.StateMode)
-			Expect(err).NotTo(HaveOccurred())
-			err = ioutil.WriteFile(filepath.Join(cloudConfigDir, "cloud-config.yml"), []byte("base"), os.ModePerm)
-			Expect(err).NotTo(HaveOccurred())
+			fileIO.ReadDirCall.Returns.FileInfos = []os.FileInfo{
+				fakes.FileInfo{
+					FileName: "shenanigans-ops.yml",
+				},
+				fakes.FileInfo{
+					FileName: "ops.yml",
+				},
+				fakes.FileInfo{
+					FileName: "cloud-config.yml",
+				},
+			}
 		})
 
 		It("returns a cloud config yaml provided a valid bbl state", func() {
@@ -335,12 +343,12 @@ var _ = Describe("Manager", func() {
 
 			Context("when reading the cloud config dir fails", func() {
 				BeforeEach(func() {
-					stateStore.GetCloudConfigDirCall.Returns.Directory = "invalid-directory"
+					fileIO.ReadDirCall.Returns.Error = errors.New("aubergine")
 				})
 
 				It("returns an error", func() {
 					_, err := manager.Interpolate()
-					Expect(err).To(MatchError("Read cloud config dir: open invalid-directory: no such file or directory"))
+					Expect(err).To(MatchError("Read cloud config dir: aubergine"))
 				})
 			})
 

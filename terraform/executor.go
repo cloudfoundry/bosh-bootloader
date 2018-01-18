@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -21,7 +20,7 @@ var redactedError = "Some output has been redacted, use `bbl latest-error` to se
 type Executor struct {
 	cmd        terraformCmd
 	stateStore stateStore
-	fileio     fileio.FileWriter
+	fs         fs
 	debug      bool
 }
 
@@ -40,11 +39,16 @@ type stateStore interface {
 	GetVarsDir() (string, error)
 }
 
-func NewExecutor(cmd terraformCmd, stateStore stateStore, fileio fileio.FileWriter, debug bool) Executor {
+type fs interface {
+	fileio.FileWriter
+	fileio.DirReader
+}
+
+func NewExecutor(cmd terraformCmd, stateStore stateStore, fs fs, debug bool) Executor {
 	return Executor{
 		cmd:        cmd,
 		stateStore: stateStore,
-		fileio:     fileio,
+		fs:         fs,
 		debug:      debug,
 	}
 }
@@ -55,7 +59,7 @@ func (e Executor) Setup(template string, input map[string]interface{}) error {
 		return fmt.Errorf("Get terraform dir: %s", err)
 	}
 
-	err = e.fileio.WriteFile(filepath.Join(terraformDir, "bbl-template.tf"), []byte(template), storage.StateMode)
+	err = e.fs.WriteFile(filepath.Join(terraformDir, "bbl-template.tf"), []byte(template), storage.StateMode)
 	if err != nil {
 		return fmt.Errorf("Write terraform template: %s", err)
 	}
@@ -70,12 +74,12 @@ func (e Executor) Setup(template string, input map[string]interface{}) error {
 		return fmt.Errorf("Create .terraform directory: %s", err)
 	}
 
-	err = e.fileio.WriteFile(filepath.Join(terraformDir, ".terraform", ".gitignore"), []byte("*\n"), storage.StateMode)
+	err = e.fs.WriteFile(filepath.Join(terraformDir, ".terraform", ".gitignore"), []byte("*\n"), storage.StateMode)
 	if err != nil {
 		return fmt.Errorf("Write .gitignore for terraform binaries: %s", err)
 	}
 
-	err = e.fileio.WriteFile(filepath.Join(varsDir, "bbl.tfvars"), []byte(formatVars(input)), storage.StateMode)
+	err = e.fs.WriteFile(filepath.Join(varsDir, "bbl.tfvars"), []byte(formatVars(input)), storage.StateMode)
 	if err != nil {
 		return fmt.Errorf("Write terraform vars: %s", err)
 	}
@@ -120,7 +124,7 @@ func (e Executor) runTFCommand(args []string) error {
 		"-state", relativeStatePath,
 	)
 
-	varsFiles, err := ioutil.ReadDir(varsDir)
+	varsFiles, err := e.fs.ReadDir(varsDir)
 	if err != nil {
 		return fmt.Errorf("Read contents of vars directory: %s", err) // not tested
 	}

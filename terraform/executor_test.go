@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
@@ -188,6 +189,11 @@ var _ = Describe("Executor", func() {
 
 	Describe("Apply", func() {
 		BeforeEach(func() {
+			fileIO.ReadDirCall.Returns.FileInfos = []os.FileInfo{
+				fakes.FileInfo{
+					FileName: "bbl.tfvars",
+				},
+			}
 			err := ioutil.WriteFile(tfStatePath, []byte("some-updated-terraform-state"), storage.StateMode)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -227,19 +233,23 @@ var _ = Describe("Executor", func() {
 				relativeUserProvidedVarsPathC string
 			)
 			BeforeEach(func() {
-				userProvidedVarsPathA := filepath.Join(varsDir, "awesome-user-vars.tfvars")
-				err := ioutil.WriteFile(userProvidedVarsPathA, []byte("user-provided tfvars"), storage.StateMode)
-				Expect(err).NotTo(HaveOccurred())
-				userProvidedVarsPathC := filepath.Join(varsDir, "custom-user-vars.tfvars")
-				err = ioutil.WriteFile(userProvidedVarsPathC, []byte("user-provided tfvars"), storage.StateMode)
-				Expect(err).NotTo(HaveOccurred())
-				err = ioutil.WriteFile(filepath.Join(varsDir, "not-a-tfvars-file.yml"), []byte("definitely not a tfvars file"), storage.StateMode)
-				Expect(err).NotTo(HaveOccurred())
+				fileIO.ReadDirCall.Returns.FileInfos = []os.FileInfo{
+					fakes.FileInfo{
+						FileName: "bbl.tfvars",
+					},
+					fakes.FileInfo{
+						FileName: "awesome-user-vars.tfvars",
+					},
+					fakes.FileInfo{
+						FileName: "custom-user-vars.tfvars",
+					},
+					fakes.FileInfo{
+						FileName: "definitely-not-a-tf-vars-file",
+					},
+				}
 
-				relativeUserProvidedVarsPathA, err = filepath.Rel(terraformDir, userProvidedVarsPathA)
-				Expect(err).NotTo(HaveOccurred())
-				relativeUserProvidedVarsPathC, err = filepath.Rel(terraformDir, userProvidedVarsPathC)
-				Expect(err).NotTo(HaveOccurred())
+				relativeUserProvidedVarsPathA = strings.Replace(relativeVarsPath, "bbl", "awesome-user-vars", 1)
+				relativeUserProvidedVarsPathC = strings.Replace(relativeVarsPath, "bbl", "custom-user-vars", 1)
 			})
 
 			It("passes all user provided tfvars files to the run command in alphabetic order", func() {
@@ -294,13 +304,13 @@ var _ = Describe("Executor", func() {
 				"some-cert": "some-cert-value",
 			}
 
-			err := ioutil.WriteFile(tfStatePath, []byte("some-tf-state"), storage.StateMode)
-			Expect(err).NotTo(HaveOccurred())
+			fileIO.ReadDirCall.Returns.FileInfos = []os.FileInfo{
+				fakes.FileInfo{
+					FileName: "bbl.tfvars",
+				},
+			}
 
-			err = ioutil.WriteFile(tfVarsPath, []byte("some-tf-vars"), storage.StateMode)
-			Expect(err).NotTo(HaveOccurred())
-
-			err = executor.Init()
+			err := executor.Init()
 			Expect(err).NotTo(HaveOccurred())
 		})
 

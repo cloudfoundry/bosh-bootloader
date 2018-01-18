@@ -226,7 +226,7 @@ var _ = Describe("Migrator", func() {
 
 				Expect(fileIO.WriteFileCall.Receives[0].Filename).To(Equal(filepath.Join(cloudConfigDir, "some-config-file")))
 				Expect(string(fileIO.WriteFileCall.Receives[0].Contents)).To(Equal("some-cloud-config"))
-				Expect(fileIO.RemoveAllCall.Receives.Path).To(Equal(oldBblDir))
+				Expect(fileIO.RemoveAllCall.Receives[0].Path).To(Equal(oldBblDir))
 			})
 
 			Context("when the contents of the old .bbl dir cannot be read", func() {
@@ -264,7 +264,7 @@ var _ = Describe("Migrator", func() {
 
 			Context("when removing the old .bbl dir fails", func() {
 				BeforeEach(func() {
-					fileIO.RemoveAllCall.Returns.Error = errors.New("feijoa")
+					fileIO.RemoveAllCall.Returns = []fakes.RemoveAllReturn{{Error: errors.New("feijoa")}}
 				})
 
 				It("returns an error", func() {

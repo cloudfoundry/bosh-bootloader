@@ -3,11 +3,11 @@ package storage
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"reflect"
 
+	"github.com/cloudfoundry/bosh-bootloader/fileio"
 	uuid "github.com/nu7hatch/gouuid"
 )
 
@@ -25,32 +25,42 @@ const (
 
 type Store struct {
 	dir         string
+	fs          stateStoreFs
 	stateSchema int
 }
 
-func NewStore(dir string) Store {
+type stateStoreFs interface {
+	fileio.FileWriter
+	fileio.Remover
+	fileio.AllRemover
+	fileio.Stater
+	fileio.AllMkdirer
+}
+
+func NewStore(dir string, fs stateStoreFs) Store {
 	return Store{
 		dir:         dir,
+		fs:          fs,
 		stateSchema: STATE_SCHEMA,
 	}
 }
 
 func (s Store) Set(state State) error {
-	_, err := os.Stat(s.dir)
+	_, err := s.fs.Stat(s.dir)
 	if err != nil {
 		return fmt.Errorf("Stat state dir: %s", err)
 	}
 
 	stateFile := filepath.Join(s.dir, StateFileName)
 	if reflect.DeepEqual(state, State{}) {
-		err := os.Remove(stateFile)
+		err := s.fs.Remove(stateFile)
 		if err != nil && !os.IsNotExist(err) {
 			return err
 		}
 
 		rmdir := func(getDirFunc func() (string, error)) error {
 			d, _ := getDirFunc()
-			return os.RemoveAll(d)
+			return s.fs.RemoveAll(d)
 		}
 		if err := rmdir(s.GetCloudConfigDir); err != nil {
 			return err
@@ -71,10 +81,10 @@ func (s Store) Set(state State) error {
 			return err
 		}
 
-		_ = os.RemoveAll(filepath.Join(s.dir, "create-jumpbox.sh"))
-		_ = os.RemoveAll(filepath.Join(s.dir, "create-director.sh"))
-		_ = os.RemoveAll(filepath.Join(s.dir, "delete-jumpbox.sh"))
-		_ = os.RemoveAll(filepath.Join(s.dir, "delete-director.sh"))
+		_ = s.fs.Remove(filepath.Join(s.dir, "create-jumpbox.sh"))
+		_ = s.fs.Remove(filepath.Join(s.dir, "create-director.sh"))
+		_ = s.fs.Remove(filepath.Join(s.dir, "delete-jumpbox.sh"))
+		_ = s.fs.Remove(filepath.Join(s.dir, "delete-director.sh"))
 
 		return nil
 	}
@@ -93,7 +103,7 @@ func (s Store) Set(state State) error {
 	if err != nil {
 		return err
 	}
-	err = ioutil.WriteFile(stateFile, jsonData, os.FileMode(0644))
+	err = s.fs.WriteFile(stateFile, jsonData, os.FileMode(0644))
 	if err != nil {
 		return err
 	}
@@ -135,30 +145,9 @@ func (s Store) GetOldBblDir() string {
 
 func (s Store) getDir(name string) (string, error) {
 	dir := filepath.Join(s.dir, name)
-	err := os.MkdirAll(dir, os.ModePerm)
+	err := s.fs.MkdirAll(dir, os.ModePerm)
 	if err != nil {
 		return "", err
 	}
 	return dir, nil
-}
-
-func stateAndBBLStateExist(dir string) (bool, error) {
-	stateFile := filepath.Join(dir, "state.json")
-	_, err := os.Stat(stateFile)
-	switch {
-	case os.IsNotExist(err):
-		return false, nil
-	case err != nil:
-		return false, err
-	}
-
-	bblStateFile := filepath.Join(dir, StateFileName)
-	_, err = os.Stat(bblStateFile)
-	switch {
-	case os.IsNotExist(err):
-		return false, nil
-	case err != nil:
-		return false, err
-	}
-	return true, nil
 }

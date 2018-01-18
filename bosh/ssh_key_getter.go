@@ -2,19 +2,22 @@ package bosh
 
 import (
 	"fmt"
-	"io/ioutil"
 	"path/filepath"
+
+	"github.com/cloudfoundry/bosh-bootloader/fileio"
 
 	yaml "gopkg.in/yaml.v2"
 )
 
 type SSHKeyGetter struct {
 	stateStore stateStore
+	fReader    fileio.FileReader
 }
 
-func NewSSHKeyGetter(stateStore stateStore) SSHKeyGetter {
+func NewSSHKeyGetter(stateStore stateStore, fReader fileio.FileReader) SSHKeyGetter {
 	return SSHKeyGetter{
 		stateStore: stateStore,
+		fReader:    fReader,
 	}
 }
 
@@ -30,7 +33,7 @@ func (j SSHKeyGetter) Get(deployment string) (string, error) {
 		return "", fmt.Errorf("Get vars directory: %s", err)
 	}
 
-	varsStore, err := ioutil.ReadFile(filepath.Join(varsDir, fmt.Sprintf("%s-vars-store.yml", deployment)))
+	varsStore, err := j.fReader.ReadFile(filepath.Join(varsDir, fmt.Sprintf("%s-vars-store.yml", deployment)))
 	if err != nil {
 		return "", fmt.Errorf("Read %s vars file: %s", deployment, err)
 	}

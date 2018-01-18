@@ -2,13 +2,9 @@ package bosh_test
 
 import (
 	"errors"
-	"io/ioutil"
-	"os"
-	"path/filepath"
 
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
-	"github.com/cloudfoundry/bosh-bootloader/storage"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -18,23 +14,18 @@ var _ = Describe("CredhubGetter", func() {
 	var (
 		credhubGetter bosh.CredhubGetter
 		stateStore    *fakes.StateStore
-		varsDir       string
-		varsFilePath  string
-		varsStorePath string
+		fileIO        *fakes.FileIO
 	)
 
 	BeforeEach(func() {
-		var err error
-		varsDir, err = ioutil.TempDir("", "")
-		Expect(err).NotTo(HaveOccurred())
 		stateStore = &fakes.StateStore{}
-		stateStore.GetVarsDirCall.Returns.Directory = varsDir
-		credhubGetter = bosh.NewCredhubGetter(stateStore)
+		stateStore.GetVarsDirCall.Returns.Directory = "fake-vars-dir"
+		fileIO = &fakes.FileIO{}
+		credhubGetter = bosh.NewCredhubGetter(stateStore, fileIO)
 	})
 
 	Context("reading from the vars store", func() {
 		BeforeEach(func() {
-			varsStorePath = filepath.Join(varsDir, "director-vars-store.yml")
 			varsStoreContents := `---
 credhub_ca:
   certificate: |
@@ -47,8 +38,7 @@ uaa_ssl:
     some-uaa-cert
     -----END CERTIFICATE-----
 credhub_cli_password: some-credhub-password`
-			err := ioutil.WriteFile(varsStorePath, []byte(varsStoreContents), storage.ScriptMode)
-			Expect(err).NotTo(HaveOccurred())
+			fileIO.ReadFileCall.Returns.Contents = []byte(varsStoreContents)
 		})
 
 		Describe("GetCerts", func() {
@@ -67,8 +57,7 @@ some-uaa-cert
 			Context("failure cases", func() {
 				Context("when the vars store cannot be unmarshaled", func() {
 					BeforeEach(func() {
-						err := ioutil.WriteFile(varsStorePath, []byte("invalid yaml"), storage.ScriptMode)
-						Expect(err).NotTo(HaveOccurred())
+						fileIO.ReadFileCall.Returns.Contents = []byte("invalid yaml")
 					})
 
 					It("returns an error", func() {
@@ -90,14 +79,13 @@ some-uaa-cert
 
 				Context("when the vars store can't be read", func() {
 					BeforeEach(func() {
-						err := os.Remove(varsStorePath)
-						Expect(err).NotTo(HaveOccurred())
+						fileIO.ReadFileCall.Returns.Error = errors.New("passionfruit")
 					})
 
 					It("returns an error", func() {
 						_, err := credhubGetter.GetCerts()
 						Expect(err).To(MatchError(ContainSubstring("Read director-vars-store.yml file: ")))
-						Expect(err).To(MatchError(ContainSubstring("no such file or directory")))
+						Expect(err).To(MatchError(ContainSubstring("passionfruit")))
 					})
 				})
 			})
@@ -113,8 +101,7 @@ some-uaa-cert
 			Context("failure cases", func() {
 				Context("when the vars store cannot be unmarshaled", func() {
 					BeforeEach(func() {
-						err := ioutil.WriteFile(varsStorePath, []byte("invalid yaml"), storage.ScriptMode)
-						Expect(err).NotTo(HaveOccurred())
+						fileIO.ReadFileCall.Returns.Contents = []byte("invalid yaml")
 					})
 
 					It("returns an error", func() {
@@ -136,14 +123,13 @@ some-uaa-cert
 
 				Context("when the vars store can't be read", func() {
 					BeforeEach(func() {
-						err := os.Remove(varsStorePath)
-						Expect(err).NotTo(HaveOccurred())
+						fileIO.ReadFileCall.Returns.Error = errors.New("quamquat")
 					})
 
 					It("returns an error", func() {
 						_, err := credhubGetter.GetCerts()
 						Expect(err).To(MatchError(ContainSubstring("Read director-vars-store.yml file: ")))
-						Expect(err).To(MatchError(ContainSubstring("no such file or directory")))
+						Expect(err).To(MatchError(ContainSubstring("quamquat")))
 					})
 				})
 			})
@@ -152,11 +138,9 @@ some-uaa-cert
 
 	Describe("GetServer", func() {
 		BeforeEach(func() {
-			varsFilePath = filepath.Join(varsDir, "director-vars-file.yml")
 			varsFileContents := `---
 internal_ip: some-internal-ip`
-			err := ioutil.WriteFile(varsFilePath, []byte(varsFileContents), storage.ScriptMode)
-			Expect(err).NotTo(HaveOccurred())
+			fileIO.ReadFileCall.Returns.Contents = []byte(varsFileContents)
 		})
 
 		It("returns the credhub server url", func() {
@@ -168,8 +152,7 @@ internal_ip: some-internal-ip`
 		Context("failure cases", func() {
 			Context("when the vars file cannot be unmarshaled", func() {
 				BeforeEach(func() {
-					err := ioutil.WriteFile(varsFilePath, []byte("invalid yaml"), storage.ScriptMode)
-					Expect(err).NotTo(HaveOccurred())
+					fileIO.ReadFileCall.Returns.Contents = []byte("invalid yaml")
 				})
 
 				It("returns an error", func() {
@@ -191,14 +174,13 @@ internal_ip: some-internal-ip`
 
 			Context("when the vars file can't be read", func() {
 				BeforeEach(func() {
-					err := os.Remove(varsFilePath)
-					Expect(err).NotTo(HaveOccurred())
+					fileIO.ReadFileCall.Returns.Error = errors.New("quamquat")
 				})
 
 				It("returns an error", func() {
 					_, err := credhubGetter.GetServer()
 					Expect(err).To(MatchError(ContainSubstring("Read director-vars-file.yml file: ")))
-					Expect(err).To(MatchError(ContainSubstring("no such file or directory")))
+					Expect(err).To(MatchError(ContainSubstring("quamquat")))
 				})
 			})
 		})

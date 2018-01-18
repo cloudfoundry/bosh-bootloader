@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"crypto/rand"
 	"encoding/json"
-	"io/ioutil"
 	"log"
 	"os"
 
@@ -16,12 +15,12 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/cloudconfig"
 	"github.com/cloudfoundry/bosh-bootloader/commands"
 	"github.com/cloudfoundry/bosh-bootloader/config"
-	"github.com/cloudfoundry/bosh-bootloader/fileio"
 	"github.com/cloudfoundry/bosh-bootloader/gcp"
 	"github.com/cloudfoundry/bosh-bootloader/helpers"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/cloudfoundry/bosh-bootloader/terraform"
 	proxy "github.com/cloudfoundry/socks5-proxy"
+	"github.com/spf13/afero"
 
 	awscloudconfig "github.com/cloudfoundry/bosh-bootloader/cloudconfig/aws"
 	azurecloudconfig "github.com/cloudfoundry/bosh-bootloader/cloudconfig/azure"
@@ -46,10 +45,13 @@ func main() {
 		log.Fatalf("\n\n%s\n", err)
 	}
 
-	fileIO := &fileio.FileIOAdapter{}
-	stateStore := storage.NewStore(globals.StateDir)
-	stateMigrator := storage.NewMigrator(stateStore, fileIO)
-	newConfig := config.NewConfig(stateBootstrap, stateMigrator, stderrLogger, fileIO)
+	// File IO
+	fs := afero.NewOsFs()
+	afs := &afero.Afero{Fs: fs}
+
+	stateStore := storage.NewStore(globals.StateDir, afs)
+	stateMigrator := storage.NewMigrator(stateStore, afs)
+	newConfig := config.NewConfig(stateBootstrap, stateMigrator, stderrLogger, afs)
 
 	appConfig, err := newConfig.Bootstrap(os.Args)
 	if err != nil {
@@ -73,7 +75,7 @@ func main() {
 	// Terraform
 	terraformOutputBuffer := bytes.NewBuffer([]byte{})
 	terraformCmd := terraform.NewCmd(os.Stderr, terraformOutputBuffer)
-	terraformExecutor := terraform.NewExecutor(terraformCmd, stateStore, fileIO, appConfig.Global.Debug)
+	terraformExecutor := terraform.NewExecutor(terraformCmd, stateStore, afs, appConfig.Global.Debug)
 
 	var (
 		networkClient            helpers.NetworkClient
@@ -138,9 +140,9 @@ func main() {
 	hostKeyGetter := proxy.NewHostKeyGetter()
 	socks5Proxy := proxy.NewSocks5Proxy(hostKeyGetter)
 	boshCommand := bosh.NewCmd(os.Stderr)
-	boshExecutor := bosh.NewExecutor(boshCommand, ioutil.ReadFile, json.Unmarshal, json.Marshal, ioutil.WriteFile)
-	sshKeyGetter := bosh.NewSSHKeyGetter(stateStore)
-	credhubGetter := bosh.NewCredhubGetter(stateStore)
+	boshExecutor := bosh.NewExecutor(boshCommand, afs.ReadFile, json.Unmarshal, json.Marshal, afs.WriteFile)
+	sshKeyGetter := bosh.NewSSHKeyGetter(stateStore, afs)
+	credhubGetter := bosh.NewCredhubGetter(stateStore, afs)
 	boshManager := bosh.NewManager(boshExecutor, logger, socks5Proxy, stateStore, sshKeyGetter)
 	boshClientProvider := bosh.NewClientProvider(socks5Proxy, sshKeyGetter)
 
@@ -155,7 +157,7 @@ func main() {
 	case "vsphere":
 		cloudConfigOpsGenerator = vspherecloudconfig.NewOpsGenerator(terraformManager)
 	}
-	cloudConfigManager := cloudconfig.NewManager(logger, boshCommand, stateStore, cloudConfigOpsGenerator, boshClientProvider, terraformManager, sshKeyGetter)
+	cloudConfigManager := cloudconfig.NewManager(logger, boshCommand, stateStore, cloudConfigOpsGenerator, boshClientProvider, terraformManager, sshKeyGetter, afs)
 
 	// Subcommands
 	var lbsCmd commands.LBsCmd
@@ -183,7 +185,7 @@ func main() {
 	commandSet["version"] = commands.NewVersion(Version, logger)
 	commandSet["up"] = up
 	commandSet["plan"] = plan
-	sshKeyDeleter := bosh.NewSSHKeyDeleter(stateStore)
+	sshKeyDeleter := bosh.NewSSHKeyDeleter(stateStore, afs)
 	commandSet["rotate"] = commands.NewRotate(stateValidator, sshKeyDeleter, up)
 	commandSet["destroy"] = commands.NewDestroy(plan, logger, os.Stdin, boshManager, stateStore, stateValidator, terraformManager, networkDeletionValidator)
 	commandSet["down"] = commandSet["destroy"]
@@ -197,7 +199,7 @@ func main() {
 	commandSet["director-ssh-key"] = commands.NewDirectorSSHKey(logger, stateValidator, sshKeyGetter)
 	commandSet["env-id"] = commands.NewStateQuery(logger, stateValidator, terraformManager, commands.EnvIDPropertyName)
 	commandSet["latest-error"] = commands.NewLatestError(logger, stateValidator)
-	commandSet["print-env"] = commands.NewPrintEnv(logger, stderrLogger, stateValidator, sshKeyGetter, credhubGetter, terraformManager)
+	commandSet["print-env"] = commands.NewPrintEnv(logger, stderrLogger, stateValidator, sshKeyGetter, credhubGetter, terraformManager, afs)
 
 	app := application.New(commandSet, appConfig, usage)
 

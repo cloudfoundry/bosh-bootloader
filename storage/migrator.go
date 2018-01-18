@@ -17,13 +17,23 @@ type store interface {
 	GetCloudConfigDir() (string, error)
 }
 
-type Migrator struct {
-	store  store
-	fileIO fileio.FileIO
+type migratorFs interface {
+	fileio.Renamer
+	fileio.FileReader
+	fileio.DirReader
+	fileio.Stater
+	fileio.FileWriter
+	fileio.Remover
+	fileio.AllRemover
 }
 
-func NewMigrator(store store, fileIO fileio.FileIO) Migrator {
-	return Migrator{store: store, fileIO: fileIO}
+type Migrator struct {
+	store store
+	fs    migratorFs
+}
+
+func NewMigrator(store store, fs migratorFs) Migrator {
+	return Migrator{store: store, fs: fs}
 }
 
 func (m Migrator) Migrate(state State) (State, error) {
@@ -96,7 +106,7 @@ func (m Migrator) Migrate(state State) (State, error) {
 
 func (m Migrator) MigrateTerraformState(state State, varsDir string) (State, error) {
 	if state.TFState != "" {
-		err := m.fileIO.WriteFile(filepath.Join(varsDir, "terraform.tfstate"), []byte(state.TFState), StateMode)
+		err := m.fs.WriteFile(filepath.Join(varsDir, "terraform.tfstate"), []byte(state.TFState), StateMode)
 		if err != nil {
 			return State{}, fmt.Errorf("migrating terraform state: %s", err)
 		}
@@ -107,9 +117,9 @@ func (m Migrator) MigrateTerraformState(state State, varsDir string) (State, err
 
 func (m Migrator) MigrateTerraformTemplate(terraformDir string) error {
 	oldTemplatePath := filepath.Join(terraformDir, "template.tf")
-	_, err := m.fileIO.Stat(oldTemplatePath)
+	_, err := m.fs.Stat(oldTemplatePath)
 	if err == nil {
-		err = m.fileIO.Rename(oldTemplatePath, filepath.Join(terraformDir, "bbl-template.tf"))
+		err = m.fs.Rename(oldTemplatePath, filepath.Join(terraformDir, "bbl-template.tf"))
 		if err != nil {
 			return fmt.Errorf("migrating terraform template: %s", err)
 		}
@@ -123,7 +133,7 @@ func (m Migrator) migrateStateFile(state map[string]interface{}, deployment, var
 		if err != nil {
 			return fmt.Errorf("marshalling %s state: %s", deployment, err)
 		}
-		err = m.fileIO.WriteFile(filepath.Join(varsDir, fmt.Sprintf("%s-state.json", deployment)), stateJSON, StateMode)
+		err = m.fs.WriteFile(filepath.Join(varsDir, fmt.Sprintf("%s-state.json", deployment)), stateJSON, StateMode)
 		if err != nil {
 			return fmt.Errorf("migrating %s state: %s", deployment, err)
 		}
@@ -150,28 +160,28 @@ func (m Migrator) MigrateJumpboxState(state State, varsDir string) (State, error
 }
 
 func (m Migrator) MigrateCloudConfigDir(bblDir, cloudConfigDir string) error {
-	if _, err := m.fileIO.Stat(bblDir); err == nil {
+	if _, err := m.fs.Stat(bblDir); err == nil {
 		oldCloudConfigDir := filepath.Join(bblDir, "cloudconfig")
-		files, err := m.fileIO.ReadDir(oldCloudConfigDir)
+		files, err := m.fs.ReadDir(oldCloudConfigDir)
 		if err != nil {
 			return fmt.Errorf("reading legacy .bbl dir contents: %s", err)
 		}
 
 		for _, file := range files {
 			oldFile := filepath.Join(oldCloudConfigDir, file.Name())
-			oldFileContent, err := m.fileIO.ReadFile(oldFile)
+			oldFileContent, err := m.fs.ReadFile(oldFile)
 			if err != nil {
 				return fmt.Errorf("reading %s: %s", oldFile, err)
 			}
 
 			newFile := filepath.Join(cloudConfigDir, file.Name())
-			err = m.fileIO.WriteFile(newFile, oldFileContent, StateMode)
+			err = m.fs.WriteFile(newFile, oldFileContent, StateMode)
 			if err != nil {
 				return fmt.Errorf("migrating %s to %s: %s", oldFile, newFile, err)
 			}
 		}
 
-		err = m.fileIO.RemoveAll(m.store.GetOldBblDir())
+		err = m.fs.RemoveAll(m.store.GetOldBblDir())
 		if err != nil {
 			return fmt.Errorf("removing legacy .bbl dir: %s", err)
 		}
@@ -182,8 +192,8 @@ func (m Migrator) MigrateCloudConfigDir(bblDir, cloudConfigDir string) error {
 func (m Migrator) MigrateTerraformVars(varsDir string) error {
 	tfVarsPath := filepath.Join(varsDir, "terraform.tfvars")
 	bblVarsPath := filepath.Join(varsDir, "bbl.tfvars")
-	if _, err := m.fileIO.Stat(tfVarsPath); err == nil {
-		err = m.fileIO.Rename(tfVarsPath, bblVarsPath)
+	if _, err := m.fs.Stat(tfVarsPath); err == nil {
+		err = m.fs.Rename(tfVarsPath, bblVarsPath)
 		if err != nil {
 			return fmt.Errorf("migrating tfvars: %s", err)
 		}
@@ -193,12 +203,12 @@ func (m Migrator) MigrateTerraformVars(varsDir string) error {
 
 func (m Migrator) burnAfterReadingLegacyVarsStore(varsDir, deployment string) (string, error) {
 	legacyVarsStore := filepath.Join(varsDir, fmt.Sprintf("%s-variables.yml", deployment))
-	if _, err := m.fileIO.Stat(legacyVarsStore); err == nil {
-		boshVars, err := m.fileIO.ReadFile(legacyVarsStore)
+	if _, err := m.fs.Stat(legacyVarsStore); err == nil {
+		boshVars, err := m.fs.ReadFile(legacyVarsStore)
 		if err != nil {
 			return "", fmt.Errorf("reading legacy %s vars store: %s", deployment, err)
 		}
-		if err := m.fileIO.Remove(legacyVarsStore); err != nil {
+		if err := m.fs.Remove(legacyVarsStore); err != nil {
 			return "", fmt.Errorf("removing legacy %s vars store: %s", deployment, err) //not tested
 		}
 
@@ -237,7 +247,7 @@ func (m Migrator) migrateVarsStore(variables, deployment, varsDir string) error 
 	}
 
 	if variables != "" {
-		err := m.fileIO.WriteFile(filepath.Join(varsDir, fmt.Sprintf("%s-vars-store.yml", deployment)), []byte(variables), StateMode)
+		err := m.fs.WriteFile(filepath.Join(varsDir, fmt.Sprintf("%s-vars-store.yml", deployment)), []byte(variables), StateMode)
 		if err != nil {
 			return fmt.Errorf("migrating %s variables: %s", deployment, err)
 		}

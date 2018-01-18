@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	uuid "github.com/nu7hatch/gouuid"
 
@@ -16,6 +17,7 @@ import (
 
 var _ = Describe("Store", func() {
 	var (
+		fileIO  *fakes.FileIO
 		store   storage.Store
 		tempDir string
 	)
@@ -24,7 +26,9 @@ var _ = Describe("Store", func() {
 		var err error
 		tempDir, err = ioutil.TempDir("", "")
 
-		store = storage.NewStore(tempDir)
+		fileIO = &fakes.FileIO{}
+
+		store = storage.NewStore(tempDir, fileIO)
 		Expect(err).NotTo(HaveOccurred())
 	})
 
@@ -110,9 +114,9 @@ var _ = Describe("Store", func() {
 				})
 				Expect(err).NotTo(HaveOccurred())
 
-				data, err := ioutil.ReadFile(filepath.Join(tempDir, "bbl-state.json"))
-				Expect(err).NotTo(HaveOccurred())
-				Expect(data).To(MatchJSON(`{
+				Expect(fileIO.WriteFileCall.Receives[0].Filename).To(Equal(filepath.Join(tempDir, "bbl-state.json")))
+				Expect(fileIO.WriteFileCall.Receives[0].Mode).To(Equal(os.FileMode(0644)))
+				Expect(fileIO.WriteFileCall.Receives[0].Contents).To(MatchJSON(`{
 				"version": 14,
 				"bblVersion": "5.3.0",
 				"iaas": "aws",
@@ -163,66 +167,46 @@ var _ = Describe("Store", func() {
 				"id": "01020304-0506-0708-0910-111213141516",
 				"latestTFOutput": ""
 		    	}`))
-
-				fileInfo, err := os.Stat(filepath.Join(tempDir, "bbl-state.json"))
-				Expect(err).NotTo(HaveOccurred())
-				Expect(fileInfo.Mode()).To(Equal(os.FileMode(0644)))
 			})
 		})
 
 		Context("when the state is empty", func() {
 			It("removes the bbl-state.json file", func() {
-				err := ioutil.WriteFile(filepath.Join(tempDir, "bbl-state.json"), []byte("{}"), storage.StateMode)
+				err := store.Set(storage.State{})
 				Expect(err).NotTo(HaveOccurred())
 
-				err = store.Set(storage.State{})
-				Expect(err).NotTo(HaveOccurred())
-
-				_, err = os.Stat(filepath.Join(tempDir, "bbl-state.json"))
-				Expect(os.IsNotExist(err)).To(BeTrue())
+				Expect(fileIO.RemoveCall.Receives[0].Name).To(Equal(filepath.Join(tempDir, "bbl-state.json")))
 			})
 
-			It("removes  bosh *-env scripts", func() {
+			It("removes bosh *-env scripts", func() {
 				createDirector := filepath.Join(tempDir, "create-director.sh")
 				createJumpbox := filepath.Join(tempDir, "create-jumpbox.sh")
 				deleteDirector := filepath.Join(tempDir, "delete-director.sh")
 				deleteJumpbox := filepath.Join(tempDir, "delete-jumpbox.sh")
 
-				err := ioutil.WriteFile(createDirector, []byte("#!/bin/bash"), storage.StateMode)
-				Expect(err).NotTo(HaveOccurred())
-				err = ioutil.WriteFile(createJumpbox, []byte("#!/bin/bash"), storage.StateMode)
-				Expect(err).NotTo(HaveOccurred())
-				err = ioutil.WriteFile(deleteDirector, []byte("#!/bin/bash"), storage.StateMode)
-				Expect(err).NotTo(HaveOccurred())
-				err = ioutil.WriteFile(deleteJumpbox, []byte("#!/bin/bash"), storage.StateMode)
+				err := store.Set(storage.State{})
 				Expect(err).NotTo(HaveOccurred())
 
-				err = store.Set(storage.State{})
-				Expect(err).NotTo(HaveOccurred())
-
-				_, err = os.Stat(createDirector)
-				Expect(os.IsNotExist(err)).To(BeTrue())
-				_, err = os.Stat(createJumpbox)
-				Expect(os.IsNotExist(err)).To(BeTrue())
-				_, err = os.Stat(deleteDirector)
-				Expect(os.IsNotExist(err)).To(BeTrue())
-				_, err = os.Stat(deleteJumpbox)
-				Expect(os.IsNotExist(err)).To(BeTrue())
+				Expect(fileIO.RemoveCall.Receives).To(ContainElement(fakes.RemoveReceive{Name: createDirector}))
+				Expect(fileIO.RemoveCall.Receives).To(ContainElement(fakes.RemoveReceive{Name: deleteDirector}))
+				Expect(fileIO.RemoveCall.Receives).To(ContainElement(fakes.RemoveReceive{Name: deleteJumpbox}))
+				Expect(fileIO.RemoveCall.Receives).To(ContainElement(fakes.RemoveReceive{Name: createJumpbox}))
 			})
 
 			DescribeTable("removing bbl-created directories",
 				func(directory string, expectToBeDeleted bool) {
-					err := os.Mkdir(filepath.Join(tempDir, directory), os.ModePerm)
+					err := store.Set(storage.State{})
 					Expect(err).NotTo(HaveOccurred())
 
-					err = ioutil.WriteFile(filepath.Join(tempDir, directory, "foo.txt"), []byte("{}"), storage.StateMode)
-					Expect(err).NotTo(HaveOccurred())
-
-					err = store.Set(storage.State{})
-					Expect(err).NotTo(HaveOccurred())
-
-					_, err = os.Stat(filepath.Join(tempDir, directory))
-					Expect(os.IsNotExist(err)).To(Equal(expectToBeDeleted))
+					if expectToBeDeleted {
+						Expect(fileIO.RemoveAllCall.Receives).To(ContainElement(fakes.RemoveAllReceive{
+							Path: filepath.Join(tempDir, directory),
+						}))
+					} else {
+						Expect(fileIO.RemoveAllCall.Receives).NotTo(ContainElement(fakes.RemoveAllReceive{
+							Path: filepath.Join(tempDir, directory),
+						}))
+					}
 				},
 				Entry("cloud-config", "cloud-config", true),
 				Entry("terraform", "terraform", true),
@@ -238,18 +222,18 @@ var _ = Describe("Store", func() {
 					err := store.Set(storage.State{})
 					Expect(err).NotTo(HaveOccurred())
 
-					_, err = os.Stat(filepath.Join(tempDir, "bbl-state.json"))
-					Expect(os.IsNotExist(err)).To(BeTrue())
+					Expect(len(fileIO.WriteFileCall.Receives)).To(Equal(0))
 				})
 			})
 
 			Context("failure cases", func() {
 				Context("when the bbl-state.json file cannot be removed", func() {
-					It("returns an error", func() {
-						err := os.Chmod(tempDir, 0000)
-						Expect(err).NotTo(HaveOccurred())
+					BeforeEach(func() {
+						fileIO.RemoveCall.Returns = []fakes.RemoveReturn{{Error: errors.New("permission denied")}}
+					})
 
-						err = store.Set(storage.State{})
+					It("returns an error", func() {
+						err := store.Set(storage.State{})
 						Expect(err).To(MatchError(ContainSubstring("permission denied")))
 					})
 				})
@@ -286,13 +270,11 @@ var _ = Describe("Store", func() {
 
 			Context("when the directory does not exist", func() {
 				BeforeEach(func() {
-					storage.SetMarshalIndent(func(state interface{}, prefix string, indent string) ([]byte, error) {
-						return []byte{}, errors.New("failed to marshal JSON")
-					})
+					fileIO.StatCall.Returns.Error = errors.New("no such file or directory")
 				})
 
 				It("returns an error", func() {
-					store = storage.NewStore("non-valid-dir")
+					store = storage.NewStore("non-valid-dir", fileIO)
 					err := store.Set(storage.State{})
 					Expect(err).To(MatchError(ContainSubstring("no such file or directory")))
 				})
@@ -300,12 +282,11 @@ var _ = Describe("Store", func() {
 
 			Context("when it fails to open the bbl-state.json file", func() {
 				BeforeEach(func() {
-					err := os.Chmod(tempDir, 0000)
-					Expect(err).NotTo(HaveOccurred())
+					fileIO.WriteFileCall.Returns = []fakes.WriteFileReturn{{Error: errors.New("permission denied")}}
 				})
 
 				It("returns an error", func() {
-					err := store.Set(storage.State{})
+					err := store.Set(storage.State{EnvID: "something"})
 					Expect(err).To(MatchError(ContainSubstring("permission denied")))
 				})
 			})
@@ -316,13 +297,13 @@ var _ = Describe("Store", func() {
 		func(subdirectory string, getDirsFunc func() (string, error)) {
 			expectedDir := filepath.Join(tempDir, subdirectory)
 
-			os.MkdirAll(expectedDir, os.ModePerm)
-
 			actualDir, err := getDirsFunc()
 			Expect(err).NotTo(HaveOccurred())
 			Expect(actualDir).To(Equal(expectedDir))
 
-			os.RemoveAll(expectedDir)
+			if len(subdirectory) > 0 {
+				Expect(fileIO.MkdirAllCall.Receives.Dir).To(Equal(expectedDir))
+			}
 		},
 		Entry("cloud-config", "cloud-config", func() (string, error) { return store.GetCloudConfigDir() }),
 		Entry("state", "", func() (string, error) { return store.GetStateDir(), nil }),
@@ -332,36 +313,14 @@ var _ = Describe("Store", func() {
 		Entry("jumpbox-deployment", "jumpbox-deployment", func() (string, error) { return store.GetJumpboxDeploymentDir() }),
 	)
 
-	DescribeTable("get dirs creates a directory that does not already exist",
-		func(subdirectory string, getDirsFunc func() (string, error)) {
-			expectedDir := filepath.Join(tempDir, subdirectory)
-
-			actualDir, err := getDirsFunc()
-			Expect(err).NotTo(HaveOccurred())
-			Expect(actualDir).To(Equal(expectedDir))
-
-			_, err = os.Stat(actualDir)
-			Expect(err).NotTo(HaveOccurred())
-
-			os.RemoveAll(expectedDir)
-		},
-		Entry("cloud-config", "cloud-config", func() (string, error) { return store.GetCloudConfigDir() }),
-		Entry("vars", "vars", func() (string, error) { return store.GetVarsDir() }),
-		Entry("terraform", "terraform", func() (string, error) { return store.GetTerraformDir() }),
-		Entry("bosh-deployment", "bosh-deployment", func() (string, error) { return store.GetDirectorDeploymentDir() }),
-		Entry("jumpbox-deployment", "jumpbox-deployment", func() (string, error) { return store.GetJumpboxDeploymentDir() }),
-	)
-
 	DescribeTable("get dirs returns an error when the subdirectory cannot be created",
 		func(subdirectory string, getDirsFunc func() (string, error)) {
 			expectedDir := filepath.Join(tempDir, subdirectory)
-			_, err := os.Create(expectedDir)
-			Expect(err).NotTo(HaveOccurred())
+			fileIO.MkdirAllCall.Returns.Error = errors.New("not a directory")
 
-			_, err = getDirsFunc()
+			_, err := getDirsFunc()
 			Expect(err).To(MatchError(ContainSubstring("not a directory")))
-
-			os.RemoveAll(expectedDir)
+			Expect(fileIO.MkdirAllCall.Receives.Dir).To(Equal(expectedDir))
 		},
 		Entry("cloud-config", "cloud-config", func() (string, error) { return store.GetCloudConfigDir() }),
 		Entry("vars", "vars", func() (string, error) { return store.GetVarsDir() }),
@@ -377,10 +336,6 @@ var _ = Describe("Store", func() {
 			expectedCloudConfigPath = filepath.Join(tempDir, "cloud-config")
 		})
 
-		AfterEach(func() {
-			os.RemoveAll(expectedCloudConfigPath)
-		})
-
 		Context("if the cloud-config subdirectory exists", func() {
 			It("returns the path to the cloud-config directory", func() {
 				cloudConfigDir, err := store.GetCloudConfigDir()
@@ -392,9 +347,7 @@ var _ = Describe("Store", func() {
 		Context("failure cases", func() {
 			Context("when there is a name collision with an existing file", func() {
 				BeforeEach(func() {
-					// create a file called cloud-config to cause name collision with the directory to be created
-					_, err := os.Create(expectedCloudConfigPath)
-					Expect(err).NotTo(HaveOccurred())
+					fileIO.MkdirAllCall.Returns.Error = errors.New("not a directory")
 				})
 
 				It("returns an error", func() {

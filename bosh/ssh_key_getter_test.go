@@ -2,12 +2,10 @@ package bosh_test
 
 import (
 	"errors"
-	"io/ioutil"
 	"path/filepath"
 
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
-	"github.com/cloudfoundry/bosh-bootloader/storage"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -17,33 +15,33 @@ var _ = Describe("SSHKeyGetter", func() {
 	Describe("Get", func() {
 		var (
 			sshKeyGetter bosh.SSHKeyGetter
-			variables    string
 			stateStore   *fakes.StateStore
-			varsDir      string
+			fileIO       *fakes.FileIO
+			variables    string
 		)
 
 		BeforeEach(func() {
-			var err error
-			varsDir, err = ioutil.TempDir("", "")
 			stateStore = &fakes.StateStore{}
-			stateStore.GetVarsDirCall.Returns.Directory = varsDir
-			sshKeyGetter = bosh.NewSSHKeyGetter(stateStore)
+			stateStore.GetVarsDirCall.Returns.Directory = "some-fake-vars-dir"
+
+			fileIO = &fakes.FileIO{}
 			variables = "jumpbox_ssh:\n  private_key: some-private-key"
-			err = ioutil.WriteFile(filepath.Join(varsDir, "some-deployment-vars-store.yml"), []byte(variables), storage.ScriptMode)
-			Expect(err).NotTo(HaveOccurred())
+			fileIO.ReadFileCall.Returns.Contents = []byte(variables)
+
+			sshKeyGetter = bosh.NewSSHKeyGetter(stateStore, fileIO)
 		})
 
 		It("returns the jumpbox ssh key from the state", func() {
 			privateKey, err := sshKeyGetter.Get("some-deployment")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(privateKey).To(Equal("some-private-key"))
+			Expect(fileIO.ReadFileCall.Receives.Filename).To(Equal(filepath.Join("some-fake-vars-dir", "some-deployment-vars-store.yml")))
 		})
 
 		Context("failure cases", func() {
 			Context("when the Jumpbox variables yaml cannot be unmarshaled", func() {
 				BeforeEach(func() {
-					err := ioutil.WriteFile(filepath.Join(varsDir, "invalid-deployment-vars-store.yml"), []byte("invalid yaml"), storage.ScriptMode)
-					Expect(err).NotTo(HaveOccurred())
+					fileIO.ReadFileCall.Returns.Contents = []byte("invalid yaml")
 				})
 
 				It("returns an error", func() {
@@ -64,10 +62,14 @@ var _ = Describe("SSHKeyGetter", func() {
 			})
 
 			Context("when the deployment vars file can't be read", func() {
+				BeforeEach(func() {
+					fileIO.ReadFileCall.Returns.Error = errors.New("orange")
+				})
+
 				It("returns an error", func() {
 					_, err := sshKeyGetter.Get("nonexistent")
 					Expect(err).To(MatchError(ContainSubstring("Read nonexistent vars file: ")))
-					Expect(err).To(MatchError(ContainSubstring("no such file or directory")))
+					Expect(err).To(MatchError(ContainSubstring("orange")))
 				})
 			})
 		})

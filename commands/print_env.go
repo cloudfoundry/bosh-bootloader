@@ -2,11 +2,11 @@ package commands
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net"
 	"path/filepath"
 	"strings"
 
+	"github.com/cloudfoundry/bosh-bootloader/fileio"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
@@ -17,6 +17,7 @@ type PrintEnv struct {
 	sshKeyGetter     sshKeyGetter
 	terraformManager terraformManager
 	credhubGetter    credhubGetter
+	fs               fs
 }
 
 type envSetter interface {
@@ -29,7 +30,20 @@ type credhubGetter interface {
 	GetPassword() (string, error)
 }
 
-func NewPrintEnv(logger logger, stderrLogger logger, stateValidator stateValidator, sshKeyGetter sshKeyGetter, credhubGetter credhubGetter, terraformManager terraformManager) PrintEnv {
+type fs interface {
+	fileio.TempDirer
+	fileio.FileWriter
+}
+
+func NewPrintEnv(
+	logger logger,
+	stderrLogger logger,
+	stateValidator stateValidator,
+	sshKeyGetter sshKeyGetter,
+	credhubGetter credhubGetter,
+	terraformManager terraformManager,
+	fs fs,
+) PrintEnv {
 	return PrintEnv{
 		stateValidator:   stateValidator,
 		logger:           logger,
@@ -37,6 +51,7 @@ func NewPrintEnv(logger logger, stderrLogger logger, stateValidator stateValidat
 		sshKeyGetter:     sshKeyGetter,
 		terraformManager: terraformManager,
 		credhubGetter:    credhubGetter,
+		fs:               fs,
 	}
 }
 
@@ -94,7 +109,7 @@ func (p PrintEnv) Execute(args []string, state storage.State) error {
 		return err
 	}
 
-	dir, err := ioutil.TempDir("", "bosh-jumpbox")
+	dir, err := p.fs.TempDir("", "bosh-jumpbox")
 	if err != nil {
 		// not tested
 		return err
@@ -107,9 +122,8 @@ func (p PrintEnv) Execute(args []string, state storage.State) error {
 		return err
 	}
 
-	err = ioutil.WriteFile(privateKeyPath, []byte(privateKeyContents), 0600)
+	err = p.fs.WriteFile(privateKeyPath, []byte(privateKeyContents), 0600)
 	if err != nil {
-		// not tested
 		return err
 	}
 
