@@ -22,6 +22,12 @@ To create a bosh-lite environment on gcp,
 you can use the steps above with the
 `bosh-lite-gcp` patch provided here.
 
+## restricted-instance-groups-gcp
+
+To create two instance groups instead of an instance group for every zone on gcp,
+you can use the steps above with the `restricted-instance-groups-gcp` patch
+provided here.
+
 ## iso-segs-aws
 
 To create an iso-segs environment on aws, you can:
