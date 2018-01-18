@@ -48,7 +48,7 @@ var _ = Describe("PrintEnv", func() {
 				DirectorSSLCA:    "some-director-ca-cert",
 			},
 			Jumpbox: storage.Jumpbox{
-				URL: "some-magical-jumpbox-url",
+				URL: "some-magical-jumpbox-url:22",
 			},
 		}
 
@@ -88,9 +88,8 @@ var _ = Describe("PrintEnv", func() {
 			Expect(logger.PrintlnCall.Messages).To(ContainElement("export CREDHUB_USER=credhub-cli"))
 			Expect(logger.PrintlnCall.Messages).To(ContainElement("export CREDHUB_PASSWORD=some-credhub-password"))
 
-			Expect(logger.PrintlnCall.Messages).To(ContainElement(MatchRegexp(`export BOSH_ALL_PROXY=socks5://localhost:\d+`)))
-			Expect(logger.PrintlnCall.Messages).To(ContainElement(MatchRegexp(`JUMPBOX_PRIVATE_KEY=.*[/\\]bosh_jumpbox_private.key`)))
-			Expect(logger.PrintlnCall.Messages).To(ContainElement(MatchRegexp(`ssh -f -N -o StrictHostKeyChecking=no -o ServerAliveInterval=300 -D \d+ jumpbox@some-magical-jumpbox-url -i \$JUMPBOX_PRIVATE_KEY`)))
+			Expect(logger.PrintlnCall.Messages).To(ContainElement(MatchRegexp(`export JUMPBOX_PRIVATE_KEY=.*[/\\]bosh_jumpbox_private.key`)))
+			Expect(logger.PrintlnCall.Messages).To(ContainElement(MatchRegexp(`export BOSH_ALL_PROXY=ssh\+socks5:\/\/jumpbox@some-magical-jumpbox-url:22\?private-key=\$JUMPBOX_PRIVATE_KEY`)))
 		})
 
 		It("writes private key to file in temp dir", func() {
@@ -180,7 +179,7 @@ var _ = Describe("PrintEnv", func() {
 					err := printEnv.Execute([]string{}, state)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(stderrLogger.PrintlnCall.Messages).To(ContainElement("No credhub password found."))
-					Expect(logger.PrintlnCall.Messages).To(ContainElement(MatchRegexp(`ssh -f -N -o StrictHostKeyChecking=no -o ServerAliveInterval=300 -D \d+ jumpbox@some-magical-jumpbox-url -i \$JUMPBOX_PRIVATE_KEY`)))
+					Expect(logger.PrintlnCall.Messages).To(ContainElement(MatchRegexp(`export JUMPBOX_PRIVATE_KEY=`)))
 				})
 			})
 
@@ -193,7 +192,7 @@ var _ = Describe("PrintEnv", func() {
 					err := printEnv.Execute([]string{}, state)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(stderrLogger.PrintlnCall.Messages).To(ContainElement("No credhub server found."))
-					Expect(logger.PrintlnCall.Messages).To(ContainElement(MatchRegexp(`ssh -f -N -o StrictHostKeyChecking=no -o ServerAliveInterval=300 -D \d+ jumpbox@some-magical-jumpbox-url -i \$JUMPBOX_PRIVATE_KEY`)))
+					Expect(logger.PrintlnCall.Messages).To(ContainElement(MatchRegexp(`export JUMPBOX_PRIVATE_KEY=`)))
 				})
 			})
 
@@ -206,7 +205,7 @@ var _ = Describe("PrintEnv", func() {
 					err := printEnv.Execute([]string{}, state)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(stderrLogger.PrintlnCall.Messages).To(ContainElement("No credhub certs found."))
-					Expect(logger.PrintlnCall.Messages).To(ContainElement(MatchRegexp(`ssh -f -N -o StrictHostKeyChecking=no -o ServerAliveInterval=300 -D \d+ jumpbox@some-magical-jumpbox-url -i \$JUMPBOX_PRIVATE_KEY`)))
+					Expect(logger.PrintlnCall.Messages).To(ContainElement(MatchRegexp(`export JUMPBOX_PRIVATE_KEY=`)))
 				})
 			})
 		})

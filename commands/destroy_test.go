@@ -35,7 +35,7 @@ var _ = Describe("Destroy", func() {
 
 		plan = &fakes.Plan{}
 		boshManager = &fakes.BOSHManager{}
-		boshManager.VersionCall.Returns.Version = "2.0.24"
+		boshManager.VersionCall.Returns.Version = "2.0.48"
 		stateStore = &fakes.StateStore{}
 		stateValidator = &fakes.StateValidator{}
 		terraformManager = &fakes.TerraformManager{}
@@ -49,13 +49,13 @@ var _ = Describe("Destroy", func() {
 	})
 
 	Describe("CheckFastFails", func() {
-		Context("when the BOSH version is less than 2.0.24 and there is a director", func() {
+		Context("when the BOSH version is less than 2.0.48 and there is a director", func() {
 			It("returns a helpful error message", func() {
 				boshManager.VersionCall.Returns.Version = "1.9.0"
 				err := destroy.CheckFastFails([]string{"--skip-if-missing"}, storage.State{
 					IAAS: "aws",
 				})
-				Expect(err).To(MatchError("BOSH version must be at least v2.0.24"))
+				Expect(err).To(MatchError("BOSH version must be at least v2.0.48"))
 			})
 		})
 

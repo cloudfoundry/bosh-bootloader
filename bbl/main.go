@@ -143,7 +143,7 @@ func main() {
 	boshExecutor := bosh.NewExecutor(boshCommand, afs.ReadFile, json.Unmarshal, json.Marshal, afs.WriteFile)
 	sshKeyGetter := bosh.NewSSHKeyGetter(stateStore, afs)
 	credhubGetter := bosh.NewCredhubGetter(stateStore, afs)
-	boshManager := bosh.NewManager(boshExecutor, logger, socks5Proxy, stateStore, sshKeyGetter)
+	boshManager := bosh.NewManager(boshExecutor, logger, stateStore, sshKeyGetter, afs)
 	boshClientProvider := bosh.NewClientProvider(socks5Proxy, sshKeyGetter)
 
 	var cloudConfigOpsGenerator cloudconfig.OpsGenerator

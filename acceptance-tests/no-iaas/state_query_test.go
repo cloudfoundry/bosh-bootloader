@@ -87,10 +87,8 @@ CF Credhub LB: 35.196.150.246`))
 		Expect(stdout).To(ContainSubstring("export BOSH_CLIENT_SECRET=some-password"))
 		Expect(stdout).To(ContainSubstring("export BOSH_ENVIRONMENT=https://10.0.0.6:25555"))
 		Expect(stdout).To(ContainSubstring("export BOSH_CA_CERT='-----BEGIN CERTIFICATE-----\ndirector-ca-cert\n-----END CERTIFICATE-----"))
-		Expect(stdout).To(ContainSubstring("export BOSH_ALL_PROXY=socks5://localhost:"))
 		Expect(stdout).To(ContainSubstring("export JUMPBOX_PRIVATE_KEY="))
-		Expect(stdout).To(ContainSubstring("ssh -f -N -o StrictHostKeyChecking=no -o ServerAliveInterval=300 -D"))
-		Expect(stdout).To(ContainSubstring("jumpbox@35.185.60.196 -i $JUMPBOX_PRIVATE_KEY"))
+		Expect(stdout).To(ContainSubstring("export BOSH_ALL_PROXY=ssh+socks5://jumpbox@35.185.60.196:22?private-key=$JUMPBOX_PRIVATE_KEY"))
 	})
 
 	It("bbl ssh-key", func() {

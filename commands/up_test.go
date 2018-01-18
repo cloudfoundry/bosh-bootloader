@@ -26,10 +26,7 @@ var _ = Describe("Up", func() {
 
 	BeforeEach(func() {
 		plan = &fakes.Plan{}
-
 		boshManager = &fakes.BOSHManager{}
-		boshManager.VersionCall.Returns.Version = "2.0.24"
-
 		terraformManager = &fakes.TerraformManager{}
 		cloudConfigManager = &fakes.CloudConfigManager{}
 		stateStore = &fakes.StateStore{}

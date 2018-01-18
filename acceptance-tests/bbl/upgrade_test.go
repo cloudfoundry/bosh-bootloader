@@ -18,12 +18,11 @@ import (
 
 var _ = Describe("Upgrade", func() {
 	var (
-		oldBBL     actors.BBL
-		newBBL     actors.BBL
-		boshcli    actors.BOSHCLI
-		state      acceptance.State
-		sshSession *gexec.Session
-		f          *os.File
+		oldBBL  actors.BBL
+		newBBL  actors.BBL
+		boshcli actors.BOSHCLI
+		state   acceptance.State
+		f       *os.File
 	)
 
 	BeforeEach(func() {
@@ -74,10 +73,6 @@ var _ = Describe("Upgrade", func() {
 		})
 
 		By("destroying with the latest bbl", func() {
-			if sshSession != nil {
-				sshSession.Interrupt()
-				Eventually(sshSession, "5s").Should(gexec.Exit())
-			}
 			session := newBBL.Destroy()
 			Eventually(session, 10*time.Minute).Should(gexec.Exit())
 		})
@@ -107,8 +102,8 @@ var _ = Describe("Upgrade", func() {
 			Eventually(session, 60*time.Minute).Should(gexec.Exit(0))
 		})
 
-		By("creating an ssh tunnel to the director in print-env", func() {
-			sshSession = newBBL.StartSSHTunnel()
+		By("setting up enivornment variables to talk to the director", func() {
+			newBBL.EvalPrintEnv()
 		})
 
 		directorAddress := newBBL.DirectorAddress()

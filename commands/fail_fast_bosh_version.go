@@ -22,13 +22,13 @@ func fastFailBOSHVersion(boshManager boshManager) error {
 	}
 
 	// This shouldn't fail, so there is no test for capturing the error.
-	minimumVersion, err := semver.NewVersion("2.0.24")
+	minimumVersion, err := semver.NewVersion("2.0.48")
 	if err != nil {
 		return err
 	}
 
 	if currentVersion.LessThan(*minimumVersion) {
-		return errors.New("BOSH version must be at least v2.0.24")
+		return errors.New("BOSH version must be at least v2.0.48")
 	}
 
 	return nil

@@ -2,7 +2,6 @@ package bosh_test
 
 import (
 	"errors"
-	"fmt"
 	"io/ioutil"
 
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
@@ -20,9 +19,9 @@ var _ = Describe("Manager", func() {
 	var (
 		boshExecutor *fakes.BOSHExecutor
 		logger       *fakes.Logger
-		socks5Proxy  *fakes.Socks5Proxy
 		stateStore   *fakes.StateStore
 		sshKeyGetter *fakes.SSHKeyGetter
+		fs           *fakes.FileIO
 
 		boshManager      *bosh.Manager
 		terraformOutputs terraform.Outputs
@@ -36,9 +35,9 @@ var _ = Describe("Manager", func() {
 	BeforeEach(func() {
 		boshExecutor = &fakes.BOSHExecutor{}
 		logger = &fakes.Logger{}
-		socks5Proxy = &fakes.Socks5Proxy{}
 		sshKeyGetter = &fakes.SSHKeyGetter{}
 		sshKeyGetter.GetCall.Returns.PrivateKey = "some-jumpbox-private-key"
+		fs = &fakes.FileIO{}
 
 		stateStore = &fakes.StateStore{}
 		stateStore.GetVarsDirCall.Returns.Directory = "some-bbl-vars-dir"
@@ -46,7 +45,7 @@ var _ = Describe("Manager", func() {
 		stateStore.GetDirectorDeploymentDirCall.Returns.Directory = "some-director-deployment-dir"
 		stateStore.GetJumpboxDeploymentDirCall.Returns.Directory = "some-jumpbox-deployment-dir"
 
-		boshManager = bosh.NewManager(boshExecutor, logger, socks5Proxy, stateStore, sshKeyGetter)
+		boshManager = bosh.NewManager(boshExecutor, logger, stateStore, sshKeyGetter, fs)
 
 		boshVars = `admin_password: some-admin-password
 director_ssl:
@@ -153,8 +152,6 @@ director_ssl:
 				Expect(boshExecutor.CreateEnvCall.Receives.DirInput.VarsDir).To(Equal("some-bbl-vars-dir"))
 				Expect(boshExecutor.CreateEnvCall.Receives.DirInput.StateDir).To(Equal("some-state-dir"))
 
-				Expect(socks5Proxy.StartCall.CallCount).To(Equal(0))
-
 				Expect(stateWithDirector.BOSH).To(Equal(storage.BOSH{
 					DirectorName:           "bosh-some-env-id",
 					DirectorAddress:        "https://10.2.0.6:25555",
@@ -203,7 +200,7 @@ director_ssl:
 			terraformOutputs = terraform.Outputs{Map: map[string]interface{}{
 				"internal_cidr": "10.0.0.0/24",
 				"some-key":      "some-value",
-				"jumpbox_url":   "some-jumpbox-url",
+				"jumpbox_url":   "some-jumpbox-url:22",
 			}}
 
 			state = storage.State{
@@ -239,6 +236,7 @@ gcp_credentials_json: some-credential-json
 
 			createEnvArgs = []string{"bosh", "create-env", "/path/to/manifest.yml", "etc"}
 			boshExecutor.CreateEnvCall.Returns.Variables = "jumpbox_ssh:\n  private_key: some-jumpbox-private-key"
+			fs.TempDirCall.Returns.Name = "/fake/file/bosh-jumpbox"
 		})
 
 		AfterEach(func() {
@@ -277,25 +275,17 @@ gcp_credentials_json: some-credential-json
 		})
 
 		Describe("CreateJumpbox", func() {
-			It("starts a socks5 proxy for the duration of creating the bosh director", func() {
-				socks5ProxyAddr := "localhost:1234"
-				socks5Proxy.AddrCall.Returns.Addr = socks5ProxyAddr
-
+			It("sets BOSH_ALL_PROXY to start an ssh tunnel and socks5 proxy to create the director", func() {
 				_, err := boshManager.CreateJumpbox(state, terraformOutputs)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(osUnsetenvKey).To(Equal("BOSH_ALL_PROXY"))
-				Expect(socks5Proxy.StartCall.CallCount).To(Equal(1))
-				Expect(socks5Proxy.StartCall.Receives.JumpboxPrivateKey).To(Equal("some-jumpbox-private-key"))
-				Expect(socks5Proxy.StartCall.Receives.JumpboxExternalURL).To(Equal("some-jumpbox-url"))
 				Expect(osSetenvKey).To(Equal("BOSH_ALL_PROXY"))
-				Expect(osSetenvValue).To(Equal(fmt.Sprintf("socks5://%s", socks5ProxyAddr)))
+				Expect(osSetenvValue).To(Equal("ssh+socks5://jumpbox@some-jumpbox-url:22?private-key=/fake/file/bosh-jumpbox/bosh_jumpbox_private.key"))
 
 				Expect(logger.StepCall.Messages).To(gomegamatchers.ContainSequence([]string{
 					"creating jumpbox",
 					"created jumpbox",
-					"starting socks5 proxy to jumpbox",
-					"started proxy",
 				}))
 			})
 
@@ -316,7 +306,7 @@ gcp_credentials_json: some-credential-json
 						ServiceAccountKey: "some-credential-json",
 					},
 					Jumpbox: storage.Jumpbox{
-						URL:   "some-jumpbox-url",
+						URL:   "some-jumpbox-url:22",
 						State: nil,
 					},
 				}))
@@ -330,7 +320,7 @@ gcp_credentials_json: some-credential-json
 
 					It("returns an error", func() {
 						_, err := boshManager.CreateJumpbox(state, terraformOutputs)
-						Expect(err).To(MatchError("jumpbox key: soursop"))
+						Expect(err).To(MatchError("Get jumpbox private key: soursop"))
 					})
 				})
 
@@ -353,21 +343,25 @@ gcp_credentials_json: some-credential-json
 					})
 				})
 
-				Context("when the socks5 proxy fails to start", func() {
-					It("returns an error", func() {
-						socks5Proxy.StartCall.Returns.Error = errors.New("coconut")
+				Context("when creating a temp directory fails", func() {
+					BeforeEach(func() {
+						fs.TempDirCall.Returns.Error = errors.New("fig")
+					})
 
+					It("returns a helpful error", func() {
 						_, err := boshManager.CreateJumpbox(state, terraformOutputs)
-						Expect(err).To(MatchError("Start proxy: coconut"))
+						Expect(err).To(MatchError("Create temp dir for jumpbox private key: fig"))
 					})
 				})
 
-				Context("when the socks5 proxy fails to return an address", func() {
-					It("returns an error", func() {
-						socks5Proxy.AddrCall.Returns.Error = errors.New("mango")
+				Context("when writing the jumpbox private key fails", func() {
+					BeforeEach(func() {
+						fs.WriteFileCall.Returns = []fakes.WriteFileReturn{{errors.New("starfruit")}}
+					})
 
+					It("returns a helpful error", func() {
 						_, err := boshManager.CreateJumpbox(state, terraformOutputs)
-						Expect(err).To(MatchError("Get proxy address: mango"))
+						Expect(err).To(MatchError("Write jumpbox private key: starfruit"))
 					})
 				})
 			})
@@ -441,16 +435,16 @@ gcp_credentials_json: some-credential-json
 			var err error
 			varsDir, err = ioutil.TempDir("", "")
 			Expect(err).NotTo(HaveOccurred())
+
 			stateStore.GetVarsDirCall.Returns.Directory = varsDir
+
+			fs.TempDirCall.Returns.Name = "/fake/file/bosh-jumpbox"
 		})
 
 		It("calls delete env", func() {
-			socks5ProxyAddr := "localhost:1234"
-			socks5Proxy.AddrCall.Returns.Addr = socks5ProxyAddr
-
 			err := boshManager.DeleteDirector(storage.State{
 				Jumpbox: storage.Jumpbox{
-					URL: "some-jumpbox-url",
+					URL: "some-jumpbox-url:22",
 				},
 				BOSH: storage.BOSH{
 					Manifest: "some-manifest",
@@ -467,12 +461,8 @@ gcp_credentials_json: some-credential-json
 			Expect(boshExecutor.WriteDeploymentVarsCall.Receives.DirInput.VarsDir).To(Equal(varsDir))
 			Expect(boshExecutor.WriteDeploymentVarsCall.Receives.DeploymentVars).To(MatchYAML("some-key: some-value"))
 
-			Expect(socks5Proxy.StartCall.CallCount).To(Equal(1))
-			Expect(socks5Proxy.StartCall.Receives.JumpboxPrivateKey).To(Equal("some-jumpbox-private-key"))
-			Expect(socks5Proxy.StartCall.Receives.JumpboxExternalURL).To(Equal("some-jumpbox-url"))
-
 			Expect(osSetenvKey).To(Equal("BOSH_ALL_PROXY"))
-			Expect(osSetenvValue).To(Equal(fmt.Sprintf("socks5://%s", socks5ProxyAddr)))
+			Expect(osSetenvValue).To(Equal("ssh+socks5://jumpbox@some-jumpbox-url:22?private-key=/fake/file/bosh-jumpbox/bosh_jumpbox_private.key"))
 
 			Expect(boshExecutor.DeleteEnvCall.Receives.DirInput).To(Equal(bosh.DirInput{
 				Deployment: "director",
@@ -482,10 +472,10 @@ gcp_credentials_json: some-credential-json
 		})
 
 		Context("when an error occurs", func() {
-			var incomingState storage.State
+			var state storage.State
 
 			BeforeEach(func() {
-				incomingState = storage.State{
+				state = storage.State{
 					BOSH: storage.BOSH{
 						Manifest: "some-manifest",
 						State: map[string]interface{}{
@@ -502,8 +492,30 @@ gcp_credentials_json: some-credential-json
 				})
 
 				It("returns an error", func() {
-					err := boshManager.DeleteDirector(incomingState, terraform.Outputs{})
-					Expect(err).To(MatchError("Delete bosh director: rambutan"))
+					err := boshManager.DeleteDirector(state, terraform.Outputs{})
+					Expect(err).To(MatchError("Get jumpbox private key: rambutan"))
+				})
+			})
+
+			Context("when creating a temp directory fails", func() {
+				BeforeEach(func() {
+					fs.TempDirCall.Returns.Error = errors.New("fig")
+				})
+
+				It("returns a helpful error", func() {
+					err := boshManager.DeleteDirector(state, terraformOutputs)
+					Expect(err).To(MatchError("Create temp dir for jumpbox private key: fig"))
+				})
+			})
+
+			Context("when writing the jumpbox private key fails", func() {
+				BeforeEach(func() {
+					fs.WriteFileCall.Returns = []fakes.WriteFileReturn{{errors.New("starfruit")}}
+				})
+
+				It("returns a helpful error", func() {
+					err := boshManager.DeleteDirector(state, terraformOutputs)
+					Expect(err).To(MatchError("Write jumpbox private key: starfruit"))
 				})
 			})
 
@@ -512,46 +524,18 @@ gcp_credentials_json: some-credential-json
 					deleteEnvError := errors.New("Run bosh delete-env director: some error")
 					boshExecutor.DeleteEnvCall.Returns.Error = deleteEnvError
 
-					expectedError := bosh.NewManagerDeleteError(incomingState, deleteEnvError)
+					expectedError := bosh.NewManagerDeleteError(state, deleteEnvError)
 
-					err := boshManager.DeleteDirector(incomingState, terraform.Outputs{})
+					err := boshManager.DeleteDirector(state, terraform.Outputs{})
 					Expect(err).To(MatchError(expectedError))
-				})
-			})
-
-			Context("when a jumpbox deployment exists", func() {
-				Context("when the socks5Proxy fails to start", func() {
-					BeforeEach(func() {
-						socks5Proxy.StartCall.Returns.Error = errors.New("failed to start socks5Proxy")
-					})
-
-					It("returns an error", func() {
-						err := boshManager.DeleteDirector(incomingState, terraform.Outputs{})
-						Expect(err).To(MatchError("Start socks5 proxy: failed to start socks5Proxy"))
-					})
-				})
-
-				Context("when the socks5Proxy fails to return an address", func() {
-					BeforeEach(func() {
-						socks5Proxy.AddrCall.Returns.Error = errors.New("plum")
-					})
-
-					It("returns an error", func() {
-						err := boshManager.DeleteDirector(incomingState, terraform.Outputs{})
-						Expect(err).To(MatchError("Get proxy address: plum"))
-					})
 				})
 			})
 		})
 	})
 
 	Describe("GetJumpboxDeploymentVars", func() {
-		var incomingState storage.State
-		BeforeEach(func() {
-			incomingState = storage.State{}
-		})
 		It("removes the jumpbox__ prefix from variable names", func() {
-			vars := boshManager.GetJumpboxDeploymentVars(incomingState, terraform.Outputs{Map: map[string]interface{}{
+			vars := boshManager.GetJumpboxDeploymentVars(storage.State{}, terraform.Outputs{Map: map[string]interface{}{
 				"some-key":      "some-value",
 				"director__key": "some-director-value",
 				"jumpbox__key":  "some-jumpbox-value",
@@ -565,12 +549,8 @@ key: some-jumpbox-value
 	})
 
 	Describe("GetDirectorDeploymentVars", func() {
-		var incomingState storage.State
-		BeforeEach(func() {
-			incomingState = storage.State{}
-		})
 		It("removes the director__ prefix from variable names", func() {
-			vars := boshManager.GetDirectorDeploymentVars(incomingState, terraform.Outputs{Map: map[string]interface{}{
+			vars := boshManager.GetDirectorDeploymentVars(storage.State{}, terraform.Outputs{Map: map[string]interface{}{
 				"some-key":      "some-value",
 				"director__key": "some-director-value",
 				"jumpbox__key":  "some-jumpbox-value",
@@ -585,14 +565,14 @@ key: some-director-value
 
 	Describe("Version", func() {
 		BeforeEach(func() {
-			boshExecutor.VersionCall.Returns.Version = "2.0.24"
+			boshExecutor.VersionCall.Returns.Version = "1.1.1"
 		})
 
 		It("calls out to bosh executor version", func() {
 			version, err := boshManager.Version()
 			Expect(err).NotTo(HaveOccurred())
 			Expect(boshExecutor.VersionCall.CallCount).To(Equal(1))
-			Expect(version).To(Equal("2.0.24"))
+			Expect(version).To(Equal("1.1.1"))
 		})
 
 		Context("when executor returns a bosh version error", func() {

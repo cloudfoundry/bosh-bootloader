@@ -36,7 +36,7 @@ var _ = Describe("Plan", func() {
 		terraformManager = &fakes.TerraformManager{}
 		bblVersion = "42.0.0"
 
-		boshManager.VersionCall.Returns.Version = "2.0.24"
+		boshManager.VersionCall.Returns.Version = "2.0.48"
 
 		command = commands.NewPlan(
 			boshManager,
@@ -183,12 +183,12 @@ var _ = Describe("Plan", func() {
 			})
 		})
 
-		Context("when the version of the bosh-cli is lower than 2.0.24", func() {
+		Context("when the version of the bosh-cli is lower than 2.0.48", func() {
 			It("returns an error", func() {
 				boshManager.VersionCall.Returns.Version = "1.9.1"
 				err := command.CheckFastFails([]string{}, storage.State{Version: 999})
 
-				Expect(err).To(MatchError("BOSH version must be at least v2.0.24"))
+				Expect(err).To(MatchError("BOSH version must be at least v2.0.48"))
 			})
 		})
 

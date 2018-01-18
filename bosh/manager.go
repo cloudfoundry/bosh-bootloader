@@ -3,6 +3,7 @@ package bosh
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	yaml "gopkg.in/yaml.v2"
@@ -19,9 +20,9 @@ var (
 type Manager struct {
 	executor     executor
 	logger       logger
-	socks5Proxy  socks5Proxy
 	stateStore   stateStore
 	sshKeyGetter sshKeyGetter
+	fs           fs
 }
 
 type directorVars struct {
@@ -46,11 +47,6 @@ type logger interface {
 	Println(string)
 }
 
-type socks5Proxy interface {
-	Start(string, string) error
-	Addr() (string, error)
-}
-
 type stateStore interface {
 	GetStateDir() string
 	GetVarsDir() (string, error)
@@ -62,13 +58,13 @@ type sshKeyGetter interface {
 	Get(string) (string, error)
 }
 
-func NewManager(executor executor, logger logger, socks5Proxy socks5Proxy, stateStore stateStore, sshKeyGetter sshKeyGetter) *Manager {
+func NewManager(executor executor, logger logger, stateStore stateStore, sshKeyGetter sshKeyGetter, fs fs) *Manager {
 	return &Manager{
 		executor:     executor,
 		logger:       logger,
-		socks5Proxy:  socks5Proxy,
 		stateStore:   stateStore,
 		sshKeyGetter: sshKeyGetter,
+		fs:           fs,
 	}
 }
 
@@ -138,24 +134,25 @@ func (m *Manager) CreateJumpbox(state storage.State, terraformOutputs terraform.
 		URL: terraformOutputs.GetString("jumpbox_url"),
 	}
 
-	m.logger.Step("starting socks5 proxy to jumpbox")
-	jumpboxPrivateKey, err := m.sshKeyGetter.Get("jumpbox")
+	dir, err := m.fs.TempDir("", "bosh-jumpbox")
 	if err != nil {
-		return storage.State{}, fmt.Errorf("jumpbox key: %s", err)
+		return storage.State{}, fmt.Errorf("Create temp dir for jumpbox private key: %s", err)
 	}
 
-	err = m.socks5Proxy.Start(jumpboxPrivateKey, state.Jumpbox.URL)
+	privateKeyPath := filepath.Join(dir, "bosh_jumpbox_private.key")
+
+	privateKeyContents, err := m.sshKeyGetter.Get("jumpbox")
 	if err != nil {
-		return storage.State{}, fmt.Errorf("Start proxy: %s", err)
+		return storage.State{}, fmt.Errorf("Get jumpbox private key: %s", err)
 	}
 
-	addr, err := m.socks5Proxy.Addr()
+	err = m.fs.WriteFile(privateKeyPath, []byte(privateKeyContents), 0600)
 	if err != nil {
-		return storage.State{}, fmt.Errorf("Get proxy address: %s", err)
+		return storage.State{}, fmt.Errorf("Write jumpbox private key: %s", err)
 	}
-	osSetenv("BOSH_ALL_PROXY", fmt.Sprintf("socks5://%s", addr))
 
-	m.logger.Step("started proxy")
+	osSetenv("BOSH_ALL_PROXY", fmt.Sprintf("ssh+socks5://jumpbox@%s?private-key=%s", state.Jumpbox.URL, privateKeyPath))
+
 	return state, nil
 }
 
@@ -267,22 +264,24 @@ func (m *Manager) DeleteDirector(state storage.State, terraformOutputs terraform
 		return fmt.Errorf("Write deployment vars: %s", err)
 	}
 
-	jumpboxPrivateKey, err := m.sshKeyGetter.Get("jumpbox")
+	dir, err := m.fs.TempDir("", "bosh-jumpbox")
 	if err != nil {
-		return fmt.Errorf("Delete bosh director: %s", err)
+		return fmt.Errorf("Create temp dir for jumpbox private key: %s", err)
 	}
 
-	err = m.socks5Proxy.Start(jumpboxPrivateKey, state.Jumpbox.URL)
+	privateKeyPath := filepath.Join(dir, "bosh_jumpbox_private.key")
+
+	privateKeyContents, err := m.sshKeyGetter.Get("jumpbox")
 	if err != nil {
-		return fmt.Errorf("Start socks5 proxy: %s", err)
+		return fmt.Errorf("Get jumpbox private key: %s", err)
 	}
 
-	addr, err := m.socks5Proxy.Addr()
+	err = m.fs.WriteFile(privateKeyPath, []byte(privateKeyContents), 0600)
 	if err != nil {
-		return fmt.Errorf("Get proxy address: %s", err)
+		return fmt.Errorf("Write jumpbox private key: %s", err)
 	}
 
-	osSetenv("BOSH_ALL_PROXY", fmt.Sprintf("socks5://%s", addr))
+	osSetenv("BOSH_ALL_PROXY", fmt.Sprintf("ssh+socks5://jumpbox@%s?private-key=%s", state.Jumpbox.URL, privateKeyPath))
 
 	err = m.executor.DeleteEnv(dirInput, state)
 	if err != nil {

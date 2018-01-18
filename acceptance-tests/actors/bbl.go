@@ -7,12 +7,12 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"time"
 
 	acceptance "github.com/cloudfoundry/bosh-bootloader/acceptance-tests"
 
-	"github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
 )
@@ -153,6 +153,23 @@ func (b BBL) SaveDirectorCA() string {
 	return file.Name()
 }
 
+func (b BBL) EvalPrintEnv() {
+	stdout := fmt.Sprintf("#!/bin/bash\n%s", b.PrintEnv())
+	Expect(stdout).To(ContainSubstring("export BOSH_ALL_PROXY=ssh+socks5://"))
+
+	dir, err := ioutil.TempDir("", "bosh-print-env-command")
+	Expect(err).NotTo(HaveOccurred())
+
+	printEnvCommandPath := filepath.Join(dir, "eval-print-env")
+
+	err = ioutil.WriteFile(printEnvCommandPath, []byte(stdout), 0700)
+	Expect(err).NotTo(HaveOccurred())
+
+	cmd := exec.Command(printEnvCommandPath)
+	err = cmd.Run()
+	Expect(err).NotTo(HaveOccurred())
+}
+
 func (b BBL) fetchValue(value string) string {
 	args := []string{
 		"--state-dir", b.stateDirectory,
@@ -172,58 +189,4 @@ func (b BBL) execute(args []string, stdout io.Writer, stderr io.Writer) *gexec.S
 	Expect(err).NotTo(HaveOccurred())
 
 	return session
-}
-
-func LBURL(config acceptance.Config, bbl BBL, state acceptance.State) (string, error) {
-	lbs := bbl.fetchValue("lbs")
-	var url string
-	if config.IAAS == "aws" {
-		cutLBsPrefix := strings.Split(lbs, "[")[1]
-		url = strings.Split(cutLBsPrefix, "]")[0]
-	} else {
-		url = strings.Split(lbs, " ")[2]
-	}
-
-	return fmt.Sprintf("https://%s", url), nil
-}
-
-func (b BBL) StartSSHTunnel() *gexec.Session {
-	printEnvLines := strings.Split(b.PrintEnv(), "\n")
-	os.Setenv("BOSH_ALL_PROXY", getExport("BOSH_ALL_PROXY", printEnvLines))
-
-	var sshArgs []string
-	for i := 0; i < len(printEnvLines); i++ {
-		if strings.HasPrefix(printEnvLines[i], "ssh ") {
-			sshCmd := strings.TrimPrefix(printEnvLines[i], "ssh ")
-			sshCmd = strings.Replace(sshCmd, "$JUMPBOX_PRIVATE_KEY", getExport("JUMPBOX_PRIVATE_KEY", printEnvLines), -1)
-			sshCmd = strings.Replace(sshCmd, "-f ", "", -1)
-			sshArgs = strings.Split(sshCmd, " ")
-		}
-	}
-
-	cmd := exec.Command("ssh", sshArgs...)
-	sshSession, err := gexec.Start(cmd, ginkgo.GinkgoWriter, ginkgo.GinkgoWriter)
-	Expect(err).NotTo(HaveOccurred())
-
-	return sshSession
-}
-
-func getExport(keyName string, lines []string) string {
-	for _, line := range lines {
-		if strings.HasPrefix(line, "export ") {
-			parts := strings.Split(line, " ")
-			if len(parts) < 2 {
-				panic(fmt.Sprintf("Unexpected print-env output: %s\n", line))
-			}
-			keyValue := parts[1]
-			keyValueParts := strings.Split(keyValue, "=")
-			key := keyValueParts[0]
-			value := keyValueParts[1]
-
-			if key == keyName {
-				return value
-			}
-		}
-	}
-	return ""
 }

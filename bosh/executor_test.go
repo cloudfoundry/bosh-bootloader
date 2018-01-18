@@ -839,7 +839,7 @@ var _ = Describe("Executor", func() {
 		BeforeEach(func() {
 			cmd = &fakes.BOSHCommand{}
 			cmd.RunStub = func(stdout io.Writer, workingDirectory string, args []string) error {
-				stdout.Write([]byte("some-text version 2.0.24 some-other-text"))
+				stdout.Write([]byte("some-text version 1.1.1 some-other-text"))
 				return nil
 			}
 
@@ -857,7 +857,7 @@ var _ = Describe("Executor", func() {
 		It("returns the correctly trimmed version", func() {
 			version, err := executor.Version()
 			Expect(err).NotTo(HaveOccurred())
-			Expect(version).To(Equal("2.0.24"))
+			Expect(version).To(Equal("1.1.1"))
 		})
 
 		Context("failure cases", func() {

@@ -18,6 +18,11 @@ type ClientProvider struct {
 	sshKeyGetter sshKeyGetter
 }
 
+type socks5Proxy interface {
+	Start(string, string) error
+	Addr() (string, error)
+}
+
 func NewClientProvider(socks5Proxy socks5Proxy, sshKeyGetter sshKeyGetter) ClientProvider {
 	return ClientProvider{
 		socks5Proxy:  socks5Proxy,

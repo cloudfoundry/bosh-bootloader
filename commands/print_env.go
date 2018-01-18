@@ -2,9 +2,7 @@ package commands
 
 import (
 	"fmt"
-	"net"
 	"path/filepath"
-	"strings"
 
 	"github.com/cloudfoundry/bosh-bootloader/fileio"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
@@ -42,8 +40,7 @@ func NewPrintEnv(
 	sshKeyGetter sshKeyGetter,
 	credhubGetter credhubGetter,
 	terraformManager terraformManager,
-	fs fs,
-) PrintEnv {
+	fs fs) PrintEnv {
 	return PrintEnv{
 		stateValidator:   stateValidator,
 		logger:           logger,
@@ -103,15 +100,8 @@ func (p PrintEnv) Execute(args []string, state storage.State) error {
 		p.stderrLogger.Println("No credhub certs found.")
 	}
 
-	portNumber, err := p.getPort()
-	if err != nil {
-		// not tested
-		return err
-	}
-
 	dir, err := p.fs.TempDir("", "bosh-jumpbox")
 	if err != nil {
-		// not tested
 		return err
 	}
 
@@ -127,27 +117,8 @@ func (p PrintEnv) Execute(args []string, state storage.State) error {
 		return err
 	}
 
-	jumpboxURL := strings.Split(state.Jumpbox.URL, ":")[0]
-
-	p.logger.Println(fmt.Sprintf("export BOSH_ALL_PROXY=socks5://localhost:%s", portNumber))
 	p.logger.Println(fmt.Sprintf("export JUMPBOX_PRIVATE_KEY=%s", privateKeyPath))
-	p.logger.Println(fmt.Sprintf("ssh -f -N -o StrictHostKeyChecking=no -o ServerAliveInterval=300 -D %s jumpbox@%s -i $JUMPBOX_PRIVATE_KEY", portNumber, jumpboxURL))
+	p.logger.Println(fmt.Sprintf("export BOSH_ALL_PROXY=ssh+socks5://jumpbox@%s?private-key=$JUMPBOX_PRIVATE_KEY", state.Jumpbox.URL))
 
 	return nil
-}
-
-func (p PrintEnv) getPort() (string, error) {
-	l, err := net.Listen("tcp4", "127.0.0.1:0")
-	if err != nil {
-		return "", err
-	}
-
-	defer l.Close()
-
-	_, port, err := net.SplitHostPort(l.Addr().String())
-	if err != nil {
-		return "", err
-	}
-
-	return port, nil
 }

@@ -23,7 +23,6 @@ var _ = Describe("up", func() {
 		directorPassword string
 		caCertPath       string
 
-		sshSession *gexec.Session
 		stateDir   string
 		iaas       string
 		iaasHelper actors.IAASLBHelper
@@ -44,11 +43,6 @@ var _ = Describe("up", func() {
 	})
 
 	AfterEach(func() {
-		if sshSession != nil {
-			sshSession.Interrupt()
-			Eventually(sshSession, "5s").Should(gexec.Exit())
-		}
-
 		session := bbl.Down()
 		Eventually(session, 10*time.Minute).Should(gexec.Exit())
 	})
@@ -61,13 +55,8 @@ var _ = Describe("up", func() {
 		session := bbl.Up(args...)
 		Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 
-		By("creating an ssh tunnel to the director in print-env", func() {
-			if iaas == "vsphere" {
-				// make requests directly to the director
-				return
-			}
-
-			sshSession = bbl.StartSSHTunnel()
+		By("exporting bosh environment variables", func() {
+			bbl.EvalPrintEnv()
 		})
 
 		By("checking if the bosh director exists", func() {

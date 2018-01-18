@@ -13,6 +13,7 @@ import (
 type fs interface {
 	fileio.FileReader
 	fileio.FileWriter
+	fileio.TempDirer
 }
 
 type SSHKeyDeleter struct {
