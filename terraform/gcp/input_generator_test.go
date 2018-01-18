@@ -25,7 +25,6 @@ var _ = Describe("InputGenerator", func() {
 				ServiceAccountKeyPath: "/some/service/account/key",
 				ProjectID:             "some-project-id",
 				Zone:                  "some-zone",
-				Zones:                 []string{"zone-1", "zone-2"},
 				Region:                "some-region",
 			},
 			TFState: "some-tf-state",
@@ -48,7 +47,6 @@ var _ = Describe("InputGenerator", func() {
 				"project_id":    state.GCP.ProjectID,
 				"region":        state.GCP.Region,
 				"zone":          state.GCP.Zone,
-				"zones":         state.GCP.Zones,
 				"system_domain": state.LB.Domain,
 			}))
 		})
@@ -68,7 +66,6 @@ var _ = Describe("InputGenerator", func() {
 					"project_id":                  state.GCP.ProjectID,
 					"region":                      state.GCP.Region,
 					"zone":                        state.GCP.Zone,
-					"zones":                       state.GCP.Zones,
 					"ssl_certificate":             state.LB.Cert,
 					"ssl_certificate_private_key": state.LB.Key,
 					"system_domain":               state.LB.Domain,

@@ -17,7 +17,6 @@ func (i InputGenerator) Generate(state storage.State) (map[string]interface{}, e
 		"project_id":    state.GCP.ProjectID,
 		"region":        state.GCP.Region,
 		"zone":          state.GCP.Zone,
-		"zones":         state.GCP.Zones,
 		"system_domain": state.LB.Domain,
 	}
 

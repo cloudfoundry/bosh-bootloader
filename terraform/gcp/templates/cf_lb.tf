@@ -6,11 +6,6 @@ variable "ssl_certificate_private_key" {
   type = "string"
 }
 
-locals {
-  router_lb_backend_service_name = "${var.restrict_instance_groups ? join(" ", google_compute_backend_service.router-lb-backend-service-restricted.*.name) : join(" ", google_compute_backend_service.router-lb-backend-service.*.name) }"
-  router_lb_backend_service_self_link = "${var.restrict_instance_groups ? join(" ", google_compute_backend_service.router-lb-backend-service-restricted.*.self_link) : join(" ", google_compute_backend_service.router-lb-backend-service.*.self_link)}"
-}
-
 output "router_backend_service" {
   value = "${google_compute_backend_service.router-lb-backend-service.name}"
 }
