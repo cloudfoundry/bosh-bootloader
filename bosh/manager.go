@@ -8,6 +8,7 @@ import (
 
 	yaml "gopkg.in/yaml.v2"
 
+	"github.com/cloudfoundry/bosh-bootloader/fileio"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/cloudfoundry/bosh-bootloader/terraform"
 )
@@ -17,12 +18,17 @@ var (
 	osUnsetenv = os.Unsetenv
 )
 
+type managerFs interface {
+	fileio.FileWriter
+	fileio.TempDirer
+}
+
 type Manager struct {
 	executor     executor
 	logger       logger
 	stateStore   stateStore
 	sshKeyGetter sshKeyGetter
-	fs           fs
+	fs           managerFs
 }
 
 type directorVars struct {
@@ -58,7 +64,7 @@ type sshKeyGetter interface {
 	Get(string) (string, error)
 }
 
-func NewManager(executor executor, logger logger, stateStore stateStore, sshKeyGetter sshKeyGetter, fs fs) *Manager {
+func NewManager(executor executor, logger logger, stateStore stateStore, sshKeyGetter sshKeyGetter, fs deleterFs) *Manager {
 	return &Manager{
 		executor:     executor,
 		logger:       logger,

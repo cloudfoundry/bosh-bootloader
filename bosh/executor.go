@@ -11,15 +11,21 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/cloudfoundry/bosh-bootloader/fileio"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
+type executorFs interface {
+	fileio.FileReader
+	fileio.FileWriter
+	fileio.Stater
+}
+
 type Executor struct {
 	command       command
-	readFile      func(string) ([]byte, error)
+	fs            executorFs
 	unmarshalJSON func([]byte, interface{}) error
 	marshalJSON   func(interface{}) ([]byte, error)
-	writeFile     func(string, []byte, os.FileMode) error
 }
 
 type DirInput struct {
@@ -44,16 +50,17 @@ var (
 	boshDeploymentRepo    = "vendor/github.com/cloudfoundry/bosh-deployment"
 )
 
-func NewExecutor(cmd command, readFile func(string) ([]byte, error),
+func NewExecutor(
+	cmd command,
+	fs executorFs,
 	unmarshalJSON func([]byte, interface{}) error,
 	marshalJSON func(interface{}) ([]byte, error),
-	writeFile func(string, []byte, os.FileMode) error) Executor {
+) Executor {
 	return Executor{
 		command:       cmd,
-		readFile:      readFile,
+		fs:            fs,
 		unmarshalJSON: unmarshalJSON,
 		marshalJSON:   marshalJSON,
-		writeFile:     writeFile,
 	}
 }
 
@@ -78,7 +85,7 @@ func (e Executor) PlanJumpbox(input DirInput, deploymentDir, iaas string) error 
 
 	for _, f := range setupFiles {
 		os.MkdirAll(filepath.Dir(f.dest), os.ModePerm)
-		err := e.writeFile(f.dest, f.contents, storage.StateMode)
+		err := e.fs.WriteFile(f.dest, f.contents, storage.StateMode)
 		if err != nil {
 			return fmt.Errorf("Jumpbox write setup file: %s", err) //not tested
 		}
@@ -94,7 +101,7 @@ func (e Executor) PlanJumpbox(input DirInput, deploymentDir, iaas string) error 
 		sharedArgs = append(sharedArgs, "-o", filepath.Join(deploymentDir, "vsphere", "resource-pool.yml"))
 		vSphereJumpboxNetworkOpsPath := filepath.Join(deploymentDir, "vsphere-jumpbox-network.yml")
 		sharedArgs = append(sharedArgs, "-o", vSphereJumpboxNetworkOpsPath)
-		err := e.writeFile(vSphereJumpboxNetworkOpsPath, []byte(VSphereJumpboxNetworkOps), os.ModePerm)
+		err := e.fs.WriteFile(vSphereJumpboxNetworkOpsPath, []byte(VSphereJumpboxNetworkOps), os.ModePerm)
 		if err != nil {
 			return fmt.Errorf("Jumpbox write vsphere network ops file: %s", err) //not tested
 		}
@@ -140,14 +147,14 @@ func (e Executor) PlanJumpbox(input DirInput, deploymentDir, iaas string) error 
 
 	createEnvCmd := []byte(formatScript(boshPath, input.StateDir, "create-env", boshArgs))
 	createJumpboxScript := filepath.Join(input.StateDir, "create-jumpbox.sh")
-	err = e.writeFile(createJumpboxScript, createEnvCmd, 0750)
+	err = e.fs.WriteFile(createJumpboxScript, createEnvCmd, 0750)
 	if err != nil {
 		return err
 	}
 
 	deleteEnvCmd := []byte(formatScript(boshPath, input.StateDir, "delete-env", boshArgs))
 	deleteJumpboxScript := filepath.Join(input.StateDir, "delete-jumpbox.sh")
-	err = e.writeFile(deleteJumpboxScript, deleteEnvCmd, 0750)
+	err = e.fs.WriteFile(deleteJumpboxScript, deleteEnvCmd, 0750)
 	if err != nil {
 		return err
 	}
@@ -209,7 +216,7 @@ func (e Executor) PlanDirector(input DirInput, deploymentDir, iaas string) error
 		if f.source != "" {
 			os.MkdirAll(filepath.Dir(f.dest), storage.StateMode)
 		}
-		if err := e.writeFile(f.dest, f.contents, storage.StateMode); err != nil {
+		if err := e.fs.WriteFile(f.dest, f.contents, storage.StateMode); err != nil {
 			return fmt.Errorf("Director write setup file: %s", err) //not tested
 		}
 	}
@@ -266,13 +273,13 @@ func (e Executor) PlanDirector(input DirInput, deploymentDir, iaas string) error
 	}
 
 	createEnvCmd := []byte(formatScript(boshPath, input.StateDir, "create-env", boshArgs))
-	err = e.writeFile(filepath.Join(input.StateDir, "create-director.sh"), createEnvCmd, 0750)
+	err = e.fs.WriteFile(filepath.Join(input.StateDir, "create-director.sh"), createEnvCmd, 0750)
 	if err != nil {
 		return err
 	}
 
 	deleteEnvCmd := []byte(formatScript(boshPath, input.StateDir, "delete-env", boshArgs))
-	err = e.writeFile(filepath.Join(input.StateDir, "delete-director.sh"), deleteEnvCmd, 0750)
+	err = e.fs.WriteFile(filepath.Join(input.StateDir, "delete-director.sh"), deleteEnvCmd, 0750)
 	if err != nil {
 		return err
 	}
@@ -295,7 +302,7 @@ func formatScript(boshPath, stateDir, command string, args []string) string {
 
 func (e Executor) WriteDeploymentVars(input DirInput, deploymentVars string) error {
 	varsFilePath := filepath.Join(input.VarsDir, fmt.Sprintf("%s-vars-file.yml", input.Deployment))
-	err := e.writeFile(varsFilePath, []byte(deploymentVars), storage.StateMode)
+	err := e.fs.WriteFile(varsFilePath, []byte(deploymentVars), storage.StateMode)
 	if err != nil {
 		return fmt.Errorf("Write vars file: %s", err) // not tested
 	}
@@ -305,7 +312,7 @@ func (e Executor) WriteDeploymentVars(input DirInput, deploymentVars string) err
 func (e Executor) CreateEnv(input DirInput, state storage.State) (string, error) {
 	os.Setenv("BBL_STATE_DIR", input.StateDir)
 	createEnvScript := filepath.Join(input.StateDir, fmt.Sprintf("create-%s-override.sh", input.Deployment))
-	_, err := os.Stat(createEnvScript)
+	_, err := e.fs.Stat(createEnvScript)
 	if err != nil {
 		createEnvScript = strings.Replace(createEnvScript, "-override", "", -1)
 	}
@@ -328,7 +335,7 @@ func (e Executor) CreateEnv(input DirInput, state storage.State) (string, error)
 		os.Setenv("BBL_VSPHERE_VCENTER_PASSWORD", state.VSphere.VCenterPassword)
 	}
 
-	cmd := exec.Command(createEnvScript)
+	cmd := exec.Command(createEnvScript) // the way this is tied to the filesystem makes for weird tests
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
@@ -338,7 +345,7 @@ func (e Executor) CreateEnv(input DirInput, state storage.State) (string, error)
 	}
 
 	varsStoreFileName := fmt.Sprintf("%s-vars-store.yml", input.Deployment)
-	varsStoreContents, err := e.readFile(filepath.Join(input.VarsDir, varsStoreFileName))
+	varsStoreContents, err := e.fs.ReadFile(filepath.Join(input.VarsDir, varsStoreFileName))
 	if err != nil {
 		return "", fmt.Errorf("Reading vars file for %s deployment: %s", input.Deployment, err) // not tested
 	}
@@ -347,7 +354,7 @@ func (e Executor) CreateEnv(input DirInput, state storage.State) (string, error)
 }
 
 func (e Executor) DeleteEnv(input DirInput, state storage.State) error {
-	isDeletable, err := deploymentExists(input.VarsDir, input.Deployment)
+	isDeletable, err := e.deploymentExists(input.VarsDir, input.Deployment)
 	if err != nil {
 		return err
 	}
@@ -358,7 +365,7 @@ func (e Executor) DeleteEnv(input DirInput, state storage.State) error {
 	os.Setenv("BBL_STATE_DIR", input.StateDir)
 
 	deleteEnvScript := filepath.Join(input.StateDir, fmt.Sprintf("delete-%s-override.sh", input.Deployment))
-	_, err = os.Stat(deleteEnvScript)
+	_, err = e.fs.Stat(deleteEnvScript)
 	if err != nil {
 		deleteEnvScript = strings.Replace(deleteEnvScript, "-override", "", -1)
 	}
@@ -381,7 +388,7 @@ func (e Executor) DeleteEnv(input DirInput, state storage.State) error {
 		os.Setenv("BBL_VSPHERE_VCENTER_PASSWORD", state.VSphere.VCenterPassword)
 	}
 
-	cmd := exec.Command(deleteEnvScript)
+	cmd := exec.Command(deleteEnvScript) // the way this is tied to the filesystem makes for weird tests
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
@@ -393,7 +400,7 @@ func (e Executor) DeleteEnv(input DirInput, state storage.State) error {
 	return nil
 }
 
-func deploymentExists(varsDir, deployment string) (bool, error) {
+func (e Executor) deploymentExists(varsDir, deployment string) (bool, error) {
 	var deploymentBoshState string
 	switch deployment {
 	case "director":
@@ -403,7 +410,7 @@ func deploymentExists(varsDir, deployment string) (bool, error) {
 	default:
 		return false, fmt.Errorf("Executor doesn't know how to delete a deployed %s", deployment)
 	}
-	_, err := os.Stat(deploymentBoshState)
+	_, err := e.fs.Stat(deploymentBoshState)
 	if err != nil {
 		return false, nil
 	}

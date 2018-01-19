@@ -140,7 +140,7 @@ func main() {
 	hostKeyGetter := proxy.NewHostKeyGetter()
 	socks5Proxy := proxy.NewSocks5Proxy(hostKeyGetter)
 	boshCommand := bosh.NewCmd(os.Stderr)
-	boshExecutor := bosh.NewExecutor(boshCommand, afs.ReadFile, json.Unmarshal, json.Marshal, afs.WriteFile)
+	boshExecutor := bosh.NewExecutor(boshCommand, afs, json.Unmarshal, json.Marshal)
 	sshKeyGetter := bosh.NewSSHKeyGetter(stateStore, afs)
 	credhubGetter := bosh.NewCredhubGetter(stateStore, afs)
 	boshManager := bosh.NewManager(boshExecutor, logger, stateStore, sshKeyGetter, afs)

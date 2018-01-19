@@ -10,7 +10,7 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
-type fs interface {
+type deleterFs interface {
 	fileio.FileReader
 	fileio.FileWriter
 	fileio.TempDirer
@@ -18,10 +18,10 @@ type fs interface {
 
 type SSHKeyDeleter struct {
 	stateStore stateStore
-	fs         fs
+	fs         deleterFs
 }
 
-func NewSSHKeyDeleter(stateStore stateStore, fs fs) SSHKeyDeleter {
+func NewSSHKeyDeleter(stateStore stateStore, fs deleterFs) SSHKeyDeleter {
 	return SSHKeyDeleter{
 		stateStore: stateStore,
 		fs:         fs,
