@@ -10,26 +10,26 @@
 
 ## Cheat sheet
 
-- Given: you want to use bbl for particular IAAS with sensible defaults and our team's credentials
-  => run `eval_bbl_gcp_creds` or `eval_bbl_aws_creds` or `eval_bbl_azure_creds` (requires lpass login)
-- Given: you made changes to the terraform templates inside bbl and you want to see them in action with `bbl` 
-  => run `./scripts/update_terraform_templates CURRENT_IAAS` from the bosh-bootloader directory
-- Given: you made changes to the bbl code and you want to see them in action with `bbl` 
-  => run `./scripts/bbl` from the bosh-bootloader directory
-- Given: you bbled up an lb environment you would like to be able to reach with DNS
-  => create a new NS record in the 'infrastructure' zone in Cloud DNS. Give it the list of name servers found in the NS record in the zone for your environment.
+- GIVEN: you want to use bbl for particular IAAS with sensible defaults and our team's credentials  
+  THEN: run `eval_bbl_gcp_creds` or `eval_bbl_aws_creds` or `eval_bbl_azure_creds` (requires lpass login)  
+- GIVEN: you made changes to the terraform templates inside bbl and you want to see them in action with `bbl`  
+  THEN run `./scripts/update_terraform_templates CURRENT_IAAS` from the bosh-bootloader directory  
+- GIVEN: you made changes to the bbl code and you want to see them in action with `bbl`  
+  THEN: run `./scripts/bbl` from the bosh-bootloader directory  
+- GIVEN: you bbled up an lb environment you would like to be able to reach with DNS  
+  THEN: create a new NS record in the 'infrastructure' zone in Cloud DNS. Give it the list of name servers found in the NS record in the zone for your environment.  
 
 ## Iaas projects
-- aws 
-  => CF Infrastructure: for development and test
-  => CF Infrastructure Acceptance: for PM story acceptance
+- aws  
+  => CF Infrastructure: for development and test  
+  => CF Infrastructure Acceptance: for PM story acceptance  
 
-- gcp
-  => CF-Infrastructure: development playground
-  => CF-Infrastructure-BBL-Test: for jobs in the bosh-bootloader pipeline that bbl up and bosh deploy
-  => CF-Infrastructure-CI: for jobs in other pipelines besides bosh-bootloader like consul
+- gcp  
+  => CF-Infrastructure: development playground  
+  => CF-Infrastructure-BBL-Test: for jobs in the bosh-bootloader pipeline that bbl up and bosh deploy  
+  => CF-Infrastructure-CI: for jobs in other pipelines besides bosh-bootloader like consul  
 
-- azure
+- azure  
   => CF-Infrastructure: for everything
 
 - vsphere
