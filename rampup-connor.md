@@ -1,14 +1,12 @@
-## Learned
+## Code walkthrough
+
+- look at bbl/main.go - where do the user inputs go?
+- look at the migrator - what are we migrating?
 
 ## WAT?!
 
 - local variable called `globals` in ParseArgs
 - Why does http still need `--skip-ssl-validation`? Why were we able to connect with http + `--skip-ssl-validation` but not https + `--skip-ssl-validation`
-
-## Code walkthrough
-
-- look at bbl/main.go - where do the user inputs go?
-- look at the migrator - what are we migrating?
 
 ## Cheat sheet
 
@@ -18,7 +16,16 @@
   => run `./scripts/update_terraform_templates CURRENT_IAAS` from the bosh-bootloader directory
 - Given: you made changes to the bbl code and you want to see them in action with `bbl` 
   => run `./scripts/bbl` from the bosh-bootloader directory
-- Given: you bbled up an lb environment you would like to be able to reach by name 
+- Given: you bbled up an lb environment you would like to be able to reach with DNS
+  => create a new NS record in the 'infrastructure' zone in Cloud DNS. Give it the list of name servers found in the NS record in the zone for your environment.
+
+## Understanding CI
+- cloud envs we manipulate in bbl CI tests (ginkgo bbl integration tests and then cf +):
+  => gcp : cf-infrastructure-bbl-test
+  => aws : cf-infrastructure
+
+- cloud envs for other infra projects:
+  => gcp : cf-infrastructure-ci
 
 ## About Connor
 
@@ -36,7 +43,7 @@ Refactoring when there is a good test suite
 
 - Describe your least favorite project
 
-Content identification system
+Content identification system:
 Hand-rolled infrastructure shenanigans
 Testing in prod
 Stressful
@@ -134,6 +141,8 @@ Power users (mostly other CF teams)
 Operators in PCFS (coming)
 
 ## Vocabulary
+
+- environment: all the iaas usually referring to the vpc. the environment name is either user-provided or generated on bbling up and is used to nam
 
 - ops-file: bosh's yaml munging concept. bosh with interpolate a yml file by applying ops-files to it.
 
