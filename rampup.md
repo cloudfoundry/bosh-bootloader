@@ -19,15 +19,23 @@
 - Given: you bbled up an lb environment you would like to be able to reach with DNS
   => create a new NS record in the 'infrastructure' zone in Cloud DNS. Give it the list of name servers found in the NS record in the zone for your environment.
 
-## Understanding CI
-- cloud envs we manipulate in bbl CI tests (ginkgo bbl integration tests and then cf +):
-  => gcp : cf-infrastructure-bbl-test
-  => aws : cf-infrastructure
+## Iaas projects
+- aws 
+  => CF Infrastructure: for development and test
+  => CF Infrastructure Acceptance: for PM story acceptance
 
-- cloud envs for other infra projects:
-  => gcp : cf-infrastructure-ci
+- gcp
+  => CF-Infrastructure: development playground
+  => CF-Infrastructure-BBL-Test: for jobs in the bosh-bootloader pipeline that bbl up and bosh deploy
+  => CF-Infrastructure-CI: for jobs in other pipelines besides bosh-bootloader like consul
 
-## About Connor
+- azure
+  => CF-Infrastructure: for everything
+
+- vsphere
+  => Pizza boxes/khaleesi: for everything
+
+## Connor
 
 - What kind of context helps you the most? i.e. Do you approach domains from the user's perspective or more technical bottom up?
 
@@ -70,24 +78,24 @@ If you come across any terminology you aren't familiar with then add it to the V
 
 1. cd ignored
 
-1. mkdir cb-day-one
+1. mkdir day-one
 
-1. cd db-day-one
+1. cd day-one
 
 1. run `eval_bbl_gcp_creds`
 
-1. Run `bbl plan --name cb-day-one --iaas gcp --lb-type cf --lb-cert ../fake_cert_stuff/fake.crt --lb-key ../fake_cert_stuff/fake.key --lb-domain cb-day-one.infrastructure.cf-app.com`
+1. Run `bbl plan --name day-one --iaas gcp --lb-type cf --lb-cert ../fake_cert_stuff/fake.crt --lb-key ../fake_cert_stuff/fake.key --lb-domain day-one.infrastructure.cf-app.com`
   - Run `tree .` and look around at the files that were created. How are they organized?
   - What files look like they are related to terraform? Which ones look like they are for bosh?
-  - Look around in the [cf-infrastructure project on gcp](https://console.cloud.google.com/home/dashboard?project=cf-infra). There should be nothing with cb-day-one in the name.
+  - Look around in the [cf-infrastructure project on gcp](https://console.cloud.google.com/home/dashboard?project=cf-infra). There should be nothing with day-one in the name.
 
 1. Run `bbl up`
   - What changed in the file system?
   - Look around in the vars directory. Where are all the credentials?
   - From the /vars directory run `terraform output`
-  - Look around in the [cf-infrastructure project on gcp](https://console.cloud.google.com/home/dashboard?project=cf-infra). Which resources have cb-day-one in the name? How are they related to each other?
+  - Look around in the [cf-infrastructure project on gcp](https://console.cloud.google.com/home/dashboard?project=cf-infra). Which resources have day-one in the name? How are they related to each other?
 
-1. Add DNS records from infrastructure.cf-app.com to the cb-day-one zone.
+1. Create a new set of NS records in the infrastructure zone with the name servers from the day-one zone.
 
 1. Run `bbl print-env`. What does it do?
 
@@ -97,7 +105,7 @@ If you come across any terminology you aren't familiar with then add it to the V
 
 1. Change to the `cf-deployment` directory.
 
-1. Run `bosh -d cf deploy cf-deployment.yml --vars-store ~/go/src/github.com/cloudfoundry/bosh-bootloader/ignored/cb-day-one/vars/cf-deployment-vars.yml -v system_domain="cb-day-one.infrastructure.cf-app.com" -o operations/use-compiled-releases.yml -n`
+1. Run `bosh -d cf deploy cf-deployment.yml --vars-store ~/go/src/github.com/cloudfoundry/bosh-bootloader/ignored/day-one/vars/cf-deployment-vars.yml -v system_domain="day-one.infrastructure.cf-app.com" -o operations/use-compiled-releases.yml -n`
 
 1. Look around in the [cf-infrastructure project on gcp](https://console.cloud.google.com/home/dashboard?project=cf-infra). Which resources did bosh create? How do they relate to the resources that `bbl up` created?
 
@@ -160,7 +168,7 @@ Operators in PCFS (coming)
 
 - Why can't bbl add the DNS records for infrastructure.cf-app.com
 
-## Day One Survey
+## Day One Survey - Connor
 
 Welcome, new team member! Thanks for taking time to fill out our ramp-up survey. Bringing new people onto the project is an important opportunity, because unlike your teammates, you haven’t acclimated to the weird parts of the project and codebase. This means that we have a brief window before you acclimate to shed light on the parts of the project that need cleaning up.
 To help us with this process, any time you find something weird, or difficult to understand, please say something! That way we can improve things for the next person to join.
