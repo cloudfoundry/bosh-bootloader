@@ -109,6 +109,19 @@ If you come across any terminology you aren't familiar with then add it to the V
 
 1. Look around in the [cf-infrastructure project on gcp](https://console.cloud.google.com/home/dashboard?project=cf-infra). Which resources did bosh create? How do they relate to the resources that `bbl up` created?
 
+1. Clean up all the resources you delployed. Try the gcp console and [leftovers](git@github.com:genevievelesperance/leftovers). Delete resources in approximately this order:
+  - instances
+  - firewall rules
+  - health checks
+  - load balancers
+  - instance groups
+  - external ips
+  - dns records in your zone
+  - your zone
+  - your vpc network
+  - disks
+  - images
+
 ## Pipelines
 
 1. bosh-bootloader:
