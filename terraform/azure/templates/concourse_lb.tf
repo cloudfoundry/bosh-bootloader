@@ -1,3 +1,13 @@
+resource "azurerm_lb_rule" "concourse-https" {
+  resource_group_name            = "${azurerm_resource_group.bosh.name}"
+  loadbalancer_id                = "${azurerm_lb.concourse.id}"
+  name                           = "${var.env_id}-cconcourse"
+  protocol                       = "Tcp"
+  frontend_port                  = 443
+  backend_port                   = 443
+  frontend_ip_configuration_name = "PublicIPAddress"
+}
+
 resource "azurerm_public_ip" "concourse" {
   name                         = "${var.env_id}-concourse-lb"
   location                     = "${var.region}"
