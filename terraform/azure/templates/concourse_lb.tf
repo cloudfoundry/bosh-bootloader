@@ -5,7 +5,7 @@ resource "azurerm_lb_rule" "concourse-https" {
   protocol                       = "Tcp"
   frontend_port                  = 443
   backend_port                   = 443
-  frontend_ip_configuration_name = "PublicIPAddress"
+  frontend_ip_configuration_name = "${var.env_id}-concourse-frontend-ip-configuration"
 }
 
 resource "azurerm_public_ip" "concourse" {
