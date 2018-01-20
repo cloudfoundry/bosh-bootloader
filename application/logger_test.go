@@ -8,31 +8,36 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/application"
 
 	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("Logger", func() {
 	var (
-		buffer *bytes.Buffer
+		writer *bytes.Buffer
+		reader *bytes.Buffer
+
 		logger *application.Logger
 	)
 
 	BeforeEach(func() {
-		buffer = bytes.NewBuffer([]byte{})
-		logger = application.NewLogger(buffer)
+		writer = bytes.NewBuffer([]byte{})
+		reader = bytes.NewBuffer([]byte{})
+
+		logger = application.NewLogger(writer, reader)
 	})
 
 	Describe("Step", func() {
 		It("prints the step message", func() {
 			logger.Step("creating key")
 
-			Expect(buffer.String()).To(Equal("step: creating key\n"))
+			Expect(writer.String()).To(Equal("step: creating key\n"))
 		})
 
 		It("prints the step message with dynamic values", func() {
 			randomInt := rand.Int()
 			logger.Step("Random variable is: %d", randomInt)
-			Expect(buffer.String()).To(Equal(fmt.Sprintf("step: Random variable is: %d\n", randomInt)))
+			Expect(writer.String()).To(Equal(fmt.Sprintf("step: Random variable is: %d\n", randomInt)))
 		})
 	})
 
@@ -42,7 +47,7 @@ var _ = Describe("Logger", func() {
 			logger.Dot()
 			logger.Dot()
 
-			Expect(buffer.String()).To(Equal("\u2022\u2022\u2022"))
+			Expect(writer.String()).To(Equal("\u2022\u2022\u2022"))
 		})
 	})
 
@@ -50,7 +55,7 @@ var _ = Describe("Logger", func() {
 		It("prints out the message", func() {
 			logger.Println("hello world")
 
-			Expect(buffer.String()).To(Equal("hello world\n"))
+			Expect(writer.String()).To(Equal("hello world\n"))
 		})
 	})
 
@@ -58,8 +63,25 @@ var _ = Describe("Logger", func() {
 		It("prompts for the given messge", func() {
 			logger.Prompt("do you like cheese?")
 
-			Expect(buffer.String()).To(Equal("do you like cheese? (y/N): "))
+			Expect(writer.String()).To(Equal("do you like cheese? (y/N): "))
 		})
+
+		DescribeTable("prompting the user for confirmation",
+			func(response string, proceed bool) {
+				fmt.Fprintf(reader, "%s\n", response)
+
+				p := logger.Prompt("Do you like bananas?")
+				Expect(p).To(Equal(proceed))
+			},
+			Entry("responding with 'yes'", "yes", true),
+			Entry("responding with 'y'", "y", true),
+			Entry("responding with 'Yes'", "Yes", true),
+			Entry("responding with 'Y'", "Y", true),
+			Entry("responding with 'no'", "no", false),
+			Entry("responding with 'n'", "n", false),
+			Entry("responding with 'No'", "No", false),
+			Entry("responding with 'N'", "N", false),
+		)
 	})
 
 	Describe("mixing steps, dots and printlns", func() {
@@ -79,7 +101,7 @@ var _ = Describe("Logger", func() {
 			logger.Dot()
 			logger.Println("SUCCESS!")
 
-			Expect(buffer.String()).To(Equal(`step: creating key
+			Expect(writer.String()).To(Equal(`step: creating key
 step: generating template
 step: applying template
 ••

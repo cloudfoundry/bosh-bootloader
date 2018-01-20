@@ -2,8 +2,6 @@ package commands
 
 import (
 	"fmt"
-	"io"
-	"strings"
 
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/flags"
@@ -15,7 +13,6 @@ import (
 type Destroy struct {
 	plan                     plan
 	logger                   logger
-	stdin                    io.Reader
 	boshManager              boshManager
 	stateStore               stateStore
 	stateValidator           stateValidator
@@ -32,13 +29,12 @@ type NetworkDeletionValidator interface {
 	ValidateSafeToDelete(networkName string, envID string) error
 }
 
-func NewDestroy(plan plan, logger logger, stdin io.Reader,
-	boshManager boshManager, stateStore stateStore, stateValidator stateValidator,
-	terraformManager terraformManager, networkDeletionValidator NetworkDeletionValidator) Destroy {
+func NewDestroy(plan plan, logger logger, boshManager boshManager, stateStore stateStore,
+	stateValidator stateValidator, terraformManager terraformManager,
+	networkDeletionValidator NetworkDeletionValidator) Destroy {
 	return Destroy{
 		plan:                     plan,
 		logger:                   logger,
-		stdin:                    stdin,
 		boshManager:              boshManager,
 		stateStore:               stateStore,
 		stateValidator:           stateValidator,
@@ -114,13 +110,8 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
 	}
 
 	if !config.NoConfirm {
-		d.logger.Prompt(fmt.Sprintf("Are you sure you want to delete infrastructure for %q? This operation cannot be undone!", state.EnvID))
-
-		var proceed string
-		fmt.Fscanln(d.stdin, &proceed)
-
-		proceed = strings.ToLower(proceed)
-		if proceed != "yes" && proceed != "y" {
+		proceed := d.logger.Prompt(fmt.Sprintf("Are you sure you want to delete infrastructure for %q? This operation cannot be undone!", state.EnvID))
+		if !proceed {
 			d.logger.Step("exiting")
 			return nil
 		}
@@ -196,7 +187,7 @@ func (d Destroy) parseFlags(subcommandFlags []string) (destroyConfig, error) {
 
 func (d Destroy) deleteBOSH(state storage.State, terraformOutputs terraform.Outputs) (storage.State, error) {
 	if state.NoDirector {
-		d.logger.Println("no BOSH director, skipping...")
+		d.logger.Println("No BOSH director, skipping...")
 		return state, nil
 	}
 

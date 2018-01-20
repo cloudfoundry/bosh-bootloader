@@ -1,9 +1,7 @@
 package commands_test
 
 import (
-	"bytes"
 	"errors"
-	"fmt"
 
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/commands"
@@ -18,7 +16,8 @@ import (
 
 var _ = Describe("Destroy", func() {
 	var (
-		destroy                  commands.Destroy
+		destroy commands.Destroy
+
 		boshManager              *fakes.BOSHManager
 		logger                   *fakes.Logger
 		plan                     *fakes.Plan
@@ -26,12 +25,11 @@ var _ = Describe("Destroy", func() {
 		stateValidator           *fakes.StateValidator
 		terraformManager         *fakes.TerraformManager
 		networkDeletionValidator *fakes.NetworkDeletionValidator
-		stdin                    *bytes.Buffer
 	)
 
 	BeforeEach(func() {
-		stdin = bytes.NewBuffer([]byte{})
 		logger = &fakes.Logger{}
+		logger.PromptCall.Returns.Proceed = true
 
 		plan = &fakes.Plan{}
 		boshManager = &fakes.BOSHManager{}
@@ -41,10 +39,9 @@ var _ = Describe("Destroy", func() {
 		terraformManager = &fakes.TerraformManager{}
 		networkDeletionValidator = &fakes.NetworkDeletionValidator{}
 
-		// Returning a fully empty State is unrealistic.
 		terraformManager.DestroyCall.Returns.BBLState = storage.State{ID: "some-state-id"}
 
-		destroy = commands.NewDestroy(plan, logger, stdin, boshManager, stateStore,
+		destroy = commands.NewDestroy(plan, logger, boshManager, stateStore,
 			stateValidator, terraformManager, networkDeletionValidator)
 	})
 
@@ -114,7 +111,6 @@ var _ = Describe("Destroy", func() {
 
 			Context("when there is no network name in the state", func() {
 				It("does not attempt to validate whether it is safe to delete the network", func() {
-					stdin.Write([]byte("yes\n"))
 					terraformManager.GetOutputsCall.Returns.Outputs = terraform.Outputs{}
 
 					err := destroy.CheckFastFails([]string{}, bblState)
@@ -140,7 +136,6 @@ var _ = Describe("Destroy", func() {
 				It("does not fast fail", func() {
 					terraformManager.GetOutputsCall.Returns.Error = errors.New("terraform output provider failed")
 
-					stdin.Write([]byte("yes\n"))
 					err := destroy.CheckFastFails([]string{}, bblState)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(networkDeletionValidator.ValidateSafeToDeleteCall.CallCount).To(Equal(0))
@@ -152,7 +147,6 @@ var _ = Describe("Destroy", func() {
 			var state storage.State
 
 			BeforeEach(func() {
-				stdin.Write([]byte("yes\n"))
 				state = storage.State{
 					IAAS:  "aws",
 					EnvID: "some-env-id",
@@ -223,10 +217,25 @@ var _ = Describe("Destroy", func() {
 			plan.IsInitializedCall.Returns.IsInitialized = true
 		})
 
-		DescribeTable("prompting the user for confirmation",
-			func(response string, proceed bool) {
-				fmt.Fprintf(stdin, "%s\n", response)
+		It("prompts the user for confirmation", func() {
+			err := destroy.Execute([]string{}, storage.State{
+				BOSH: storage.BOSH{
+					DirectorName: "some-director",
+				},
+				EnvID: "some-lake",
+			})
+			Expect(err).NotTo(HaveOccurred())
 
+			Expect(logger.PromptCall.Receives.Message).To(Equal(`Are you sure you want to delete infrastructure for "some-lake"? This operation cannot be undone!`))
+			Expect(boshManager.DeleteDirectorCall.CallCount).To(Equal(1))
+		})
+
+		Context("when the user says no to the prompt", func() {
+			BeforeEach(func() {
+				logger.PromptCall.Returns.Proceed = false
+			})
+
+			It("does not delete anything", func() {
 				err := destroy.Execute([]string{}, storage.State{
 					BOSH: storage.BOSH{
 						DirectorName: "some-director",
@@ -236,23 +245,10 @@ var _ = Describe("Destroy", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(logger.PromptCall.Receives.Message).To(Equal(`Are you sure you want to delete infrastructure for "some-lake"? This operation cannot be undone!`))
-
-				if proceed {
-					Expect(boshManager.DeleteDirectorCall.CallCount).To(Equal(1))
-				} else {
-					Expect(logger.StepCall.Receives.Message).To(Equal("exiting"))
-					Expect(boshManager.DeleteDirectorCall.CallCount).To(Equal(0))
-				}
-			},
-			Entry("responding with 'yes'", "yes", true),
-			Entry("responding with 'y'", "y", true),
-			Entry("responding with 'Yes'", "Yes", true),
-			Entry("responding with 'Y'", "Y", true),
-			Entry("responding with 'no'", "no", false),
-			Entry("responding with 'n'", "n", false),
-			Entry("responding with 'No'", "No", false),
-			Entry("responding with 'N'", "N", false),
-		)
+				Expect(logger.StepCall.Receives.Message).To(Equal("exiting"))
+				Expect(boshManager.DeleteDirectorCall.CallCount).To(Equal(0))
+			})
+		})
 
 		Context("when the --no-confirm flag is supplied", func() {
 			DescribeTable("destroys without prompting the user for confirmation", func(flag string) {
@@ -272,7 +268,6 @@ var _ = Describe("Destroy", func() {
 		})
 
 		It("invokes bosh delete", func() {
-			stdin.Write([]byte("yes\n"))
 			state := storage.State{
 				BOSH: storage.BOSH{
 					DirectorName: "some-director",
@@ -290,7 +285,6 @@ var _ = Describe("Destroy", func() {
 		})
 
 		It("invokes bosh delete jumpbox as well", func() {
-			stdin.Write([]byte("yes\n"))
 			state := storage.State{
 				BOSH: storage.BOSH{
 					DirectorName: "some-director",
@@ -323,7 +317,6 @@ var _ = Describe("Destroy", func() {
 		Context("when the plan is not initialized", func() {
 			It("initializes the plan", func() {
 				plan.IsInitializedCall.Returns.IsInitialized = false
-				stdin.Write([]byte("yes\n"))
 				state := storage.State{
 					EnvID: "unintialized",
 					LB:    storage.LB{Type: "lb-type", Domain: "lb-domain"},
@@ -343,10 +336,6 @@ var _ = Describe("Destroy", func() {
 		})
 
 		Context("failure cases", func() {
-			BeforeEach(func() {
-				stdin.Write([]byte("yes\n"))
-			})
-
 			Context("when an invalid command line flag is supplied", func() {
 				It("returns an error", func() {
 					err := destroy.Execute([]string{"--invalid-flag"}, storage.State{})
@@ -392,24 +381,9 @@ var _ = Describe("Destroy", func() {
 			)
 
 			BeforeEach(func() {
-				stdin.Write([]byte("yes\n"))
 				state = storage.State{
 					IAAS: "aws",
-					AWS: storage.AWS{
-						AccessKeyID:     "some-access-key-id",
-						SecretAccessKey: "some-secret-access-key",
-						Region:          "some-aws-region",
-					},
-					BOSH: storage.BOSH{
-						DirectorUsername: "some-director-username",
-						DirectorPassword: "some-director-password",
-						State: map[string]interface{}{
-							"key": "value",
-						},
-						DirectorSSLCertificate: "some-certificate",
-						DirectorSSLPrivateKey:  "some-private-key",
-					},
-					EnvID: "bbl-lake-time:stamp",
+					BOSH: storage.BOSH{State: map[string]interface{}{"key": "value"}},
 				}
 			})
 
@@ -438,8 +412,6 @@ var _ = Describe("Destroy", func() {
 
 					terraformManager.DestroyCall.Returns.BBLState = updatedBBLState
 					terraformManager.DestroyCall.Returns.Error = errors.New("failed to destroy")
-
-					stdin.Write([]byte("yes\n"))
 				})
 
 				It("saves the partially destroyed tf state", func() {
@@ -474,7 +446,7 @@ var _ = Describe("Destroy", func() {
 						err := destroy.Execute([]string{}, state)
 						Expect(err).NotTo(HaveOccurred())
 
-						Expect(logger.PrintlnCall.Receives.Message).To(Equal("no BOSH director, skipping..."))
+						Expect(logger.PrintlnCall.Receives.Message).To(Equal("No BOSH director, skipping..."))
 						Expect(logger.StepCall.Messages).NotTo(ContainElement("destroying bosh director"))
 						Expect(boshManager.DeleteDirectorCall.CallCount).To(Equal(0))
 					})
@@ -484,10 +456,6 @@ var _ = Describe("Destroy", func() {
 		})
 
 		Context("failure cases", func() {
-			BeforeEach(func() {
-				stdin.Write([]byte("yes\n"))
-			})
-
 			Context("when bosh fails to delete the director", func() {
 				var state storage.State
 
@@ -504,10 +472,7 @@ var _ = Describe("Destroy", func() {
 
 					BeforeEach(func() {
 						errState = storage.State{
-							BOSH: storage.BOSH{
-								State: map[string]interface{}{"error": "state"},
-							},
-							IAAS: "aws",
+							BOSH: storage.BOSH{State: map[string]interface{}{"error": "state"}},
 						}
 						boshManager.DeleteDirectorCall.Returns.Error = bosh.NewManagerDeleteError(errState, errors.New("deletion failed"))
 					})

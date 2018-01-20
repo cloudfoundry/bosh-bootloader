@@ -44,6 +44,9 @@ type Logger struct {
 		Receives  struct {
 			Message string
 		}
+		Returns struct {
+			Proceed bool
+		}
 	}
 }
 
@@ -81,9 +84,11 @@ func (l *Logger) Println(message string) {
 	l.PrintlnCall.Messages = append(l.PrintlnCall.Messages, message)
 }
 
-func (l *Logger) Prompt(message string) {
+func (l *Logger) Prompt(message string) bool {
 	l.PromptCall.CallCount++
 	l.PromptCall.Receives.Message = message
+
+	return l.PromptCall.Returns.Proceed
 }
 
 func (l *Logger) PrintlnMessages() []string {

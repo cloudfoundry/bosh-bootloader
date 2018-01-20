@@ -35,8 +35,8 @@ import (
 var Version = "dev"
 
 func main() {
-	logger := application.NewLogger(os.Stdout)
-	stderrLogger := application.NewLogger(os.Stderr)
+	logger := application.NewLogger(os.Stdout, os.Stdin)
+	stderrLogger := application.NewLogger(os.Stderr, os.Stdin)
 	stateBootstrap := storage.NewStateBootstrap(stderrLogger, Version)
 
 	globals, _, err := config.ParseArgs(os.Args)
@@ -188,7 +188,7 @@ func main() {
 	commandSet["plan"] = plan
 	sshKeyDeleter := bosh.NewSSHKeyDeleter(stateStore, afs)
 	commandSet["rotate"] = commands.NewRotate(stateValidator, sshKeyDeleter, up)
-	commandSet["destroy"] = commands.NewDestroy(plan, logger, os.Stdin, boshManager, stateStore, stateValidator, terraformManager, networkDeletionValidator)
+	commandSet["destroy"] = commands.NewDestroy(plan, logger, boshManager, stateStore, stateValidator, terraformManager, networkDeletionValidator)
 	commandSet["down"] = commandSet["destroy"]
 	commandSet["lbs"] = commands.NewLBs(lbsCmd, stateValidator)
 	commandSet["jumpbox-address"] = commands.NewStateQuery(logger, stateValidator, terraformManager, commands.JumpboxAddressPropertyName)

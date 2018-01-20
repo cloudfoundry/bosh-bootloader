@@ -25,7 +25,10 @@ func NewAWSLBHelper(c acceptance.Config) awsLBHelper {
 		SecretAccessKey: c.AWSSecretAccessKey,
 		Region:          c.AWSRegion,
 	}
-	client := aws.NewClient(creds, application.NewLogger(os.Stdout))
+
+	logger := application.NewLogger(os.Stdout, os.Stdin)
+
+	client := aws.NewClient(creds, logger)
 
 	elbConfig := &awslib.Config{
 		Credentials: credentials.NewStaticCredentials(creds.AccessKeyID, creds.SecretAccessKey, ""),

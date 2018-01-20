@@ -3,17 +3,20 @@ package application
 import (
 	"fmt"
 	"io"
+	"strings"
 )
 
 type Logger struct {
 	newline bool
 	writer  io.Writer
+	reader  io.Reader
 }
 
-func NewLogger(writer io.Writer) *Logger {
+func NewLogger(writer io.Writer, reader io.Reader) *Logger {
 	return &Logger{
 		newline: true,
 		writer:  writer,
+		reader:  reader,
 	}
 }
 
@@ -47,8 +50,17 @@ func (l *Logger) Println(message string) {
 	fmt.Fprintf(l.writer, "%s\n", message)
 }
 
-func (l *Logger) Prompt(message string) {
+func (l *Logger) Prompt(message string) bool {
 	l.clear()
 	fmt.Fprintf(l.writer, "%s (y/N): ", message)
 	l.newline = true
+
+	var proceed string
+	fmt.Fscanln(l.reader, &proceed)
+
+	proceed = strings.ToLower(proceed)
+	if proceed == "yes" || proceed == "y" {
+		return true
+	}
+	return false
 }
