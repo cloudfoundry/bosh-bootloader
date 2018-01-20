@@ -2,8 +2,6 @@ package commands_test
 
 import (
 	"errors"
-	"path/filepath"
-	"strings"
 
 	"github.com/cloudfoundry/bosh-bootloader/commands"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
@@ -19,7 +17,7 @@ var _ = Describe("PrintEnv", func() {
 		stderrLogger     *fakes.Logger
 		stateValidator   *fakes.StateValidator
 		terraformManager *fakes.TerraformManager
-		sshKeyGetter     *fakes.SSHKeyGetter
+		allProxyGetter   *fakes.AllProxyGetter
 		credhubGetter    *fakes.CredhubGetter
 		fileIO           *fakes.FileIO
 		printEnv         commands.PrintEnv
@@ -31,8 +29,9 @@ var _ = Describe("PrintEnv", func() {
 		stderrLogger = &fakes.Logger{}
 		stateValidator = &fakes.StateValidator{}
 		terraformManager = &fakes.TerraformManager{}
-		sshKeyGetter = &fakes.SSHKeyGetter{}
-		sshKeyGetter.GetCall.Returns.PrivateKey = "some-private-key"
+		allProxyGetter = &fakes.AllProxyGetter{}
+		allProxyGetter.GeneratePrivateKeyCall.Returns.PrivateKey = "the-key-path"
+		allProxyGetter.BoshAllProxyCall.Returns.URL = "ipfs://some-domain-with?private_key=the-key-path"
 		credhubGetter = &fakes.CredhubGetter{}
 		credhubGetter.GetServerCall.Returns.Server = "some-credhub-server"
 		credhubGetter.GetCertsCall.Returns.Certs = "some-credhub-certs"
@@ -52,7 +51,7 @@ var _ = Describe("PrintEnv", func() {
 			},
 		}
 
-		printEnv = commands.NewPrintEnv(logger, stderrLogger, stateValidator, sshKeyGetter, credhubGetter, terraformManager, fileIO)
+		printEnv = commands.NewPrintEnv(logger, stderrLogger, stateValidator, allProxyGetter, credhubGetter, terraformManager, fileIO)
 	})
 	Describe("CheckFastFails", func() {
 		Context("when the state does not exist", func() {
@@ -68,15 +67,13 @@ var _ = Describe("PrintEnv", func() {
 	})
 
 	Describe("Execute", func() {
-		BeforeEach(func() {
-			fileIO.TempDirCall.Returns.Name = "some-temp-dir"
-		})
-
 		It("prints the correct environment variables for the bosh cli", func() {
 			err := printEnv.Execute([]string{}, state)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(sshKeyGetter.GetCall.Receives.Deployment).To(Equal("jumpbox"))
+			Expect(allProxyGetter.GeneratePrivateKeyCall.CallCount).To(Equal(1))
+			Expect(allProxyGetter.BoshAllProxyCall.Receives.JumpboxURL).To(Equal("some-magical-jumpbox-url:22"))
+			Expect(allProxyGetter.BoshAllProxyCall.Receives.PrivateKey).To(Equal("the-key-path"))
 
 			Expect(logger.PrintlnCall.Messages).To(ContainElement("export BOSH_CLIENT=some-director-username"))
 			Expect(logger.PrintlnCall.Messages).To(ContainElement("export BOSH_CLIENT_SECRET=some-director-password"))
@@ -88,24 +85,8 @@ var _ = Describe("PrintEnv", func() {
 			Expect(logger.PrintlnCall.Messages).To(ContainElement("export CREDHUB_USER=credhub-cli"))
 			Expect(logger.PrintlnCall.Messages).To(ContainElement("export CREDHUB_PASSWORD=some-credhub-password"))
 
-			Expect(logger.PrintlnCall.Messages).To(ContainElement(MatchRegexp(`export JUMPBOX_PRIVATE_KEY=.*[/\\]bosh_jumpbox_private.key`)))
-			Expect(logger.PrintlnCall.Messages).To(ContainElement(MatchRegexp(`export BOSH_ALL_PROXY=ssh\+socks5:\/\/jumpbox@some-magical-jumpbox-url:22\?private-key=\$JUMPBOX_PRIVATE_KEY`)))
-		})
-
-		It("writes private key to file in temp dir", func() {
-			err := printEnv.Execute([]string{}, state)
-			Expect(err).NotTo(HaveOccurred())
-
-			for _, line := range logger.PrintlnCall.Messages {
-				if strings.HasPrefix(line, "export JUMPBOX_PRIVATE_KEY=") {
-					privateKeyFilename := strings.TrimPrefix(line, "export JUMPBOX_PRIVATE_KEY=")
-
-					Expect(privateKeyFilename).To(Equal(filepath.Join("some-temp-dir", "bosh_jumpbox_private.key")))
-
-					Expect(fileIO.WriteFileCall.Receives[0].Filename).To(Equal(privateKeyFilename))
-					Expect(fileIO.WriteFileCall.Receives[0].Contents).To(Equal([]byte("some-private-key")))
-				}
-			}
+			Expect(logger.PrintlnCall.Messages).To(ContainElement(`export JUMPBOX_PRIVATE_KEY=the-key-path`))
+			Expect(logger.PrintlnCall.Messages).To(ContainElement(`export BOSH_ALL_PROXY=ipfs://some-domain-with?private_key=the-key-path`))
 		})
 
 		Context("when there is no director", func() {
@@ -144,29 +125,14 @@ var _ = Describe("PrintEnv", func() {
 				})
 			})
 
-			Context("when ssh key getter fails", func() {
+			Context("when the allproxy getter fails to get a private key", func() {
 				BeforeEach(func() {
-					sshKeyGetter.GetCall.Returns.Error = errors.New("papaya")
+					allProxyGetter.GeneratePrivateKeyCall.Returns.Error = errors.New("papaya")
 				})
 
 				It("returns an error", func() {
 					err := printEnv.Execute([]string{}, storage.State{})
 					Expect(err).To(MatchError("papaya"))
-				})
-			})
-
-			Context("when the private key can't be written", func() {
-				BeforeEach(func() {
-					fileIO.WriteFileCall.Returns = []fakes.WriteFileReturn{
-						{
-							Error: errors.New("mango"),
-						},
-					}
-				})
-
-				It("returns an error", func() {
-					err := printEnv.Execute([]string{}, storage.State{})
-					Expect(err).To(MatchError("mango"))
 				})
 			})
 

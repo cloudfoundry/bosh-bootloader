@@ -102,8 +102,8 @@ var _ = Describe("Upgrade", func() {
 			Eventually(session, 60*time.Minute).Should(gexec.Exit(0))
 		})
 
-		By("setting up enivornment variables to talk to the director", func() {
-			newBBL.EvalPrintEnv()
+		By("exporting environment variables to talk to the director", func() {
+			newBBL.ExportBoshAllProxy()
 		})
 
 		directorAddress := newBBL.DirectorAddress()

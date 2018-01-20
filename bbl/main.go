@@ -142,6 +142,7 @@ func main() {
 	boshCommand := bosh.NewCmd(os.Stderr)
 	boshExecutor := bosh.NewExecutor(boshCommand, afs, json.Unmarshal, json.Marshal)
 	sshKeyGetter := bosh.NewSSHKeyGetter(stateStore, afs)
+	allProxyGetter := bosh.NewAllProxyGetter(sshKeyGetter, afs)
 	credhubGetter := bosh.NewCredhubGetter(stateStore, afs)
 	boshManager := bosh.NewManager(boshExecutor, logger, stateStore, sshKeyGetter, afs)
 	boshClientProvider := bosh.NewClientProvider(socks5Proxy, sshKeyGetter)
@@ -199,7 +200,7 @@ func main() {
 	commandSet["director-ssh-key"] = commands.NewDirectorSSHKey(logger, stateValidator, sshKeyGetter)
 	commandSet["env-id"] = commands.NewStateQuery(logger, stateValidator, terraformManager, commands.EnvIDPropertyName)
 	commandSet["latest-error"] = commands.NewLatestError(logger, stateValidator)
-	commandSet["print-env"] = commands.NewPrintEnv(logger, stderrLogger, stateValidator, sshKeyGetter, credhubGetter, terraformManager, afs)
+	commandSet["print-env"] = commands.NewPrintEnv(logger, stderrLogger, stateValidator, allProxyGetter, credhubGetter, terraformManager, afs)
 
 	app := application.New(commandSet, appConfig, usage)
 

@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -153,21 +152,18 @@ func (b BBL) SaveDirectorCA() string {
 	return file.Name()
 }
 
-func (b BBL) EvalPrintEnv() {
-	stdout := fmt.Sprintf("#!/bin/bash\n%s", b.PrintEnv())
-	Expect(stdout).To(ContainSubstring("export BOSH_ALL_PROXY=ssh+socks5://"))
-
-	dir, err := ioutil.TempDir("", "bosh-print-env-command")
-	Expect(err).NotTo(HaveOccurred())
-
-	printEnvCommandPath := filepath.Join(dir, "eval-print-env")
-
-	err = ioutil.WriteFile(printEnvCommandPath, []byte(stdout), 0700)
-	Expect(err).NotTo(HaveOccurred())
-
-	cmd := exec.Command(printEnvCommandPath)
-	err = cmd.Run()
-	Expect(err).NotTo(HaveOccurred())
+func (b BBL) ExportBoshAllProxy() string {
+	lines := strings.Split(b.PrintEnv(), "\n")
+	for _, line := range lines {
+		if strings.Contains(line, "export BOSH_ALL_PROXY=") {
+			keyValueParts := strings.Split(line, "export BOSH_ALL_PROXY=")
+			if len(keyValueParts) > 1 {
+				os.Setenv("BOSH_ALL_PROXY", keyValueParts[1])
+				return keyValueParts[1]
+			}
+		}
+	}
+	return ""
 }
 
 func (b BBL) fetchValue(value string) string {

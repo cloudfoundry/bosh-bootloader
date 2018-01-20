@@ -2,7 +2,6 @@ package commands
 
 import (
 	"fmt"
-	"path/filepath"
 
 	"github.com/cloudfoundry/bosh-bootloader/fileio"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
@@ -12,7 +11,7 @@ type PrintEnv struct {
 	stateValidator   stateValidator
 	logger           logger
 	stderrLogger     logger
-	sshKeyGetter     sshKeyGetter
+	allProxyGetter   allProxyGetter
 	terraformManager terraformManager
 	credhubGetter    credhubGetter
 	fs               fs
@@ -28,6 +27,11 @@ type credhubGetter interface {
 	GetPassword() (string, error)
 }
 
+type allProxyGetter interface {
+	GeneratePrivateKey() (string, error)
+	BoshAllProxy(string, string) string
+}
+
 type fs interface {
 	fileio.TempDirer
 	fileio.FileWriter
@@ -37,7 +41,7 @@ func NewPrintEnv(
 	logger logger,
 	stderrLogger logger,
 	stateValidator stateValidator,
-	sshKeyGetter sshKeyGetter,
+	allProxyGetter allProxyGetter,
 	credhubGetter credhubGetter,
 	terraformManager terraformManager,
 	fs fs) PrintEnv {
@@ -45,7 +49,7 @@ func NewPrintEnv(
 		stateValidator:   stateValidator,
 		logger:           logger,
 		stderrLogger:     stderrLogger,
-		sshKeyGetter:     sshKeyGetter,
+		allProxyGetter:   allProxyGetter,
 		terraformManager: terraformManager,
 		credhubGetter:    credhubGetter,
 		fs:               fs,
@@ -100,25 +104,13 @@ func (p PrintEnv) Execute(args []string, state storage.State) error {
 		p.stderrLogger.Println("No credhub certs found.")
 	}
 
-	dir, err := p.fs.TempDir("", "bosh-jumpbox")
-	if err != nil {
-		return err
-	}
-
-	privateKeyPath := filepath.Join(dir, "bosh_jumpbox_private.key")
-
-	privateKeyContents, err := p.sshKeyGetter.Get("jumpbox")
-	if err != nil {
-		return err
-	}
-
-	err = p.fs.WriteFile(privateKeyPath, []byte(privateKeyContents), 0600)
+	privateKeyPath, err := p.allProxyGetter.GeneratePrivateKey()
 	if err != nil {
 		return err
 	}
 
 	p.logger.Println(fmt.Sprintf("export JUMPBOX_PRIVATE_KEY=%s", privateKeyPath))
-	p.logger.Println(fmt.Sprintf("export BOSH_ALL_PROXY=ssh+socks5://jumpbox@%s?private-key=$JUMPBOX_PRIVATE_KEY", state.Jumpbox.URL))
+	p.logger.Println(fmt.Sprintf("export BOSH_ALL_PROXY=%s", p.allProxyGetter.BoshAllProxy(state.Jumpbox.URL, privateKeyPath)))
 
 	return nil
 }

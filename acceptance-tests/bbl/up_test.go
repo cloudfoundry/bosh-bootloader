@@ -56,7 +56,7 @@ var _ = Describe("up", func() {
 		Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 
 		By("exporting bosh environment variables", func() {
-			bbl.EvalPrintEnv()
+			bbl.ExportBoshAllProxy()
 		})
 
 		By("checking if the bosh director exists", func() {
@@ -96,7 +96,7 @@ var _ = Describe("up", func() {
 			sshKey := bbl.SSHKey()
 			Expect(sshKey).NotTo(BeEmpty())
 
-			session = bbl.Rotate()
+			session := bbl.Rotate()
 			Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 
 			rotatedKey := bbl.SSHKey()
