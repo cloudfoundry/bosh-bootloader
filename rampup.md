@@ -85,15 +85,15 @@ If you come across any terminology you aren't familiar with then add it to the V
 1. run `eval_bbl_gcp_creds`
 
 1. Run `bbl plan --name day-one --iaas gcp --lb-type cf --lb-cert ../fake_cert_stuff/fake.crt --lb-key ../fake_cert_stuff/fake.key --lb-domain day-one.infrastructure.cf-app.com`
-  - Run `tree .` and look around at the files that were created. How are they organized?
-  - What files look like they are related to terraform? Which ones look like they are for bosh?
-  - Look around in the [cf-infrastructure project on gcp](https://console.cloud.google.com/home/dashboard?project=cf-infra). There should be nothing with day-one in the name.
+   - Run `tree .` and look around at the files that were created. How are they organized?
+   - What files look like they are related to terraform? Which ones look like they are for bosh?
+   - Look around in the [cf-infrastructure project on gcp](https://console.cloud.google.com/home/dashboard?project=cf-infra). There should be nothing with day-one in the name.
 
 1. Run `bbl up`
-  - What changed in the file system?
-  - Look around in the vars directory. Where are all the credentials?
-  - From the /vars directory run `terraform output`
-  - Look around in the [cf-infrastructure project on gcp](https://console.cloud.google.com/home/dashboard?project=cf-infra). Which resources have day-one in the name? How are they related to each other?
+   - What changed in the file system?
+   - Look around in the vars directory. Where are all the credentials?
+   - From the /vars directory run `terraform output`
+   - Look around in the [cf-infrastructure project on gcp](https://console.cloud.google.com/home/dashboard?project=cf-infra). Which resources have day-one in the name? How are they related to each other?
 
 1. Create a new set of NS records in the infrastructure zone with the name servers from the day-one zone.
 
@@ -110,17 +110,17 @@ If you come across any terminology you aren't familiar with then add it to the V
 1. Look around in the [cf-infrastructure project on gcp](https://console.cloud.google.com/home/dashboard?project=cf-infra). Which resources did bosh create? How do they relate to the resources that `bbl up` created?
 
 1. Clean up all the resources you delployed. Try the gcp console and [leftovers](git@github.com:genevievelesperance/leftovers). Delete resources in approximately this order:
-  - instances
-  - firewall rules
-  - health checks
-  - load balancers
-  - instance groups
-  - external ips
-  - dns records in your zone
-  - your zone
-  - your vpc network
-  - disks
-  - images
+   - instances
+   - firewall rules
+   - health checks
+   - load balancers
+   - instance groups
+   - external ips
+   - dns records in your zone
+   - your zone
+   - your vpc network
+   - disks
+   - images
 
 ## Pipelines
 
