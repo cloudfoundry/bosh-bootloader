@@ -21,8 +21,7 @@ type Destroy struct {
 }
 
 type destroyConfig struct {
-	NoConfirm     bool
-	SkipIfMissing bool
+	NoConfirm bool
 }
 
 type NetworkDeletionValidator interface {
@@ -52,16 +51,6 @@ func (d Destroy) CheckFastFails(subcommandFlags []string, state storage.State) e
 	err = d.terraformManager.ValidateVersion()
 	if err != nil {
 		return err
-	}
-
-	config, err := d.parseFlags(subcommandFlags)
-	if err != nil {
-		return err
-	}
-
-	if config.SkipIfMissing && state.EnvID == "" {
-		d.logger.Step("state file not found, and --skip-if-missing flag provided, exiting")
-		return nil
 	}
 
 	err = d.stateValidator.Validate()
@@ -175,7 +164,6 @@ func (d Destroy) parseFlags(subcommandFlags []string) (destroyConfig, error) {
 
 	config := destroyConfig{}
 	destroyFlags.Bool(&config.NoConfirm, "n", "no-confirm", false)
-	destroyFlags.Bool(&config.SkipIfMissing, "", "skip-if-missing", false)
 
 	err := destroyFlags.Parse(subcommandFlags)
 	if err != nil {
