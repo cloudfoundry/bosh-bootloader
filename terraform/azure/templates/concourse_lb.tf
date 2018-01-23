@@ -3,7 +3,6 @@ resource "azurerm_public_ip" "concourse" {
   location                     = "${var.region}"
   resource_group_name          = "${azurerm_resource_group.bosh.name}"
   public_ip_address_allocation = "static"
-  domain_name_label            = "${var.env_id}"
 
   tags {
     environment = "${var.env_id}"
@@ -19,28 +18,6 @@ resource "azurerm_lb" "concourse" {
     name                 = "${var.env_id}-concourse-frontend-ip-configuration"
     public_ip_address_id = "${azurerm_public_ip.concourse.id}"
   }
-}
-
-resource "azurerm_lb_rule" "concourse-ssh" {
-  name                = "${var.env_id}-concourse-ssh"
-  resource_group_name = "${azurerm_resource_group.bosh.name}"
-  loadbalancer_id     = "${azurerm_lb.concourse.id}"
-
-  frontend_ip_configuration_name = "${var.env_id}-concourse-frontend-ip-configuration"
-  protocol                       = "TCP"
-  frontend_port                  = 2222
-  backend_port                   = 2222
-
-  backend_address_pool_id = "${azurerm_lb_backend_address_pool.concourse.id}"
-  probe_id                = "${azurerm_lb_probe.concourse-ssh.id}"
-}
-
-resource "azurerm_lb_probe" "concourse-ssh" {
-  name                = "${var.env_id}-concourse-ssh"
-  resource_group_name = "${azurerm_resource_group.bosh.name}"
-  loadbalancer_id     = "${azurerm_lb.concourse.id}"
-  protocol            = "TCP"
-  port                = 2222
 }
 
 resource "azurerm_lb_rule" "concourse-https" {
