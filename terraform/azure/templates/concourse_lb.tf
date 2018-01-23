@@ -64,8 +64,8 @@ resource "azurerm_lb_probe" "concourse-http" {
   port                = 80
 }
 
-resource "azurerm_network_security_rule" "concourse" {
-  name                        = "${var.env_id}-concourse"
+resource "azurerm_network_security_rule" "concourse-http" {
+  name                        = "${var.env_id}-concourse-http"
   priority                    = 209
   direction                   = "Inbound"
   access                      = "Allow"
@@ -78,8 +78,8 @@ resource "azurerm_network_security_rule" "concourse" {
   network_security_group_name = "${azurerm_network_security_group.bosh.name}"
 }
 
-resource "azurerm_network_security_rule" "concourse" {
-  name                        = "${var.env_id}-concourse"
+resource "azurerm_network_security_rule" "concourse-https" {
+  name                        = "${var.env_id}-concourse-https"
   priority                    = 208
   direction                   = "Inbound"
   access                      = "Allow"
