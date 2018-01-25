@@ -71,7 +71,7 @@
     ephemeral_disk:
       size: 10240
       type: gp2
-    instance_type: Standard_F3
+    instance_type: Standard_F4
 
 - type: replace
   path: /vm_types/name=large/cloud_properties?
