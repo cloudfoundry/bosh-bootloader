@@ -118,6 +118,18 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
 		}
 	}
 
+	isPaved, err := d.terraformManager.IsPaved()
+	if err != nil {
+		return err
+	}
+
+	if !isPaved {
+		if err := d.stateStore.Set(storage.State{}); err != nil {
+			return err
+		}
+		return nil
+	}
+
 	terraformOutputs, err := d.terraformManager.GetOutputs()
 	if err != nil {
 		return err

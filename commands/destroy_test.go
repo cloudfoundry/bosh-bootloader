@@ -40,6 +40,7 @@ var _ = Describe("Destroy", func() {
 		networkDeletionValidator = &fakes.NetworkDeletionValidator{}
 
 		terraformManager.DestroyCall.Returns.BBLState = storage.State{ID: "some-state-id"}
+		terraformManager.IsPavedCall.Returns.IsPaved = true
 
 		destroy = commands.NewDestroy(plan, logger, boshManager, stateStore,
 			stateValidator, terraformManager, networkDeletionValidator)
@@ -323,6 +324,20 @@ var _ = Describe("Destroy", func() {
 					Name: "unintialized",
 					LB:   storage.LB{Type: "lb-type", Domain: "lb-domain"},
 				}))
+			})
+		})
+
+		Context("when the environment is not paved", func() {
+			It("deletes the directory without attempting to destroy bosh or terraform", func() {
+				terraformManager.IsPavedCall.Returns.IsPaved = false
+
+				err := destroy.Execute([]string{}, storage.State{})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(boshManager.DeleteDirectorCall.CallCount).To(Equal(0))
+				Expect(boshManager.DeleteJumpboxCall.CallCount).To(Equal(0))
+				Expect(terraformManager.DestroyCall.CallCount).To(Equal(0))
+				Expect(stateStore.SetCall.CallCount).To(Equal(1))
+				Expect(stateStore.SetCall.Receives[0].State).To(Equal(storage.State{}))
 			})
 		})
 

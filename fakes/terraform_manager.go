@@ -66,6 +66,13 @@ type TerraformManager struct {
 			Error error
 		}
 	}
+	IsPavedCall struct {
+		CallCount int
+		Returns   struct {
+			IsPaved bool
+			Error   error
+		}
+	}
 }
 
 func (t *TerraformManager) Init(bblState storage.State) error {
@@ -110,4 +117,9 @@ func (t *TerraformManager) Version() (string, error) {
 func (t *TerraformManager) ValidateVersion() error {
 	t.ValidateVersionCall.CallCount++
 	return t.ValidateVersionCall.Returns.Error
+}
+
+func (t *TerraformManager) IsPaved() (bool, error) {
+	t.IsPavedCall.CallCount++
+	return t.IsPavedCall.Returns.IsPaved, t.IsPavedCall.Returns.Error
 }

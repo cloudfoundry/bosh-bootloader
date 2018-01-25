@@ -73,6 +73,13 @@ type TerraformExecutor struct {
 			Error   error
 		}
 	}
+	IsPavedCall struct {
+		CallCount int
+		Returns   struct {
+			IsPaved bool
+			Error   error
+		}
+	}
 }
 
 func (t *TerraformExecutor) IsInitialized() bool {
@@ -128,4 +135,9 @@ func (t *TerraformExecutor) Outputs() (map[string]interface{}, error) {
 	}
 
 	return t.OutputsCall.Returns.Outputs, t.OutputsCall.Returns.Error
+}
+
+func (t *TerraformExecutor) IsPaved() (bool, error) {
+	t.IsPavedCall.CallCount++
+	return t.IsPavedCall.Returns.IsPaved, t.IsPavedCall.Returns.Error
 }

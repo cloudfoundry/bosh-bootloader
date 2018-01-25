@@ -42,6 +42,7 @@ type stateStore interface {
 type fs interface {
 	fileio.FileWriter
 	fileio.DirReader
+	fileio.Stater
 }
 
 func NewExecutor(cmd terraformCmd, stateStore stateStore, fs fs, debug bool) Executor {
@@ -256,4 +257,17 @@ func (e Executor) Outputs() (map[string]interface{}, error) {
 	}
 
 	return outputs, nil
+}
+
+func (e Executor) IsPaved() (bool, error) {
+	varsDir, err := e.stateStore.GetVarsDir()
+	if err != nil {
+		return false, fmt.Errorf("Get vars dir: %s", err)
+	}
+
+	if _, err := e.fs.Stat(filepath.Join(varsDir, "terraform.tfstate")); err != nil {
+		return false, nil
+	} else {
+		return true, nil
+	}
 }

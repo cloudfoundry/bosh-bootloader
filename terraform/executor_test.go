@@ -575,4 +575,34 @@ var _ = Describe("Executor", func() {
 			})
 		})
 	})
+
+	Describe("IsPaved", func() {
+		Context("when the state store fails to return the vars directory", func() {
+			It("returns an error", func() {
+				stateStore.GetVarsDirCall.Returns.Error = errors.New("guava")
+
+				_, err := executor.IsPaved()
+
+				Expect(err).To(MatchError("Get vars dir: guava"))
+			})
+		})
+		Context("when the terraform.tfstate file does not exist", func() {
+			It("returns false", func() {
+				fileIO.StatCall.Returns.Error = errors.New("pear")
+
+				isPaved, err := executor.IsPaved()
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(isPaved).To(Equal(false))
+			})
+		})
+		Context("when the terraform.tfstate file does exist", func() {
+			It("returns true", func() {
+				isPaved, err := executor.IsPaved()
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(isPaved).To(Equal(true))
+			})
+		})
+	})
 })

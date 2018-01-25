@@ -25,6 +25,7 @@ type executor interface {
 	Destroy(credentials map[string]string) error
 	Outputs() (map[string]interface{}, error)
 	Output(string) (string, error)
+	IsPaved() (bool, error)
 }
 
 type InputGenerator interface {
@@ -138,6 +139,10 @@ func (m Manager) GetOutputs() (Outputs, error) {
 	}
 
 	return Outputs{Map: tfOutputs}, nil
+}
+
+func (m Manager) IsPaved() (bool, error) {
+	return m.executor.IsPaved()
 }
 
 func readAndReset(buf *bytes.Buffer) string {

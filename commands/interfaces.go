@@ -26,6 +26,7 @@ type terraformManager interface {
 	Init(storage.State) error
 	Apply(storage.State) (storage.State, error)
 	Destroy(storage.State) (storage.State, error)
+	IsPaved() (bool, error)
 }
 
 type boshManager interface {
