@@ -17,5 +17,5 @@
     ```
 1. To `bbl  plan` or `bbl up` you will provide that pfx file and password:
     ```
-    bbl up --lb-type cf --lb-cert PFX_FILE --lb-key PFX_FILE_PASSWORD
+    bbl up --lb-type cf --lb-cert $PFX_FILE --lb-key $PFX_FILE_PASSWORD
     ```
