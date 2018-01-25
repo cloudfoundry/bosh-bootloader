@@ -81,6 +81,16 @@ var _ = Describe("Destroy", func() {
 			})
 		})
 
+		Context("when the environment is not paved", func() {
+			It("deletes the directory without attempting to destroy bosh or terraform", func() {
+				terraformManager.IsPavedCall.Returns.IsPaved = false
+
+				err := destroy.CheckFastFails([]string{}, storage.State{})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(terraformManager.GetOutputsCall.CallCount).To(Equal(0))
+			})
+		})
+
 		Context("when iaas is gcp", func() {
 			var bblState storage.State
 

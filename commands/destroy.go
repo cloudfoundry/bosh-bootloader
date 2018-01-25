@@ -58,6 +58,11 @@ func (d Destroy) CheckFastFails(subcommandFlags []string, state storage.State) e
 		return err
 	}
 
+	isPaved, _ := d.terraformManager.IsPaved()
+	if !isPaved {
+		return nil
+	}
+
 	terraformOutputs, err := d.terraformManager.GetOutputs()
 	if err != nil {
 		return nil
