@@ -60,7 +60,7 @@ bosh create-env \
   -o  ${BBL_STATE_DIR}/../shared/bosh-deployment/credhub.yml
 ```
 ## <a name='terraform'></a>Customizing IaaS Paving with Terraform
-Numerous settings can be reconfigured repeatedly by editing `$BBL_STATE_DIR/vars/terraform.tfvars` or adding a terraform override into  `$BBL_STATE_DIR/terraform/my-cool-tf-template.override`. Some settings, like VPCs, are not able to be changed after initial creation so it may be better to `bbl plan` first before running `bbl up` for the first time.
+Numerous settings can be reconfigured repeatedly by editing `$BBL_STATE_DIR/vars/terraform.tfvars` or adding a terraform override into  `$BBL_STATE_DIR/terraform/my-cool-template-override.tf`. Some settings, like VPCs, are not able to be changed after initial creation so it may be better to `bbl plan` first before running `bbl up` for the first time.
 
 ### Example: adjusting the cidr on AWS
 1. Plan the environment:
