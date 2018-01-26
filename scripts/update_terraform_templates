@@ -1,19 +1,21 @@
 #!/bin/bash -exu
 
+root_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
 if [ "${@}" == "aws" ]; then
-  pushd terraform/aws
+  pushd ${root_dir}/../terraform/aws
     go-bindata -pkg aws -mode 0740 -o templates.go templates
   popd
 fi
 
 if [ "${@}" == "azure" ]; then
-  pushd terraform/azure
+  pushd ${root_dir}/../terraform/azure
     go-bindata -pkg azure -mode 0740 -o templates.go templates
   popd
 fi
 
 if [ "${@}" == "gcp" ]; then
-  pushd terraform/gcp
+  pushd ${root_dir}/../terraform/gcp
     go-bindata -pkg gcp -mode 0740 -o templates.go templates
   popd
 fi
