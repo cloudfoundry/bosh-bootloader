@@ -209,9 +209,7 @@ var _ = Describe("Migrator", func() {
 
 	Describe("MigrateCloudConfigDir", func() {
 		Context("when the state has a populated .bbl directory", func() {
-			var cloudConfigFilePath string
 			BeforeEach(func() {
-				cloudConfigFilePath = filepath.Join(oldCloudConfigDir, "some-config-file")
 				fileIO.ReadDirCall.Returns.FileInfos = []os.FileInfo{
 					fakes.FileInfo{
 						FileName: "some-config-file",

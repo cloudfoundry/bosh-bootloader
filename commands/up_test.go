@@ -48,7 +48,6 @@ var _ = Describe("Up", func() {
 	Describe("Execute", func() {
 		var (
 			incomingState       storage.State
-			iaasState           storage.State
 			planState           storage.State
 			planConfig          commands.PlanConfig
 			terraformApplyState storage.State
@@ -61,7 +60,6 @@ var _ = Describe("Up", func() {
 			plan.ParseArgsCall.Returns.Config = planConfig
 
 			incomingState = storage.State{LatestTFOutput: "incoming-state", IAAS: "some-iaas"}
-			iaasState = storage.State{LatestTFOutput: "iaas-state", IAAS: "some-iaas"}
 
 			planState = storage.State{LatestTFOutput: "plan-state", IAAS: "some-iaas"}
 			plan.InitializePlanCall.Returns.State = planState
