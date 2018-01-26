@@ -7,7 +7,7 @@ Steps to deploy kubo with bbl:
     cp -r /path/to/this-patch-dir/. .
     bbl up
     ```
-1. `bosh update-runtime-config bosh_deployments/runtime-configs/dns.yml`
+1. `bosh update-runtime-config bosh-deployment/runtime-configs/dns.yml`
 1. `bosh upload-release https://storage.googleapis.com/kubo-public/kubo-deployment-latest.tgz`
 1. `bosh upload-stemcell https://bosh.io/d/stemcells/bosh-google-kvm-ubuntu-trusty-go_agent?v=3468.13`
 1. generate the kubo manifest

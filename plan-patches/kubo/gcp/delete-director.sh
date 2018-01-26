@@ -9,4 +9,7 @@ bosh delete-env \
   -o  ${BBL_STATE_DIR}/bosh-deployment/uaa.yml \
   -o  ${BBL_STATE_DIR}/bosh-deployment/credhub.yml \
   -o  ${BBL_STATE_DIR}/bosh-deployment/local-dns.yml \
-  -o  ${BBL_STATE_DIR}/bbl-ops-files/gcp/bosh-director-ephemeral-ip-ops.yml 
+  -o  ${BBL_STATE_DIR}/bbl-ops-files/gcp/bosh-director-ephemeral-ip-ops.yml \
+  --var-file  gcp_credentials_json="${BBL_GCP_SERVICE_ACCOUNT_KEY_PATH}" \
+  -v  project_id="${BBL_GCP_PROJECT_ID}" \
+  -v  zone="${BBL_GCP_ZONE}"
