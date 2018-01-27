@@ -40,8 +40,8 @@ This document will walk through deploying a concourse clustered install to GCP u
 ## Download concourse-deployment
 Download the latest release of [concourse-deployment](https://github.com/evanfarrar/concourse-deployment/releases/latest).
   ```
-  mv ~/Downloads/concourse-deployment-0.0.1.tar.gz ./
-  tar xvf concourse-deployment-0.0.1.tar.gz
+  mv ~/Downloads/concourse-deployment-0.0.2.tar.gz ./
+  tar xvf concourse-deployment-0.0.2.tar.gz
   ```
 ## Target the director
   ```
@@ -60,7 +60,7 @@ Download the latest release of [concourse-deployment](https://github.com/evanfar
   bosh deploy    \
     -d concourse \
     -v 'system_domain=myconcourse.example.com' \
-    -o concourse-deployment-0.0.1/operations/gcp.yml  \
+    --vars-store concourse-vars.yml  \
     concourse-deployment-0.0.1/concourse-deployment.yml
   ```
   
