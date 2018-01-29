@@ -7,21 +7,23 @@ Steps to deploy kubo with bbl:
     cp -r /path/to/this-patch-dir/. .
     bbl up
     ```
-1. `bosh update-runtime-config bosh-deployment/runtime-configs/dns.yml`
-1. `bosh upload-release https://storage.googleapis.com/kubo-public/kubo-deployment-latest.tgz`
-1. `bosh upload-stemcell https://bosh.io/d/stemcells/bosh-google-kvm-ubuntu-trusty-go_agent?v=3468.13`
+1. `bosh upload-release https://storage.googleapis.com/kubo-public/kubo-release-latest.tgz`
+1. `bosh upload-stemcell https://bosh.io/d/stemcells/bosh-google-kvm-ubuntu-trusty-go_agent?v=3468.21`
 1. generate the kubo manifest
-    - create director.yml: with a combination of variables from terraform outputs, the director-vars-file.yml, and the gcp console. Example:  
+    - create cfcr-vars.yml: with a combination of variables from terraform outputs, the director-vars-file.yml, and the gcp console. Example:  
     ```
-    bosh int director-template.yml --vars-file vars/director-vars-file.yml --vars-file vars/cloud-config-vars.yml > director.yml
+    bosh int cfcr-vars-template.yml \
+    --vars-file vars/director-vars-file.yml \
+    --vars-file vars/cloud-config-vars.yml \
+    -v  project_id="${BBL_GCP_PROJECT_ID}" \
+    > cfcr-vars.yml
     ```
-    - run the kubo manifest generation script:  
-      `{KUBO_DEPLOYMENT_PATH}/bin/generate_kubo_manifest [KUBO_ENV] kubo [DIRECTOR_UUID] > kubo-deployment.yml`
-      - KUBO_ENV: the directory with our director.yml
-      - DIRECTOR_UUID: can be found with `bosh env`
 1. bosh deploy the kubo manifest
    ```
-   bosh deploy -d kubo kubo-deployment.yml
+   bosh deploy -d cfcr ~/kubo-deployment/manifests/cfcr.yml \
+   -o ~/kubo-deployment/manifests/ops-files/iaas/gcp/cloud-provider.yml \
+   -o ./kubo-ops.yml \
+   --vars-file cfcr-vars.yml
    ```
 1. configure kubectl
     - `kubectl config set-cluster`

@@ -8,8 +8,6 @@ kubernetes_master_host: 35.227.103.126
 kubernetes_master_port: 8443
 
 # from bbl's director-vars-file.yml
-network: dr-bbl-kubo-network
-project_id: cf-infra
 director_name: bosh-dr-bbl-kubo
 
 # from?
