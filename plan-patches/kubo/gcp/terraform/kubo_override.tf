@@ -19,6 +19,7 @@ data "google_iam_policy" "admin" {
 
     members = [
       "serviceAccount:${google_service_account.master.email}",
+      "serviceAccount:${google_service_account.worker.email}",
     ]
   }
 
@@ -27,6 +28,7 @@ data "google_iam_policy" "admin" {
 
     members = [
       "serviceAccount:${google_service_account.master.email}",
+      "serviceAccount:${google_service_account.worker.email}",
     ]
   }
 
@@ -35,7 +37,7 @@ data "google_iam_policy" "admin" {
 
     members = [
       "serviceAccount:${google_service_account.master.email}",
-
+      "serviceAccount:${google_service_account.worker.email}",
     ]
   }
 
@@ -44,6 +46,7 @@ data "google_iam_policy" "admin" {
 
     members = [
       "serviceAccount:${google_service_account.master.email}",
+      "serviceAccount:${google_service_account.worker.email}",
     ]
   }
 
@@ -52,13 +55,6 @@ data "google_iam_policy" "admin" {
 
     members = [
       "serviceAccount:${google_service_account.master.email}",
-    ]
-  }
-
-  binding {
-    role = "roles/compute.viewer"
-
-    members = [
       "serviceAccount:${google_service_account.worker.email}",
     ]
   }
