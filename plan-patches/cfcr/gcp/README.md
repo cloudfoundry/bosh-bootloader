@@ -19,7 +19,8 @@ Steps to deploy cfcr with bbl:
     -v  project_id="${BBL_GCP_PROJECT_ID}" \
     > cfcr-vars.yml
     ```
-    this file will contain the additional variables necessary for a healthy cfcr deployment.
+    this file will contain the additional variables necessary for a cfcr deployment.
+
 1. bosh deploy the cfcr manifest
    ```
    bosh deploy -d cfcr ~/kubo-deployment/manifests/cfcr.yml \
@@ -27,6 +28,7 @@ Steps to deploy cfcr with bbl:
    -o ./kubo-ops.yml \
    --vars-file cfcr-vars.yml
    ```
+
 1. configure kubectl
    Note: at the the time of PRing this patch, credhub+boshcli+bbl support requires some work make sure to:
      1. set the JUMPBOX_PUBLIC_IP environment variable to the jumpbox public ip found in BOSH_ALL_PROXY
@@ -34,23 +36,27 @@ Steps to deploy cfcr with bbl:
      1. `export https_proxy=socks5://localhost:61943`
      1. Use the latest version of the credhub cli (old versions do not respect the https_proxy environment variable)
      1. `unset https_proxy` when you are done running credhub commands because it interferes with the bosh cli
-   ```
-   export tmp_ca_file="$(mktemp)"
-   bosh int <(credhub get -n "${director_name}/${deployment_name}/tls-kubernetes" --output-json) --path=/value/ca > "${tmp_ca_file}"
 
-   export deployment_name=cfcr
+   Export `deployment_name`, `director_name`, `kubernetes_master_host`, and `kubernetes_master_port` from your`cfcar-vars.yml` file.
+   Then run the following to mix them together into kubectl-appropriate forms:
+   ```
+   # right now, we don't support TLS verification of the kubernetes master, so we also don't need to run these commmands.
+   # export tmp_ca_file="$(mktemp)"
+   # bosh int <(credhub get -n "${director_name}/${deployment_name}/tls-kubernetes" --output-json) --path=/value/ca > "${tmp_ca_file}"
+
    export address="https://${kubernetes_master_host}:${kubernetes_master_port}"
    export admin_password=$(bosh int <(credhub get -n "${director_name}/${deployment_name}/kubo-admin-password" --output-json) --path=/value)
    export cluster_name="kubo:${director_name}:${deployment_name}"
    export user_name="kubo:${director_name}:${deployment_name}-admin"
    export context_name="kubo:${director_name}:${deployment_name}"
-
+   ```
+   ```
    kubectl config set-cluster "${cluster_name}" --server="${address}" --insecure-skip-tls-verify=true
-   kubectl config set-cluster "${cluster_name}" --server="$address" --certificate-authority="${tmp_ca_file}" --embed-certs=true
    kubectl config set-credentials "${user_name}" --token="${admin_password}"
    kubectl config set-context "${context_name}" --cluster="${cluster_name}" --user="${user_name}"
    kubectl config use-context "${context_name}"
    ```
+
  - `kubectl get pods`
  - create, scale, and expose apps with the kubernetes bootcamp docker image:
    ```
