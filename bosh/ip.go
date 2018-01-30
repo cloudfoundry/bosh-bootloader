@@ -7,12 +7,12 @@ import (
 )
 
 type IP struct {
-	ip int
+	ip int64
 }
 
 func ParseIP(ip string) (IP, error) {
 	const IP_PARTS = 4
-	const MAX_IP_PART = 256
+	const MAX_IP_PART = int64(256)
 
 	ipParts := strings.Split(ip, ".")
 
@@ -20,9 +20,9 @@ func ParseIP(ip string) (IP, error) {
 		return IP{}, fmt.Errorf(`'%s' is not a valid ip address`, ip)
 	}
 
-	ipValue := 0
+	ipValue := int64(0)
 	for _, ipPart := range ipParts {
-		ipPartInt, err := strconv.Atoi(ipPart)
+		ipPartInt, err := strconv.ParseInt(ipPart, 10, 0)
 		if err != nil {
 			return IP{}, err
 		}
@@ -41,13 +41,13 @@ func ParseIP(ip string) (IP, error) {
 
 func (i IP) Add(offset int) IP {
 	return IP{
-		ip: i.ip + offset,
+		ip: i.ip + int64(offset),
 	}
 }
 
 func (i IP) Subtract(offset int) IP {
 	return IP{
-		ip: i.ip - offset,
+		ip: i.ip - int64(offset),
 	}
 }
 
