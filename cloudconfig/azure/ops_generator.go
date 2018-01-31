@@ -123,17 +123,38 @@ func (o OpsGenerator) Generate(state storage.State) (string, error) {
 
 	switch state.LB.Type {
 	case "cf":
-		lbOp := op{
-			Type: "replace",
-			Path: "/vm_extensions/-",
-			Value: lb{
-				Name: "cf-router-network-properties",
-				CloudProperties: cloudProperties{
-					ApplicationGateway: "((cf_app_gateway_name))",
+		lbOps := []op{
+			{
+				Type: "replace",
+				Path: "/vm_extensions/-",
+				Value: lb{
+					Name: "cf-router-network-properties",
+					CloudProperties: cloudProperties{
+						ApplicationGateway: "((cf_app_gateway_name))",
+					},
 				},
 			},
-		}
-		cloudConfigOps = append(cloudConfigOps, lbOp)
+			{
+				Type: "replace",
+				Path: "/vm_extensions/-",
+				Value: lb{
+					Name: "cf-tcp-router-network-properties",
+					CloudProperties: cloudProperties{
+						ApplicationGateway: "((cf_app_gateway_name))",
+					},
+				},
+			},
+			{
+				Type: "replace",
+				Path: "/vm_extensions/-",
+				Value: lb{
+					Name: "diego-ssh-proxy-network-properties",
+					CloudProperties: cloudProperties{
+						ApplicationGateway: "((cf_app_gateway_name))",
+					},
+				},
+			}}
+		cloudConfigOps = append(cloudConfigOps, lbOps...)
 	case "concourse":
 		lbOp := op{
 			Type: "replace",
