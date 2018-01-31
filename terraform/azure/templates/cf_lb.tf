@@ -88,6 +88,11 @@ resource "azurerm_application_gateway" "network" {
   }
 
   frontend_port {
+    name = "frontendporthttp"
+    port = 80
+  }
+
+  frontend_port {
     name = "frontendportlogs"
     port = 4443
   }
@@ -117,17 +122,48 @@ resource "azurerm_application_gateway" "network" {
   }
 
   http_listener {
-    name                           = "${azurerm_virtual_network.bosh.name}-httplstn"
+    name                           = "${azurerm_virtual_network.bosh.name}-http-lstn"
+    frontend_ip_configuration_name = "${var.env_id}-cf-frontend-ip-configuration"
+    frontend_port_name             = "frontendporthttp"
+    protocol                       = "Http"
+  }
+
+  http_listener {
+    name                           = "${azurerm_virtual_network.bosh.name}-https-lstn"
     frontend_ip_configuration_name = "${var.env_id}-cf-frontend-ip-configuration"
     frontend_port_name             = "frontendporthttps"
     protocol                       = "Https"
     ssl_certificate_name           = "ssl-cert"
   }
 
+  http_listener {
+    name                           = "${azurerm_virtual_network.bosh.name}-logs-lstn"
+    frontend_ip_configuration_name = "${var.env_id}-cf-frontend-ip-configuration"
+    frontend_port_name             = "frontendportlogs"
+    protocol                       = "Https"
+    ssl_certificate_name           = "ssl-cert"
+  }
+
   request_routing_rule {
-    name                       = "${azurerm_virtual_network.bosh.name}-rqrt"
+    name                       = "${azurerm_virtual_network.bosh.name}-http-rule"
     rule_type                  = "Basic"
-    http_listener_name         = "${azurerm_virtual_network.bosh.name}-httplstn"
+    http_listener_name         = "${azurerm_virtual_network.bosh.name}-http-lstn"
+    backend_address_pool_name  = "${var.env_id}-cf-backend-address-pool"
+    backend_http_settings_name = "${azurerm_virtual_network.bosh.name}-be-htst"
+  }
+
+  request_routing_rule {
+    name                       = "${azurerm_virtual_network.bosh.name}-https-rule"
+    rule_type                  = "Basic"
+    http_listener_name         = "${azurerm_virtual_network.bosh.name}-https-lstn"
+    backend_address_pool_name  = "${var.env_id}-cf-backend-address-pool"
+    backend_http_settings_name = "${azurerm_virtual_network.bosh.name}-be-htst"
+  }
+
+  request_routing_rule {
+    name                       = "${azurerm_virtual_network.bosh.name}-logs-rule"
+    rule_type                  = "Basic"
+    http_listener_name         = "${azurerm_virtual_network.bosh.name}-logs-lstn"
     backend_address_pool_name  = "${var.env_id}-cf-backend-address-pool"
     backend_http_settings_name = "${azurerm_virtual_network.bosh.name}-be-htst"
   }
