@@ -50,21 +50,6 @@ var _ = Describe("AzureOpsGenerator", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(varsYAML).To(MatchYAML(`
-az1_gateway: 10.0.16.1
-az1_range: 10.0.16.0/20
-az1_reserved_1: 10.0.16.2-10.0.16.3
-az1_reserved_2: 10.0.31.255
-az1_static: 10.0.31.190-10.0.31.254
-az2_gateway: 10.0.32.1
-az2_range: 10.0.32.0/20
-az2_reserved_1: 10.0.32.2-10.0.32.3
-az2_reserved_2: 10.0.47.255
-az2_static: 10.0.47.190-10.0.47.254
-az3_gateway: 10.0.48.1
-az3_range: 10.0.48.0/20
-az3_reserved_1: 10.0.48.2-10.0.48.3
-az3_reserved_2: 10.0.63.255
-az3_static: 10.0.63.190-10.0.63.254
 bosh_network_name: some-virtual-network-name
 bosh_subnet_name: some-subnet-name
 bosh_default_security_group: some-security-group
@@ -111,12 +96,12 @@ some-key: some-value
 		Context("failure cases", func() {
 			Context("when terraform output provider fails to retrieve", func() {
 				BeforeEach(func() {
-					terraformManager.GetOutputsCall.Returns.Error = errors.New("failed to output")
+					terraformManager.GetOutputsCall.Returns.Error = errors.New("banana")
 				})
 
 				It("returns an error", func() {
 					_, err := opsGenerator.GenerateVars(storage.State{})
-					Expect(err).To(MatchError("failed to output"))
+					Expect(err).To(MatchError("Get terraform outputs: banana"))
 				})
 			})
 

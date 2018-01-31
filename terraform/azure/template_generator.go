@@ -26,7 +26,9 @@ func NewTemplateGenerator() TemplateGenerator {
 
 func (t TemplateGenerator) Generate(state storage.State) string {
 	tmpls := readTemplates()
+
 	template := strings.Join([]string{tmpls.vars, tmpls.resourceGroup, tmpls.network, tmpls.storage, tmpls.networkSecurityGroup, tmpls.output, tmpls.tls}, "\n")
+
 	switch state.LB.Type {
 	case "cf":
 		template = strings.Join([]string{template, tmpls.cfLB}, "\n")

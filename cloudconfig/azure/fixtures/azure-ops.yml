@@ -103,38 +103,11 @@
     name: default
     type: manual
     subnets:
-    - gateway: ((az1_gateway))
-      range: ((az1_range))
-      az: z1
-      reserved:
-      - ((az1_reserved_1))
-      - ((az1_reserved_2))
-      static:
-      - ((az1_static))
-      cloud_properties:
-        virtual_network_name: ((vnet_name))
-        subnet_name: ((subnet_name))
-        security_group: ((default_security_group))
-    - gateway: ((az2_gateway))
-      range: ((az2_range))
-      az: z2
-      reserved:
-      - ((az2_reserved_1))
-      - ((az2_reserved_2))
-      static:
-      - ((az2_static))
-      cloud_properties:
-        virtual_network_name: ((vnet_name))
-        subnet_name: ((subnet_name))
-        security_group: ((default_security_group))
-    - gateway: ((az3_gateway))
-      range: ((az3_range))
-      az: z3
-      reserved:
-      - ((az3_reserved_1))
-      - ((az3_reserved_2))
-      static:
-      - ((az3_static))
+    - gateway: ((internal_gw))
+      range: ((internal_cidr))
+      azs: [z1, z2, z3]
+      reserved: [((jumpbox__internal_ip)), ((director__internal_ip)), ((internal_gw))/30]
+      dns: [8.8.8.8, 168.63.129.16]
       cloud_properties:
         virtual_network_name: ((vnet_name))
         subnet_name: ((subnet_name))
@@ -146,38 +119,11 @@
     name: private
     type: manual
     subnets:
-    - gateway: ((az1_gateway))
-      range: ((az1_range))
-      az: z1
-      reserved:
-      - ((az1_reserved_1))
-      - ((az1_reserved_2))
-      static:
-      - ((az1_static))
-      cloud_properties:
-        virtual_network_name: ((vnet_name))
-        subnet_name: ((subnet_name))
-        security_group: ((default_security_group))
-    - gateway: ((az2_gateway))
-      range: ((az2_range))
-      az: z2
-      reserved:
-      - ((az2_reserved_1))
-      - ((az2_reserved_2))
-      static:
-      - ((az2_static))
-      cloud_properties:
-        virtual_network_name: ((vnet_name))
-        subnet_name: ((subnet_name))
-        security_group: ((default_security_group))
-    - gateway: ((az3_gateway))
-      range: ((az3_range))
-      az: z3
-      reserved:
-      - ((az3_reserved_1))
-      - ((az3_reserved_2))
-      static:
-      - ((az3_static))
+    - gateway: ((internal_gw))
+      range: ((internal_cidr))
+      azs: [z1, z2, z3]
+      reserved: [((jumpbox__internal_ip)), ((director__internal_ip)), ((internal_gw))/30]
+      dns: [8.8.8.8, 168.63.129.16]
       cloud_properties:
         virtual_network_name: ((vnet_name))
         subnet_name: ((subnet_name))

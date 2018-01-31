@@ -98,8 +98,9 @@ func (o OpsGenerator) GenerateVars(state storage.State) (string, error) {
 
 	varsBytes, err := marshal(varsYAML)
 	if err != nil {
-		panic(err) // not tested; cannot occur
+		return "", err
 	}
+
 	return string(varsBytes), nil
 }
 
