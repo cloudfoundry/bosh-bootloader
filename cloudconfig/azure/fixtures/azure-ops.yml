@@ -104,7 +104,7 @@
     type: manual
     subnets:
     - gateway: ((internal_gw))
-      range: ((internal_cidr))
+      range: ((subnet_cidr))
       azs: [z1, z2, z3]
       reserved: [((jumpbox__internal_ip)), ((director__internal_ip)), ((internal_gw))/30]
       dns: [8.8.8.8, 168.63.129.16]
@@ -120,7 +120,7 @@
     type: manual
     subnets:
     - gateway: ((internal_gw))
-      range: ((internal_cidr))
+      range: ((subnet_cidr))
       azs: [z1, z2, z3]
       reserved: [((jumpbox__internal_ip)), ((director__internal_ip)), ((internal_gw))/30]
       dns: [8.8.8.8, 168.63.129.16]

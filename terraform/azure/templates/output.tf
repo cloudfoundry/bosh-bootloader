@@ -45,10 +45,10 @@ output "network_cidr" {
 }
 
 locals {
-  director_name = "bosh-${var.env_id}"
-  internal_cidr = "${var.internal_cidr}"
-  internal_gw = "${cidrhost(local.internal_cidr, 1)}"
-  jumpbox_internal_ip = "${cidrhost(local.internal_cidr, 5)}"
+  director_name        = "bosh-${var.env_id}"
+  internal_cidr        = "${var.internal_cidr}"
+  internal_gw          = "${cidrhost(local.internal_cidr, 1)}"
+  jumpbox_internal_ip  = "${cidrhost(local.internal_cidr, 5)}"
   director_internal_ip = "${cidrhost(local.internal_cidr, 6)}"
 }
 
@@ -58,6 +58,10 @@ output "director_name" {
 
 output "internal_cidr" {
   value = "${local.internal_cidr}"
+}
+
+output "subnet_cidr" {
+  value = "${cidrsubnet(var.network_cidr, 8, 0)}"
 }
 
 output "internal_gw" {
@@ -71,4 +75,3 @@ output "jumpbox__internal_ip" {
 output "director__internal_ip" {
   value = "${local.director_internal_ip}"
 }
-

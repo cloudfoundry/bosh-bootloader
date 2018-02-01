@@ -86,7 +86,7 @@ func (o OpsGenerator) Generate(state storage.State) (string, error) {
 	subnet := networkSubnet{
 		AZs:      []string{"z1", "z2", "z3"},
 		Gateway:  "((internal_gw))",
-		Range:    "((internal_cidr))",
+		Range:    "((subnet_cidr))",
 		Reserved: []string{"((jumpbox__internal_ip))", "((director__internal_ip))", "((internal_gw))/30"},
 		DNS:      []string{"8.8.8.8", "168.63.129.16"},
 		CloudProperties: subnetCloudProperties{
