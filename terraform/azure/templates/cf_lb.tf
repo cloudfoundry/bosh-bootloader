@@ -4,6 +4,19 @@ variable "pfx_cert_base64" {}
 
 variable "pfx_password" {}
 
+resource "azurerm_dns_zone" "cf" {
+  name                = "${var.env_id}.${var.system_domain}"
+  resource_group_name = "${azurerm_resource_group.bosh.name}"
+}
+
+resource "azurerm_dns_a_record" "cf_dns" {
+  name                = "api"
+  zone_name           = "${azurerm_dns_zone.cf.name}"
+  resource_group_name = "${azurerm_resource_group.bosh.name}"
+  ttl                 = "60"
+  records             = ["${azurerm_public_ip.lb.ip_address}"]
+}
+
 resource "azurerm_subnet" "cf-sn" {
   name                 = "${var.env_id}-cf-sn"
   address_prefix       = "${cidrsubnet(var.network_cidr, 8, 1)}"
