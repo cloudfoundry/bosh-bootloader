@@ -12,46 +12,44 @@ install to AWS using `bbl` and `bosh`.
 ## Create load balancer
 
 ```
-bbl plan --lb-type concourse && bbl up
+$ bbl plan --lb-type concourse
+$ external_url=`bbl lbs | sed 's/.*\[\(.*\)\]/\1/'`
 ```
 
-## Create a bosh deployment manifest
 
-Scale instance types, disks and instance count based on your needs.
-Other sizes are available, see `bosh cloud-config`.
-
-1. Start with the sample manifest from the
-[Concourse documentation](http://concourse.ci/clusters-with-bosh.html)
-2. Replace all `vm_type: REPLACE_ME` with `vm_type: t2.small`.
-3. Add the vm_extension `lb` to the instance_group `web`.
-4. Delete `tls_cert` and `tls_key` from the properties of the job named `atc`.
-5. Add the vm_extension `50GB_ephemeral_disk` to the instance_group `worker`.
-6. Replace all `persistent_disk_type: REPLACE_ME` with `persistent_disk_type: 5GB`.
-7. Replace `director_uuid: REPLACE_ME` with `uuid` from `bosh env`.
-8. Fill `external_url: REPLACE_ME` with Concourse external URL.
-
-## Upload releases
-
-1. Upload latest [stemcell](http://bosh.io/stemcells)
+# Upload latest stemcell
 ```
 bosh upload-stemcell https://bosh.io/d/stemcells/bosh-aws-xen-hvm-ubuntu-trusty-go_agent
 ```
-2. Upload latest concourse [BOSH Releases](http://concourse.ci/downloads.html)
+
+## Make an ops file
 ```
-bosh upload-release https://github.com/concourse/concourse/releases/download/v2.7.3/concourse-2.7.3.tgz
-bosh upload-release https://github.com/concourse/concourse/releases/download/v2.7.3/garden-runc-1.4.0.tgz
-```
-3. Upload latest [postgres release](http://bosh.io/releases/github.com/cloudfoundry/postgres-release?all=1)
-```
-bosh upload-release https://bosh.io/d/github.com/cloudfoundry/postgres-release
+$ cat bbl_ops.yml
+- type: replace
+  path: /instance_groups/name=web/vm_extensions?/-
+  value: lb
+- type: replace
+  path: /instance_groups/name=web/jobs/name=atc/properties/bind_port?
+  value: 80
+- type: replace
 ```
 
-## Deploy
+## Deploy concourse-deployment
 
 ```
-bosh -d concourse deploy concourse.yml
+bosh deploy -d concourse concourse.yml \
+  -l ../versions.yml \
+  --vars-store cluster-creds.yml \
+  -o operations/no-auth.yml \
+  -o bbl_ops.yml \
+  --var network_name=default \
+  --var external_url=$external_url \
+  --var web_vm_type=default \
+  --var db_vm_type=default \
+  --var db_persistent_disk_type=10GB \
+  --var worker_vm_type=default \
+  --var deployment_name=concourse
 ```
 
 ## Verify
-
 Point your browser to `$external_url`.
