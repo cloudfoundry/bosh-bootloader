@@ -1,7 +1,7 @@
 # Deploying Concourse
 
 This document will walk through deploying a concourse clustered
-install to AWS using `bbl` and `bosh`.
+install to AWS, GCP and Azure using `bbl` and `bosh`.
 
 ## Prerequisites
 
