@@ -22,31 +22,31 @@
   value: Standard_D3_v2
 
 - type: replace
-  path: /vm_extensions/name=1GB_ephemeral_disk/cloud_properties?/size
+  path: /vm_extensions/name=1GB_ephemeral_disk/cloud_properties?/ephemeral_disk/size
   value: 1024
 
 - type: replace
-  path: /vm_extensions/name=5GB_ephemeral_disk/cloud_properties?/size
+  path: /vm_extensions/name=5GB_ephemeral_disk/cloud_properties?/ephemeral_disk/size
   value: 5120
 
 - type: replace
-  path: /vm_extensions/name=10GB_ephemeral_disk/cloud_properties?/size
+  path: /vm_extensions/name=10GB_ephemeral_disk/cloud_properties?/ephemeral_disk/size
   value: 10240
 
 - type: replace
-  path: /vm_extensions/name=50GB_ephemeral_disk/cloud_properties?/size
+  path: /vm_extensions/name=50GB_ephemeral_disk/cloud_properties?/ephemeral_disk/size
   value: 51200
 
 - type: replace
-  path: /vm_extensions/name=100GB_ephemeral_disk/cloud_properties?/size
+  path: /vm_extensions/name=100GB_ephemeral_disk/cloud_properties?/ephemeral_disk/size
   value: 102400
 
 - type: replace
-  path: /vm_extensions/name=500GB_ephemeral_disk/cloud_properties?/size
+  path: /vm_extensions/name=500GB_ephemeral_disk/cloud_properties?/ephemeral_disk/size
   value: 512000
 
 - type: replace
-  path: /vm_extensions/name=1TB_ephemeral_disk/cloud_properties?/size
+  path: /vm_extensions/name=1TB_ephemeral_disk/cloud_properties?/ephemeral_disk/size
   value: 1048576
 
 - type: replace
