@@ -81,11 +81,11 @@ func (p PrintEnv) Execute(args []string, state storage.State) error {
 	p.logger.Println(fmt.Sprintf("export BOSH_ENVIRONMENT=%s", state.BOSH.DirectorAddress))
 	p.logger.Println(fmt.Sprintf("export BOSH_CA_CERT='%s'", state.BOSH.DirectorSSLCA))
 
-	p.logger.Println("export CREDHUB_USER=credhub-cli")
+	p.logger.Println("export CREDHUB_CLIENT=credhub-admin")
 
 	credhubPassword, err := p.credhubGetter.GetPassword()
 	if err == nil {
-		p.logger.Println(fmt.Sprintf("export CREDHUB_PASSWORD=%s", credhubPassword))
+		p.logger.Println(fmt.Sprintf("export CREDHUB_SECRET=%s", credhubPassword))
 	} else {
 		p.stderrLogger.Println("No credhub password found.")
 	}

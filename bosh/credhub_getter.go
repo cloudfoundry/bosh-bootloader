@@ -74,7 +74,7 @@ func (c CredhubGetter) GetCerts() (string, error) {
 
 func (c CredhubGetter) GetPassword() (string, error) {
 	var certs struct {
-		Password string `yaml:"credhub_cli_password"`
+		Password string `yaml:"credhub_admin_client_secret"`
 	}
 
 	varsDir, err := c.stateStore.GetVarsDir()

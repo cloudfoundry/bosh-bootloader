@@ -37,7 +37,7 @@ uaa_ssl:
     -----BEGIN CERTIFICATE-----
     some-uaa-cert
     -----END CERTIFICATE-----
-credhub_cli_password: some-credhub-password`
+credhub_admin_client_secret: some-credhub-password`
 			fileIO.ReadFileCall.Returns.Contents = []byte(varsStoreContents)
 		})
 

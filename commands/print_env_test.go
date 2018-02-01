@@ -82,8 +82,8 @@ var _ = Describe("PrintEnv", func() {
 
 			Expect(logger.PrintlnCall.Messages).To(ContainElement("export CREDHUB_SERVER=some-credhub-server"))
 			Expect(logger.PrintlnCall.Messages).To(ContainElement("export CREDHUB_CA_CERT='some-credhub-certs'"))
-			Expect(logger.PrintlnCall.Messages).To(ContainElement("export CREDHUB_USER=credhub-cli"))
-			Expect(logger.PrintlnCall.Messages).To(ContainElement("export CREDHUB_PASSWORD=some-credhub-password"))
+			Expect(logger.PrintlnCall.Messages).To(ContainElement("export CREDHUB_CLIENT=credhub-admin"))
+			Expect(logger.PrintlnCall.Messages).To(ContainElement("export CREDHUB_SECRET=some-credhub-password"))
 
 			Expect(logger.PrintlnCall.Messages).To(ContainElement(`export JUMPBOX_PRIVATE_KEY=the-key-path`))
 			Expect(logger.PrintlnCall.Messages).To(ContainElement(`export BOSH_ALL_PROXY=ipfs://some-domain-with?private_key=the-key-path`))
