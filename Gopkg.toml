@@ -48,7 +48,3 @@
 [[constraint]]
   name = "github.com/square/certstrap"
   version = "1.0.1"
-
-[[constraint]]
-  name = "github.com/genevievelesperance/leftovers"
-  branch = "master"

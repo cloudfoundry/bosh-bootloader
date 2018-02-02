@@ -30,10 +30,6 @@ import (
 	azureterraform "github.com/cloudfoundry/bosh-bootloader/terraform/azure"
 	gcpterraform "github.com/cloudfoundry/bosh-bootloader/terraform/gcp"
 	vsphereterraform "github.com/cloudfoundry/bosh-bootloader/terraform/vsphere"
-
-	awsleftovers "github.com/genevievelesperance/leftovers/aws"
-	azureleftovers "github.com/genevievelesperance/leftovers/azure"
-	gcpleftovers "github.com/genevievelesperance/leftovers/gcp"
 )
 
 var Version = "dev"
@@ -176,19 +172,6 @@ func main() {
 		lbsCmd = commands.NewAzureLBs(terraformManager, logger)
 	}
 
-	var leftovers commands.FilteredDeleter
-	switch appConfig.State.IAAS {
-	case "aws":
-		leftovers, err = awsleftovers.NewLeftovers(logger, appConfig.State.AWS.AccessKeyID, appConfig.State.AWS.SecretAccessKey, appConfig.State.AWS.Region)
-	case "azure":
-		leftovers, err = azureleftovers.NewLeftovers(logger, appConfig.State.Azure.ClientID, appConfig.State.Azure.ClientSecret, appConfig.State.Azure.SubscriptionID, appConfig.State.Azure.TenantID)
-	case "gcp":
-		leftovers, err = gcpleftovers.NewLeftovers(logger, appConfig.State.GCP.ServiceAccountKeyPath)
-	}
-	if err != nil {
-		log.Fatalf("\n\n%s\n", err)
-	}
-
 	// Commands
 	var envIDManager helpers.EnvIDManager
 	if appConfig.State.IAAS != "" {
@@ -207,8 +190,6 @@ func main() {
 	commandSet["rotate"] = commands.NewRotate(stateValidator, sshKeyDeleter, up)
 	commandSet["destroy"] = commands.NewDestroy(plan, logger, boshManager, stateStore, stateValidator, terraformManager, networkDeletionValidator)
 	commandSet["down"] = commandSet["destroy"]
-	commandSet["cleanup-leftovers"] = commands.NewCleanupLeftovers(leftovers)
-	commandSet["leftovers"] = commandSet["cleanup-leftovers"]
 	commandSet["lbs"] = commands.NewLBs(lbsCmd, stateValidator)
 	commandSet["jumpbox-address"] = commands.NewStateQuery(logger, stateValidator, terraformManager, commands.JumpboxAddressPropertyName)
 	commandSet["director-address"] = commands.NewStateQuery(logger, stateValidator, terraformManager, commands.DirectorAddressPropertyName)
