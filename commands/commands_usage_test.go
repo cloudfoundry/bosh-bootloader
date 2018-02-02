@@ -83,6 +83,18 @@ var _ = Describe("Commands Usage", func() {
 		})
 	})
 
+	Describe("CleanupLeftovers", func() {
+		It("returns string describing usage", func() {
+			command := commands.CleanupLeftovers{}
+			usageText := command.Usage()
+			Expect(usageText).To(Equal(fmt.Sprintf(`Cleans up orphaned IAAS resources
+
+  --filter            Only delete resources with this string in their name
+
+  Credentials for your IaaS are required:%s`, commands.Credentials)))
+		})
+	})
+
 	Describe("Rotate", func() {
 		Describe("Usage", func() {
 			It("returns string describing usage", func() {
