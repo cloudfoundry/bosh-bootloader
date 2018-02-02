@@ -15,6 +15,7 @@ type templates struct {
 	output               string
 	tls                  string
 	cfLB                 string
+	cfDNS                string
 	concourseLB          string
 }
 
@@ -32,6 +33,10 @@ func (t TemplateGenerator) Generate(state storage.State) string {
 	switch state.LB.Type {
 	case "cf":
 		template = strings.Join([]string{template, tmpls.cfLB}, "\n")
+
+		if state.LB.Domain != "" {
+			template = strings.Join([]string{template, tmpls.cfDNS}, "\n")
+		}
 	case "concourse":
 		template = strings.Join([]string{template, tmpls.concourseLB}, "\n")
 	}
@@ -49,6 +54,7 @@ func readTemplates() templates {
 	tmpls.output = string(MustAsset("templates/output.tf"))
 	tmpls.tls = string(MustAsset("templates/tls.tf"))
 	tmpls.cfLB = string(MustAsset("templates/cf_lb.tf"))
+	tmpls.cfDNS = string(MustAsset("templates/cf_dns.tf"))
 	tmpls.concourseLB = string(MustAsset("templates/concourse_lb.tf"))
 
 	return tmpls

@@ -4,19 +4,6 @@ variable "pfx_cert_base64" {}
 
 variable "pfx_password" {}
 
-resource "azurerm_dns_zone" "cf" {
-  name                = "${var.env_id}.${var.system_domain}"
-  resource_group_name = "${azurerm_resource_group.bosh.name}"
-}
-
-resource "azurerm_dns_a_record" "cf_dns" {
-  name                = "api"
-  zone_name           = "${azurerm_dns_zone.cf.name}"
-  resource_group_name = "${azurerm_resource_group.bosh.name}"
-  ttl                 = "60"
-  records             = ["${azurerm_public_ip.lb.ip_address}"]
-}
-
 resource "azurerm_subnet" "cf-sn" {
   name                 = "${var.env_id}-cf-sn"
   address_prefix       = "${cidrsubnet(var.network_cidr, 8, 1)}"
@@ -34,9 +21,23 @@ resource "azurerm_network_security_group" "cf" {
   }
 }
 
-resource "azurerm_network_security_rule" "cf-https" {
-  name                        = "${var.env_id}-dns"
+resource "azurerm_network_security_rule" "cf-http" {
+  name                        = "${var.env_id}-cf-http"
   priority                    = 201
+  direction                   = "Inbound"
+  access                      = "Allow"
+  protocol                    = "Tcp"
+  source_port_range           = "*"
+  destination_port_range      = "80"
+  source_address_prefix       = "*"
+  destination_address_prefix  = "*"
+  resource_group_name         = "${azurerm_resource_group.bosh.name}"
+  network_security_group_name = "${azurerm_network_security_group.cf.name}"
+}
+
+resource "azurerm_network_security_rule" "cf-https" {
+  name                        = "${var.env_id}-cf-https"
+  priority                    = 202
   direction                   = "Inbound"
   access                      = "Allow"
   protocol                    = "Tcp"
@@ -50,7 +51,7 @@ resource "azurerm_network_security_rule" "cf-https" {
 
 resource "azurerm_network_security_rule" "cf-log" {
   name                        = "${var.env_id}-cf-log"
-  priority                    = 202
+  priority                    = 203
   direction                   = "Inbound"
   access                      = "Allow"
   protocol                    = "Tcp"
@@ -62,14 +63,14 @@ resource "azurerm_network_security_rule" "cf-log" {
   network_security_group_name = "${azurerm_network_security_group.cf.name}"
 }
 
-resource "azurerm_public_ip" "lb" {
+resource "azurerm_public_ip" "cf" {
   name                         = "${var.env_id}-cf-lb-ip"
   location                     = "${var.region}"
   resource_group_name          = "${azurerm_resource_group.bosh.name}"
   public_ip_address_allocation = "dynamic"
 }
 
-resource "azurerm_application_gateway" "network" {
+resource "azurerm_application_gateway" "cf" {
   name                = "${var.env_id}-app-gateway"
   resource_group_name = "${azurerm_resource_group.bosh.name}"
   location            = "${var.region}"
@@ -81,10 +82,10 @@ resource "azurerm_application_gateway" "network" {
   }
 
   probe {
-    name                = "Probe01"
+    name                = "health-probe"
     protocol            = "Http"
-    path                = "/login"
-    host                = "login.${var.system_domain}"
+    path                = "/"
+    host                = "${var.env_id}.${var.system_domain}"
     interval            = 60
     timeout             = 60
     unhealthy_threshold = 3
@@ -112,7 +113,7 @@ resource "azurerm_application_gateway" "network" {
 
   frontend_ip_configuration {
     name                 = "${var.env_id}-cf-frontend-ip-configuration"
-    public_ip_address_id = "${azurerm_public_ip.lb.id}"
+    public_ip_address_id = "${azurerm_public_ip.cf.id}"
   }
 
   backend_address_pool {
@@ -125,7 +126,7 @@ resource "azurerm_application_gateway" "network" {
     port                  = 80
     protocol              = "Http"
     request_timeout       = 1
-    probe_name            = "Probe01"
+    probe_name            = "health-probe"
   }
 
   ssl_certificate {
@@ -183,5 +184,5 @@ resource "azurerm_application_gateway" "network" {
 }
 
 output "cf_app_gateway_name" {
-  value = "${azurerm_application_gateway.network.name}"
+  value = "${azurerm_application_gateway.cf.name}"
 }
