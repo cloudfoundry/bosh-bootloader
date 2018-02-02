@@ -57,6 +57,10 @@ const (
   [--no-confirm]       Do not ask for confirmation (optional)
   [--skip-if-missing]  Gracefully exit if there is no state file (optional)`
 
+	CleanupLeftoversCommandUsage = `Cleans up orphaned IAAS resources
+
+  --filter            Only delete resources with this string in their name`
+
 	LBsCommandUsage = "Prints attached load balancer(s)"
 
 	VersionCommandUsage = "Prints version"
