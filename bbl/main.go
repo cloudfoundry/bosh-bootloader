@@ -49,6 +49,7 @@ func main() {
 	fs := afero.NewOsFs()
 	afs := &afero.Afero{Fs: fs}
 
+	//App Configuration
 	stateStore := storage.NewStore(globals.StateDir, afs)
 	stateMigrator := storage.NewMigrator(stateStore, afs)
 	newConfig := config.NewConfig(stateBootstrap, stateMigrator, stderrLogger, afs)
@@ -77,65 +78,6 @@ func main() {
 	terraformCmd := terraform.NewCmd(os.Stderr, terraformOutputBuffer)
 	terraformExecutor := terraform.NewExecutor(terraformCmd, stateStore, afs, appConfig.Global.Debug)
 
-	var (
-		networkClient            helpers.NetworkClient
-		networkDeletionValidator commands.NetworkDeletionValidator
-
-		gcpClient                 gcp.Client
-		availabilityZoneRetriever aws.AvailabilityZoneRetriever
-	)
-	if appConfig.State.IAAS == "aws" && needsIAASCreds {
-		awsClient := aws.NewClient(appConfig.State.AWS, logger)
-
-		availabilityZoneRetriever = awsClient
-		networkDeletionValidator = awsClient
-		networkClient = awsClient
-	} else if appConfig.State.IAAS == "gcp" && needsIAASCreds {
-		gcpClient, err = gcp.NewClient(appConfig.State.GCP, "")
-		if err != nil {
-			log.Fatalf("\n\n%s\n", err)
-		}
-
-		networkDeletionValidator = gcpClient
-		networkClient = gcpClient
-
-		gcpZonerHack := config.NewGCPZonerHack(gcpClient)
-		stateWithZones, err := gcpZonerHack.SetZones(appConfig.State)
-		if err != nil {
-			log.Fatalf("\n\n%s\n", err)
-		}
-		appConfig.State = stateWithZones
-	} else if appConfig.State.IAAS == "azure" && needsIAASCreds {
-		azureClient, err := azure.NewClient(appConfig.State.Azure)
-		if err != nil {
-			log.Fatalf("\n\n%s\n", err)
-		}
-
-		networkDeletionValidator = azureClient
-		networkClient = azureClient
-	}
-
-	var (
-		inputGenerator    terraform.InputGenerator
-		templateGenerator terraform.TemplateGenerator
-	)
-	switch appConfig.State.IAAS {
-	case "aws":
-		templateGenerator = awsterraform.NewTemplateGenerator()
-		inputGenerator = awsterraform.NewInputGenerator(availabilityZoneRetriever)
-	case "azure":
-		templateGenerator = azureterraform.NewTemplateGenerator()
-		inputGenerator = azureterraform.NewInputGenerator()
-	case "gcp":
-		templateGenerator = gcpterraform.NewTemplateGenerator()
-		inputGenerator = gcpterraform.NewInputGenerator()
-	case "vsphere":
-		templateGenerator = vsphereterraform.NewTemplateGenerator()
-		inputGenerator = vsphereterraform.NewInputGenerator()
-	}
-
-	terraformManager := terraform.NewManager(terraformExecutor, templateGenerator, inputGenerator, terraformOutputBuffer, logger)
-
 	// BOSH
 	hostKeyGetter := proxy.NewHostKeyGetter()
 	socks5Proxy := proxy.NewSocks5Proxy(hostKeyGetter)
@@ -147,30 +89,95 @@ func main() {
 	boshManager := bosh.NewManager(boshExecutor, logger, stateStore, sshKeyGetter, afs)
 	boshClientProvider := bosh.NewClientProvider(socks5Proxy, sshKeyGetter)
 
-	var cloudConfigOpsGenerator cloudconfig.OpsGenerator
+	//Clients that require IAAS credentials.
+	var (
+		networkClient            helpers.NetworkClient
+		networkDeletionValidator commands.NetworkDeletionValidator
+
+		gcpClient                 gcp.Client
+		availabilityZoneRetriever aws.AvailabilityZoneRetriever
+	)
+	if needsIAASCreds {
+		switch appConfig.State.IAAS {
+		case "aws":
+			awsClient := aws.NewClient(appConfig.State.AWS, logger)
+
+			availabilityZoneRetriever = awsClient
+			networkDeletionValidator = awsClient
+			networkClient = awsClient
+		case "gcp":
+			gcpClient, err = gcp.NewClient(appConfig.State.GCP, "")
+			if err != nil {
+				log.Fatalf("\n\n%s\n", err)
+			}
+
+			networkDeletionValidator = gcpClient
+			networkClient = gcpClient
+
+			gcpZonerHack := config.NewGCPZonerHack(gcpClient)
+			stateWithZones, err := gcpZonerHack.SetZones(appConfig.State)
+			if err != nil {
+				log.Fatalf("\n\n%s\n", err)
+			}
+			appConfig.State = stateWithZones
+		case "azure":
+			azureClient, err := azure.NewClient(appConfig.State.Azure)
+			if err != nil {
+				log.Fatalf("\n\n%s\n", err)
+			}
+
+			networkDeletionValidator = azureClient
+			networkClient = azureClient
+		}
+	}
+
+	var (
+		inputGenerator    terraform.InputGenerator
+		templateGenerator terraform.TemplateGenerator
+
+		terraformManager        terraform.Manager
+		cloudConfigOpsGenerator cloudconfig.OpsGenerator
+
+		lbsCmd commands.LBsCmd
+	)
 	switch appConfig.State.IAAS {
 	case "aws":
+		templateGenerator = awsterraform.NewTemplateGenerator()
+		inputGenerator = awsterraform.NewInputGenerator(availabilityZoneRetriever)
+
+		terraformManager = terraform.NewManager(terraformExecutor, templateGenerator, inputGenerator, terraformOutputBuffer, logger)
+
 		cloudConfigOpsGenerator = awscloudconfig.NewOpsGenerator(terraformManager, availabilityZoneRetriever)
+
+		lbsCmd = commands.NewAWSLBs(terraformManager, logger)
 	case "azure":
+		templateGenerator = azureterraform.NewTemplateGenerator()
+		inputGenerator = azureterraform.NewInputGenerator()
+
+		terraformManager = terraform.NewManager(terraformExecutor, templateGenerator, inputGenerator, terraformOutputBuffer, logger)
+
 		cloudConfigOpsGenerator = azurecloudconfig.NewOpsGenerator(terraformManager)
+
+		lbsCmd = commands.NewAzureLBs(terraformManager, logger)
 	case "gcp":
+		templateGenerator = gcpterraform.NewTemplateGenerator()
+		inputGenerator = gcpterraform.NewInputGenerator()
+
+		terraformManager = terraform.NewManager(terraformExecutor, templateGenerator, inputGenerator, terraformOutputBuffer, logger)
+
 		cloudConfigOpsGenerator = gcpcloudconfig.NewOpsGenerator(terraformManager)
+
+		lbsCmd = commands.NewGCPLBs(terraformManager, logger)
 	case "vsphere":
+		templateGenerator = vsphereterraform.NewTemplateGenerator()
+		inputGenerator = vsphereterraform.NewInputGenerator()
+
+		terraformManager = terraform.NewManager(terraformExecutor, templateGenerator, inputGenerator, terraformOutputBuffer, logger)
+
 		cloudConfigOpsGenerator = vspherecloudconfig.NewOpsGenerator(terraformManager)
 	}
+
 	cloudConfigManager := cloudconfig.NewManager(logger, boshCommand, stateStore, cloudConfigOpsGenerator, boshClientProvider, terraformManager, sshKeyGetter, afs)
-
-	// Subcommands
-	var lbsCmd commands.LBsCmd
-
-	switch appConfig.State.IAAS {
-	case "aws":
-		lbsCmd = commands.NewAWSLBs(terraformManager, logger)
-	case "gcp":
-		lbsCmd = commands.NewGCPLBs(terraformManager, logger)
-	case "azure":
-		lbsCmd = commands.NewAzureLBs(terraformManager, logger)
-	}
 
 	// Commands
 	var envIDManager helpers.EnvIDManager
