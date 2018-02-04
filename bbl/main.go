@@ -49,7 +49,7 @@ func main() {
 	fs := afero.NewOsFs()
 	afs := &afero.Afero{Fs: fs}
 
-	//App Configuration
+	// bbl Configuration
 	stateStore := storage.NewStore(globals.StateDir, afs)
 	stateMigrator := storage.NewMigrator(stateStore, afs)
 	newConfig := config.NewConfig(stateBootstrap, stateMigrator, stderrLogger, afs)
@@ -63,7 +63,7 @@ func main() {
 	if needsIAASCreds {
 		err = config.ValidateIAAS(appConfig.State)
 		if err != nil {
-			log.Fatalf("\n\n%s\n", err)
+			log.Fatal(err)
 		}
 	}
 
@@ -89,7 +89,7 @@ func main() {
 	boshManager := bosh.NewManager(boshExecutor, logger, stateStore, sshKeyGetter, afs)
 	boshClientProvider := bosh.NewClientProvider(socks5Proxy, sshKeyGetter)
 
-	//Clients that require IAAS credentials.
+	// Clients that require IAAS credentials.
 	var (
 		networkClient            helpers.NetworkClient
 		networkDeletionValidator commands.NetworkDeletionValidator
@@ -131,6 +131,7 @@ func main() {
 		}
 	}
 
+	// Objects that do not require IAAS credentials.
 	var (
 		inputGenerator    terraform.InputGenerator
 		templateGenerator terraform.TemplateGenerator

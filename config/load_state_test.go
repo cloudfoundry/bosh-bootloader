@@ -2,6 +2,7 @@ package config_test
 
 import (
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -998,7 +999,7 @@ var _ = Describe("LoadState", func() {
 		DescribeTable("when configuration is invalid",
 			func(state storage.State, expectedErr string) {
 				err := config.ValidateIAAS(state)
-				Expect(err).To(MatchError(expectedErr))
+				Expect(err).To(MatchError(fmt.Sprintf("\n\n%s\n", expectedErr)))
 			},
 			Entry("when IAAS is missing",
 				storage.State{},

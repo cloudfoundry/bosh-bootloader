@@ -361,30 +361,30 @@ func supportedIAAS(iaas string) bool {
 
 func ValidateIAAS(state storage.State) error {
 	if !supportedIAAS(state.IAAS) {
-		return errors.New("--iaas [gcp, aws, azure] must be provided or BBL_IAAS must be set")
+		return errors.New("\n\n--iaas [gcp, aws, azure] must be provided or BBL_IAAS must be set\n")
 	}
 	if state.IAAS == "aws" {
 		err := validateAWS(state.AWS)
 		if err != nil {
-			return err
+			return fmt.Errorf("\n\n%s\n", err)
 		}
 	}
 	if state.IAAS == "azure" {
 		err := validateAzure(state.Azure)
 		if err != nil {
-			return err
+			return fmt.Errorf("\n\n%s\n", err)
 		}
 	}
 	if state.IAAS == "gcp" {
 		err := validateGCP(state.GCP)
 		if err != nil {
-			return err
+			return fmt.Errorf("\n\n%s\n", err)
 		}
 	}
 	if state.IAAS == "vsphere" {
 		err := validateVSphere(state.VSphere)
 		if err != nil {
-			return err
+			return fmt.Errorf("\n\n%s\n", err)
 		}
 	}
 	return nil
