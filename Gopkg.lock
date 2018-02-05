@@ -63,6 +63,7 @@
     "service/elb",
     "service/elbv2",
     "service/iam",
+    "service/rds",
     "service/s3",
     "service/s3/s3iface",
     "service/s3/s3manager",
@@ -97,13 +98,7 @@
 
 [[projects]]
   branch = "master"
-  name = "github.com/genevievelesperance/go-socks5"
-  packages = ["."]
-  revision = "f07e0bb84629ba30f60da69274cd1d9dbb4a1d08"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/genevievelesperance/leftovers"
+  name = "github.com/genevieve/leftovers"
   packages = [
     "aws",
     "aws/common",
@@ -111,13 +106,21 @@
     "aws/elb",
     "aws/elbv2",
     "aws/iam",
+    "aws/rds",
     "aws/s3",
     "azure",
     "gcp",
+    "gcp/common",
     "gcp/compute",
     "gcp/dns"
   ]
-  revision = "4691ae2f3cad261a56a4dba34f8189efb7c5ba0e"
+  revision = "e8fec495d9d8e91764c37c326be6342d51ae1de8"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/genevievelesperance/go-socks5"
+  packages = ["."]
+  revision = "f07e0bb84629ba30f60da69274cd1d9dbb4a1d08"
 
 [[projects]]
   name = "github.com/go-ini/ini"
@@ -331,6 +334,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "c7f3041223fec44fd3e45206c22bc939b17e3ce5dcb03090357eece5cad343bc"
+  inputs-digest = "5904b3d848d0ce4c3471389ad0026b1877a47d39eb4cc715af81b741ce692a04"
   solver-name = "gps-cdcl"
   solver-version = 1

@@ -31,9 +31,9 @@ import (
 	gcpterraform "github.com/cloudfoundry/bosh-bootloader/terraform/gcp"
 	vsphereterraform "github.com/cloudfoundry/bosh-bootloader/terraform/vsphere"
 
-	awsleftovers "github.com/genevievelesperance/leftovers/aws"
-	azureleftovers "github.com/genevievelesperance/leftovers/azure"
-	gcpleftovers "github.com/genevievelesperance/leftovers/gcp"
+	awsleftovers "github.com/genevieve/leftovers/aws"
+	azureleftovers "github.com/genevieve/leftovers/azure"
+	gcpleftovers "github.com/genevieve/leftovers/gcp"
 )
 
 var Version = "dev"
@@ -98,8 +98,8 @@ func main() {
 		networkClient            helpers.NetworkClient
 		networkDeletionValidator commands.NetworkDeletionValidator
 
-		gcpClient                 gcp.Client
 		availabilityZoneRetriever aws.AvailabilityZoneRetriever
+		leftovers                 commands.FilteredDeleter
 	)
 	if needsIAASCreds {
 		switch appConfig.State.IAAS {
@@ -109,8 +109,14 @@ func main() {
 			availabilityZoneRetriever = awsClient
 			networkDeletionValidator = awsClient
 			networkClient = awsClient
+
+			leftovers, err = awsleftovers.NewLeftovers(logger, appConfig.State.AWS.AccessKeyID, appConfig.State.AWS.SecretAccessKey, appConfig.State.AWS.Region)
+			if err != nil {
+				log.Fatalf("\n\n%s\n", err)
+			}
+
 		case "gcp":
-			gcpClient, err = gcp.NewClient(appConfig.State.GCP, "")
+			gcpClient, err := gcp.NewClient(appConfig.State.GCP, "")
 			if err != nil {
 				log.Fatalf("\n\n%s\n", err)
 			}
@@ -124,6 +130,12 @@ func main() {
 				log.Fatalf("\n\n%s\n", err)
 			}
 			appConfig.State = stateWithZones
+
+			leftovers, err = gcpleftovers.NewLeftovers(logger, appConfig.State.GCP.ServiceAccountKeyPath)
+			if err != nil {
+				log.Fatalf("\n\n%s\n", err)
+			}
+
 		case "azure":
 			azureClient, err := azure.NewClient(appConfig.State.Azure)
 			if err != nil {
@@ -132,6 +144,11 @@ func main() {
 
 			networkDeletionValidator = azureClient
 			networkClient = azureClient
+
+			leftovers, err = azureleftovers.NewLeftovers(logger, appConfig.State.Azure.ClientID, appConfig.State.Azure.ClientSecret, appConfig.State.Azure.SubscriptionID, appConfig.State.Azure.TenantID)
+			if err != nil {
+				log.Fatalf("\n\n%s\n", err)
+			}
 		}
 	}
 
@@ -183,19 +200,6 @@ func main() {
 	}
 
 	cloudConfigManager := cloudconfig.NewManager(logger, boshCommand, stateStore, cloudConfigOpsGenerator, boshClientProvider, terraformManager, sshKeyGetter, afs)
-
-	var leftovers commands.FilteredDeleter
-	switch appConfig.State.IAAS {
-	case "aws":
-		leftovers, err = awsleftovers.NewLeftovers(logger, appConfig.State.AWS.AccessKeyID, appConfig.State.AWS.SecretAccessKey, appConfig.State.AWS.Region)
-	case "azure":
-		leftovers, err = azureleftovers.NewLeftovers(logger, appConfig.State.Azure.ClientID, appConfig.State.Azure.ClientSecret, appConfig.State.Azure.SubscriptionID, appConfig.State.Azure.TenantID)
-	case "gcp":
-		leftovers, err = gcpleftovers.NewLeftovers(logger, appConfig.State.GCP.ServiceAccountKeyPath)
-	}
-	if err != nil {
-		log.Fatalf("\n\n%s\n", err)
-	}
 
 	// Commands
 	var envIDManager helpers.EnvIDManager

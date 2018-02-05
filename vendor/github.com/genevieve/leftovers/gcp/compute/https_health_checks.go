@@ -1,0 +1,51 @@
+package compute
+
+import (
+	"fmt"
+	"strings"
+
+	"github.com/genevieve/leftovers/gcp/common"
+	gcpcompute "google.golang.org/api/compute/v1"
+)
+
+type httpsHealthChecksClient interface {
+	ListHttpsHealthChecks() (*gcpcompute.HttpsHealthCheckList, error)
+	DeleteHttpsHealthCheck(httpsHealthCheck string) error
+}
+
+type HttpsHealthChecks struct {
+	client httpsHealthChecksClient
+	logger logger
+}
+
+func NewHttpsHealthChecks(client httpsHealthChecksClient, logger logger) HttpsHealthChecks {
+	return HttpsHealthChecks{
+		client: client,
+		logger: logger,
+	}
+}
+
+func (h HttpsHealthChecks) List(filter string) ([]common.Deletable, error) {
+	checks, err := h.client.ListHttpsHealthChecks()
+	if err != nil {
+		return nil, fmt.Errorf("Listing https health checks: %s", err)
+	}
+
+	var resources []common.Deletable
+	for _, check := range checks.Items {
+		resource := NewHttpsHealthCheck(h.client, check.Name)
+
+		if !strings.Contains(check.Name, filter) {
+			continue
+		}
+
+		proceed := h.logger.Prompt(fmt.Sprintf("Are you sure you want to delete https health check %s?", check.Name))
+		if !proceed {
+			continue
+		}
+
+		resources = append(resources, resource)
+	}
+
+	return resources, nil
+}
