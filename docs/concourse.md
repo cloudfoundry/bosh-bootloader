@@ -11,32 +11,33 @@ install to AWS, GCP and Azure using `bbl` and `bosh`.
 
 ## Create load balancer
 
-```
-$ bbl plan --lb-type concourse
-$ external_url=`bbl lbs | sed 's/.*\[\(.*\)\]/\1/'`
+```bash
+bbl plan --lb-type concourse
+export external_url=`bbl lbs | sed 's/.*\[\(.*\)\]/\1/'`
 ```
 
 
 # Upload latest stemcell
-```
+```bash
 bosh upload-stemcell https://bosh.io/d/stemcells/bosh-aws-xen-hvm-ubuntu-trusty-go_agent
 ```
 
 ## Make an ops file
-```
-$ cat bbl_ops.yml
+```bash
+cd concourse-deployment/cluster
+cat > bbl_ops.yml << 'EOF'
 - type: replace
   path: /instance_groups/name=web/vm_extensions?/-
   value: lb
 - type: replace
   path: /instance_groups/name=web/jobs/name=atc/properties/bind_port?
   value: 80
-- type: replace
+EOF
 ```
 
 ## Deploy concourse-deployment
 
-```
+```bash
 bosh deploy -d concourse concourse.yml \
   -l ../versions.yml \
   --vars-store cluster-creds.yml \
