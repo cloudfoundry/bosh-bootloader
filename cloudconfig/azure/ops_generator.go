@@ -31,6 +31,7 @@ type lb struct {
 
 type cloudProperties struct {
 	ApplicationGateway string `yaml:"application_gateway,omitempty"`
+	SecurityGroup      string `yaml:"security_group,omitempty"`
 	LoadBalancer       string `yaml:"load_balancer,omitempty"`
 }
 
@@ -127,6 +128,7 @@ func (o OpsGenerator) Generate(state storage.State) (string, error) {
 					Name: "cf-router-network-properties",
 					CloudProperties: cloudProperties{
 						ApplicationGateway: "((cf_app_gateway_name))",
+						SecurityGroup:      "((cf_security_group))",
 					},
 				},
 			},
