@@ -85,9 +85,9 @@ resource "azurerm_application_gateway" "cf" {
     name                = "health-probe"
     protocol            = "Http"
     path                = "/"
-    host                = "${var.env_id}.${var.system_domain}"
-    interval            = 60
-    timeout             = 60
+    host                = "api.${var.env_id}.${var.system_domain}"
+    interval            = 30
+    timeout             = 30
     unhealthy_threshold = 3
   }
 
@@ -185,4 +185,8 @@ resource "azurerm_application_gateway" "cf" {
 
 output "cf_app_gateway_name" {
   value = "${azurerm_application_gateway.cf.name}"
+}
+
+output "cf_security_group" {
+  value = "${azurerm_network_security_group.cf.name}"
 }

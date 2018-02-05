@@ -8,7 +8,7 @@ resource "azurerm_dns_zone" "cf" {
   resource_group_name = "${azurerm_resource_group.bosh.name}"
 }
 
-resource "azurerm_dns_a_record" "cf_dns" {
+resource "azurerm_dns_a_record" "cf-dns" {
   name                = "*"
   zone_name           = "${azurerm_dns_zone.cf.name}"
   resource_group_name = "${azurerm_resource_group.bosh.name}"
