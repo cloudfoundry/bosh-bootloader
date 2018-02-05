@@ -13,7 +13,7 @@ install to AWS, GCP and Azure using `bbl` and `bosh`.
 
 ```bash
 bbl plan --lb-type concourse
-export external_url=`bbl lbs | sed 's/.*\[\(.*\)\]/\1/'`
+export external_url=`bbl lbs |awk -F':' '{print $2}' |sed 's/ //'`
 ```
 
 
