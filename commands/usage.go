@@ -33,6 +33,7 @@ Maintenance Lifecycle Commands:
   destroy                 Tears down BOSH director infrastructure. Cleans up state directory
   rotate                  Rotates SSH key for the jumpbox user
   plan                    Populates a state directory with the latest config without applying it
+  cleanup-leftovers       Cleans up orphaned IAAS resources
 
 Environmental Detail Commands: Useful for automation and gaining access
   jumpbox-address         Prints BOSH jumpbox address
