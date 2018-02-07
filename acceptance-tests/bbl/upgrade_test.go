@@ -82,6 +82,11 @@ var _ = Describe("Upgrade", func() {
 	})
 
 	It("is able to upgrade from an environment bbl'd up with an older version of bbl", func() {
+		By("cleaning up any leftovers", func() {
+			session := newBBL.CleanupLeftovers(newBBL.PredefinedEnvID())
+			Eventually(session, 10*time.Minute).Should(gexec.Exit())
+		})
+
 		By("bbl'ing up with old bbl", func() {
 			session := oldBBL.Up("--name", oldBBL.PredefinedEnvID())
 			Eventually(session, 40*time.Minute).Should(gexec.Exit(0))

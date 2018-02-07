@@ -91,6 +91,15 @@ func (b BBL) Down() *gexec.Session {
 	}, os.Stdout, os.Stderr)
 }
 
+func (b BBL) CleanupLeftovers(filter string) *gexec.Session {
+	return b.execute([]string{
+		"--state-dir", b.stateDirectory,
+		"cleanup-leftovers",
+		"--filter", filter,
+		"--no-confirm",
+	}, os.Stdout, os.Stderr)
+}
+
 func (b BBL) Lbs() string {
 	return b.fetchValue("lbs")
 }
