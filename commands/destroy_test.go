@@ -10,7 +10,6 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/terraform"
 
 	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
 )
 
@@ -252,23 +251,6 @@ var _ = Describe("Destroy", func() {
 			})
 		})
 
-		Context("when the --no-confirm flag is supplied", func() {
-			DescribeTable("destroys without prompting the user for confirmation", func(flag string) {
-				err := destroy.Execute([]string{flag}, storage.State{
-					BOSH: storage.BOSH{
-						DirectorName: "some-director",
-					},
-				})
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(logger.PromptCall.CallCount).To(Equal(0))
-				Expect(boshManager.DeleteDirectorCall.CallCount).To(Equal(1))
-			},
-				Entry("--no-confirm", "--no-confirm"),
-				Entry("-n", "-n"),
-			)
-		})
-
 		It("invokes bosh delete", func() {
 			state := storage.State{
 				BOSH: storage.BOSH{
@@ -352,13 +334,6 @@ var _ = Describe("Destroy", func() {
 		})
 
 		Context("failure cases", func() {
-			Context("when an invalid command line flag is supplied", func() {
-				It("returns an error", func() {
-					err := destroy.Execute([]string{"--invalid-flag"}, storage.State{})
-					Expect(err).To(MatchError("flag provided but not defined: -invalid-flag"))
-				})
-			})
-
 			Context("when the terraform manager fails to get outputs", func() {
 				It("returns an error", func() {
 					terraformManager.GetOutputsCall.Returns.Error = errors.New("nope")
@@ -392,9 +367,7 @@ var _ = Describe("Destroy", func() {
 		})
 
 		Context("when iaas is aws", func() {
-			var (
-				state storage.State
-			)
+			var state storage.State
 
 			BeforeEach(func() {
 				state = storage.State{

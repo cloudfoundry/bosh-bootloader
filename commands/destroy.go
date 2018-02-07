@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
-	"github.com/cloudfoundry/bosh-bootloader/flags"
 	"github.com/cloudfoundry/bosh-bootloader/helpers"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/cloudfoundry/bosh-bootloader/terraform"
@@ -98,17 +97,10 @@ func (d Destroy) CheckFastFails(subcommandFlags []string, state storage.State) e
 }
 
 func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
-	config, err := d.parseFlags(subcommandFlags)
-	if err != nil {
-		return err
-	}
-
-	if !config.NoConfirm {
-		proceed := d.logger.Prompt(fmt.Sprintf("Are you sure you want to delete infrastructure for %q? This operation cannot be undone!", state.EnvID))
-		if !proceed {
-			d.logger.Step("exiting")
-			return nil
-		}
+	proceed := d.logger.Prompt(fmt.Sprintf("Are you sure you want to delete infrastructure for %q? This operation cannot be undone!", state.EnvID))
+	if !proceed {
+		d.logger.Step("exiting")
+		return nil
 	}
 
 	if !d.plan.IsInitialized(state) {
@@ -117,9 +109,10 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
 			LB:   state.LB,
 		}
 
+		var err error
 		state, err = d.plan.InitializePlan(planConfig, state)
 		if err != nil {
-			panic(err)
+			return fmt.Errorf("Initialize plan during destroy: %s", err)
 		}
 	}
 
@@ -174,20 +167,6 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
 	}
 
 	return nil
-}
-
-func (d Destroy) parseFlags(subcommandFlags []string) (destroyConfig, error) {
-	destroyFlags := flags.New("destroy")
-
-	config := destroyConfig{}
-	destroyFlags.Bool(&config.NoConfirm, "n", "no-confirm", false)
-
-	err := destroyFlags.Parse(subcommandFlags)
-	if err != nil {
-		return config, err
-	}
-
-	return config, nil
 }
 
 func (d Destroy) deleteBOSH(state storage.State, terraformOutputs terraform.Outputs) (storage.State, error) {

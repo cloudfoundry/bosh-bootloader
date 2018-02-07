@@ -39,14 +39,18 @@ import (
 var Version = "dev"
 
 func main() {
+	log.SetFlags(0)
+
 	logger := application.NewLogger(os.Stdout, os.Stdin)
 	stderrLogger := application.NewLogger(os.Stderr, os.Stdin)
 	stateBootstrap := storage.NewStateBootstrap(stderrLogger, Version)
 
 	globals, _, err := config.ParseArgs(os.Args)
-	log.SetFlags(0)
 	if err != nil {
 		log.Fatalf("\n\n%s\n", err)
+	}
+	if globals.NoConfirm {
+		logger.NoConfirm()
 	}
 
 	// File IO

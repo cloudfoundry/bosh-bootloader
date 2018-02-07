@@ -60,6 +60,19 @@ var _ = Describe("Logger", func() {
 	})
 
 	Describe("Prompt", func() {
+		Context("when NoConfirm has been called", func() {
+			BeforeEach(func() {
+				logger.NoConfirm()
+			})
+
+			It("doesn't prompt", func() {
+				proceed := logger.Prompt("do you like cheese?")
+				Expect(proceed).To(BeTrue())
+
+				Expect(writer.String()).To(Equal(""))
+			})
+		})
+
 		It("prompts for the given messge", func() {
 			logger.Prompt("do you like cheese?")
 
