@@ -49,7 +49,7 @@ var _ = Describe("up", func() {
 
 	It("bbl's up a new bosh director and jumpbox", func() {
 		By("cleaning up any leftovers", func() {
-			session := bbl.CleanupLeftovers(newBBL.PredefinedEnvID())
+			session := bbl.CleanupLeftovers(bbl.PredefinedEnvID())
 			Eventually(session, 10*time.Minute).Should(gexec.Exit())
 		})
 
