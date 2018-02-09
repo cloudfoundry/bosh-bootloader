@@ -1,0 +1,10 @@
+- type: replace
+  path: /vm_extensions/-
+  value:
+    name: gorouter-and-ssh-proxy-network-properties
+    cloud_properties:
+      backend_service: ((router_backend_service))
+      target_pool: ((ws_ssh_proxy_target_pool))
+      tags:
+      - ((router_backend_service))
+      - ((ws_ssh_proxy_target_pool))
