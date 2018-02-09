@@ -31,3 +31,7 @@ func (m ManagedZone) Delete() error {
 
 	return nil
 }
+
+func (m ManagedZone) Name() string {
+	return m.name
+}

@@ -23,3 +23,7 @@ func (g GlobalForwardingRule) Delete() error {
 
 	return nil
 }
+
+func (g GlobalForwardingRule) Name() string {
+	return g.name
+}

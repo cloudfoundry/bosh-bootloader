@@ -23,3 +23,7 @@ func (f Firewall) Delete() error {
 
 	return nil
 }
+
+func (f Firewall) Name() string {
+	return f.name
+}

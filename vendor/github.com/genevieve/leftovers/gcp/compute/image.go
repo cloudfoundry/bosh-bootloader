@@ -23,3 +23,7 @@ func (i Image) Delete() error {
 
 	return nil
 }
+
+func (i Image) Name() string {
+	return i.name
+}

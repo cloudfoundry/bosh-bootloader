@@ -25,3 +25,7 @@ func (i InstanceGroup) Delete() error {
 
 	return nil
 }
+
+func (i InstanceGroup) Name() string {
+	return i.name
+}

@@ -32,12 +32,14 @@ func (l Leftovers) Delete(filter string) error {
 	}
 
 	for _, d := range deletables {
+		l.logger.Println(fmt.Sprintf("Deleting %s.", d.Name()))
+
 		err := d.Delete()
 
 		if err != nil {
 			l.logger.Println(err.Error())
 		} else {
-			l.logger.Printf("SUCCESS deleting %s\n", d.Name())
+			l.logger.Printf("SUCCESS deleting %s!\n", d.Name())
 		}
 	}
 

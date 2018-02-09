@@ -25,3 +25,7 @@ func (d Disk) Delete() error {
 
 	return nil
 }
+
+func (d Disk) Name() string {
+	return d.name
+}

@@ -50,10 +50,10 @@
   version = "v3.0.0"
 
 [[projects]]
+  branch = "master"
   name = "github.com/genevieve/leftovers"
   packages = ["aws","aws/common","aws/ec2","aws/elb","aws/elbv2","aws/iam","aws/rds","aws/s3","azure","gcp","gcp/common","gcp/compute","gcp/dns"]
-  revision = "e8fec495d9d8e91764c37c326be6342d51ae1de8"
-  version = "v0.10.0"
+  revision = "a6b4a929c6dcc72a294891267098201fdfc43130"
 
 [[projects]]
   branch = "master"

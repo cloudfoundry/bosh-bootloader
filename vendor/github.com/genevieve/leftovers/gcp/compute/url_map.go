@@ -23,3 +23,7 @@ func (u UrlMap) Delete() error {
 
 	return nil
 }
+
+func (u UrlMap) Name() string {
+	return u.name
+}

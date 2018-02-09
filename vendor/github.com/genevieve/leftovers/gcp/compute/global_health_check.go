@@ -23,3 +23,7 @@ func (g GlobalHealthCheck) Delete() error {
 
 	return nil
 }
+
+func (g GlobalHealthCheck) Name() string {
+	return g.name
+}

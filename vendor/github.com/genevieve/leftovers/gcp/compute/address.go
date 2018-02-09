@@ -25,3 +25,7 @@ func (a Address) Delete() error {
 
 	return nil
 }
+
+func (a Address) Name() string {
+	return a.name
+}

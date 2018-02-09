@@ -23,3 +23,7 @@ func (h HttpHealthCheck) Delete() error {
 
 	return nil
 }
+
+func (h HttpHealthCheck) Name() string {
+	return h.name
+}

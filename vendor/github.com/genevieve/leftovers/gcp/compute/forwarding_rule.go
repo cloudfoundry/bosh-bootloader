@@ -25,3 +25,7 @@ func (f ForwardingRule) Delete() error {
 
 	return nil
 }
+
+func (f ForwardingRule) Name() string {
+	return f.name
+}

@@ -25,3 +25,7 @@ func (t TargetPool) Delete() error {
 
 	return nil
 }
+
+func (t TargetPool) Name() string {
+	return t.name
+}

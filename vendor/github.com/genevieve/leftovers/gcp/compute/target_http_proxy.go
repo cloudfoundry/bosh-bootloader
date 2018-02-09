@@ -23,3 +23,7 @@ func (t TargetHttpProxy) Delete() error {
 
 	return nil
 }
+
+func (t TargetHttpProxy) Name() string {
+	return t.name
+}

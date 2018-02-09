@@ -23,3 +23,7 @@ func (n Network) Delete() error {
 
 	return nil
 }
+
+func (n Network) Name() string {
+	return n.name
+}

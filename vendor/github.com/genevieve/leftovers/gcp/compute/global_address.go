@@ -16,9 +16,14 @@ func NewGlobalAddress(client globalAddressesClient, name string) GlobalAddress {
 
 func (g GlobalAddress) Delete() error {
 	err := g.client.DeleteGlobalAddress(g.name)
+
 	if err != nil {
 		return fmt.Errorf("ERROR deleting global address %s: %s", g.name, err)
 	}
 
 	return nil
+}
+
+func (g GlobalAddress) Name() string {
+	return g.name
 }

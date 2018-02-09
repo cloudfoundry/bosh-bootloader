@@ -35,8 +35,6 @@ func (s *state) Wait() error {
 	go func() {
 		defer close(resultCh)
 
-		s.logger.Printf("Deleting..")
-
 		time.Sleep(delay)
 
 		var wait time.Duration
@@ -143,8 +141,8 @@ func (s *state) Wait() error {
 			lastResult = r
 
 		case <-afterTimeout:
-			s.logger.Printf("Timeout after %s", timeout)
-			s.logger.Printf("Starting %s refresh grace period", refreshGracePeriod)
+			s.logger.Printf("Timeout after %s\n", timeout)
+			s.logger.Printf("Starting %s refresh grace period\n", refreshGracePeriod)
 
 			close(cancellationCh)
 			afterTimeout := time.After(refreshGracePeriod)
@@ -163,7 +161,7 @@ func (s *state) Wait() error {
 
 					lastResult = r
 				case <-afterTimeout:
-					s.logger.Printf("Exceeded refresh grace period")
+					s.logger.Printf("Exceeded refresh grace period\n")
 					break forSelect
 				}
 			}

@@ -25,3 +25,7 @@ func (i Instance) Delete() error {
 
 	return nil
 }
+
+func (i Instance) Name() string {
+	return i.name
+}

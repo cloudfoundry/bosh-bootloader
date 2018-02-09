@@ -25,3 +25,7 @@ func (s Subnetwork) Delete() error {
 
 	return nil
 }
+
+func (s Subnetwork) Name() string {
+	return s.name
+}
