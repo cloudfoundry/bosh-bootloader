@@ -43,20 +43,19 @@ func (v Validator) ReadAndValidate(certPath, keyPath, chainPath string) (CertDat
 }
 
 func (v Validator) Read(certPath, keyPath, chainPath string) (CertData, error) {
-	var err error
-	var certBytes []byte
-	var keyBytes []byte
-	var chainBytes []byte
 	validateErrors := multierror.NewMultiError("")
 
-	if certBytes, err = readFile("certificate", "--lb-cert", certPath); err != nil {
+	certBytes, err := readFile("certificate", "--lb-cert", certPath)
+	if err != nil {
 		validateErrors.Add(err)
 	}
 
-	if keyBytes, err = readFile("key", "--lb-key", keyPath); err != nil {
+	keyBytes, err := readFile("key", "--lb-key", keyPath)
+	if err != nil {
 		validateErrors.Add(err)
 	}
 
+	var chainBytes []byte
 	if chainPath != "" {
 		if chainBytes, err = readFile("chain", "--lb-chain", chainPath); err != nil {
 			validateErrors.Add(err)
@@ -75,19 +74,18 @@ func (v Validator) Read(certPath, keyPath, chainPath string) (CertData, error) {
 }
 
 func (v Validator) Validate(cert, key, chain []byte) error {
-	var err error
-	var certificate *x509.Certificate
-	var privateKey *rsa.PrivateKey
 	validateErrors := multierror.NewMultiError("")
 
-	err = validatePEM(cert)
+	err := validatePEM(cert)
 	if err != nil {
 		validateErrors.Add(fmt.Errorf("certificate %s: \"%s\"", err, cert))
 	}
+
 	err = validatePEM(key)
 	if err != nil {
 		validateErrors.Add(fmt.Errorf("key %s: \"%s\"", err, key))
 	}
+
 	if len(chain) > 0 {
 		err = validatePEM(chain)
 		if err != nil {
@@ -99,18 +97,18 @@ func (v Validator) Validate(cert, key, chain []byte) error {
 		return validateErrors
 	}
 
+	var privateKey *rsa.PrivateKey
 	tlsCertificateStruct, err := tls.X509KeyPair(cert, key)
 	if err != nil {
 		validateErrors.Add(err)
 	} else {
 		privateKey = tlsCertificateStruct.PrivateKey.(*rsa.PrivateKey)
 	}
-	if certificate == nil {
-		loadKeyPairError := err
-		certificate, err = parseCertificate(cert, loadKeyPairError)
-		if err != nil {
-			validateErrors.Add(err)
-		}
+
+	loadKeyPairError := err
+	certificate, err := parseCertificate(cert, loadKeyPairError)
+	if err != nil {
+		validateErrors.Add(err)
 	}
 
 	var certPool *x509.CertPool
@@ -155,16 +153,15 @@ func (v Validator) ReadAndValidatePKCS12(certPath, passwordPath string) (CertDat
 }
 
 func (v Validator) ReadPKCS12(certPath, passwordPath string) (CertData, error) {
-	var err error
-	var certBytes []byte
-	var passwordBytes []byte
 	validateErrors := multierror.NewMultiError("")
 
-	if certBytes, err = readFile("certificate", "--lb-cert", certPath); err != nil {
+	certBytes, err := readFile("certificate", "--lb-cert", certPath)
+	if err != nil {
 		validateErrors.Add(err)
 	}
 
-	if passwordBytes, err = readFile("key", "--lb-key", passwordPath); err != nil {
+	passwordBytes, err := readFile("key", "--lb-key", passwordPath)
+	if err != nil {
 		validateErrors.Add(err)
 	}
 
@@ -241,9 +238,7 @@ func validateCertAndKey(certificate *x509.Certificate, privateKey *rsa.PrivateKe
 }
 
 func validateCertAndChain(certificate *x509.Certificate, certPool *x509.CertPool) error {
-	opts := x509.VerifyOptions{
-		Roots: certPool,
-	}
+	opts := x509.VerifyOptions{Roots: certPool}
 
 	if _, err := certificate.Verify(opts); err != nil {
 		return fmt.Errorf("certificate and chain mismatch: %s", err.Error())
