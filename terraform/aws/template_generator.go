@@ -10,6 +10,7 @@ type TemplateGenerator struct{}
 
 type templates struct {
 	base           string
+	iam            string
 	lbSubnet       string
 	cfLB           string
 	cfDNS          string
@@ -25,7 +26,7 @@ func NewTemplateGenerator() TemplateGenerator {
 
 func (tg TemplateGenerator) Generate(state storage.State) string {
 	tmpls := readTemplates()
-	template := strings.Join([]string{tmpls.base, tmpls.vpc}, "\n")
+	template := strings.Join([]string{tmpls.base, tmpls.iam, tmpls.vpc}, "\n")
 
 	switch state.LB.Type {
 	case "concourse":
@@ -44,6 +45,7 @@ func (tg TemplateGenerator) Generate(state storage.State) string {
 func readTemplates() templates {
 	tmpls := templates{}
 	tmpls.base = string(MustAsset("templates/base.tf"))
+	tmpls.iam = string(MustAsset("templates/iam.tf"))
 	tmpls.lbSubnet = string(MustAsset("templates/lb_subnet.tf"))
 	tmpls.concourseLB = string(MustAsset("templates/concourse_lb.tf"))
 	tmpls.sslCertificate = string(MustAsset("templates/ssl_certificate.tf"))

@@ -16,6 +16,7 @@ bbl up
 A patch is a directory with a set of files
 organized in the same hierarchy as the bbl-state dir.
 
+
 ## bosh-lite-gcp
 
 To create a bosh-lite environment on gcp,
@@ -33,7 +34,7 @@ provided here.
 Creates a single routing isolation segment on GCP, including dedicated load balancers and firewall rules.
 
 ```
-cp -r bosh-bootloader/plan-patches/iso-segs-gcp/. my-bbl-state-dir/
+cp -r bosh-bootloader/plan-patches/iso-segs-gcp/. some-env/
 bbl up
 ```
 
@@ -51,3 +52,20 @@ bbl plan --name some-env --lb-type cf --lb-cert /path/to/lb.crt --lb-key /path/t
 cp /path/to/patch-dir/cloud-config/iso-segs-ops.yml cloud-config/
 TF_VAR_isolation_segments="1" bbl up
 ```
+
+## iam-profile-aws
+
+To use an existing iam instance profile for the bosh director on aws, you can:
+
+```
+mkdir some-env && cd some-env
+bbl plan --name some-env
+cp -r bosh-bootloader/plan-patches/iam-profile-aws/. some-env/
+
+# write the name of the iam instance profile in the vars/iam.tfvars file
+
+bbl up
+```
+
+Providing the iam instance profile the bosh director means that the iam policy for
+the user you give to bbl does not require `iam:*` permissions.
