@@ -40,18 +40,18 @@ func (e EnvIDManager) Sync(state storage.State, envID string) (storage.State, er
 		return storage.State{}, err
 	}
 
-	err = e.validateName(envID)
-	if err != nil {
-		return storage.State{}, err
-	}
-
-	if envID != "" {
-		state.EnvID = envID
-	} else {
+	if envID == "" {
 		state.EnvID, err = e.envIDGenerator.Generate()
 		if err != nil {
 			return storage.State{}, err
 		}
+	} else {
+		err = e.validateName(envID)
+		if err != nil {
+			return storage.State{}, err
+		}
+
+		state.EnvID = envID
 	}
 
 	return state, nil
@@ -59,6 +59,7 @@ func (e EnvIDManager) Sync(state storage.State, envID string) (storage.State, er
 
 func (e EnvIDManager) checkFastFail(iaas, envID string) error {
 	var networkName string
+
 	switch iaas {
 	case "aws":
 		networkName = envID + "-vpc"
@@ -67,6 +68,8 @@ func (e EnvIDManager) checkFastFail(iaas, envID string) error {
 	case "gcp":
 		networkName = envID + "-network"
 	case "vsphere":
+		return nil
+	case "openstack":
 		return nil
 	}
 
@@ -83,10 +86,6 @@ func (e EnvIDManager) checkFastFail(iaas, envID string) error {
 }
 
 func (e EnvIDManager) validateName(envID string) error {
-	if envID == "" {
-		return nil
-	}
-
 	matched, err := matchString("^(?:[a-z](?:[-a-z0-9]*[a-z0-9])?)$", envID)
 	if err != nil {
 		return err

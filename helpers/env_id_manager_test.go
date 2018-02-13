@@ -43,86 +43,64 @@ var _ = Describe("EnvIDManager", func() {
 				Expect(state.EnvID).To(Equal("some-other-env-id"))
 			})
 
-			It("fails if a name of a pre-existing environment is passed in", func() {
-				networkClient.CheckExistsCall.Returns.Exists = true
-				_, err := envIDManager.Sync(storage.State{
-					IAAS: "gcp",
-				}, "existing")
-
-				Expect(networkClient.CheckExistsCall.CallCount).To(Equal(1))
-				Expect(networkClient.CheckExistsCall.Receives.Name).To(Equal("existing-network"))
-
-				Expect(err).To(MatchError("It looks like a bbl environment already exists with the name 'existing'. Please provide a different name."))
-			})
-
-			Context("for aws", func() {
-				It("fails if an environment with that name was already created", func() {
+			Context("when a pre-existing environment has that id", func() {
+				BeforeEach(func() {
 					networkClient.CheckExistsCall.Returns.Exists = true
-					_, err := envIDManager.Sync(storage.State{
-						IAAS: "aws",
-					}, "existing-env")
-
-					Expect(networkClient.CheckExistsCall.CallCount).To(Equal(1))
-					Expect(networkClient.CheckExistsCall.Receives.Name).To(Equal("existing-env-vpc"))
-
-					Expect(err).To(MatchError("It looks like a bbl environment already exists with the name 'existing-env'. Please provide a different name."))
 				})
-			})
 
-			Context("for azure", func() {
-				It("fails if an environment with that name was already created", func() {
-					networkClient.CheckExistsCall.Returns.Exists = true
-					_, err := envIDManager.Sync(storage.State{
-						IAAS: "azure",
-					}, "existing-env")
+				Context("gcp", func() {
+					It("fails", func() {
+						_, err := envIDManager.Sync(storage.State{IAAS: "gcp"}, "existing")
 
-					Expect(networkClient.CheckExistsCall.CallCount).To(Equal(1))
-					Expect(networkClient.CheckExistsCall.Receives.Name).To(Equal("existing-env"))
+						Expect(networkClient.CheckExistsCall.CallCount).To(Equal(1))
+						Expect(networkClient.CheckExistsCall.Receives.Name).To(Equal("existing-network"))
 
-					Expect(err).To(MatchError("It looks like a bbl environment already exists with the name 'existing-env'. Please provide a different name."))
+						Expect(err).To(MatchError("It looks like a bbl environment already exists with the name 'existing'. Please provide a different name."))
+					})
+				})
+
+				Context("for aws", func() {
+					It("fails", func() {
+						_, err := envIDManager.Sync(storage.State{IAAS: "aws"}, "existing-env")
+
+						Expect(networkClient.CheckExistsCall.CallCount).To(Equal(1))
+						Expect(networkClient.CheckExistsCall.Receives.Name).To(Equal("existing-env-vpc"))
+
+						Expect(err).To(MatchError("It looks like a bbl environment already exists with the name 'existing-env'. Please provide a different name."))
+					})
+				})
+
+				Context("for azure", func() {
+					It("fails", func() {
+						_, err := envIDManager.Sync(storage.State{IAAS: "azure"}, "existing-env")
+
+						Expect(networkClient.CheckExistsCall.CallCount).To(Equal(1))
+						Expect(networkClient.CheckExistsCall.Receives.Name).To(Equal("existing-env"))
+
+						Expect(err).To(MatchError("It looks like a bbl environment already exists with the name 'existing-env'. Please provide a different name."))
+					})
 				})
 			})
 		})
 
 		Context("for vsphere", func() {
-			Context("for existing environments", func() {
-				var existingState storage.State
-				BeforeEach(func() {
-					existingState = storage.State{
-						IAAS:  "vsphere",
-						EnvID: "existing-environment",
-					}
-				})
+			It("does not call the network client", func() {
+				_, err := envIDManager.Sync(storage.State{
+					IAAS:  "vsphere",
+					EnvID: "existing-environment",
+				}, "specified-env-id")
+				Expect(err).NotTo(HaveOccurred())
 
-				It("uses the env id from the state", func() {
-					state, err := envIDManager.Sync(existingState, "specified-env-id")
-					Expect(err).NotTo(HaveOccurred())
-
-					Expect(envIDGenerator.GenerateCall.CallCount).To(Equal(0))
-					Expect(state.EnvID).To(Equal(existingState.EnvID))
-				})
+				Expect(networkClient.CheckExistsCall.CallCount).To(Equal(0))
 			})
+		})
 
-			Context("for new environments", func() {
-				It("generates an environment name if not supplied", func() {
-					state, err := envIDManager.Sync(storage.State{
-						IAAS: "vsphere",
-					}, "")
-					Expect(err).NotTo(HaveOccurred())
+		Context("for openstack", func() {
+			It("does not call the network client", func() {
+				_, err := envIDManager.Sync(storage.State{IAAS: "openstack"}, "specified-env-id")
+				Expect(err).NotTo(HaveOccurred())
 
-					Expect(envIDGenerator.GenerateCall.CallCount).To(Equal(1))
-					Expect(state.EnvID).To(Equal("some-env-id"))
-				})
-
-				It("uses the environment name passed in", func() {
-					state, err := envIDManager.Sync(storage.State{
-						IAAS: "vsphere",
-					}, "specified-env-id")
-					Expect(err).NotTo(HaveOccurred())
-
-					Expect(envIDGenerator.GenerateCall.CallCount).To(Equal(0))
-					Expect(state.EnvID).To(Equal("specified-env-id"))
-				})
+				Expect(networkClient.CheckExistsCall.CallCount).To(Equal(0))
 			})
 		})
 
@@ -138,18 +116,14 @@ var _ = Describe("EnvIDManager", func() {
 
 		Context("when the name provided is two characters", func() {
 			It("returns the name provided", func() {
-				state, err := envIDManager.Sync(storage.State{
-					IAAS: "gcp",
-				}, "ci")
+				state, err := envIDManager.Sync(storage.State{IAAS: "gcp"}, "ci")
 				Expect(err).NotTo(HaveOccurred())
 				Expect(state.EnvID).To(Equal("ci"))
 			})
 
 			Context("when the name ends with a hyphen", func() {
 				It("returns the name", func() {
-					_, err := envIDManager.Sync(storage.State{
-						IAAS: "gcp",
-					}, "c-")
+					_, err := envIDManager.Sync(storage.State{IAAS: "gcp"}, "c-")
 					Expect(err).To(MatchError("Names must start with a letter and be alphanumeric or hyphenated."))
 				})
 			})
@@ -162,10 +136,7 @@ var _ = Describe("EnvIDManager", func() {
 				})
 
 				It("returns an error", func() {
-					_, err := envIDManager.Sync(storage.State{
-						IAAS: "gcp",
-					}, "existing")
-
+					_, err := envIDManager.Sync(storage.State{IAAS: "gcp"}, "existing")
 					Expect(err).To(MatchError("failed to get network list"))
 				})
 			})
@@ -173,7 +144,6 @@ var _ = Describe("EnvIDManager", func() {
 			Context("when an invalid name is provided", func() {
 				It("returns an error with a helpful message", func() {
 					_, err := envIDManager.Sync(storage.State{}, "some_bad_name")
-
 					Expect(err).To(MatchError("Names must start with a letter and be alphanumeric or hyphenated."))
 				})
 			})
@@ -185,7 +155,6 @@ var _ = Describe("EnvIDManager", func() {
 
 				It("returns an error", func() {
 					_, err := envIDManager.Sync(storage.State{}, "")
-
 					Expect(err).To(MatchError("failed to generate"))
 				})
 			})
@@ -199,7 +168,6 @@ var _ = Describe("EnvIDManager", func() {
 
 				It("returns an error", func() {
 					_, err := envIDManager.Sync(storage.State{}, "some-name")
-
 					Expect(err).To(MatchError("failed to match string"))
 
 					helpers.ResetMatchString()
