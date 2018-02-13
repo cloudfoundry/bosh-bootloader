@@ -4,8 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"io/ioutil"
-	"os"
-	"path/filepath"
 
 	"golang.org/x/oauth2/google"
 
@@ -42,10 +40,9 @@ func NewGCPLBHelper(config acceptance.Config) gcpLBHelper {
 	Expect(err).NotTo(HaveOccurred())
 
 	return gcpLBHelper{
-		service:               service,
-		projectID:             p.ProjectID,
-		region:                config.GCPRegion,
-		serviceAccountKeyPath: config.GCPServiceAccountKey,
+		service:   service,
+		projectID: p.ProjectID,
+		region:    config.GCPRegion,
 	}
 }
 
@@ -54,16 +51,11 @@ func (g gcpLBHelper) GetLBArgs() []string {
 	Expect(err).NotTo(HaveOccurred())
 	keyPath, err := testhelpers.WriteContentsToTempFile(testhelpers.BBL_KEY)
 	Expect(err).NotTo(HaveOccurred())
-	workingDir, err := os.Getwd()
-	Expect(err).NotTo(HaveOccurred())
-	serviceAccountKeyPath, err := filepath.Rel(workingDir, g.serviceAccountKeyPath)
-	Expect(err).NotTo(HaveOccurred())
 
 	return []string{
 		"--lb-type", "cf",
 		"--lb-cert", certPath,
 		"--lb-key", keyPath,
-		"--gcp-service-account-key", serviceAccountKeyPath,
 	}
 }
 
