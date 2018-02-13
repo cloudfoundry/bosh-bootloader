@@ -111,6 +111,7 @@ func (p PrintEnv) Execute(args []string, state storage.State) error {
 
 	p.logger.Println(fmt.Sprintf("export JUMPBOX_PRIVATE_KEY=%s", privateKeyPath))
 	p.logger.Println(fmt.Sprintf("export BOSH_ALL_PROXY=%s", p.allProxyGetter.BoshAllProxy(state.Jumpbox.URL, privateKeyPath)))
+	p.logger.Println(fmt.Sprintf("export CREDHUB_PROXY=%s", p.allProxyGetter.BoshAllProxy(state.Jumpbox.URL, privateKeyPath)))
 
 	return nil
 }

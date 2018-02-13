@@ -84,6 +84,7 @@ var _ = Describe("PrintEnv", func() {
 			Expect(logger.PrintlnCall.Messages).To(ContainElement("export CREDHUB_CA_CERT='some-credhub-certs'"))
 			Expect(logger.PrintlnCall.Messages).To(ContainElement("export CREDHUB_CLIENT=credhub-admin"))
 			Expect(logger.PrintlnCall.Messages).To(ContainElement("export CREDHUB_SECRET=some-credhub-password"))
+			Expect(logger.PrintlnCall.Messages).To(ContainElement("export CREDHUB_PROXY=ipfs://some-domain-with?private_key=the-key-path"))
 
 			Expect(logger.PrintlnCall.Messages).To(ContainElement(`export JUMPBOX_PRIVATE_KEY=the-key-path`))
 			Expect(logger.PrintlnCall.Messages).To(ContainElement(`export BOSH_ALL_PROXY=ipfs://some-domain-with?private_key=the-key-path`))
@@ -106,8 +107,6 @@ var _ = Describe("PrintEnv", func() {
 
 				Expect(logger.PrintlnCall.Messages).To(ContainElement("export BOSH_ENVIRONMENT=https://some-external-ip:25555"))
 				Expect(logger.PrintlnCall.Messages).NotTo(ContainElement("export BOSH_CLIENT=some-director-username"))
-				Expect(logger.PrintlnCall.Messages).NotTo(ContainElement("export BOSH_CLIENT_SECRET=some-director-password"))
-				Expect(logger.PrintlnCall.Messages).NotTo(ContainElement("export BOSH_CA_CERT='some-director-ca-cert'"))
 			})
 		})
 
@@ -118,9 +117,7 @@ var _ = Describe("PrintEnv", func() {
 				})
 
 				It("returns an error", func() {
-					err := printEnv.Execute([]string{}, storage.State{
-						NoDirector: true,
-					})
+					err := printEnv.Execute([]string{}, storage.State{NoDirector: true})
 					Expect(err).To(MatchError("failed to get terraform output"))
 				})
 			})
