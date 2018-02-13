@@ -14,18 +14,16 @@ type TerraformCmd struct {
 		}
 		Initialized bool
 		Receives    struct {
-			Stdout           io.Writer
-			WorkingDirectory string
-			Args             []string
-			Debug            bool
+			Stdout io.Writer
+			Args   []string
+			Debug  bool
 		}
 	}
 }
 
-func (t *TerraformCmd) Run(stdout io.Writer, workingDirectory string, args []string, debug bool) error {
+func (t *TerraformCmd) Run(stdout io.Writer, args []string, debug bool) error {
 	t.RunCall.CallCount++
 	t.RunCall.Receives.Stdout = stdout
-	t.RunCall.Receives.WorkingDirectory = workingDirectory
 	t.RunCall.Receives.Args = args
 	t.RunCall.Receives.Debug = debug
 

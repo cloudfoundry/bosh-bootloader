@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"io/ioutil"
+	"os"
+	"path/filepath"
 
 	"golang.org/x/oauth2/google"
 
@@ -15,9 +17,10 @@ import (
 )
 
 type gcpLBHelper struct {
-	service   *compute.Service
-	projectID string
-	region    string
+	service               *compute.Service
+	projectID             string
+	region                string
+	serviceAccountKeyPath string
 }
 
 func NewGCPLBHelper(config acceptance.Config) gcpLBHelper {
@@ -39,9 +42,10 @@ func NewGCPLBHelper(config acceptance.Config) gcpLBHelper {
 	Expect(err).NotTo(HaveOccurred())
 
 	return gcpLBHelper{
-		service:   service,
-		projectID: p.ProjectID,
-		region:    config.GCPRegion,
+		service:               service,
+		projectID:             p.ProjectID,
+		region:                config.GCPRegion,
+		serviceAccountKeyPath: config.GCPServiceAccountKey,
 	}
 }
 
@@ -50,11 +54,16 @@ func (g gcpLBHelper) GetLBArgs() []string {
 	Expect(err).NotTo(HaveOccurred())
 	keyPath, err := testhelpers.WriteContentsToTempFile(testhelpers.BBL_KEY)
 	Expect(err).NotTo(HaveOccurred())
+	workingDir, err := os.Getwd()
+	Expect(err).NotTo(HaveOccurred())
+	serviceAccountKeyPath, err := filepath.Rel(workingDir, g.serviceAccountKeyPath)
+	Expect(err).NotTo(HaveOccurred())
 
 	return []string{
 		"--lb-type", "cf",
 		"--lb-cert", certPath,
 		"--lb-key", keyPath,
+		"--gcp-service-account-key", serviceAccountKeyPath,
 	}
 }
 
@@ -91,5 +100,4 @@ func (g gcpLBHelper) VerifyBblLBOutput(stdout string) {
 	Expect(stdout).To(MatchRegexp("CF SSH Proxy LB:.*"))
 	Expect(stdout).To(MatchRegexp("CF TCP Router LB:.*"))
 	Expect(stdout).To(MatchRegexp("CF WebSocket LB:.*"))
-	Expect(stdout).To(MatchRegexp("CF Credhub LB:.*"))
 }

@@ -17,9 +17,8 @@ func NewCmd(stderr, outputBuffer io.Writer) Cmd {
 	}
 }
 
-func (c Cmd) Run(stdout io.Writer, workingDirectory string, args []string, debug bool) error {
+func (c Cmd) Run(stdout io.Writer, args []string, debug bool) error {
 	command := exec.Command("terraform", args...)
-	command.Dir = workingDirectory
 
 	if debug {
 		command.Stdout = io.MultiWriter(stdout, c.outputBuffer)

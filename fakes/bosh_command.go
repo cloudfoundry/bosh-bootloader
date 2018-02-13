@@ -2,7 +2,6 @@ package fakes
 
 import (
 	"io"
-	"sync"
 )
 
 type BOSHCommand struct {
@@ -14,12 +13,10 @@ type BOSHCommand struct {
 		}
 	}
 
-	RunStub        func(stdout io.Writer, workingDirectory string, args []string) error
-	runMutex       sync.RWMutex
+	RunStub        func(stdout io.Writer, args []string) error
 	runArgsForCall []struct {
-		stdout           io.Writer
-		workingDirectory string
-		args             []string
+		stdout io.Writer
+		args   []string
 	}
 	runReturns struct {
 		result1 error
@@ -27,8 +24,7 @@ type BOSHCommand struct {
 	runReturnsOnCall map[int]struct {
 		result1 error
 	}
-	invocations      map[string][][]interface{}
-	invocationsMutex sync.RWMutex
+	invocations map[string][][]interface{}
 }
 
 func (fake *BOSHCommand) GetBOSHPath() (string, error) {
@@ -37,24 +33,21 @@ func (fake *BOSHCommand) GetBOSHPath() (string, error) {
 	return fake.GetBOSHPathCall.Returns.Path, fake.GetBOSHPathCall.Returns.Error
 }
 
-func (fake *BOSHCommand) Run(stdout io.Writer, workingDirectory string, args []string) error {
+func (fake *BOSHCommand) Run(stdout io.Writer, args []string) error {
 	var argsCopy []string
 	if args != nil {
 		argsCopy = make([]string, len(args))
 		copy(argsCopy, args)
 	}
-	fake.runMutex.Lock()
 	ret, specificReturn := fake.runReturnsOnCall[len(fake.runArgsForCall)]
 	fake.runArgsForCall = append(fake.runArgsForCall, struct {
-		stdout           io.Writer
-		workingDirectory string
-		args             []string
-	}{stdout, workingDirectory, argsCopy})
-	fake.recordInvocation("Run", []interface{}{stdout, workingDirectory, argsCopy})
-	fake.runMutex.Unlock()
+		stdout io.Writer
+		args   []string
+	}{stdout, argsCopy})
+	fake.recordInvocation("Run", []interface{}{stdout, argsCopy})
 
 	if fake.RunStub != nil {
-		return fake.RunStub(stdout, workingDirectory, args)
+		return fake.RunStub(stdout, args)
 	}
 	if specificReturn {
 		return ret.result1
@@ -63,15 +56,11 @@ func (fake *BOSHCommand) Run(stdout io.Writer, workingDirectory string, args []s
 }
 
 func (fake *BOSHCommand) RunCallCount() int {
-	fake.runMutex.RLock()
-	defer fake.runMutex.RUnlock()
 	return len(fake.runArgsForCall)
 }
 
-func (fake *BOSHCommand) RunArgsForCall(i int) (io.Writer, string, []string) {
-	fake.runMutex.RLock()
-	defer fake.runMutex.RUnlock()
-	return fake.runArgsForCall[i].stdout, fake.runArgsForCall[i].workingDirectory, fake.runArgsForCall[i].args
+func (fake *BOSHCommand) RunArgsForCall(i int) (io.Writer, []string) {
+	return fake.runArgsForCall[i].stdout, fake.runArgsForCall[i].args
 }
 
 func (fake *BOSHCommand) RunReturns(result1 error) {
@@ -94,16 +83,10 @@ func (fake *BOSHCommand) RunReturnsOnCall(i int, result1 error) {
 }
 
 func (fake *BOSHCommand) Invocations() map[string][][]interface{} {
-	fake.invocationsMutex.RLock()
-	defer fake.invocationsMutex.RUnlock()
-	fake.runMutex.RLock()
-	defer fake.runMutex.RUnlock()
 	return fake.invocations
 }
 
 func (fake *BOSHCommand) recordInvocation(key string, args []interface{}) {
-	fake.invocationsMutex.Lock()
-	defer fake.invocationsMutex.Unlock()
 	if fake.invocations == nil {
 		fake.invocations = map[string][][]interface{}{}
 	}

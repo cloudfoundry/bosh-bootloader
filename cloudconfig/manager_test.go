@@ -56,7 +56,7 @@ var _ = Describe("Manager", func() {
 		varsDir = "some-vars-dir"
 		stateStore.GetVarsDirCall.Returns.Directory = varsDir
 
-		cmd.RunStub = func(stdout io.Writer, workingDirectory string, args []string) error {
+		cmd.RunStub = func(stdout io.Writer, args []string) error {
 			stdout.Write([]byte("some-cloud-config"))
 			return nil
 		}
@@ -306,8 +306,7 @@ var _ = Describe("Manager", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(cmd.RunCallCount()).To(Equal(1))
-			_, workingDirectory, args := cmd.RunArgsForCall(0)
-			Expect(workingDirectory).To(Equal(cloudConfigDir))
+			_, args := cmd.RunArgsForCall(0)
 			Expect(args).To(Equal([]string{
 				"interpolate", fmt.Sprintf("%s%ccloud-config.yml", cloudConfigDir, os.PathSeparator),
 				"--vars-file", fmt.Sprintf("%s%ccloud-config-vars.yml", varsDir, os.PathSeparator),

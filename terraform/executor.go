@@ -31,7 +31,7 @@ type tfOutput struct {
 }
 
 type terraformCmd interface {
-	Run(stdout io.Writer, workingDirectory string, args []string, debug bool) error
+	Run(stdout io.Writer, args []string, debug bool) error
 }
 
 type stateStore interface {
@@ -111,18 +111,8 @@ func (e Executor) runTFCommand(args []string) error {
 		return fmt.Errorf("Get vars dir: %s", err)
 	}
 	tfStatePath := filepath.Join(varsDir, "terraform.tfstate")
-
-	terraformDir, err := e.stateStore.GetTerraformDir()
-	if err != nil {
-		return fmt.Errorf("Get terraform dir: %s", err)
-	}
-	relativeStatePath, err := filepath.Rel(terraformDir, tfStatePath)
-	if err != nil {
-		return fmt.Errorf("Get relative terraform state path: %s", err) //not tested
-	}
-
 	args = append(args,
-		"-state", relativeStatePath,
+		"-state", tfStatePath,
 	)
 
 	varsFiles, err := e.fs.ReadDir(varsDir)
@@ -131,17 +121,20 @@ func (e Executor) runTFCommand(args []string) error {
 	}
 	for _, file := range varsFiles {
 		if strings.HasSuffix(file.Name(), ".tfvars") {
-			relativeFilePath, err := filepath.Rel(terraformDir, filepath.Join(varsDir, file.Name()))
-			if err != nil {
-				return fmt.Errorf("Get relative terraform vars path: %s", err) //not tested
-			}
 			args = append(args,
-				"-var-file", relativeFilePath,
+				"-var-file", filepath.Join(varsDir, file.Name()),
 			)
 		}
 	}
 
-	err = e.cmd.Run(os.Stdout, terraformDir, args, e.debug)
+	terraformDir, err := e.stateStore.GetTerraformDir()
+	if err != nil {
+		return fmt.Errorf("Get terraform dir: %s", err)
+	}
+	// TODO: test this after things pass-ish and we fix cmd
+	args = append(args, terraformDir)
+
+	err = e.cmd.Run(os.Stdout, args, e.debug)
 	if err != nil {
 		if e.debug {
 			return err
@@ -159,7 +152,7 @@ func (e Executor) Init() error {
 		return fmt.Errorf("Get terraform dir: %s", err)
 	}
 
-	err = e.cmd.Run(os.Stdout, terraformDir, []string{"init"}, e.debug)
+	err = e.cmd.Run(os.Stdout, []string{"init", terraformDir}, e.debug)
 	if err != nil {
 		return fmt.Errorf("Run terraform init: %s", err)
 	}
@@ -187,7 +180,7 @@ func (e Executor) Destroy(credentials map[string]string) error {
 
 func (e Executor) Version() (string, error) {
 	buffer := bytes.NewBuffer([]byte{})
-	err := e.cmd.Run(buffer, "/tmp", []string{"version"}, true)
+	err := e.cmd.Run(buffer, []string{"version"}, true)
 	if err != nil {
 		return "", err
 	}
@@ -213,14 +206,14 @@ func (e Executor) Output(outputName string) (string, error) {
 		return "", fmt.Errorf("Get vars dir: %s", err)
 	}
 
-	err = e.cmd.Run(os.Stdout, terraformDir, []string{"init"}, e.debug)
+	err = e.cmd.Run(os.Stdout, []string{"init", terraformDir}, e.debug)
 	if err != nil {
 		return "", fmt.Errorf("Run terraform init in terraform dir: %s", err)
 	}
 
-	args := []string{"output", outputName, "-state", filepath.Join(varsDir, "terraform.tfstate")}
+	args := []string{"output", outputName, "-state", filepath.Join(varsDir, "terraform.tfstate"), terraformDir}
 	buffer := bytes.NewBuffer([]byte{})
-	err = e.cmd.Run(buffer, terraformDir, args, true)
+	err = e.cmd.Run(buffer, args, true)
 	if err != nil {
 		return "", fmt.Errorf("Run terraform output -state: %s", err)
 	}
@@ -234,13 +227,13 @@ func (e Executor) Outputs() (map[string]interface{}, error) {
 		return map[string]interface{}{}, fmt.Errorf("Get vars dir: %s", err)
 	}
 
-	err = e.cmd.Run(os.Stdout, varsDir, []string{"init"}, false)
+	err = e.cmd.Run(os.Stdout, []string{"init", varsDir}, false)
 	if err != nil {
 		return map[string]interface{}{}, fmt.Errorf("Run terraform init in vars dir: %s", err)
 	}
 
 	buffer := bytes.NewBuffer([]byte{})
-	err = e.cmd.Run(buffer, varsDir, []string{"output", "--json"}, true)
+	err = e.cmd.Run(buffer, []string{"output", "--json", "-state", filepath.Join(varsDir, "terraform.tfstate")}, true)
 	if err != nil {
 		return map[string]interface{}{}, fmt.Errorf("Run terraform output --json in vars dir: %s", err)
 	}
