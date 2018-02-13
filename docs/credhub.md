@@ -7,8 +7,8 @@ eval "$(bbl print-env)"
 ```
 ## Make an SSH tunnel to the jumpbox
 ```
-$ bbl ssh-key > /tmp/jumpbox.key
-$ chmod 0700 /tmp/jumpbox.key
+bbl ssh-key > /tmp/jumpbox.key
+chmod 0700 /tmp/jumpbox.key
 ssh -4 -D 5000 -fNC jumpbox@`bbl jumpbox-address` -i /tmp/jumpbox.key
 ```
 ## Log in
