@@ -344,7 +344,7 @@ func (c Config) updateVSphereState(globalFlags globalFlags, state storage.State)
 }
 
 func supportedIAAS(iaas string) bool {
-	supported := []string{"aws", "azure", "gcp", "vsphere"}
+	supported := []string{"aws", "azure", "gcp", "vsphere", "openstack"}
 	for _, i := range supported {
 		if iaas == i {
 			return true
@@ -355,7 +355,7 @@ func supportedIAAS(iaas string) bool {
 
 func ValidateIAAS(state storage.State) error {
 	if !supportedIAAS(state.IAAS) {
-		return errors.New("\n\n--iaas [gcp, aws, azure] must be provided or BBL_IAAS must be set\n")
+		return errors.New("\n\n--iaas [gcp, aws, azure, vsphere, openstack] must be provided or BBL_IAAS must be set\n")
 	}
 	if state.IAAS == "aws" {
 		err := validateAWS(state.AWS)

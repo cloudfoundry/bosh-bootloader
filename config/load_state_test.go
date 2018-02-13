@@ -1171,12 +1171,12 @@ var _ = Describe("LoadState", func() {
 			},
 			Entry("when IAAS is missing",
 				storage.State{},
-				"--iaas [gcp, aws, azure] must be provided or BBL_IAAS must be set"),
+				"--iaas [gcp, aws, azure, vsphere, openstack] must be provided or BBL_IAAS must be set"),
 			Entry("when IAAS is unsupported",
 				storage.State{
 					IAAS: "not-a-real-iaas",
 				},
-				"--iaas [gcp, aws, azure] must be provided or BBL_IAAS must be set"),
+				"--iaas [gcp, aws, azure, vsphere, openstack] must be provided or BBL_IAAS must be set"),
 			Entry("when AWS access key is missing",
 				storage.State{
 					IAAS: "aws",
