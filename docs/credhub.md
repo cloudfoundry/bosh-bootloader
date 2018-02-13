@@ -1,25 +1,12 @@
 # Accessing the BOSH director credhub
 
-## Using CREDHUB_PROXY
+## Using http_proxy
 
 ### requirements
 
-- `bbl v6.2`
-- `credhub-cli v1.6.0`
+- `bbl pre-v6.2`
+- `credhub-cli < v1.6.0`
 - a bbl environment
-
-### steps
-
-```
-eval "$(bbl print-env)"
-
-credhub find -n 'cf_admin_password'
-```
-
-
-## Using http_proxy
-
-Using `credhub-cli < v1.6.0`.
 
 ### steps
 
@@ -46,3 +33,22 @@ Using `credhub-cli < v1.6.0`.
     ```
     http_proxy=socks5://localhost:5000 credhub find -n 'cf_admin_password'
     ```
+
+
+## Using CREDHUB_PROXY
+
+### requirements
+
+- `bbl v6.2`
+- `credhub-cli v1.6.0`
+- a bbl environment
+
+### steps
+
+```
+eval "$(bbl print-env)"
+
+credhub find -n 'cf_admin_password'
+```
+
+
