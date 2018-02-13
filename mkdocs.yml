@@ -1,0 +1,8 @@
+site_name: BBL
+theme:
+  name: 'material'
+  custom_dir: 'docs/theme'
+  logo: 'theme/bosh.svg'
+  palette:
+    primary: 'white'
+    accent: 'indigo'
