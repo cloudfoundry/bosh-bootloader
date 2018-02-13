@@ -397,6 +397,7 @@ func NeedsIAASCreds(command string) bool {
 		"down":              struct{}{},
 		"plan":              struct{}{},
 		"destroy":           struct{}{},
+		"leftovers":         struct{}{},
 		"cleanup-leftovers": struct{}{},
 		"rotate":            struct{}{},
 	}[command]
