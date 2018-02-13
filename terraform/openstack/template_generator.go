@@ -15,11 +15,13 @@ func NewTemplateGenerator() TemplateGenerator {
 func (t TemplateGenerator) Generate(state storage.State) string {
 	return fmt.Sprintf(`
 variable "internal_cidr" {}
+variable "internal_gw" {}
+variable "director_ip" {}
 variable "external_ip" {}
 variable "auth_url" {}
 variable "az" {}
 variable "default_key_name" {}
-variable "default_security_groups" {}
+variable "default_security_group" {}
 variable "net_id" {}
 variable "openstack_project" {}
 variable "openstack_domain" {}
@@ -27,7 +29,10 @@ variable "region" {}
 variable "env_id" {}
 
 output "internal_cidr" { value = "${var.internal_cidr}" }
+output "internal_gw" { value = "${var.internal_gw}" }
 output "external_ip" { value = "${var.external_ip}" }
+output "jumpbox__internal_ip" { value = "${var.external_ip}" }
+output "director__internal_ip" { value = "${var.director_ip}" }
 output "auth_url" { value = "${var.auth_url}" }
 output "az" { value = "${var.az}" }
 output "default_key_name" { value = "${var.default_key_name}" }

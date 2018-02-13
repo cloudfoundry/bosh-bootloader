@@ -11,11 +11,12 @@ import (
 var _ = Describe("bbl", func() {
 	Context("when passed an unsupported --iaas flag", func() {
 		It("prints out an error", func() {
-			cmd := exec.Command(pathToBBL, "up", "--iaas", "openstack")
+			cmd := exec.Command(pathToBBL, "up", "--iaas", "banana")
 			session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
 			Expect(err).NotTo(HaveOccurred())
 			Eventually(session).Should(gexec.Exit(1))
-			Expect(string(session.Err.Contents())).To(ContainSubstring("--iaas [gcp, aws, azure] must be provided or BBL_IAAS must be set"))
+
+			Expect(string(session.Err.Contents())).To(ContainSubstring("--iaas [gcp, aws, azure, vsphere, openstack] must be provided or BBL_IAAS must be set"))
 			Expect(string(session.Err.Contents())).NotTo(ContainSubstring("panic"))
 		})
 	})

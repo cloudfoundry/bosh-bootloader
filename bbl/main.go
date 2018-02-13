@@ -25,10 +25,13 @@ import (
 	awscloudconfig "github.com/cloudfoundry/bosh-bootloader/cloudconfig/aws"
 	azurecloudconfig "github.com/cloudfoundry/bosh-bootloader/cloudconfig/azure"
 	gcpcloudconfig "github.com/cloudfoundry/bosh-bootloader/cloudconfig/gcp"
+	openstackcloudconfig "github.com/cloudfoundry/bosh-bootloader/cloudconfig/openstack"
 	vspherecloudconfig "github.com/cloudfoundry/bosh-bootloader/cloudconfig/vsphere"
+
 	awsterraform "github.com/cloudfoundry/bosh-bootloader/terraform/aws"
 	azureterraform "github.com/cloudfoundry/bosh-bootloader/terraform/azure"
 	gcpterraform "github.com/cloudfoundry/bosh-bootloader/terraform/gcp"
+	openstackterraform "github.com/cloudfoundry/bosh-bootloader/terraform/openstack"
 	vsphereterraform "github.com/cloudfoundry/bosh-bootloader/terraform/vsphere"
 
 	awsleftovers "github.com/genevieve/leftovers/aws"
@@ -201,6 +204,14 @@ func main() {
 		terraformManager = terraform.NewManager(terraformExecutor, templateGenerator, inputGenerator, terraformOutputBuffer, logger)
 
 		cloudConfigOpsGenerator = vspherecloudconfig.NewOpsGenerator(terraformManager)
+
+	case "openstack":
+		templateGenerator = openstackterraform.NewTemplateGenerator()
+		inputGenerator = openstackterraform.NewInputGenerator()
+
+		terraformManager = terraform.NewManager(terraformExecutor, templateGenerator, inputGenerator, terraformOutputBuffer, logger)
+
+		cloudConfigOpsGenerator = openstackcloudconfig.NewOpsGenerator(terraformManager)
 	}
 
 	cloudConfigManager := cloudconfig.NewManager(logger, boshCommand, stateStore, cloudConfigOpsGenerator, boshClientProvider, terraformManager, sshKeyGetter, afs)
