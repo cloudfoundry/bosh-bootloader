@@ -16,6 +16,8 @@ resource "aws_iam_role" "bosh" {
   name = "${var.env_id}_bosh_role"
   path = "/"
 
+  count = "${1 - local.iamProfileProvided}"
+
   lifecycle {
     create_before_destroy = true
   }
@@ -40,6 +42,8 @@ EOF
 resource "aws_iam_policy" "bosh" {
   name = "${var.env_id}_bosh_policy"
   path = "/"
+
+  count = "${1 - local.iamProfileProvided}"
 
   policy = <<EOF
 {
@@ -96,6 +100,8 @@ EOF
 resource "aws_iam_role_policy_attachment" "bosh" {
   role       = "${var.env_id}_bosh_role"
   policy_arn = "${aws_iam_policy.bosh.arn}"
+
+  count = "${1 - local.iamProfileProvided}"
 }
 
 resource "aws_iam_instance_profile" "bosh" {
