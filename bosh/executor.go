@@ -50,12 +50,9 @@ var (
 	boshDeploymentRepo    = "vendor/github.com/cloudfoundry/bosh-deployment"
 )
 
-func NewExecutor(
-	cmd command,
-	fs executorFs,
+func NewExecutor(cmd command, fs executorFs,
 	unmarshalJSON func([]byte, interface{}) error,
-	marshalJSON func(interface{}) ([]byte, error),
-) Executor {
+	marshalJSON func(interface{}) ([]byte, error)) Executor {
 	return Executor{
 		command:       cmd,
 		fs:            fs,
@@ -137,6 +134,11 @@ func (e Executor) PlanJumpbox(input DirInput, deploymentDir, iaas string) error 
 		boshArgs = append(boshArgs,
 			"-v", `vcenter_user="${BBL_VSPHERE_VCENTER_USER}"`,
 			"-v", `vcenter_password="${BBL_VSPHERE_VCENTER_PASSWORD}"`,
+		)
+	case "openstack":
+		boshArgs = append(boshArgs,
+			"-v", `openstack_username="${BBL_OPENSTACK_USERNAME}"`,
+			"-v", `openstack_password="${BBL_OPENSTACK_PASSWORD}"`,
 		)
 	}
 
@@ -270,6 +272,11 @@ func (e Executor) PlanDirector(input DirInput, deploymentDir, iaas string) error
 			"-v", `vcenter_user="${BBL_VSPHERE_VCENTER_USER}"`,
 			"-v", `vcenter_password="${BBL_VSPHERE_VCENTER_PASSWORD}"`,
 		)
+	case "openstack":
+		boshArgs = append(boshArgs,
+			"-v", `openstack_username="${BBL_OPENSTACK_USERNAME}"`,
+			"-v", `openstack_password="${BBL_OPENSTACK_PASSWORD}"`,
+		)
 	}
 
 	createEnvCmd := []byte(formatScript(boshPath, input.StateDir, "create-env", boshArgs))
@@ -333,6 +340,9 @@ func (e Executor) CreateEnv(input DirInput, state storage.State) (string, error)
 	case "vsphere":
 		os.Setenv("BBL_VSPHERE_VCENTER_USER", state.VSphere.VCenterUser)
 		os.Setenv("BBL_VSPHERE_VCENTER_PASSWORD", state.VSphere.VCenterPassword)
+	case "openstack":
+		os.Setenv("BBL_OPENSTACK_USERNAME", state.OpenStack.Username)
+		os.Setenv("BBL_OPENSTACK_PASSWORD", state.OpenStack.Password)
 	}
 
 	cmd := exec.Command(createEnvScript) // the way this is tied to the filesystem makes for weird tests

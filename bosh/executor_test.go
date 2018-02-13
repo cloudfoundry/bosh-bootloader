@@ -35,7 +35,6 @@ var _ = Describe("Executor", func() {
 
 			executor bosh.Executor
 			dirInput bosh.DirInput
-			state    storage.State
 		)
 
 		BeforeEach(func() {
@@ -64,10 +63,6 @@ var _ = Describe("Executor", func() {
 			dirInput = bosh.DirInput{
 				VarsDir:  varsDir,
 				StateDir: stateDir,
-			}
-
-			state = storage.State{
-				IAAS: "aws",
 			}
 
 			executor = bosh.NewExecutor(cmd, fs, json.Unmarshal, json.Marshal)
@@ -258,7 +253,6 @@ var _ = Describe("Executor", func() {
 
 			executor bosh.Executor
 			dirInput bosh.DirInput
-			state    storage.State
 		)
 
 		BeforeEach(func() {
@@ -286,10 +280,6 @@ var _ = Describe("Executor", func() {
 				StateDir: stateDir,
 			}
 
-			state = storage.State{
-				IAAS: "aws",
-			}
-
 			executor = bosh.NewExecutor(cmd, fs, json.Unmarshal, json.Marshal)
 		})
 
@@ -313,10 +303,8 @@ var _ = Describe("Executor", func() {
 		})
 
 		Context("aws", func() {
-			var expectedArgs []string
-
-			BeforeEach(func() {
-				expectedArgs = []string{
+			It("writes create-director.sh and delete-director.sh", func() {
+				expectedArgs := []string{
 					filepath.Join(relativeDeploymentDir, "bosh.yml"),
 					"--state", filepath.Join(relativeVarsDir, "bosh-state.json"),
 					"--vars-store", filepath.Join(relativeVarsDir, "director-vars-store.yml"),
@@ -331,9 +319,7 @@ var _ = Describe("Executor", func() {
 					"-v", `access_key_id="${BBL_AWS_ACCESS_KEY_ID}"`,
 					"-v", `secret_access_key="${BBL_AWS_SECRET_ACCESS_KEY}"`,
 				}
-			})
 
-			It("writes create-director.sh and delete-director.sh", func() {
 				behavesLikePlan(expectedArgs, cmd, fs, executor, dirInput, deploymentDir, "aws", stateDir)
 			})
 
@@ -365,10 +351,8 @@ var _ = Describe("Executor", func() {
 		})
 
 		Context("gcp", func() {
-			var expectedArgs []string
-
-			BeforeEach(func() {
-				expectedArgs = []string{
+			It("writes create-director.sh and delete-director.sh", func() {
+				expectedArgs := []string{
 					filepath.Join(relativeDeploymentDir, "bosh.yml"),
 					"--state", filepath.Join(relativeVarsDir, "bosh-state.json"),
 					"--vars-store", filepath.Join(relativeVarsDir, "director-vars-store.yml"),
@@ -382,9 +366,7 @@ var _ = Describe("Executor", func() {
 					"-v", `project_id="${BBL_GCP_PROJECT_ID}"`,
 					"-v", `zone="${BBL_GCP_ZONE}"`,
 				}
-			})
 
-			It("writes create-director.sh and delete-director.sh", func() {
 				behavesLikePlan(expectedArgs, cmd, fs, executor, dirInput, deploymentDir, "gcp", stateDir)
 			})
 
@@ -405,10 +387,8 @@ var _ = Describe("Executor", func() {
 		})
 
 		Context("azure", func() {
-			var expectedArgs []string
-
-			BeforeEach(func() {
-				expectedArgs = []string{
+			It("writes create-director.sh and delete-director.sh", func() {
+				expectedArgs := []string{
 					filepath.Join(relativeDeploymentDir, "bosh.yml"),
 					"--state", filepath.Join(relativeVarsDir, "bosh-state.json"),
 					"--vars-store", filepath.Join(relativeVarsDir, "director-vars-store.yml"),
@@ -422,18 +402,14 @@ var _ = Describe("Executor", func() {
 					"-v", `client_secret="${BBL_AZURE_CLIENT_SECRET}"`,
 					"-v", `tenant_id="${BBL_AZURE_TENANT_ID}"`,
 				}
-			})
 
-			It("writes create-director.sh and delete-director.sh", func() {
 				behavesLikePlan(expectedArgs, cmd, fs, executor, dirInput, deploymentDir, "azure", stateDir)
 			})
 		})
 
 		Context("vsphere", func() {
-			var expectedArgs []string
-
-			BeforeEach(func() {
-				expectedArgs = []string{
+			It("writes create-director.sh and delete-director.sh", func() {
+				expectedArgs := []string{
 					filepath.Join(relativeDeploymentDir, "bosh.yml"),
 					"--state", filepath.Join(relativeVarsDir, "bosh-state.json"),
 					"--vars-store", filepath.Join(relativeVarsDir, "director-vars-store.yml"),
@@ -446,10 +422,27 @@ var _ = Describe("Executor", func() {
 					"-v", `vcenter_user="${BBL_VSPHERE_VCENTER_USER}"`,
 					"-v", `vcenter_password="${BBL_VSPHERE_VCENTER_PASSWORD}"`,
 				}
-			})
 
-			It("writes create-director.sh and delete-director.sh", func() {
 				behavesLikePlan(expectedArgs, cmd, fs, executor, dirInput, deploymentDir, "vsphere", stateDir)
+			})
+		})
+
+		Context("openstack", func() {
+			It("writes create-director.sh and delete-director.sh", func() {
+				expectedArgs := []string{
+					filepath.Join(relativeDeploymentDir, "bosh.yml"),
+					"--state", filepath.Join(relativeVarsDir, "bosh-state.json"),
+					"--vars-store", filepath.Join(relativeVarsDir, "director-vars-store.yml"),
+					"--vars-file", filepath.Join(relativeVarsDir, "director-vars-file.yml"),
+					"-o", filepath.Join(relativeDeploymentDir, "openstack", "cpi.yml"),
+					"-o", filepath.Join(relativeDeploymentDir, "jumpbox-user.yml"),
+					"-o", filepath.Join(relativeDeploymentDir, "uaa.yml"),
+					"-o", filepath.Join(relativeDeploymentDir, "credhub.yml"),
+					"-v", `openstack_username="${BBL_OPENSTACK_USERNAME}"`,
+					"-v", `openstack_password="${BBL_OPENSTACK_PASSWORD}"`,
+				}
+
+				behavesLikePlan(expectedArgs, cmd, fs, executor, dirInput, deploymentDir, "openstack", stateDir)
 			})
 		})
 	})
@@ -505,10 +498,9 @@ var _ = Describe("Executor", func() {
 
 		BeforeEach(func() {
 			fs = &afero.Afero{afero.NewOsFs()} // real os fs so we can exec scripts...
+			cmd = &fakes.BOSHCommand{}
 
 			var err error
-
-			cmd = &fakes.BOSHCommand{}
 			varsDir, err = fs.TempDir("", "")
 			Expect(err).NotTo(HaveOccurred())
 			stateDir, err = fs.TempDir("", "")
@@ -520,10 +512,6 @@ var _ = Describe("Executor", func() {
 				Deployment: "some-deployment",
 				StateDir:   stateDir,
 				VarsDir:    varsDir,
-			}
-
-			state = storage.State{
-				IAAS: "some-iaas",
 			}
 
 			createEnvPath = filepath.Join(stateDir, "create-some-deployment.sh")
@@ -631,20 +619,34 @@ var _ = Describe("Executor", func() {
 			})
 
 			Context("on vsphere", func() {
-				BeforeEach(func() {
-					state.IAAS = "vsphere"
-					state.VSphere = storage.VSphere{
-						VCenterUser:     "some-user",
-						VCenterPassword: "some-password",
-					}
-				})
-
 				It("sets credentials in environment variables", func() {
-					_, err := executor.CreateEnv(dirInput, state)
+					_, err := executor.CreateEnv(dirInput, storage.State{
+						IAAS: "vsphere",
+						VSphere: storage.VSphere{
+							VCenterUser:     "some-user",
+							VCenterPassword: "some-password",
+						},
+					})
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(os.Getenv("BBL_VSPHERE_VCENTER_USER")).To(Equal("some-user"))
 					Expect(os.Getenv("BBL_VSPHERE_VCENTER_PASSWORD")).To(Equal("some-password"))
+				})
+			})
+
+			Context("on openstack", func() {
+				It("sets credentials in environment variables", func() {
+					_, err := executor.CreateEnv(dirInput, storage.State{
+						IAAS: "openstack",
+						OpenStack: storage.OpenStack{
+							Username: "some-user",
+							Password: "some-password",
+						},
+					})
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(os.Getenv("BBL_OPENSTACK_USERNAME")).To(Equal("some-user"))
+					Expect(os.Getenv("BBL_OPENSTACK_PASSWORD")).To(Equal("some-password"))
 				})
 			})
 		})

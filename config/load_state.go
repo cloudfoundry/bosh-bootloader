@@ -13,38 +13,6 @@ import (
 	flags "github.com/jessevdk/go-flags"
 )
 
-type globalFlags struct {
-	Help      bool   `short:"h" long:"help"`
-	Debug     bool   `short:"d" long:"debug"     env:"BBL_DEBUG"`
-	Version   bool   `short:"v" long:"version"`
-	NoConfirm bool   `short:"n" long:"no-confirm"`
-	StateDir  string `short:"s" long:"state-dir" env:"BBL_STATE_DIRECTORY"`
-	IAAS      string `          long:"iaas"      env:"BBL_IAAS"`
-
-	AWSAccessKeyID     string `long:"aws-access-key-id"       env:"BBL_AWS_ACCESS_KEY_ID"`
-	AWSSecretAccessKey string `long:"aws-secret-access-key"   env:"BBL_AWS_SECRET_ACCESS_KEY"`
-	AWSRegion          string `long:"aws-region"              env:"BBL_AWS_REGION"`
-
-	AzureClientID       string `long:"azure-client-id"        env:"BBL_AZURE_CLIENT_ID"`
-	AzureClientSecret   string `long:"azure-client-secret"    env:"BBL_AZURE_CLIENT_SECRET"`
-	AzureRegion         string `long:"azure-region"           env:"BBL_AZURE_REGION"`
-	AzureSubscriptionID string `long:"azure-subscription-id"  env:"BBL_AZURE_SUBSCRIPTION_ID"`
-	AzureTenantID       string `long:"azure-tenant-id"        env:"BBL_AZURE_TENANT_ID"`
-
-	GCPServiceAccountKey string `long:"gcp-service-account-key" env:"BBL_GCP_SERVICE_ACCOUNT_KEY"`
-	GCPRegion            string `long:"gcp-region"              env:"BBL_GCP_REGION"`
-
-	VSphereCluster         string `long:"vsphere-vcenter-cluster"  env:"BBL_VSPHERE_VCENTER_CLUSTER"`
-	VSphereNetwork         string `long:"vsphere-network"          env:"BBL_VSPHERE_NETWORK"`
-	VSphereSubnet          string `long:"vsphere-subnet"           env:"BBL_VSPHERE_SUBNET"`
-	VSphereVCenterDC       string `long:"vsphere-vcenter-dc"       env:"BBL_VSPHERE_VCENTER_DC"`
-	VSphereVCenterDS       string `long:"vsphere-vcenter-ds"       env:"BBL_VSPHERE_VCENTER_DS"`
-	VSphereVCenterIP       string `long:"vsphere-vcenter-ip"       env:"BBL_VSPHERE_VCENTER_IP"`
-	VSphereVCenterPassword string `long:"vsphere-vcenter-password" env:"BBL_VSPHERE_VCENTER_PASSWORD"`
-	VSphereVCenterRP       string `long:"vsphere-vcenter-rp"       env:"BBL_VSPHERE_VCENTER_RP"`
-	VSphereVCenterUser     string `long:"vsphere-vcenter-user"     env:"BBL_VSPHERE_VCENTER_USER"`
-}
-
 type logger interface {
 	Println(string)
 }
@@ -200,8 +168,33 @@ func (c Config) updateIAASState(globalFlags globalFlags, state storage.State) (s
 	case "vsphere":
 		state, err := c.updateVSphereState(globalFlags, state)
 		return state, err
+	case "openstack":
+		state, err := c.updateOpenStackState(globalFlags, state)
+		return state, err
 	}
 
+	return state, nil
+}
+
+func copyOver(source string, sink *string) {
+	if source != "" {
+		*sink = source
+	}
+}
+
+func (c Config) updateOpenStackState(globalFlags globalFlags, state storage.State) (storage.State, error) {
+	copyOver(globalFlags.OpenStackInternalCidr, &state.OpenStack.InternalCidr)
+	copyOver(globalFlags.OpenStackExternalIP, &state.OpenStack.ExternalIP)
+	copyOver(globalFlags.OpenStackAuthURL, &state.OpenStack.AuthURL)
+	copyOver(globalFlags.OpenStackAZ, &state.OpenStack.AZ)
+	copyOver(globalFlags.OpenStackDefaultKeyName, &state.OpenStack.DefaultKeyName)
+	copyOver(globalFlags.OpenStackDefaultSecurityGroup, &state.OpenStack.DefaultSecurityGroup)
+	copyOver(globalFlags.OpenStackNetworkID, &state.OpenStack.NetworkID)
+	copyOver(globalFlags.OpenStackPassword, &state.OpenStack.Password)
+	copyOver(globalFlags.OpenStackUsername, &state.OpenStack.Username)
+	copyOver(globalFlags.OpenStackProject, &state.OpenStack.Project)
+	copyOver(globalFlags.OpenStackDomain, &state.OpenStack.Domain)
+	copyOver(globalFlags.OpenStackRegion, &state.OpenStack.Region)
 	return state, nil
 }
 

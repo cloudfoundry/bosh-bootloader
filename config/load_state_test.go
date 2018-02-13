@@ -281,11 +281,7 @@ var _ = Describe("LoadState", func() {
 				})
 
 				It("returns an error", func() {
-					_, err := c.Bootstrap([]string{
-						"bbl",
-						"rotate",
-						"--state-dir", "/this/will/not/work",
-					})
+					_, err := c.Bootstrap([]string{"bbl", "rotate", "--state-dir", "/this/will/not/work"})
 
 					Expect(err).To(MatchError("some state dir error"))
 				})
@@ -296,26 +292,198 @@ var _ = Describe("LoadState", func() {
 					fakeStateMigrator.MigrateCall.Returns.Error = errors.New("coconut")
 				})
 				It("returns an error", func() {
-					_, err := c.Bootstrap([]string{
-						"bbl",
-						"rotate",
-						"--state-dir", "some-state-dir",
-					})
+					_, err := c.Bootstrap([]string{"bbl", "rotate", "--state-dir", "some-state-dir"})
 					Expect(err).To(MatchError("coconut"))
 				})
 			})
 
 			Context("when state-dir flag is passed without an argument", func() {
 				It("returns an error", func() {
-					_, err := c.Bootstrap([]string{
-						"bbl",
-						"rotate",
-						"--state-dir",
-						"--help",
-					})
+					_, err := c.Bootstrap([]string{"bbl", "rotate", "--state-dir", "--help"})
 
 					Expect(err).To(MatchError("expected argument for flag `-s, --state-dir', but got option `--help'"))
 				})
+			})
+		})
+
+		Context("using Openstack", func() {
+			Context("when a previous state does not exist", func() {
+				Context("when configuration is passed in by flag", func() {
+					var args []string
+
+					BeforeEach(func() {
+						args = []string{
+							"bbl",
+							"--iaas", "openstack",
+							"--openstack-internal-cidr", "internal-cidr",
+							"--openstack-external-ip", "external-ip",
+							"--openstack-auth-url", "auth-url",
+							"--openstack-az", "az",
+							"--openstack-default-key-name", "key-name",
+							"--openstack-default-security-group", "security-group",
+							"--openstack-network-id", "network-id",
+							"--openstack-password", "password",
+							"--openstack-username", "username",
+							"--openstack-project", "project",
+							"--openstack-domain", "domain",
+							"--openstack-region", "region",
+							"up",
+							"--name", "some-env-id",
+						}
+					})
+
+					It("returns a state object containing configuration flags", func() {
+						appConfig, err := c.Bootstrap(args)
+						Expect(err).NotTo(HaveOccurred())
+
+						state := appConfig.State
+
+						Expect(state.IAAS).To(Equal("openstack"))
+						Expect(state.OpenStack.InternalCidr).To(Equal("internal-cidr"))
+						Expect(state.OpenStack.ExternalIP).To(Equal("external-ip"))
+						Expect(state.OpenStack.AuthURL).To(Equal("auth-url"))
+						Expect(state.OpenStack.AZ).To(Equal("az"))
+						Expect(state.OpenStack.DefaultKeyName).To(Equal("key-name"))
+						Expect(state.OpenStack.DefaultSecurityGroup).To(Equal("security-group"))
+						Expect(state.OpenStack.NetworkID).To(Equal("network-id"))
+						Expect(state.OpenStack.Password).To(Equal("password"))
+						Expect(state.OpenStack.Username).To(Equal("username"))
+						Expect(state.OpenStack.Project).To(Equal("project"))
+						Expect(state.OpenStack.Domain).To(Equal("domain"))
+						Expect(state.OpenStack.Region).To(Equal("region"))
+					})
+
+					It("returns the remaining arguments", func() {
+						appConfig, err := c.Bootstrap(args)
+						Expect(err).NotTo(HaveOccurred())
+
+						Expect(appConfig.Command).To(Equal("up"))
+						Expect(appConfig.SubcommandFlags).To(Equal(application.StringSlice{"--name", "some-env-id"}))
+					})
+				})
+
+				Context("when configuration is passed in by env vars", func() {
+					var args []string
+
+					BeforeEach(func() {
+						args = []string{"bbl", "up"}
+
+						os.Setenv("BBL_IAAS", "openstack")
+						os.Setenv("BBL_OPENSTACK_INTERNAL_CIDR", "internal-cidr")
+						os.Setenv("BBL_OPENSTACK_EXTERNAL_IP", "external-ip")
+						os.Setenv("BBL_OPENSTACK_AUTH_URL", "auth-url")
+						os.Setenv("BBL_OPENSTACK_AZ", "az")
+						os.Setenv("BBL_OPENSTACK_DEFAULT_KEY_NAME", "key-name")
+						os.Setenv("BBL_OPENSTACK_DEFAULT_SECURITY_GROUP", "security-group")
+						os.Setenv("BBL_OPENSTACK_NETWORK_ID", "network-id")
+						os.Setenv("BBL_OPENSTACK_PASSWORD", "password")
+						os.Setenv("BBL_OPENSTACK_USERNAME", "username")
+						os.Setenv("BBL_OPENSTACK_PROJECT", "project")
+						os.Setenv("BBL_OPENSTACK_DOMAIN", "domain")
+						os.Setenv("BBL_OPENSTACK_REGION", "region")
+					})
+
+					AfterEach(func() {
+						os.Unsetenv("BBL_IAAS")
+						os.Unsetenv("BBL_OPENSTACK_INTERNAL_CIDR")
+						os.Unsetenv("BBL_OPENSTACK_EXTERNAL_IP")
+						os.Unsetenv("BBL_OPENSTACK_AUTH_URL")
+						os.Unsetenv("BBL_OPENSTACK_AZ")
+						os.Unsetenv("BBL_OPENSTACK_DEFAULT_KEY_NAME")
+						os.Unsetenv("BBL_OPENSTACK_DEFAULT_SECURITY_GROUP")
+						os.Unsetenv("BBL_OPENSTACK_NETWORK_ID")
+						os.Unsetenv("BBL_OPENSTACK_PASSWORD")
+						os.Unsetenv("BBL_OPENSTACK_USERNAME")
+						os.Unsetenv("BBL_OPENSTACK_PROJECT")
+						os.Unsetenv("BBL_OPENSTACK_DOMAIN")
+						os.Unsetenv("BBL_OPENSTACK_REGION")
+					})
+
+					It("returns a state object containing configuration flags", func() {
+						appConfig, err := c.Bootstrap(args)
+						Expect(err).NotTo(HaveOccurred())
+
+						state := appConfig.State
+						Expect(state.IAAS).To(Equal("openstack"))
+						Expect(state.OpenStack.InternalCidr).To(Equal("internal-cidr"))
+						Expect(state.OpenStack.ExternalIP).To(Equal("external-ip"))
+						Expect(state.OpenStack.AuthURL).To(Equal("auth-url"))
+						Expect(state.OpenStack.AZ).To(Equal("az"))
+						Expect(state.OpenStack.DefaultKeyName).To(Equal("key-name"))
+						Expect(state.OpenStack.DefaultSecurityGroup).To(Equal("security-group"))
+						Expect(state.OpenStack.NetworkID).To(Equal("network-id"))
+						Expect(state.OpenStack.Password).To(Equal("password"))
+						Expect(state.OpenStack.Username).To(Equal("username"))
+						Expect(state.OpenStack.Project).To(Equal("project"))
+						Expect(state.OpenStack.Domain).To(Equal("domain"))
+						Expect(state.OpenStack.Region).To(Equal("region"))
+					})
+
+					It("returns the command", func() {
+						appConfig, err := c.Bootstrap(args)
+						Expect(err).NotTo(HaveOccurred())
+
+						Expect(appConfig.Command).To(Equal("up"))
+					})
+				})
+			})
+
+			Context("when a previous state exists", func() {
+				BeforeEach(func() {
+					fakeStateMigrator.MigrateCall.Returns.State = storage.State{
+						IAAS: "vsphere",
+						OpenStack: storage.OpenStack{
+							InternalCidr:         "internal-cidr",
+							ExternalIP:           "external-ip",
+							AuthURL:              "auth-url",
+							AZ:                   "az",
+							DefaultKeyName:       "key-name",
+							DefaultSecurityGroup: "security-group",
+							NetworkID:            "network-id",
+							Password:             "password",
+							Username:             "username",
+							Project:              "project",
+							Domain:               "domain",
+							Region:               "region",
+						},
+						EnvID: "some-env-id",
+					}
+				})
+
+				Context("when valid matching configuration is passed in", func() {
+					It("returns state with existing configuration", func() {
+						appConfig, err := c.Bootstrap([]string{
+							"bbl", "up",
+							"--iaas", "vsphere",
+							"--openstack-internal-cidr", "internal-cidr",
+							"--openstack-external-ip", "external-ip",
+							"--openstack-auth-url", "auth-url",
+							"--openstack-az", "az",
+							"--openstack-default-key-name", "key-name",
+							"--openstack-default-security-group", "security-group",
+							"--openstack-network-id", "network-id",
+							"--openstack-password", "password",
+							"--openstack-username", "username",
+							"--openstack-project", "project",
+							"--openstack-domain", "domain",
+							"--openstack-region", "region",
+							"--", "subnet",
+						})
+						Expect(err).NotTo(HaveOccurred())
+
+						Expect(appConfig.State.EnvID).To(Equal("some-env-id"))
+					})
+				})
+
+				DescribeTable("when non-matching configuration is passed in",
+					func(args []string, expected string) {
+						_, err := c.Bootstrap(args)
+
+						Expect(err).To(MatchError(expected))
+					},
+					Entry("returns an error for non-matching IAAS", []string{"bbl", "up", "--iaas", "gcp"},
+						"The iaas type cannot be changed for an existing environment. The current iaas type is vsphere."),
+				)
 			})
 		})
 

@@ -80,6 +80,20 @@ var _ = Describe("Store", func() {
 						VCenterDS:       "ds",
 						Subnet:          "10.0.0.0/24",
 					},
+					OpenStack: storage.OpenStack{
+						InternalCidr:         "cidr",
+						ExternalIP:           "ext-ip",
+						AuthURL:              "auth-url",
+						AZ:                   "az",
+						DefaultKeyName:       "default-key-name",
+						DefaultSecurityGroup: "default-security-group",
+						NetworkID:            "network-id",
+						Password:             "password",
+						Username:             "username",
+						Project:              "project",
+						Domain:               "domain",
+						Region:               "region",
+					},
 					LB: storage.LB{
 						Type:   "some-type",
 						Cert:   "some-cert",
@@ -120,6 +134,8 @@ var _ = Describe("Store", func() {
 				"version": 14,
 				"bblVersion": "5.3.0",
 				"iaas": "aws",
+				"id": "01020304-0506-0708-0910-111213141516",
+				"envID": "some-env-id",
 				"noDirector": false,
 				"aws": {
 					"region": "some-region"
@@ -133,6 +149,7 @@ var _ = Describe("Store", func() {
 					"zones": ["some-zone", "some-other-zone"]
 				},
 				"vsphere": {},
+				"openstack": {},
 				"lb": {
 					"type": "some-type",
 					"cert": "some-cert",
@@ -162,9 +179,7 @@ var _ = Describe("Store", func() {
 						"key": "value"
 					}
 				},
-				"envID": "some-env-id",
 				"tfState": "some-tf-state",
-				"id": "01020304-0506-0708-0910-111213141516",
 				"latestTFOutput": ""
 		    	}`))
 			})
