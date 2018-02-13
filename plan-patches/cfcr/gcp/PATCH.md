@@ -1,17 +1,21 @@
+# Patch: cfcr-gcp
+
 Steps to deploy cfcr with bbl:
 
 1. Follow the normal steps to bbl up with a patch
     ```
-    mkdir some-env && cd some-env
-    bbl plan --name some-env
-    cp -r /path/to/this-patch-dir/. .
+    mkdir banana-env && cd banana-env
+    bbl plan --name banana-env
+    cp -r bosh-bootloader/plan-patches/cfcr/gcp/. .
     bbl up
     ```
-1. upload a kubo-release newer than 0.13.1
-   `bosh upload-release https://storage.googleapis.com/kubo-public/kubo-release-latest.tgz`
-1. upload a stemcell
-   `bosh upload-stemcell https://bosh.io/d/stemcells/bosh-google-kvm-ubuntu-trusty-go_agent?v=3468.21`
-1. create cfcr-vars.yml: with a combination of variables from terraform outputs, the director-vars-file.yml, and the gcp console. Example:
+
+1. `bosh upload-release https://storage.googleapis.com/kubo-public/kubo-release-latest.tgz`
+
+1. `bosh upload-stemcell https://bosh.io/d/stemcells/bosh-google-kvm-ubuntu-trusty-go_agent?v=3468.21`
+
+1. Create cfcr-vars.yml: with a combination of variables from terraform outputs, the director-vars-file.yml, and the gcp console. Example:
+
     ```
     bosh int cfcr-vars-template.yml \
     --vars-file vars/director-vars-file.yml \
@@ -21,7 +25,8 @@ Steps to deploy cfcr with bbl:
     ```
     this file will contain the additional variables necessary for a cfcr deployment.
 
-1. bosh deploy the cfcr manifest
+1. Deploy the cfcr manifest
+
    ```
    bosh deploy -d cfcr ~/kubo-deployment/manifests/cfcr.yml \
    -o ~/kubo-deployment/manifests/ops-files/iaas/gcp/cloud-provider.yml \
@@ -29,7 +34,8 @@ Steps to deploy cfcr with bbl:
    --vars-file cfcr-vars.yml
    ```
 
-1. configure kubectl
+1. Configure kubectl
+
    Note: at the the time of PRing this patch, credhub+boshcli+bbl support requires some work make sure to:
      1. set the JUMPBOX_PUBLIC_IP environment variable to the jumpbox public ip found in BOSH_ALL_PROXY
      1. open an ssh tunnel to your jumpbox `ssh -f -N -o StrictHostKeyChecking=no -o ServerAliveInterval=300 -D 61943 jumpbox@${JUMPBOX_PUBLIC_IP} -i /var/folders/sy/ypl_k9gd29bc4b8g3w6hw0840000gn/T/bosh-jumpbox415804785/bosh_jumpbox_private.key`

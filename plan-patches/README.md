@@ -16,13 +16,6 @@ bbl up
 A patch is a directory with a set of files
 organized in the same hierarchy as the bbl-state dir.
 
-
-## bosh-lite-gcp
-
-To create a bosh-lite environment on gcp,
-you can use the steps above with the
-`bosh-lite-gcp` patch provided here.
-
 ## restricted-instance-groups-gcp
 
 To create two instance groups instead of an instance group for every zone on gcp,
