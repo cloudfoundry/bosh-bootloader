@@ -337,15 +337,6 @@ resource "aws_security_group_rule" "jumpbox_agent" {
   cidr_blocks       = ["${var.bosh_inbound_cidr}"]
 }
 
-resource "aws_security_group_rule" "jumpbox_credhub" {
-  security_group_id = "${aws_security_group.jumpbox.id}"
-  type              = "ingress"
-  protocol          = "tcp"
-  from_port         = 8844
-  to_port           = 8844
-  cidr_blocks       = ["${var.bosh_inbound_cidr}"]
-}
-
 resource "aws_security_group_rule" "jumpbox_director" {
   security_group_id = "${aws_security_group.jumpbox.id}"
   type              = "ingress"
