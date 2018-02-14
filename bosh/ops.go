@@ -28,6 +28,12 @@ const VSphereJumpboxNetworkOps = `---
 
 const OpenStackJumpboxKeystoneV3Ops = `---
 - type: remove
+  path: /instance_groups/name=jumpbox/networks/name=public
+
+- type: remove
+  path: /networks/name=public
+
+- type: remove
   path: /cloud_provider/properties/openstack/tenant
 
 - type: replace
