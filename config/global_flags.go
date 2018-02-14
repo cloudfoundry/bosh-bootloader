@@ -43,4 +43,5 @@ type globalFlags struct {
 	OpenStackProject              string `long:"openstack-project"                env:"BBL_OPENSTACK_PROJECT"`
 	OpenStackDomain               string `long:"openstack-domain"                 env:"BBL_OPENSTACK_DOMAIN"`
 	OpenStackRegion               string `long:"openstack-region"                 env:"BBL_OPENSTACK_REGION"`
+	OpenStackPrivateKey           string `long:"openstack-private-key"            env:"BBL_OPENSTACK_PRIVATE_KEY"`
 }

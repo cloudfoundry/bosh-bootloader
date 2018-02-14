@@ -27,6 +27,7 @@ variable "openstack_project" {}
 variable "openstack_domain" {}
 variable "region" {}
 variable "env_id" {}
+variable "private_key" {}
 
 output "internal_cidr" { value = "${var.internal_cidr}" }
 output "internal_gw" { value = "${var.internal_gw}" }
@@ -41,5 +42,6 @@ output "net_id" { value = "${var.net_id}" }
 output "openstack_project" { value = "${var.openstack_project}" }
 output "region" { value = "${var.region}" }
 output "env_id" { value = "${var.env_id}" }
+output "private_key" { value = "${var.private_key}" }
 `)
 }

@@ -327,6 +327,7 @@ var _ = Describe("LoadState", func() {
 							"--openstack-project", "project",
 							"--openstack-domain", "domain",
 							"--openstack-region", "region",
+							"--openstack-private-key", "private-key",
 							"up",
 							"--name", "some-env-id",
 						}
@@ -351,6 +352,7 @@ var _ = Describe("LoadState", func() {
 						Expect(state.OpenStack.Project).To(Equal("project"))
 						Expect(state.OpenStack.Domain).To(Equal("domain"))
 						Expect(state.OpenStack.Region).To(Equal("region"))
+						Expect(state.OpenStack.PrivateKey).To(Equal("private-key"))
 					})
 
 					It("returns the remaining arguments", func() {
@@ -381,6 +383,7 @@ var _ = Describe("LoadState", func() {
 						os.Setenv("BBL_OPENSTACK_PROJECT", "project")
 						os.Setenv("BBL_OPENSTACK_DOMAIN", "domain")
 						os.Setenv("BBL_OPENSTACK_REGION", "region")
+						os.Setenv("BBL_OPENSTACK_PRIVATE_KEY", "private-key")
 					})
 
 					AfterEach(func() {
@@ -397,6 +400,7 @@ var _ = Describe("LoadState", func() {
 						os.Unsetenv("BBL_OPENSTACK_PROJECT")
 						os.Unsetenv("BBL_OPENSTACK_DOMAIN")
 						os.Unsetenv("BBL_OPENSTACK_REGION")
+						os.Unsetenv("BBL_OPENSTACK_PRIVATE_KEY")
 					})
 
 					It("returns a state object containing configuration flags", func() {
@@ -417,6 +421,7 @@ var _ = Describe("LoadState", func() {
 						Expect(state.OpenStack.Project).To(Equal("project"))
 						Expect(state.OpenStack.Domain).To(Equal("domain"))
 						Expect(state.OpenStack.Region).To(Equal("region"))
+						Expect(state.OpenStack.PrivateKey).To(Equal("private-key"))
 					})
 
 					It("returns the command", func() {
@@ -445,6 +450,7 @@ var _ = Describe("LoadState", func() {
 							Project:              "project",
 							Domain:               "domain",
 							Region:               "region",
+							PrivateKey:           "private-key",
 						},
 						EnvID: "some-env-id",
 					}
@@ -467,6 +473,7 @@ var _ = Describe("LoadState", func() {
 							"--openstack-project", "project",
 							"--openstack-domain", "domain",
 							"--openstack-region", "region",
+							"--openstack-private-key", "private-key",
 							"--", "subnet",
 						})
 						Expect(err).NotTo(HaveOccurred())

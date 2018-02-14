@@ -176,25 +176,27 @@ func (c Config) updateIAASState(globalFlags globalFlags, state storage.State) (s
 	return state, nil
 }
 
-func copyOver(source string, sink *string) {
+func copyFlagToState(source string, sink *string) {
 	if source != "" {
 		*sink = source
 	}
 }
 
 func (c Config) updateOpenStackState(globalFlags globalFlags, state storage.State) (storage.State, error) {
-	copyOver(globalFlags.OpenStackInternalCidr, &state.OpenStack.InternalCidr)
-	copyOver(globalFlags.OpenStackExternalIP, &state.OpenStack.ExternalIP)
-	copyOver(globalFlags.OpenStackAuthURL, &state.OpenStack.AuthURL)
-	copyOver(globalFlags.OpenStackAZ, &state.OpenStack.AZ)
-	copyOver(globalFlags.OpenStackDefaultKeyName, &state.OpenStack.DefaultKeyName)
-	copyOver(globalFlags.OpenStackDefaultSecurityGroup, &state.OpenStack.DefaultSecurityGroup)
-	copyOver(globalFlags.OpenStackNetworkID, &state.OpenStack.NetworkID)
-	copyOver(globalFlags.OpenStackPassword, &state.OpenStack.Password)
-	copyOver(globalFlags.OpenStackUsername, &state.OpenStack.Username)
-	copyOver(globalFlags.OpenStackProject, &state.OpenStack.Project)
-	copyOver(globalFlags.OpenStackDomain, &state.OpenStack.Domain)
-	copyOver(globalFlags.OpenStackRegion, &state.OpenStack.Region)
+	copyFlagToState(globalFlags.OpenStackInternalCidr, &state.OpenStack.InternalCidr)
+	copyFlagToState(globalFlags.OpenStackExternalIP, &state.OpenStack.ExternalIP)
+	copyFlagToState(globalFlags.OpenStackAuthURL, &state.OpenStack.AuthURL)
+	copyFlagToState(globalFlags.OpenStackAZ, &state.OpenStack.AZ)
+	copyFlagToState(globalFlags.OpenStackDefaultKeyName, &state.OpenStack.DefaultKeyName)
+	copyFlagToState(globalFlags.OpenStackDefaultSecurityGroup, &state.OpenStack.DefaultSecurityGroup)
+	copyFlagToState(globalFlags.OpenStackNetworkID, &state.OpenStack.NetworkID)
+	copyFlagToState(globalFlags.OpenStackPassword, &state.OpenStack.Password)
+	copyFlagToState(globalFlags.OpenStackUsername, &state.OpenStack.Username)
+	copyFlagToState(globalFlags.OpenStackProject, &state.OpenStack.Project)
+	copyFlagToState(globalFlags.OpenStackDomain, &state.OpenStack.Domain)
+	copyFlagToState(globalFlags.OpenStackRegion, &state.OpenStack.Region)
+	copyFlagToState(globalFlags.OpenStackRegion, &state.OpenStack.Region)
+	copyFlagToState(globalFlags.OpenStackPrivateKey, &state.OpenStack.PrivateKey)
 	return state, nil
 }
 

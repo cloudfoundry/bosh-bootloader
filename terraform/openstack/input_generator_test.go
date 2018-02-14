@@ -30,6 +30,7 @@ var _ = Describe("InputGenerator", func() {
 					Project:              "project",
 					Domain:               "domain",
 					Region:               "region",
+					PrivateKey:           "private-key",
 				},
 			})
 			Expect(err).NotTo(HaveOccurred())
@@ -48,6 +49,7 @@ var _ = Describe("InputGenerator", func() {
 				"openstack_project":      "project",
 				"openstack_domain":       "domain",
 				"region":                 "region",
+				"private_key":            "private-key",
 			}))
 		})
 	})

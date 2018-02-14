@@ -29,6 +29,7 @@ func (i InputGenerator) Generate(state storage.State) (map[string]interface{}, e
 		"openstack_project":      state.OpenStack.Project,
 		"openstack_domain":       state.OpenStack.Domain,
 		"region":                 state.OpenStack.Region,
+		"private_key":            state.OpenStack.PrivateKey,
 	}, nil
 }
 

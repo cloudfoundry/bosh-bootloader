@@ -13,4 +13,5 @@ type OpenStack struct {
 	Project              string `json:"-"`
 	Domain               string `json:"-"`
 	Region               string `json:"-"`
+	PrivateKey           string `json:"-"`
 }
