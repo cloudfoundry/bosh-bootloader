@@ -27,11 +27,13 @@ const VSphereJumpboxNetworkOps = `---
 `
 
 const OpenStackJumpboxKeystoneV3Ops = `---
-- type: remove
-  path: /instance_groups/name=jumpbox/networks/name=public
+- type: replace
+  path: /releases/name=bosh-openstack-cpi/url
+  value: https://bosh.io/d/github.com/cloudfoundry-incubator/bosh-openstack-cpi-release?v=37
 
-- type: remove
-  path: /networks/name=public
+- type: replace
+  path: /releases/name=bosh-openstack-cpi/sha1
+  value: 4507b907955909bc8036afc1cf6be339b306ca03
 
 - type: remove
   path: /cloud_provider/properties/openstack/tenant
