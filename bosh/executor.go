@@ -104,6 +104,15 @@ func (e Executor) PlanJumpbox(input DirInput, deploymentDir, iaas string) error 
 		}
 	}
 
+	if iaas == "openstack" {
+		path := filepath.Join(deploymentDir, "openstack-keystone-v3-ops.yml")
+		sharedArgs = append(sharedArgs, "-o", path)
+		err := e.fs.WriteFile(path, []byte(OpenStackJumpboxKeystoneV3Ops), os.ModePerm)
+		if err != nil {
+			return fmt.Errorf("Jumpbox write openstack keystone v3 ops file: %s", err) //not tested
+		}
+	}
+
 	jumpboxState := filepath.Join(input.VarsDir, "jumpbox-state.json")
 
 	boshArgs := append([]string{
