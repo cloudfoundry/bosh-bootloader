@@ -37,37 +37,39 @@ func (c Client) CheckExists(envID string) (bool, error) {
 }
 
 func (c Client) ValidateSafeToDelete(networkName string, envID string) error {
-	resourceGroupName := fmt.Sprintf("%s-bosh", envID)
+	resourceGroup := fmt.Sprintf("%s-bosh", envID)
 
-	instanceList, err := c.azureVMsClient.List(resourceGroupName)
+	instances, err := c.azureVMsClient.List(resourceGroup)
 	if err != nil {
 		return fmt.Errorf("List instances: %s", err)
 	}
 
-	for _, instance := range *instanceList.Value {
-		vmName := getOrEmpty(instance.Name)
+	for _, instance := range *instances.Value {
+		var vm string
+		if instance.Name != nil {
+			vm = *instance.Name
+		}
+
 		if instance.Tags == nil {
-			return fmt.Errorf("bbl environment is not safe to delete; vms still exist in resource group: %s: %s",
-				resourceGroupName, vmName)
+			return fmt.Errorf("bbl environment is not safe to delete; vms still exist in resource group: %s: %s", resourceGroup, vm)
 		}
+
 		tags := *instance.Tags
-		job := getOrEmpty(tags["job"])
-		deployment := getOrEmpty(tags["deployment"])
-		if deployment != "" {
-			deployment = fmt.Sprintf(" (deployment: %s)", deployment)
+
+		var deployment string
+		if tags["deployment"] != nil {
+			deployment = fmt.Sprintf(" (deployment: %s)", *tags["deployment"])
 		}
+
+		var job string
+		if tags["job"] != nil {
+			job = *tags["job"]
+		}
+
 		if job != "bosh" && job != "jumpbox" {
-			return fmt.Errorf("bbl environment is not safe to delete; vms still exist in resource group: %s%s: %s",
-				resourceGroupName, deployment, vmName)
+			return fmt.Errorf("bbl environment is not safe to delete; vms still exist in resource group: %s%s: %s", resourceGroup, deployment, vm)
 		}
 	}
 
 	return nil
-}
-
-func getOrEmpty(value *string) string {
-	if value == nil {
-		return ""
-	}
-	return *value
 }
