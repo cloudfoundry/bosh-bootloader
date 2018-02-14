@@ -47,11 +47,9 @@ func (s SSHKey) CheckFastFails(subcommandFlags []string, state storage.State) er
 }
 
 func (s SSHKey) Execute(subcommandFlags []string, state storage.State) error {
-	var deployment string
+	deployment := "jumpbox"
 	if s.Director {
 		deployment = "director"
-	} else {
-		deployment = "jumpbox"
 	}
 
 	privateKey, err := s.sshKeyGetter.Get(deployment)

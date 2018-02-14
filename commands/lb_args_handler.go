@@ -28,12 +28,12 @@ func NewLBArgsHandler(certificateValidator certificateValidator) LBArgsHandler {
 }
 
 func (l LBArgsHandler) GetLBState(iaas string, args LBArgs) (storage.LB, error) {
-	var certData certs.CertData
-	var err error
-
 	if args.LBType == "" {
 		return storage.LB{}, nil
 	}
+
+	var certData certs.CertData
+	var err error
 
 	if iaas == "azure" && args.LBType == "cf" {
 		certData, err = l.certificateValidator.ReadAndValidatePKCS12(args.CertPath, args.KeyPath)
@@ -57,7 +57,7 @@ func (l LBArgsHandler) GetLBState(iaas string, args LBArgs) (storage.LB, error) 
 	}
 
 	if args.LBType == "concourse" && args.Domain != "" {
-		return storage.LB{}, errors.New("domain is not implemented for concourse load balancers. Remove the --domain flag and try again.")
+		return storage.LB{}, errors.New("domain is not implemented for concourse load balancers. Remove the --lb-domain flag and try again.")
 	}
 
 	return storage.LB{

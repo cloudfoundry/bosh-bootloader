@@ -11,10 +11,10 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("LB args handler", func() {
+var _ = Describe("LBArgsHandler", func() {
 	var (
-		handler              commands.LBArgsHandler
 		certificateValidator *fakes.CertificateValidator
+		handler              commands.LBArgsHandler
 	)
 
 	BeforeEach(func() {
@@ -31,13 +31,6 @@ var _ = Describe("LB args handler", func() {
 			}
 			certificateValidator.ReadAndValidateCall.Returns.CertData = certData
 			certificateValidator.ReadCall.Returns.CertData = certData
-
-			certDataPKCS12 := certs.CertData{
-				Cert: []byte("some-cert"),
-				Key:  []byte("some-password"),
-			}
-			certificateValidator.ReadAndValidatePKCS12Call.Returns.CertData = certDataPKCS12
-			certificateValidator.ReadPKCS12Call.Returns.CertData = certDataPKCS12
 		})
 
 		It("returns a storage.LB object", func() {
@@ -78,73 +71,59 @@ var _ = Describe("LB args handler", func() {
 			})
 			Context("on aws", func() {
 				It("does not call certificateValidator", func() {
-					lbState, err := handler.GetLBState("aws", commands.LBArgs{
-						LBType: "concourse",
-					})
+					lbState, err := handler.GetLBState("aws", commands.LBArgs{LBType: "concourse"})
 					Expect(err).NotTo(HaveOccurred())
+
 					Expect(lbState.Type).To(Equal("concourse"))
-					Expect(lbState.Cert).To(Equal(""))
-					Expect(lbState.Key).To(Equal(""))
-					Expect(lbState.Chain).To(Equal(""))
-					Expect(lbState.Domain).To(Equal(""))
 					Expect(certificateValidator.ReadAndValidateCall.CallCount).To(Equal(0))
 				})
 			})
 		})
 
 		Context("when iaas is azure and lb type is cf", func() {
+			BeforeEach(func() {
+				certDataPKCS12 := certs.CertData{
+					Cert: []byte("some-cert"),
+					Key:  []byte("some-password"),
+				}
+				certificateValidator.ReadAndValidatePKCS12Call.Returns.CertData = certDataPKCS12
+				certificateValidator.ReadPKCS12Call.Returns.CertData = certDataPKCS12
+			})
+
 			It("it reads the certificate and validates the password", func() {
-				lbState, err := handler.GetLBState("azure", commands.LBArgs{
-					LBType: "cf",
-				})
+				lbState, err := handler.GetLBState("azure", commands.LBArgs{LBType: "cf"})
 				Expect(err).NotTo(HaveOccurred())
+
 				Expect(lbState.Type).To(Equal("cf"))
 				Expect(lbState.Cert).To(Equal("c29tZS1jZXJ0"))
 				Expect(lbState.Key).To(Equal("some-password"))
-				Expect(lbState.Chain).To(Equal(""))
-				Expect(certificateValidator.ReadPKCS12Call.CallCount).To(Equal(0))
 				Expect(certificateValidator.ReadAndValidatePKCS12Call.CallCount).To(Equal(1))
 			})
 		})
 
 		Context("when empty config is passed in", func() {
 			It("does not call certificateValidator", func() {
-				lbState, err := handler.GetLBState("", commands.LBArgs{})
+				_, err := handler.GetLBState("", commands.LBArgs{})
 				Expect(err).NotTo(HaveOccurred())
-				Expect(lbState.Type).To(Equal(""))
-				Expect(lbState.Cert).To(Equal(""))
-				Expect(lbState.Key).To(Equal(""))
-				Expect(lbState.Chain).To(Equal(""))
-				Expect(lbState.Domain).To(Equal(""))
 				Expect(certificateValidator.ReadAndValidateCall.CallCount).To(Equal(0))
 			})
 		})
 
 		Context("failure cases", func() {
-			Context("when certificate validator fails for cert and key", func() {
+			Context("when certificate validator fails for aws/gcp", func() {
 				It("returns an error", func() {
 					certificateValidator.ReadAndValidateCall.Returns.Error = errors.New("failed to validate")
-					_, err := handler.GetLBState("aws", commands.LBArgs{
-						LBType:    "cf",
-						CertPath:  "/path/to/cert",
-						KeyPath:   "/path/to/key",
-						ChainPath: "/path/to/chain",
-					})
 
+					_, err := handler.GetLBState("aws", commands.LBArgs{LBType: "cf"})
 					Expect(err).To(MatchError("Validate certificate: failed to validate"))
 				})
 			})
 
-			Context("when certificate validator fails for cert and password", func() {
+			Context("when certificate validator fails for azure", func() {
 				It("returns an error", func() {
 					certificateValidator.ReadAndValidatePKCS12Call.Returns.Error = errors.New("failed to validate")
-					_, err := handler.GetLBState("azure", commands.LBArgs{
-						LBType:    "cf",
-						CertPath:  "/path/to/cert",
-						KeyPath:   "/path/to/key",
-						ChainPath: "/path/to/chain",
-					})
 
+					_, err := handler.GetLBState("azure", commands.LBArgs{LBType: "cf"})
 					Expect(err).To(MatchError("Validate certificate: failed to validate"))
 				})
 			})
@@ -155,7 +134,7 @@ var _ = Describe("LB args handler", func() {
 						LBType: "concourse",
 						Domain: "something.io",
 					})
-					Expect(err).To(MatchError("domain is not implemented for concourse load balancers. Remove the --domain flag and try again."))
+					Expect(err).To(MatchError("domain is not implemented for concourse load balancers. Remove the --lb-domain flag and try again."))
 				})
 			})
 		})

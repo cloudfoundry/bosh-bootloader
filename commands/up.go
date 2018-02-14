@@ -15,13 +15,9 @@ type Up struct {
 	terraformManager   terraformManager
 }
 
-func NewUp(
-	plan plan,
-	boshManager boshManager,
+func NewUp(plan plan, boshManager boshManager,
 	cloudConfigManager cloudConfigManager,
-	stateStore stateStore,
-	terraformManager terraformManager,
-) Up {
+	stateStore stateStore, terraformManager terraformManager) Up {
 	return Up{
 		plan:               plan,
 		boshManager:        boshManager,
@@ -54,9 +50,7 @@ func (u Up) Execute(args []string, state storage.State) error {
 		return handleTerraformError(err, state, u.stateStore)
 	}
 
-	if state.NoDirector {
-		state.NoDirector = false
-	}
+	state.NoDirector = false
 
 	err = u.stateStore.Set(state)
 	if err != nil {
