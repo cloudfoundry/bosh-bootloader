@@ -33,4 +33,12 @@ const OpenStackJumpboxKeystoneV3Ops = `---
 - type: replace
   path: /cloud_provider/properties/openstack/project?
   value: ((openstack_project))
+
+- type: replace
+  path: /cloud_provider/properties/openstack/domain?
+  value: ((openstack_domain))
+
+- type: replace
+  path: /cloud_provider/properties/openstack/human_readable_vm_names?
+  value: true
 `
