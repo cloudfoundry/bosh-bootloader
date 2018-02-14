@@ -110,20 +110,18 @@ func (e Executor) runTFCommand(args []string) error {
 	if err != nil {
 		return fmt.Errorf("Get vars dir: %s", err)
 	}
+
 	tfStatePath := filepath.Join(varsDir, "terraform.tfstate")
-	args = append(args,
-		"-state", tfStatePath,
-	)
+	args = append(args, "-state", tfStatePath)
 
 	varsFiles, err := e.fs.ReadDir(varsDir)
 	if err != nil {
-		return fmt.Errorf("Read contents of vars directory: %s", err) // not tested
+		return fmt.Errorf("Read contents of vars directory: %s", err)
 	}
+
 	for _, file := range varsFiles {
 		if strings.HasSuffix(file.Name(), ".tfvars") {
-			args = append(args,
-				"-var-file", filepath.Join(varsDir, file.Name()),
-			)
+			args = append(args, "-var-file", filepath.Join(varsDir, file.Name()))
 		}
 	}
 
@@ -138,9 +136,8 @@ func (e Executor) runTFCommand(args []string) error {
 	if err != nil {
 		if e.debug {
 			return err
-		} else {
-			return fmt.Errorf(redactedError)
 		}
+		return fmt.Errorf(redactedError)
 	}
 
 	return nil
