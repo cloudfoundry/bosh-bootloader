@@ -214,7 +214,7 @@ func main() {
 		cloudConfigOpsGenerator = openstackcloudconfig.NewOpsGenerator(terraformManager)
 	}
 
-	cloudConfigManager := cloudconfig.NewManager(logger, boshCommand, stateStore, cloudConfigOpsGenerator, boshClientProvider, terraformManager, sshKeyGetter, afs)
+	cloudConfigManager := cloudconfig.NewManager(logger, boshCommand, stateStore, cloudConfigOpsGenerator, boshClientProvider, terraformManager, afs)
 
 	// Commands
 	var envIDManager helpers.EnvIDManager

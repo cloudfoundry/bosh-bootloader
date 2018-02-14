@@ -25,7 +25,6 @@ type Manager struct {
 	opsGenerator       OpsGenerator
 	boshClientProvider boshClientProvider
 	terraformManager   terraformManager
-	sshKeyGetter       sshKeyGetter
 	fs                 fs
 }
 
@@ -50,17 +49,13 @@ type terraformManager interface {
 	GetOutputs() (terraform.Outputs, error)
 }
 
-type sshKeyGetter interface {
-	Get(string) (string, error)
-}
-
 type stateStore interface {
 	GetCloudConfigDir() (string, error)
 	GetVarsDir() (string, error)
 }
 
 func NewManager(logger logger, cmd command, stateStore stateStore, opsGenerator OpsGenerator, boshClientProvider boshClientProvider,
-	terraformManager terraformManager, sshKeyGetter sshKeyGetter, fs fs) Manager {
+	terraformManager terraformManager, fs fs) Manager {
 	return Manager{
 		logger:             logger,
 		command:            cmd,
@@ -68,7 +63,6 @@ func NewManager(logger logger, cmd command, stateStore stateStore, opsGenerator 
 		opsGenerator:       opsGenerator,
 		boshClientProvider: boshClientProvider,
 		terraformManager:   terraformManager,
-		sshKeyGetter:       sshKeyGetter,
 		fs:                 fs,
 	}
 }

@@ -26,7 +26,6 @@ var _ = Describe("Manager", func() {
 		boshClientProvider *fakes.BOSHClientProvider
 		boshClient         *fakes.BOSHClient
 		terraformManager   *fakes.TerraformManager
-		sshKeyGetter       *fakes.SSHKeyGetter
 		fileIO             *fakes.FileIO
 		manager            cloudconfig.Manager
 
@@ -45,7 +44,6 @@ var _ = Describe("Manager", func() {
 		boshClient = &fakes.BOSHClient{}
 		boshClientProvider = &fakes.BOSHClientProvider{}
 		terraformManager = &fakes.TerraformManager{}
-		sshKeyGetter = &fakes.SSHKeyGetter{}
 		fileIO = &fakes.FileIO{}
 
 		boshClientProvider.ClientCall.Returns.Client = boshClient
@@ -77,7 +75,7 @@ var _ = Describe("Manager", func() {
 		baseCloudConfig, err = ioutil.ReadFile("fixtures/base-cloud-config.yml")
 		Expect(err).NotTo(HaveOccurred())
 
-		manager = cloudconfig.NewManager(logger, cmd, stateStore, opsGenerator, boshClientProvider, terraformManager, sshKeyGetter, fileIO)
+		manager = cloudconfig.NewManager(logger, cmd, stateStore, opsGenerator, boshClientProvider, terraformManager, fileIO)
 	})
 
 	Describe("Initialize", func() {
