@@ -16,7 +16,8 @@ func (t TemplateGenerator) Generate(state storage.State) string {
 	return fmt.Sprintf(`
 variable "internal_cidr" {}
 variable "internal_gw" {}
-variable "director_ip" {}
+variable "director_internal_ip" {}
+variable "jumpbox_internal_ip" {}
 variable "external_ip" {}
 variable "auth_url" {}
 variable "az" {}
@@ -32,8 +33,8 @@ variable "private_key" {}
 output "internal_cidr" { value = "${var.internal_cidr}" }
 output "internal_gw" { value = "${var.internal_gw}" }
 output "external_ip" { value = "${var.external_ip}" }
-output "jumpbox__internal_ip" { value = "${var.external_ip}" }
-output "director__internal_ip" { value = "${var.director_ip}" }
+output "jumpbox__internal_ip" { value = "${var.jumpbox_internal_ip}" }
+output "director__internal_ip" { value = "${var.director_internal_ip}" }
 output "auth_url" { value = "${var.auth_url}" }
 output "az" { value = "${var.az}" }
 output "default_key_name" { value = "${var.default_key_name}" }
