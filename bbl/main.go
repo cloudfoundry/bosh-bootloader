@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"log"
 	"os"
+	"path/filepath"
 
 	"github.com/cloudfoundry/bosh-bootloader/application"
 	"github.com/cloudfoundry/bosh-bootloader/aws"
@@ -86,7 +87,7 @@ func main() {
 
 	// Terraform
 	terraformOutputBuffer := bytes.NewBuffer([]byte{})
-	terraformCmd := terraform.NewCmd(os.Stderr, terraformOutputBuffer)
+	terraformCmd := terraform.NewCmd(os.Stderr, terraformOutputBuffer, filepath.Join(appConfig.Global.StateDir, "terraform", ".terraform"))
 	terraformExecutor := terraform.NewExecutor(terraformCmd, stateStore, afs, appConfig.Global.Debug)
 
 	// BOSH

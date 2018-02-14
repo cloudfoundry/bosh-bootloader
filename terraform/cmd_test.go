@@ -44,7 +44,7 @@ var _ = Describe("Run", func() {
 
 		defaultArgs = []string{"apply", "-state=/tmp/terraform.tfstate", "/tmp"}
 
-		cmd = terraform.NewCmd(stderr, outputBuffer)
+		cmd = terraform.NewCmd(stderr, outputBuffer, "some-terraform-dir")
 
 		fakeTerraformBackendServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
 			fastFailMtx.Lock()
@@ -90,6 +90,9 @@ var _ = Describe("Run", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(terraformArgs).To(Equal([]string{"apply", "-state=/tmp/terraform.tfstate", "/tmp"}))
+
+		outputBufferContents := string(outputBuffer.Bytes())
+		Expect(outputBufferContents).To(ContainSubstring("data directory: some-terraform-dir"))
 	})
 
 	Context("when debug is true", func() {
