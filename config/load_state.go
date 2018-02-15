@@ -196,7 +196,16 @@ func (c Config) updateOpenStackState(globalFlags globalFlags, state storage.Stat
 	copyFlagToState(globalFlags.OpenStackDomain, &state.OpenStack.Domain)
 	copyFlagToState(globalFlags.OpenStackRegion, &state.OpenStack.Region)
 	copyFlagToState(globalFlags.OpenStackRegion, &state.OpenStack.Region)
-	copyFlagToState(globalFlags.OpenStackPrivateKey, &state.OpenStack.PrivateKey)
+
+	if globalFlags.OpenStackPrivateKey != "" {
+		_, key, err := c.readKey(globalFlags.OpenStackPrivateKey)
+		if err != nil {
+			return storage.State{}, err
+		}
+
+		state.OpenStack.PrivateKey = key
+	}
+
 	return state, nil
 }
 
@@ -273,7 +282,7 @@ func (c Config) getGCPServiceAccountKey(key string) (string, string, error) {
 	if _, err := c.fs.Stat(key); err != nil {
 		return c.writeGCPServiceAccountKey(key)
 	}
-	return c.readGCPServiceAccountKey(key)
+	return c.readKey(key)
 }
 
 func (c Config) writeGCPServiceAccountKey(contents string) (string, string, error) {
@@ -288,10 +297,10 @@ func (c Config) writeGCPServiceAccountKey(contents string) (string, string, erro
 	return tempFile.Name(), contents, nil
 }
 
-func (c Config) readGCPServiceAccountKey(path string) (string, string, error) {
+func (c Config) readKey(path string) (string, string, error) {
 	keyBytes, err := c.fs.ReadFile(path)
 	if err != nil {
-		return "", "", fmt.Errorf("Reading service account key: %v", err)
+		return "", "", fmt.Errorf("Reading key: %v", err)
 	}
 	return path, string(keyBytes), nil
 }

@@ -30,7 +30,12 @@ var _ = Describe("LoadState", func() {
 		fakeStateBootstrap = &fakes.StateBootstrap{}
 		fakeStateMigrator = &fakes.StateMigrator{}
 		fakeFileIO = &fakes.FileIO{}
+		os.Clearenv()
+
 		c = config.NewConfig(fakeStateBootstrap, fakeStateMigrator, fakeLogger, fakeFileIO)
+	})
+
+	AfterEach(func() {
 		os.Clearenv()
 	})
 
@@ -142,10 +147,6 @@ var _ = Describe("LoadState", func() {
 					os.Setenv("BBL_DEBUG", "true")
 				})
 
-				AfterEach(func() {
-					os.Unsetenv("BBL_DEBUG")
-				})
-
 				It("returns global flags", func() {
 					appConfig, err := c.Bootstrap([]string{"bbl", "up"})
 					Expect(err).NotTo(HaveOccurred())
@@ -157,10 +158,6 @@ var _ = Describe("LoadState", func() {
 			Context("when state dir flag is passed in through environment variable", func() {
 				BeforeEach(func() {
 					os.Setenv("BBL_STATE_DIRECTORY", "/path/to/state")
-				})
-
-				AfterEach(func() {
-					os.Unsetenv("BBL_STATE_DIRECTORY")
 				})
 
 				It("returns global flags", func() {
@@ -277,7 +274,6 @@ var _ = Describe("LoadState", func() {
 			Context("when invalid state dir is passed in", func() {
 				BeforeEach(func() {
 					fakeStateBootstrap.GetStateCall.Returns.Error = errors.New("some state dir error")
-					os.Clearenv()
 				})
 
 				It("returns an error", func() {
@@ -331,6 +327,8 @@ var _ = Describe("LoadState", func() {
 							"up",
 							"--name", "some-env-id",
 						}
+
+						fakeFileIO.ReadFileCall.Returns.Contents = []byte("private-key-contents")
 					})
 
 					It("returns a state object containing configuration flags", func() {
@@ -352,7 +350,7 @@ var _ = Describe("LoadState", func() {
 						Expect(state.OpenStack.Project).To(Equal("project"))
 						Expect(state.OpenStack.Domain).To(Equal("domain"))
 						Expect(state.OpenStack.Region).To(Equal("region"))
-						Expect(state.OpenStack.PrivateKey).To(Equal("private-key"))
+						Expect(state.OpenStack.PrivateKey).To(Equal("private-key-contents"))
 					})
 
 					It("returns the remaining arguments", func() {
@@ -383,24 +381,9 @@ var _ = Describe("LoadState", func() {
 						os.Setenv("BBL_OPENSTACK_PROJECT", "project")
 						os.Setenv("BBL_OPENSTACK_DOMAIN", "domain")
 						os.Setenv("BBL_OPENSTACK_REGION", "region")
-						os.Setenv("BBL_OPENSTACK_PRIVATE_KEY", "private-key")
-					})
+						os.Setenv("BBL_OPENSTACK_PRIVATE_KEY", "private-key-path")
 
-					AfterEach(func() {
-						os.Unsetenv("BBL_IAAS")
-						os.Unsetenv("BBL_OPENSTACK_INTERNAL_CIDR")
-						os.Unsetenv("BBL_OPENSTACK_EXTERNAL_IP")
-						os.Unsetenv("BBL_OPENSTACK_AUTH_URL")
-						os.Unsetenv("BBL_OPENSTACK_AZ")
-						os.Unsetenv("BBL_OPENSTACK_DEFAULT_KEY_NAME")
-						os.Unsetenv("BBL_OPENSTACK_DEFAULT_SECURITY_GROUP")
-						os.Unsetenv("BBL_OPENSTACK_NETWORK_ID")
-						os.Unsetenv("BBL_OPENSTACK_PASSWORD")
-						os.Unsetenv("BBL_OPENSTACK_USERNAME")
-						os.Unsetenv("BBL_OPENSTACK_PROJECT")
-						os.Unsetenv("BBL_OPENSTACK_DOMAIN")
-						os.Unsetenv("BBL_OPENSTACK_REGION")
-						os.Unsetenv("BBL_OPENSTACK_PRIVATE_KEY")
+						fakeFileIO.ReadFileCall.Returns.Contents = []byte("private-key-contents")
 					})
 
 					It("returns a state object containing configuration flags", func() {
@@ -421,7 +404,7 @@ var _ = Describe("LoadState", func() {
 						Expect(state.OpenStack.Project).To(Equal("project"))
 						Expect(state.OpenStack.Domain).To(Equal("domain"))
 						Expect(state.OpenStack.Region).To(Equal("region"))
-						Expect(state.OpenStack.PrivateKey).To(Equal("private-key"))
+						Expect(state.OpenStack.PrivateKey).To(Equal("private-key-contents"))
 					})
 
 					It("returns the command", func() {
@@ -562,19 +545,6 @@ var _ = Describe("LoadState", func() {
 						os.Setenv("BBL_VSPHERE_SUBNET", "subnet")
 					})
 
-					AfterEach(func() {
-						os.Unsetenv("BBL_IAAS")
-						os.Unsetenv("BBL_VSPHERE_VCENTER_USER")
-						os.Unsetenv("BBL_VSPHERE_VCENTER_PASSWORD")
-						os.Unsetenv("BBL_VSPHERE_VCENTER_IP")
-						os.Unsetenv("BBL_VSPHERE_VCENTER_DC")
-						os.Unsetenv("BBL_VSPHERE_VCENTER_CLUSTER")
-						os.Unsetenv("BBL_VSPHERE_VCENTER_RP")
-						os.Unsetenv("BBL_VSPHERE_NETWORK")
-						os.Unsetenv("BBL_VSPHERE_VCENTER_DS")
-						os.Unsetenv("BBL_VSPHERE_SUBNET")
-					})
-
 					It("returns a state object containing configuration flags", func() {
 						appConfig, err := c.Bootstrap(args)
 						Expect(err).NotTo(HaveOccurred())
@@ -703,13 +673,6 @@ var _ = Describe("LoadState", func() {
 						os.Setenv("BBL_AWS_ACCESS_KEY_ID", "some-access-key-id")
 						os.Setenv("BBL_AWS_SECRET_ACCESS_KEY", "some-secret-key")
 						os.Setenv("BBL_AWS_REGION", "some-region")
-					})
-
-					AfterEach(func() {
-						os.Unsetenv("BBL_IAAS")
-						os.Unsetenv("BBL_AWS_ACCESS_KEY_ID")
-						os.Unsetenv("BBL_AWS_SECRET_ACCESS_KEY")
-						os.Unsetenv("BBL_AWS_REGION")
 					})
 
 					It("returns a state object containing configuration flags", func() {
