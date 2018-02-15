@@ -2,22 +2,19 @@ package terraform_test
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
-	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
-	"sync"
 
 	"github.com/cloudfoundry/bosh-bootloader/terraform"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
+	"github.com/onsi/gomega/ghttp"
 )
 
 var _ = Describe("Run", func() {
@@ -30,12 +27,8 @@ var _ = Describe("Run", func() {
 
 		cmd terraform.Cmd
 
-		fakeTerraformBackendServer *httptest.Server
+		fakeTerraformBackendServer *ghttp.Server
 		pathToTerraform            string
-		fastFailTerraform          bool
-		fastFailMtx                sync.Mutex
-
-		terraformArgs []string
 	)
 
 	BeforeEach(func() {
@@ -47,29 +40,11 @@ var _ = Describe("Run", func() {
 
 		cmd = terraform.NewCmd(fakeStderr, io.MultiWriter(outputBuffer, GinkgoWriter), "some-terraform-dir")
 
-		fakeTerraformBackendServer = httptest.NewServer(http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
-			fastFailMtx.Lock()
-			if fastFailTerraform {
-				responseWriter.WriteHeader(http.StatusInternalServerError)
-			}
-			fastFailMtx.Unlock()
-
-			if request.Method == "POST" {
-				body, err := ioutil.ReadAll(request.Body)
-				if err != nil {
-					panic(err)
-				}
-
-				err = json.Unmarshal(body, &terraformArgs)
-				if err != nil {
-					panic(err)
-				}
-			}
-		}))
+		fakeTerraformBackendServer = ghttp.NewServer()
 
 		var err error
 		pathToTerraform, err = gexec.Build("github.com/cloudfoundry/bosh-bootloader/fakes/terraform",
-			"--ldflags", fmt.Sprintf("-X main.backendURL=%s", fakeTerraformBackendServer.URL))
+			"--ldflags", fmt.Sprintf("-X main.backendURL=%s", fakeTerraformBackendServer.URL()))
 		Expect(err).NotTo(HaveOccurred())
 
 		os.Setenv("PATH", strings.Join([]string{filepath.Dir(pathToTerraform), originalPath}, ":"))
@@ -79,42 +54,45 @@ var _ = Describe("Run", func() {
 		os.Setenv("PATH", originalPath)
 	})
 
-	It("runs terraform with args", func() {
-		err := cmd.Run(fakeStdout, defaultArgs, false)
-		Expect(err).NotTo(HaveOccurred())
-
-		Expect(terraformArgs).To(Equal([]string{"apply", "-state=/tmp/terraform.tfstate", "/tmp"}))
-
-		By("does not write terraform output to stdout", func() {
-			fakeStdoutContents := string(fakeStdout.Bytes())
-			Expect(fakeStdoutContents).NotTo(ContainSubstring("-state=/tmp/terraform.tfstate"))
+	Context("when the terraform server succeeds", func() {
+		BeforeEach(func() {
+			fakeTerraformBackendServer.AppendHandlers(
+				ghttp.RespondWith(200, "we good"),
+				ghttp.VerifyJSONRepresenting(defaultArgs),
+			)
 		})
-	})
 
-	It("sets TF_DATA_DIR to the provided .terraform directory", func() {
-		err := cmd.Run(nil, defaultArgs, false)
-		Expect(err).NotTo(HaveOccurred())
-
-		Expect(terraformArgs).To(Equal([]string{"apply", "-state=/tmp/terraform.tfstate", "/tmp"}))
-
-		outputBufferContents := string(outputBuffer.Bytes())
-		Expect(outputBufferContents).To(ContainSubstring("data directory: some-terraform-dir"))
-	})
-
-	Context("when debug is true", func() {
-		It("redirects command stdout to provided stdout", func() {
-			err := cmd.Run(fakeStdout, defaultArgs, true)
+		It("runs terraform with args", func() {
+			err := cmd.Run(fakeStdout, defaultArgs, false)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(fakeStdout).To(ContainSubstring("apply -state=/tmp/terraform.tfstate /tmp"))
+			By("does not write terraform output to stdout", func() {
+				fakeStdoutContents := string(fakeStdout.Bytes())
+				Expect(fakeStdoutContents).NotTo(ContainSubstring("-state=/tmp/terraform.tfstate"))
+			})
+		})
+
+		It("sets TF_DATA_DIR to the provided .terraform directory", func() {
+			err := cmd.Run(nil, defaultArgs, false)
+			Expect(err).NotTo(HaveOccurred())
+
+			outputBufferContents := string(outputBuffer.Bytes())
+			Expect(outputBufferContents).To(ContainSubstring("data directory: some-terraform-dir"))
+		})
+
+		Context("when debug is true", func() {
+			It("redirects command stdout to provided stdout", func() {
+				err := cmd.Run(fakeStdout, defaultArgs, true)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(fakeStdout).To(ContainSubstring("apply -state=/tmp/terraform.tfstate /tmp"))
+			})
 		})
 	})
 
 	Context("when terraform fails", func() {
 		BeforeEach(func() {
-			fastFailMtx.Lock()
-			fastFailTerraform = true
-			fastFailMtx.Unlock()
+			fakeTerraformBackendServer.AppendHandlers(ghttp.RespondWith(http.StatusInternalServerError, "intentional 500"))
 		})
 
 		It("returns an error and redirects command stderr to the provided buffer", func() {
