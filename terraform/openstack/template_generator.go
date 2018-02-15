@@ -34,6 +34,7 @@ output "internal_cidr" { value = "${var.internal_cidr}" }
 output "internal_gw" { value = "${var.internal_gw}" }
 output "external_ip" { value = "${var.external_ip}" }
 output "jumpbox__internal_ip" { value = "${var.jumpbox_internal_ip}" }
+output "jumpbox_url" { value = "${var.external_ip}:22" }
 output "director__internal_ip" { value = "${var.director_internal_ip}" }
 output "auth_url" { value = "${var.auth_url}" }
 output "az" { value = "${var.az}" }
