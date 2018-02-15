@@ -318,15 +318,28 @@ func ValidateIAAS(state storage.State) error {
 	var err error
 	switch state.IAAS {
 	case "aws":
-		err = validateAWS(state.AWS)
+		creds := []string{state.AWS.AccessKeyID, state.AWS.SecretAccessKey, state.AWS.Region}
+		err = validate("AWS", creds)
+
 	case "azure":
-		err = validateAzure(state.Azure)
+		creds := []string{state.Azure.ClientID, state.Azure.ClientSecret, state.Azure.Region, state.Azure.SubscriptionID, state.Azure.TenantID}
+		err = validate("Azure", creds)
+
 	case "gcp":
-		err = validateGCP(state.GCP)
+		creds := []string{state.GCP.ServiceAccountKey, state.GCP.Region}
+		err = validate("GCP", creds)
+
 	case "vsphere":
-		err = validateVSphere(state.VSphere)
+		creds := []string{state.VSphere.VCenterUser, state.VSphere.VCenterPassword, state.VSphere.VCenterIP, state.VSphere.VCenterIP,
+			state.VSphere.VCenterDC, state.VSphere.Cluster, state.VSphere.VCenterRP, state.VSphere.Network, state.VSphere.VCenterDS, state.VSphere.Subnet}
+		err = validate("vSphere", creds)
+
 	case "openstack":
-		err = validateOpenStack(state.OpenStack)
+		creds := []string{state.OpenStack.InternalCidr, state.OpenStack.ExternalIP, state.OpenStack.AuthURL, state.OpenStack.AZ, state.OpenStack.DefaultKeyName,
+			state.OpenStack.DefaultSecurityGroup, state.OpenStack.NetworkID, state.OpenStack.Password, state.OpenStack.Username, state.OpenStack.Project,
+			state.OpenStack.Domain, state.OpenStack.Region, state.OpenStack.PrivateKey}
+		err = validate("OpenStack", creds)
+
 	default:
 		err = errors.New("--iaas [gcp, aws, azure, vsphere, openstack] must be provided or BBL_IAAS must be set")
 	}
@@ -351,59 +364,10 @@ func NeedsIAASCreds(command string) bool {
 	return ok
 }
 
-func validateAWS(aws storage.AWS) error {
-	creds := []string{aws.AccessKeyID, aws.SecretAccessKey, aws.Region}
-
+func validate(iaas string, creds []string) error {
 	for _, s := range creds {
 		if s == "" {
-			return errors.New("Some AWS credentials are missing. To see all required credentials run `bbl plan --help`.")
-		}
-	}
-	return nil
-}
-
-func validateAzure(azure storage.Azure) error {
-	creds := []string{azure.ClientID, azure.ClientSecret, azure.Region, azure.SubscriptionID, azure.TenantID}
-
-	for _, s := range creds {
-		if s == "" {
-			return errors.New("Some Azure credentials are missing. To see all required credentials run `bbl plan --help`.")
-		}
-	}
-	return nil
-}
-
-func validateGCP(gcp storage.GCP) error {
-	creds := []string{gcp.ServiceAccountKey, gcp.Region}
-
-	for _, s := range creds {
-		if s == "" {
-			return errors.New("Some GCP credentials are missing. To see all required credentials run `bbl plan --help`.")
-		}
-	}
-	return nil
-}
-
-func validateVSphere(vsphere storage.VSphere) error {
-	creds := []string{vsphere.VCenterUser, vsphere.VCenterPassword, vsphere.VCenterIP, vsphere.VCenterIP, vsphere.VCenterDC,
-		vsphere.Cluster, vsphere.VCenterRP, vsphere.Network, vsphere.VCenterDS, vsphere.Subnet}
-
-	for _, s := range creds {
-		if s == "" {
-			return errors.New("Some vSphere credentials are missing. To see all required credentials run `bbl plan --help`.")
-		}
-	}
-	return nil
-}
-
-func validateOpenStack(openstack storage.OpenStack) error {
-	creds := []string{openstack.InternalCidr, openstack.ExternalIP, openstack.AuthURL, openstack.AZ, openstack.DefaultKeyName,
-		openstack.DefaultSecurityGroup, openstack.NetworkID, openstack.Password, openstack.Username, openstack.Project,
-		openstack.Domain, openstack.Region, openstack.PrivateKey}
-
-	for _, s := range creds {
-		if s == "" {
-			return errors.New("Some OpenStack credentials are missing. To see all required credentials run `bbl plan --help`.")
+			return fmt.Errorf("There are %s credentials missing. To see all required credentials run `bbl plan --help`.", iaas)
 		}
 	}
 	return nil

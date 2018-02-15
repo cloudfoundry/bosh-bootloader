@@ -1152,31 +1152,31 @@ var _ = Describe("LoadState", func() {
 					IAAS: "aws",
 					AWS:  storage.AWS{},
 				},
-				"Some AWS credentials are missing. To see all required credentials run `bbl plan --help`."),
+				"There are AWS credentials missing. To see all required credentials run `bbl plan --help`."),
 			Entry("when any GCP credential is missing",
 				storage.State{
 					IAAS: "gcp",
 					GCP:  storage.GCP{},
 				},
-				"Some GCP credentials are missing. To see all required credentials run `bbl plan --help`."),
+				"There are GCP credentials missing. To see all required credentials run `bbl plan --help`."),
 			Entry("when any Azure credential is missing",
 				storage.State{
 					IAAS:  "azure",
 					Azure: storage.Azure{},
 				},
-				"Some Azure credentials are missing. To see all required credentials run `bbl plan --help`."),
+				"There are Azure credentials missing. To see all required credentials run `bbl plan --help`."),
 			Entry("when any vSphere credential is missing",
 				storage.State{
 					IAAS:    "vsphere",
 					VSphere: storage.VSphere{},
 				},
-				"Some vSphere credentials are missing. To see all required credentials run `bbl plan --help`."),
+				"There are vSphere credentials missing. To see all required credentials run `bbl plan --help`."),
 			Entry("when any OpenStack credential is missing",
 				storage.State{
 					IAAS:      "openstack",
 					OpenStack: storage.OpenStack{},
 				},
-				"Some OpenStack credentials are missing. To see all required credentials run `bbl plan --help`."),
+				"There are OpenStack credentials missing. To see all required credentials run `bbl plan --help`."),
 		)
 	})
 })
