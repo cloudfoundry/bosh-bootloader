@@ -13,22 +13,7 @@ import (
 )
 
 var _ = Describe("state query against a bbl 5.1.0 state file", func() {
-	// Tests all the bbl read commands:
-	//
-	//   lbs                     Prints attached load balancer(s)
-	//   jumpbox-address         Prints BOSH jumpbox address
-	//   director-address        Prints BOSH director address
-	//   director-username       Prints BOSH director username
-	//   director-password       Prints BOSH director password
-	//   director-ca-cert        Prints BOSH director CA certificate
-	//   env-id                  Prints environment ID
-	//   latest-error            Prints the output from the latest call to terraform
-	//   print-env               Prints BOSH friendly environment variables
-	//   ssh-key                 Prints jumpbox SSH private key
-	//   director-ssh-key        Prints director SSH private key
-	var (
-		bbl actors.BBL
-	)
+	var bbl actors.BBL
 
 	BeforeEach(func() {
 		stateDir, err := ioutil.TempDir("", "")
