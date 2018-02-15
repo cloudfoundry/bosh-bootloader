@@ -16,6 +16,16 @@ const (
       availability_zone: ((az))
 
 - type: replace
+  path: /vm_types
+  value:
+  - name: default
+    cloud_properties:
+      instance_type: m1.small
+  - name: large
+    cloud_properties:
+      instance_type: m1.xlarge
+
+- type: replace
   path: /compilation
   value:
     workers: 5
