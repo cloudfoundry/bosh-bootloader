@@ -9,8 +9,7 @@ import (
 
 var _ = Describe("Flags", func() {
 	var (
-		f flags.Flags
-		// boolVal   bool
+		f         flags.Flags
 		stringVal string
 	)
 
