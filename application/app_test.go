@@ -60,13 +60,7 @@ var _ = Describe("App", func() {
 					Global: application.GlobalConfiguration{
 						StateDir: "some/state/dir",
 					},
-					State: storage.State{
-						AWS: storage.AWS{
-							AccessKeyID:     "some-access-key-id",
-							SecretAccessKey: "some-secret-access-key",
-							Region:          "some-region",
-						},
-					},
+					State: storage.State{},
 				})
 
 				Expect(app.Run()).To(Succeed())
@@ -183,8 +177,7 @@ var _ = Describe("App", func() {
 					})
 
 					It("returns an error", func() {
-						err := app.Run()
-						Expect(err).To(MatchError("unknown command: version"))
+						Expect(app.Run()).To(MatchError("unknown command: version"))
 					})
 				})
 			})
@@ -227,8 +220,7 @@ var _ = Describe("App", func() {
 							Debug: true,
 						},
 					})
-					err := app.Run()
-					Expect(err).To(MatchError("error executing command"))
+					Expect(app.Run()).To(MatchError("error executing command"))
 				})
 			})
 		})

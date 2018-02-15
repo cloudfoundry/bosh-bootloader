@@ -29,12 +29,7 @@ func New(commands CommandSet, configuration Configuration, usage usage) App {
 }
 
 func (a App) Run() error {
-	err := a.execute()
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return a.execute()
 }
 
 func (a App) getCommand(commandString string) (commands.Command, error) {
@@ -81,10 +76,5 @@ func (a App) execute() error {
 		return err
 	}
 
-	err = command.Execute(a.configuration.SubcommandFlags, a.configuration.State)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return command.Execute(a.configuration.SubcommandFlags, a.configuration.State)
 }

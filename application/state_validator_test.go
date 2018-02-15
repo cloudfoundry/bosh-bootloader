@@ -35,30 +35,26 @@ var _ = Describe("StateValidator", func() {
 		})
 
 		It("returns no error ", func() {
-			err := stateValidator.Validate()
-			Expect(err).NotTo(HaveOccurred())
+			Expect(stateValidator.Validate()).To(Succeed())
 		})
 	})
 
 	Context("when state file cannot be found", func() {
 		It("returns an error", func() {
-			err := stateValidator.Validate()
 			expectedError := fmt.Errorf("bbl-state.json not found in %q, ensure you're running this command in the proper state directory or create a new environment with bbl up", tempDirectory)
-			Expect(err).To(MatchError(expectedError))
+			Expect(stateValidator.Validate()).To(MatchError(expectedError))
 		})
 	})
 
 	Context("failure cases", func() {
 		Context("when permission denied", func() {
-
 			It("returns an error", func() {
 				if runtime.GOOS == "windows" {
 					Skip("Chmod is not supported on Windows")
 				}
-				err := os.Chmod(tempDirectory, os.FileMode(0))
-				Expect(err).NotTo(HaveOccurred())
-				err = stateValidator.Validate()
-				Expect(err).To(MatchError(ContainSubstring("permission denied")))
+				Expect(os.Chmod(tempDirectory, os.FileMode(0))).To(Succeed())
+
+				Expect(stateValidator.Validate()).To(MatchError(ContainSubstring("permission denied")))
 			})
 		})
 	})

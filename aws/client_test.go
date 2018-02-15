@@ -170,9 +170,7 @@ var _ = Describe("Client", func() {
 
 		Context("when there are no instances at all", func() {
 			BeforeEach(func() {
-				ec2Client.DescribeInstancesCall.Returns.Output = &awsec2.DescribeInstancesOutput{
-					Reservations: []*awsec2.Reservation{},
-				}
+				ec2Client.DescribeInstancesCall.Returns.Output = &awsec2.DescribeInstancesOutput{Reservations: []*awsec2.Reservation{}}
 			})
 
 			It("returns nil", func() {

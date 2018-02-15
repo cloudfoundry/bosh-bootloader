@@ -150,51 +150,12 @@ func (c Client) removeOneVM(vms []string, vmToRemove string) []string {
 	return vms
 }
 
-//********************************************************************************
-// Methods from actors.AWS
-
-func (c Client) Instances(envID string) ([]string, error) {
-	var instances []string
-
-	vpcID, err := c.GetVPC(fmt.Sprintf("%s-vpc", envID))
-
-	output, err := c.ec2Client.DescribeInstances(&awsec2.DescribeInstancesInput{
-		Filters: []*awsec2.Filter{
-			{
-				Name: awslib.String("vpc-id"),
-				Values: []*string{
-					vpcID,
-				},
-			},
-		},
-	})
-	if err != nil {
-		return []string{}, err
-	}
-
-	for _, reservation := range output.Reservations {
-		for _, instance := range reservation.Instances {
-			for _, tag := range instance.Tags {
-				if awslib.StringValue(tag.Key) == "Name" && awslib.StringValue(tag.Value) != "" {
-					instances = append(instances, awslib.StringValue(tag.Value))
-				}
-			}
-		}
-	}
-
-	return instances, nil
-}
-
 func (c Client) GetVPC(vpcName string) (*string, error) {
 	vpcs, err := c.ec2Client.DescribeVpcs(&awsec2.DescribeVpcsInput{
-		Filters: []*awsec2.Filter{
-			{
-				Name: awslib.String("tag:Name"),
-				Values: []*string{
-					awslib.String(vpcName),
-				},
-			},
-		},
+		Filters: []*awsec2.Filter{{
+			Name:   awslib.String("tag:Name"),
+			Values: []*string{awslib.String(vpcName)},
+		}},
 	})
 
 	if err != nil {
