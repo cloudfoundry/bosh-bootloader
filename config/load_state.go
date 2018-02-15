@@ -352,78 +352,59 @@ func NeedsIAASCreds(command string) bool {
 }
 
 func validateAWS(aws storage.AWS) error {
-	if aws.AccessKeyID == "" {
-		return errors.New("AWS access key ID must be provided (--aws-access-key-id or BBL_AWS_ACCESS_KEY_ID)")
-	}
-	if aws.SecretAccessKey == "" {
-		return errors.New("AWS secret access key must be provided (--aws-secret-access-key or BBL_AWS_SECRET_ACCESS_KEY)")
-	}
-	if aws.Region == "" {
-		return errors.New("AWS region must be provided (--aws-region or BBL_AWS_REGION)")
+	creds := []string{aws.AccessKeyID, aws.SecretAccessKey, aws.Region}
+
+	for _, s := range creds {
+		if s == "" {
+			return errors.New("Some AWS credentials are missing. To see all required credentials run `bbl plan --help`.")
+		}
 	}
 	return nil
 }
 
 func validateAzure(azure storage.Azure) error {
-	if azure.ClientID == "" {
-		return errors.New("Azure client id must be provided (--azure-client-id or BBL_AZURE_CLIENT_ID)")
-	}
-	if azure.ClientSecret == "" {
-		return errors.New("Azure client secret must be provided (--azure-client-secret or BBL_AZURE_CLIENT_SECRET)")
-	}
-	if azure.Region == "" {
-		return errors.New("Azure region must be provided (--azure-region or BBL_AZURE_REGION)")
-	}
-	if azure.SubscriptionID == "" {
-		return errors.New("Azure subscription id must be provided (--azure-subscription-id or BBL_AZURE_SUBSCRIPTION_ID)")
-	}
-	if azure.TenantID == "" {
-		return errors.New("Azure tenant id must be provided (--azure-tenant-id or BBL_AZURE_TENANT_ID)")
+	creds := []string{azure.ClientID, azure.ClientSecret, azure.Region, azure.SubscriptionID, azure.TenantID}
+
+	for _, s := range creds {
+		if s == "" {
+			return errors.New("Some Azure credentials are missing. To see all required credentials run `bbl plan --help`.")
+		}
 	}
 	return nil
 }
 
 func validateGCP(gcp storage.GCP) error {
-	if gcp.ServiceAccountKey == "" {
-		return errors.New("GCP service account key must be provided (--gcp-service-account-key or BBL_GCP_SERVICE_ACCOUNT_KEY)")
-	}
-	if gcp.Region == "" {
-		return errors.New("GCP region must be provided (--gcp-region or BBL_GCP_REGION)")
+	creds := []string{gcp.ServiceAccountKey, gcp.Region}
+
+	for _, s := range creds {
+		if s == "" {
+			return errors.New("Some GCP credentials are missing. To see all required credentials run `bbl plan --help`.")
+		}
 	}
 	return nil
 }
 
 func validateVSphere(vsphere storage.VSphere) error {
-	if vsphere.VCenterUser == "" {
-		return errors.New("vSphere vcenter user must be provided (--vsphere-vcenter-user or BBL_VSPHERE_VCENTER_USER)")
-	}
-	if vsphere.VCenterPassword == "" {
-		return errors.New("vSphere vcenter password must be provided (--vsphere-vcenter-password or BBL_VSPHERE_VCENTER_PASSWORD)")
-	}
-	if vsphere.VCenterIP == "" {
-		return errors.New("vSphere vcenter ip must be provided (--vsphere-vcenter-ip or BBL_VSPHERE_VCENTER_IP)")
-	}
-	if vsphere.VCenterDC == "" {
-		return errors.New("vSphere vcenter datacenter must be provided (--vsphere-vcenter-dc or BBL_VSPHERE_VCENTER_DC)")
-	}
-	if vsphere.Cluster == "" {
-		return errors.New("vSphere cluster must be provided (--vsphere-vcenter-cluster or BBL_VSPHERE_VCENTER_CLUSTER)")
-	}
-	if vsphere.VCenterRP == "" {
-		return errors.New("vSphere vcenter resource pool must be provided (--vsphere-vcenter-rp or BBL_VSPHERE_VCENTER_RP)")
-	}
-	if vsphere.Network == "" {
-		return errors.New("vSphere network must be provided (--vsphere-network or BBL_VSPHERE_NETWORK)")
-	}
-	if vsphere.VCenterDS == "" {
-		return errors.New("vSphere vcenter datastore must be provided (--vsphere-vcenter-ds or BBL_VSPHERE_VCENTER_DS)")
-	}
-	if vsphere.Subnet == "" {
-		return errors.New("vSphere subnet must be provided (--vsphere-subnet or BBL_VSPHERE_SUBNET)")
+	creds := []string{vsphere.VCenterUser, vsphere.VCenterPassword, vsphere.VCenterIP, vsphere.VCenterIP, vsphere.VCenterDC,
+		vsphere.Cluster, vsphere.VCenterRP, vsphere.Network, vsphere.VCenterDS, vsphere.Subnet}
+
+	for _, s := range creds {
+		if s == "" {
+			return errors.New("Some vSphere credentials are missing. To see all required credentials run `bbl plan --help`.")
+		}
 	}
 	return nil
 }
 
 func validateOpenStack(openstack storage.OpenStack) error {
+	creds := []string{openstack.InternalCidr, openstack.ExternalIP, openstack.AuthURL, openstack.AZ, openstack.DefaultKeyName,
+		openstack.DefaultSecurityGroup, openstack.NetworkID, openstack.Password, openstack.Username, openstack.Project,
+		openstack.Domain, openstack.Region, openstack.PrivateKey}
+
+	for _, s := range creds {
+		if s == "" {
+			return errors.New("Some OpenStack credentials are missing. To see all required credentials run `bbl plan --help`.")
+		}
+	}
 	return nil
 }
