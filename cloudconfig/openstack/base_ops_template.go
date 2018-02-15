@@ -48,7 +48,7 @@ const (
       gateway: ((internal_gw))
       azs: [z1, z2, z3]
       dns: [8.8.8.8]
-      reserved: [((jumpbox__internal_ip))]
+      reserved: ["((internal_gw))-((jumpbox__internal_ip))"]
       cloud_properties:
         net_id: ((net_id))
 
