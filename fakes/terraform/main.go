@@ -33,6 +33,7 @@ func main() {
 	}
 
 	if contains(os.Args, "region=fail-to-terraform") {
+		fmt.Printf("received args: %+v\n", os.Args)
 		err := ioutil.WriteFile(*stateFile, []byte(`{"key":"partial-apply"}`), storage.StateMode)
 		if err != nil {
 			panic(err)
