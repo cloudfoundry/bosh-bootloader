@@ -149,28 +149,22 @@ func (c Config) Bootstrap(args []string) (application.Configuration, error) {
 func (c Config) updateIAASState(globalFlags globalFlags, state storage.State) (storage.State, error) {
 	if globalFlags.IAAS != "" {
 		if state.IAAS != "" && globalFlags.IAAS != state.IAAS {
-			iaasMismatch := fmt.Sprintf("The iaas type cannot be changed for an existing environment. The current iaas type is %s.", state.IAAS)
-			return storage.State{}, errors.New(iaasMismatch)
+			return storage.State{}, fmt.Errorf("The iaas type cannot be changed for an existing environment. The current iaas type is %s.", state.IAAS)
 		}
 		state.IAAS = globalFlags.IAAS
 	}
 
 	switch state.IAAS {
 	case "aws":
-		state, err := c.updateAWSState(globalFlags, state)
-		return state, err
+		return c.updateAWSState(globalFlags, state)
 	case "azure":
-		state, err := c.updateAzureState(globalFlags, state)
-		return state, err
+		return c.updateAzureState(globalFlags, state)
 	case "gcp":
-		state, err := c.updateGCPState(globalFlags, state)
-		return state, err
+		return c.updateGCPState(globalFlags, state)
 	case "vsphere":
-		state, err := c.updateVSphereState(globalFlags, state)
-		return state, err
+		return c.updateVSphereState(globalFlags, state)
 	case "openstack":
-		state, err := c.updateOpenStackState(globalFlags, state)
-		return state, err
+		return c.updateOpenStackState(globalFlags, state)
 	}
 
 	return state, nil
@@ -209,17 +203,27 @@ func (c Config) updateOpenStackState(globalFlags globalFlags, state storage.Stat
 	return state, nil
 }
 
+func (c Config) updateVSphereState(globalFlags globalFlags, state storage.State) (storage.State, error) {
+	copyFlagToState(globalFlags.VSphereVCenterUser, &state.VSphere.VCenterUser)
+	copyFlagToState(globalFlags.VSphereVCenterPassword, &state.VSphere.VCenterPassword)
+	copyFlagToState(globalFlags.VSphereVCenterIP, &state.VSphere.VCenterIP)
+	copyFlagToState(globalFlags.VSphereVCenterDC, &state.VSphere.VCenterDC)
+	copyFlagToState(globalFlags.VSphereVCenterRP, &state.VSphere.VCenterRP)
+	copyFlagToState(globalFlags.VSphereCluster, &state.VSphere.Cluster)
+	copyFlagToState(globalFlags.VSphereNetwork, &state.VSphere.Network)
+	copyFlagToState(globalFlags.VSphereVCenterDS, &state.VSphere.VCenterDS)
+	copyFlagToState(globalFlags.VSphereSubnet, &state.VSphere.Subnet)
+
+	return state, nil
+}
+
 func (c Config) updateAWSState(globalFlags globalFlags, state storage.State) (storage.State, error) {
-	if globalFlags.AWSAccessKeyID != "" {
-		state.AWS.AccessKeyID = globalFlags.AWSAccessKeyID
-	}
-	if globalFlags.AWSSecretAccessKey != "" {
-		state.AWS.SecretAccessKey = globalFlags.AWSSecretAccessKey
-	}
+	copyFlagToState(globalFlags.AWSAccessKeyID, &state.AWS.AccessKeyID)
+	copyFlagToState(globalFlags.AWSSecretAccessKey, &state.AWS.SecretAccessKey)
+
 	if globalFlags.AWSRegion != "" {
 		if state.AWS.Region != "" && globalFlags.AWSRegion != state.AWS.Region {
-			regionMismatch := fmt.Sprintf("The region cannot be changed for an existing environment. The current region is %s.", state.AWS.Region)
-			return storage.State{}, errors.New(regionMismatch)
+			return storage.State{}, fmt.Errorf("The region cannot be changed for an existing environment. The current region is %s.", state.AWS.Region)
 		}
 		state.AWS.Region = globalFlags.AWSRegion
 	}
@@ -228,21 +232,11 @@ func (c Config) updateAWSState(globalFlags globalFlags, state storage.State) (st
 }
 
 func (c Config) updateAzureState(globalFlags globalFlags, state storage.State) (storage.State, error) {
-	if globalFlags.AzureClientID != "" {
-		state.Azure.ClientID = globalFlags.AzureClientID
-	}
-	if globalFlags.AzureClientSecret != "" {
-		state.Azure.ClientSecret = globalFlags.AzureClientSecret
-	}
-	if globalFlags.AzureRegion != "" {
-		state.Azure.Region = globalFlags.AzureRegion
-	}
-	if globalFlags.AzureSubscriptionID != "" {
-		state.Azure.SubscriptionID = globalFlags.AzureSubscriptionID
-	}
-	if globalFlags.AzureTenantID != "" {
-		state.Azure.TenantID = globalFlags.AzureTenantID
-	}
+	copyFlagToState(globalFlags.AzureClientID, &state.Azure.ClientID)
+	copyFlagToState(globalFlags.AzureClientSecret, &state.Azure.ClientSecret)
+	copyFlagToState(globalFlags.AzureRegion, &state.Azure.Region)
+	copyFlagToState(globalFlags.AzureSubscriptionID, &state.Azure.SubscriptionID)
+	copyFlagToState(globalFlags.AzureTenantID, &state.Azure.TenantID)
 
 	return state, nil
 }
@@ -261,16 +255,14 @@ func (c Config) updateGCPState(globalFlags globalFlags, state storage.State) (st
 			return storage.State{}, err
 		}
 		if state.GCP.ProjectID != "" && id != state.GCP.ProjectID {
-			mismatch := fmt.Sprintf("The project ID cannot be changed for an existing environment. The current project ID is %s.", state.GCP.ProjectID)
-			return storage.State{}, errors.New(mismatch)
+			return storage.State{}, fmt.Errorf("The project ID cannot be changed for an existing environment. The current project ID is %s.", state.GCP.ProjectID)
 		}
 		state.GCP.ProjectID = id
 	}
 
 	if globalFlags.GCPRegion != "" {
 		if state.GCP.Region != "" && globalFlags.GCPRegion != state.GCP.Region {
-			regionMismatch := fmt.Sprintf("The region cannot be changed for an existing environment. The current region is %s.", state.GCP.Region)
-			return storage.State{}, errors.New(regionMismatch)
+			return storage.State{}, fmt.Errorf("The region cannot be changed for an existing environment. The current region is %s.", state.GCP.Region)
 		}
 		state.GCP.Region = globalFlags.GCPRegion
 	}
@@ -322,38 +314,6 @@ func (c Config) getGCPProjectID(key string) (string, error) {
 	return p.ProjectID, nil
 }
 
-func (c Config) updateVSphereState(globalFlags globalFlags, state storage.State) (storage.State, error) {
-	if globalFlags.VSphereVCenterUser != "" {
-		state.VSphere.VCenterUser = globalFlags.VSphereVCenterUser
-	}
-	if globalFlags.VSphereVCenterPassword != "" {
-		state.VSphere.VCenterPassword = globalFlags.VSphereVCenterPassword
-	}
-	if globalFlags.VSphereVCenterIP != "" {
-		state.VSphere.VCenterIP = globalFlags.VSphereVCenterIP
-	}
-	if globalFlags.VSphereVCenterDC != "" {
-		state.VSphere.VCenterDC = globalFlags.VSphereVCenterDC
-	}
-	if globalFlags.VSphereCluster != "" {
-		state.VSphere.Cluster = globalFlags.VSphereCluster
-	}
-	if globalFlags.VSphereVCenterRP != "" {
-		state.VSphere.VCenterRP = globalFlags.VSphereVCenterRP
-	}
-	if globalFlags.VSphereNetwork != "" {
-		state.VSphere.Network = globalFlags.VSphereNetwork
-	}
-	if globalFlags.VSphereVCenterDS != "" {
-		state.VSphere.VCenterDS = globalFlags.VSphereVCenterDS
-	}
-	if globalFlags.VSphereSubnet != "" {
-		state.VSphere.Subnet = globalFlags.VSphereSubnet
-	}
-
-	return state, nil
-}
-
 func ValidateIAAS(state storage.State) error {
 	var err error
 	switch state.IAAS {
@@ -365,6 +325,8 @@ func ValidateIAAS(state storage.State) error {
 		err = validateGCP(state.GCP)
 	case "vsphere":
 		err = validateVSphere(state.VSphere)
+	case "openstack":
+		err = validateOpenStack(state.OpenStack)
 	default:
 		err = errors.New("--iaas [gcp, aws, azure, vsphere, openstack] must be provided or BBL_IAAS must be set")
 	}
@@ -459,5 +421,9 @@ func validateVSphere(vsphere storage.VSphere) error {
 	if vsphere.Subnet == "" {
 		return errors.New("vSphere subnet must be provided (--vsphere-subnet or BBL_VSPHERE_SUBNET)")
 	}
+	return nil
+}
+
+func validateOpenStack(openstack storage.OpenStack) error {
 	return nil
 }
