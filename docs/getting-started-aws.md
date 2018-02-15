@@ -29,7 +29,7 @@ The user must have the following `policy`:
                 "logs:*",
                 "elasticloadbalancing:*",
                 "cloudformation:*",
-                "iam:*',
+                "iam:*",
                 "kms:*",
                 "route53:*",
                 "ec2:*"
