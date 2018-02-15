@@ -44,6 +44,7 @@ output "openstack_project" { value = "${var.openstack_project}" }
 output "openstack_domain" { value = "${var.openstack_domain}" }
 output "region" { value = "${var.region}" }
 output "env_id" { value = "${var.env_id}" }
+output "director_name" { value = "${var.env_id}" }
 output "private_key" {
 	value     = "${var.private_key}"
 	sensitive = true
