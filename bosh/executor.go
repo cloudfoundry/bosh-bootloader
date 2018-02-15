@@ -217,6 +217,9 @@ func (e Executor) getDirectorOpsFiles(stateDir, deploymentDir, iaas string) []st
 		files = append(files, filepath.Join(deploymentDir, iaas, "iam-instance-profile.yml"))
 		files = append(files, filepath.Join(stateDir, "bbl-ops-files", iaas, "bosh-director-encrypt-disk-ops.yml"))
 	}
+	if iaas == "vsphere" {
+		files = append(files, filepath.Join(deploymentDir, "vsphere", "resource-pool.yml"))
+	}
 	return files
 }
 
@@ -239,10 +242,6 @@ func (e Executor) PlanDirector(input DirInput, deploymentDir, iaas string) error
 
 	for _, f := range e.getDirectorOpsFiles(input.StateDir, deploymentDir, iaas) {
 		sharedArgs = append(sharedArgs, "-o", f)
-	}
-
-	if iaas == "vsphere" {
-		sharedArgs = append(sharedArgs, "-o", filepath.Join(deploymentDir, "vsphere", "resource-pool.yml"))
 	}
 
 	boshState := filepath.Join(input.VarsDir, "bosh-state.json")
