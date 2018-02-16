@@ -26,6 +26,20 @@ resource "google_compute_route" "bosh-lite-vms" {
   depends_on = ["google_compute_subnetwork.bbl-subnet"]
 }
 
+resource "google_compute_firewall" "bosh-director-lite-tcp-routing" {
+  name    = "${var.env_id}-bosh-director-lite-tcp-routing"
+  network = "${google_compute_network.bbl-network.name}"
+
+  source_ranges = ["0.0.0.0/0"]
+
+  allow {
+    ports    = ["1024-1123"]
+    protocol = "tcp"
+  }
+
+  target_tags = ["${var.env_id}-bosh-director"]
+}
+
 output "external_ip" {
   value = "${google_compute_address.bosh-director-ip.address}"
 }
