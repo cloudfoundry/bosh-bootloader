@@ -83,8 +83,9 @@ func (d Destroy) CheckFastFails(subcommandFlags []string, state storage.State) e
 		if networkName == "" {
 			return nil
 		}
-	} else if state.IAAS == "vsphere" {
+	} else if state.IAAS == "vsphere" || state.IAAS == "openstack" {
 		// we don't create or delete the network for vsphere
+		// and right now we don't do it for openstack either
 		return nil
 	}
 

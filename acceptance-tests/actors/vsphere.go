@@ -11,7 +11,7 @@ func (v vSphereLBHelper) GetLBArgs() []string {
 	return []string{}
 }
 
-func (z vSphereLBHelper) VerifyCloudConfigExtensions(vmExtensions []string) {
+func (v vSphereLBHelper) VerifyCloudConfigExtensions(vmExtensions []string) {
 }
 
 func (v vSphereLBHelper) ConfirmLBsExist(envID string) {
