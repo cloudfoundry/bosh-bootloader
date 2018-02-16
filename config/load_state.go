@@ -192,7 +192,12 @@ func (c Config) updateOpenStackState(globalFlags globalFlags, state storage.Stat
 	copyFlagToState(globalFlags.OpenStackRegion, &state.OpenStack.Region)
 
 	if globalFlags.OpenStackPrivateKey != "" {
-		_, key, err := c.readKey(globalFlags.OpenStackPrivateKey)
+		absKeyPath, err := filepath.Abs(globalFlags.OpenStackPrivateKey)
+		if err != nil {
+			return storage.State{}, err
+		}
+
+		_, key, err := c.readKey(absKeyPath)
 		if err != nil {
 			return storage.State{}, err
 		}
