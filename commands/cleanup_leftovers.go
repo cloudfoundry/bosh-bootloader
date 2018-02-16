@@ -35,6 +35,12 @@ func (l CleanupLeftovers) Execute(subcommandFlags []string, state storage.State)
 		return fmt.Errorf("Parsing cleanup-leftovers args: %s", err)
 	}
 
+	if state.IAAS == "vsphere" || state.IAAS == "openstack" {
+		// we don't create network infrastructure on vsphere or openstack
+		// and we don't tear it down either
+		return nil
+	}
+
 	return l.deleter.Delete(filter)
 }
 
