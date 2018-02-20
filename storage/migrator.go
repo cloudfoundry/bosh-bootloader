@@ -91,7 +91,17 @@ func (m Migrator) Migrate(state State) (State, error) {
 		return State{}, err
 	}
 
+	err = m.MigrateDirectorVarsFile(varsDir)
+	if err != nil {
+		return State{}, err
+	}
+
 	state, err = m.MigrateJumpboxVars(state, varsDir)
+	if err != nil {
+		return State{}, err
+	}
+
+	err = m.MigrateJumpboxVarsFile(varsDir)
 	if err != nil {
 		return State{}, err
 	}
@@ -253,5 +263,29 @@ func (m Migrator) migrateVarsStore(variables, deployment, varsDir string) error 
 		}
 	}
 
+	return nil
+}
+
+func (m Migrator) MigrateDirectorVarsFile(varsDir string) error {
+	deploymentVarsPath := filepath.Join(varsDir, "director-deployment-vars.yml")
+	varsFilePath := filepath.Join(varsDir, "director-vars-file.yml")
+	if _, err := m.fs.Stat(deploymentVarsPath); err == nil {
+		err = m.fs.Rename(deploymentVarsPath, varsFilePath)
+		if err != nil {
+			return fmt.Errorf("migrating director vars file: %s", err)
+		}
+	}
+	return nil
+}
+
+func (m Migrator) MigrateJumpboxVarsFile(varsDir string) error {
+	deploymentVarsPath := filepath.Join(varsDir, "jumpbox-deployment-vars.yml")
+	varsFilePath := filepath.Join(varsDir, "jumpbox-vars-file.yml")
+	if _, err := m.fs.Stat(deploymentVarsPath); err == nil {
+		err = m.fs.Rename(deploymentVarsPath, varsFilePath)
+		if err != nil {
+			return fmt.Errorf("migrating jumpbox vars file: %s", err)
+		}
+	}
 	return nil
 }

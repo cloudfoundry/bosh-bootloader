@@ -184,6 +184,50 @@ var _ = Describe("Migrator", func() {
 		})
 	})
 
+	Describe("MigrateDirectorVarsFile", func() {
+		Context("when the state has a director-deployment-vars.yml file", func() {
+			It("migrates the file to director-vars-file.yml", func() {
+				err := migrator.MigrateDirectorVarsFile(varsDir)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(fileIO.RenameCall.Receives.Oldpath).To(Equal(filepath.Join(varsDir, "director-deployment-vars.yml")))
+				Expect(fileIO.RenameCall.Receives.Newpath).To(Equal(filepath.Join(varsDir, "director-vars-file.yml")))
+			})
+		})
+		Context("when renaming the director-deployment-vars.yml file fails", func() {
+			BeforeEach(func() {
+				fileIO.RenameCall.Returns.Error = errors.New("pumpkins aren't a fruit")
+			})
+
+			It("returns an error", func() {
+				err := migrator.MigrateDirectorVarsFile(varsDir)
+				Expect(err).To(MatchError(ContainSubstring("pumpkins")))
+			})
+		})
+	})
+
+	Describe("MigrateJumpboxVarsFile", func() {
+		Context("when the state has a jumpbox-deployment-vars.yml file", func() {
+			It("migrates the file to jumpbox-vars-file.yml", func() {
+				err := migrator.MigrateJumpboxVarsFile(varsDir)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(fileIO.RenameCall.Receives.Oldpath).To(Equal(filepath.Join(varsDir, "jumpbox-deployment-vars.yml")))
+				Expect(fileIO.RenameCall.Receives.Newpath).To(Equal(filepath.Join(varsDir, "jumpbox-vars-file.yml")))
+			})
+		})
+		Context("when renaming the jumpbox-deployment-vars.yml file fails", func() {
+			BeforeEach(func() {
+				fileIO.RenameCall.Returns.Error = errors.New("pumpkins aren't a fruit")
+			})
+
+			It("returns an error", func() {
+				err := migrator.MigrateJumpboxVarsFile(varsDir)
+				Expect(err).To(MatchError(ContainSubstring("pumpkins")))
+			})
+		})
+	})
+
 	Describe("MigrateTFVars", func() {
 		Context("when the state has bbl-provided tfvars in the terraform.tfvars file", func() {
 			It("migrates terraform.tfvars to bbl.tfvars", func() {
