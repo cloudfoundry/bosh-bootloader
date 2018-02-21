@@ -36,6 +36,8 @@ func (l AWSLBs) Execute(subcommandFlags []string, state storage.State) error {
 				SSHProxyLBURL          string   `json:"cf_ssh_proxy_lb_url,omitempty"`
 				TCPRouterLBName        string   `json:"cf_tcp_lb,omitempty"`
 				TCPRouterLBURL         string   `json:"cf_tcp_lb_url,omitempty"`
+				CredhubLBName          string   `json:"cf_credhub_lb,omitempty"`
+				CredhubLBURL           string   `json:"cf_credhub_lb_url,omitempty"`
 				SystemDomainDNSServers []string `json:"env_dns_zone_name_servers,omitempty"`
 			}{
 				RouterLBName:           terraformOutputs.GetString("cf_router_lb_name"),
@@ -44,6 +46,8 @@ func (l AWSLBs) Execute(subcommandFlags []string, state storage.State) error {
 				SSHProxyLBURL:          terraformOutputs.GetString("cf_ssh_lb_url"),
 				TCPRouterLBName:        terraformOutputs.GetString("cf_tcp_lb_name"),
 				TCPRouterLBURL:         terraformOutputs.GetString("cf_tcp_lb_url"),
+				CredhubLBName:          terraformOutputs.GetString("cf_credhub_lb_name"),
+				CredhubLBURL:           terraformOutputs.GetString("cf_credhub_lb_url"),
 				SystemDomainDNSServers: terraformOutputs.GetStringSlice("env_dns_zone_name_servers"),
 			})
 			if err != nil {
@@ -56,6 +60,7 @@ func (l AWSLBs) Execute(subcommandFlags []string, state storage.State) error {
 			l.logger.Printf("CF Router LB: %s [%s]\n", terraformOutputs.GetString("cf_router_lb_name"), terraformOutputs.GetString("cf_router_lb_url"))
 			l.logger.Printf("CF SSH Proxy LB: %s [%s]\n", terraformOutputs.GetString("cf_ssh_lb_name"), terraformOutputs.GetString("cf_ssh_lb_url"))
 			l.logger.Printf("CF TCP Router LB: %s [%s]\n", terraformOutputs.GetString("cf_tcp_lb_name"), terraformOutputs.GetString("cf_tcp_lb_url"))
+			l.logger.Printf("CF Credhub LB: %s [%s]\n", terraformOutputs.GetString("cf_credhub_lb_name"), terraformOutputs.GetString("cf_credhub_lb_url"))
 
 			dnsServers := terraformOutputs.GetStringSlice("env_dns_zone_name_servers")
 

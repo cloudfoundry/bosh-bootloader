@@ -39,12 +39,14 @@ var _ = Describe("AWSLBs", func() {
 					},
 				}
 				terraformManager.GetOutputsCall.Returns.Outputs = terraform.Outputs{Map: map[string]interface{}{
-					"cf_router_lb_name": "some-router-lb-name",
-					"cf_router_lb_url":  "some-router-lb-url",
-					"cf_ssh_lb_name":    "some-ssh-lb-name",
-					"cf_ssh_lb_url":     "some-ssh-lb-url",
-					"cf_tcp_lb_name":    "some-tcp-lb-name",
-					"cf_tcp_lb_url":     "some-tcp-lb-url",
+					"cf_router_lb_name":  "some-router-lb-name",
+					"cf_router_lb_url":   "some-router-lb-url",
+					"cf_ssh_lb_name":     "some-ssh-lb-name",
+					"cf_ssh_lb_url":      "some-ssh-lb-url",
+					"cf_tcp_lb_name":     "some-tcp-lb-name",
+					"cf_tcp_lb_url":      "some-tcp-lb-url",
+					"cf_credhub_lb_name": "some-credhub-lb-name",
+					"cf_credhub_lb_url":  "some-credhub-lb-url",
 				}}
 			})
 
@@ -57,6 +59,7 @@ var _ = Describe("AWSLBs", func() {
 					"CF Router LB: some-router-lb-name [some-router-lb-url]\n",
 					"CF SSH Proxy LB: some-ssh-lb-name [some-ssh-lb-url]\n",
 					"CF TCP Router LB: some-tcp-lb-name [some-tcp-lb-url]\n",
+					"CF Credhub LB: some-credhub-lb-name [some-credhub-lb-url]\n",
 				}))
 			})
 
@@ -64,15 +67,7 @@ var _ = Describe("AWSLBs", func() {
 				BeforeEach(func() {
 					incomingState.LB.Domain = "some-domain"
 
-					terraformManager.GetOutputsCall.Returns.Outputs = terraform.Outputs{Map: map[string]interface{}{
-						"cf_router_lb_name":         "some-router-lb-name",
-						"cf_router_lb_url":          "some-router-lb-url",
-						"cf_ssh_lb_name":            "some-ssh-lb-name",
-						"cf_ssh_lb_url":             "some-ssh-lb-url",
-						"cf_tcp_lb_name":            "some-tcp-lb-name",
-						"cf_tcp_lb_url":             "some-tcp-lb-url",
-						"env_dns_zone_name_servers": []string{"name-server-1.", "name-server-2."},
-					}}
+					terraformManager.GetOutputsCall.Returns.Outputs.Map["env_dns_zone_name_servers"] = []string{"name-server-1.", "name-server-2."}
 				})
 
 				It("prints LB names, URLs, and DNS servers", func() {
@@ -84,6 +79,7 @@ var _ = Describe("AWSLBs", func() {
 						"CF Router LB: some-router-lb-name [some-router-lb-url]\n",
 						"CF SSH Proxy LB: some-ssh-lb-name [some-ssh-lb-url]\n",
 						"CF TCP Router LB: some-tcp-lb-name [some-tcp-lb-url]\n",
+						"CF Credhub LB: some-credhub-lb-name [some-credhub-lb-url]\n",
 						"CF System Domain DNS servers: name-server-1. name-server-2.\n",
 					}))
 				})
@@ -104,6 +100,8 @@ var _ = Describe("AWSLBs", func() {
 								"cf_ssh_proxy_lb_url": "some-ssh-lb-url",
 								"cf_tcp_lb": "some-tcp-lb-name",
 								"cf_tcp_lb_url":  "some-tcp-lb-url",
+								"cf_credhub_lb": "some-credhub-lb-name",
+								"cf_credhub_lb_url":  "some-credhub-lb-url",
 								"env_dns_zone_name_servers": [
 									"name-server-1.",
 									"name-server-2."

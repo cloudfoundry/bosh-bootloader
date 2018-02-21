@@ -47,3 +47,13 @@
       security_groups:
       - ((cf_ssh_lb_internal_security_group))
       - ((internal_security_group))
+
+- type: replace
+  path: /vm_extensions/-
+  value:
+    name: credhub-lb
+    cloud_properties:
+      lb_target_groups: ((cf_credhub_lb_target_groups))
+      security_groups:
+      - ((cf_credhub_lb_internal_security_group))
+      - ((internal_security_group))
