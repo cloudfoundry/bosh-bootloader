@@ -2,6 +2,7 @@ package commands
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/cloudfoundry/bosh-bootloader/flags"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
@@ -71,7 +72,7 @@ func (p Plan) ParseArgs(args []string, state storage.State) (PlanConfig, error) 
 		lbArgs LBArgs
 	)
 	planFlags := flags.New("up")
-	planFlags.String(&config.Name, "name", "")
+	planFlags.String(&config.Name, "name", os.Getenv("BBL_ENV_NAME"))
 	planFlags.String(&lbArgs.LBType, "lb-type", "")
 	planFlags.String(&lbArgs.CertPath, "lb-cert", "")
 	planFlags.String(&lbArgs.KeyPath, "lb-key", "")

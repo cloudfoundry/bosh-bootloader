@@ -2,6 +2,7 @@ package commands_test
 
 import (
 	"errors"
+	"os"
 
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/commands"
@@ -237,6 +238,22 @@ var _ = Describe("Plan", func() {
 				config, err := command.ParseArgs([]string{
 					"--name", "a-better-name",
 				}, storage.State{})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(config.Name).To(Equal("a-better-name"))
+			})
+		})
+
+		Context("when the user provides the name flag as an environment variable", func() {
+			BeforeEach(func() {
+				os.Setenv("BBL_ENV_NAME", "a-better-name")
+			})
+
+			AfterEach(func() {
+				os.Unsetenv("BBL_ENV_NAME")
+			})
+
+			It("passes the name flag in the up config", func() {
+				config, err := command.ParseArgs([]string{}, storage.State{})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(config.Name).To(Equal("a-better-name"))
 			})
