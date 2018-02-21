@@ -13,7 +13,6 @@ type templates struct {
 	iam            string
 	lbSubnet       string
 	cfLB           string
-	credhubLB      string
 	cfDNS          string
 	concourseLB    string
 	sslCertificate string
@@ -33,7 +32,7 @@ func (tg TemplateGenerator) Generate(state storage.State) string {
 	case "concourse":
 		template = strings.Join([]string{template, tmpls.lbSubnet, tmpls.concourseLB}, "\n")
 	case "cf":
-		template = strings.Join([]string{template, tmpls.lbSubnet, tmpls.cfLB, tmpls.credhubLB, tmpls.sslCertificate, tmpls.isoSeg}, "\n")
+		template = strings.Join([]string{template, tmpls.lbSubnet, tmpls.cfLB, tmpls.sslCertificate, tmpls.isoSeg}, "\n")
 
 		if state.LB.Domain != "" {
 			template = strings.Join([]string{template, tmpls.cfDNS}, "\n")
@@ -51,7 +50,6 @@ func readTemplates() templates {
 	tmpls.concourseLB = string(MustAsset("templates/concourse_lb.tf"))
 	tmpls.sslCertificate = string(MustAsset("templates/ssl_certificate.tf"))
 	tmpls.cfLB = string(MustAsset("templates/cf_lb.tf"))
-	tmpls.credhubLB = string(MustAsset("templates/credhub_lb.tf"))
 	tmpls.cfDNS = string(MustAsset("templates/cf_dns.tf"))
 	tmpls.isoSeg = string(MustAsset("templates/iso_segments.tf"))
 	tmpls.vpc = string(MustAsset("templates/vpc.tf"))

@@ -60,12 +60,3 @@ resource "aws_route53_record" "iso" {
 
   records = ["${aws_elb.iso_router_lb.dns_name}"]
 }
-
-resource "aws_route53_record" "credhub" {
-  zone_id = "${aws_route53_zone.env_dns_zone.id}"
-  name    = "credhub.${var.system_domain}"
-  type    = "CNAME"
-  ttl     = 300
-
-  records = ["${aws_lb.credhub.dns_name}"]
-}

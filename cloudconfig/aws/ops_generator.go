@@ -108,8 +108,6 @@ func (o OpsGenerator) GenerateVars(state storage.State) (string, error) {
 			"cf_ssh_lb_internal_security_group",
 			"cf_tcp_lb_name",
 			"cf_tcp_lb_internal_security_group",
-			"cf_credhub_lb_target_groups",
-			"cf_credhub_lb_internal_security_group",
 		)
 	}
 
@@ -269,18 +267,6 @@ func (o OpsGenerator) generateOps(state storage.State) ([]op, error) {
 				},
 			}))
 		}
-
-		ops = append(ops, createOp("replace", "/vm_extensions/-", lb{
-			Name: "credhub-lb",
-			CloudProperties: lbCloudProperties{
-				LBTargetGroups: "((cf_credhub_lb_target_groups))",
-				SecurityGroups: []string{
-					"((cf_credhub_lb_internal_security_group))",
-					"((internal_security_group))",
-				},
-			},
-		}))
-
 	case "concourse":
 		ops = append(ops, createOp("replace", "/vm_extensions/-", lb{
 			Name: "lb",

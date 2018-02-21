@@ -50,7 +50,7 @@ var _ = Describe("TemplateGenerator", func() {
 
 		Context("when a CF lb type is provided with no system domain", func() {
 			BeforeEach(func() {
-				expectedTemplate = expectTemplate("base", "iam", "vpc", "lb_subnet", "cf_lb", "credhub_lb", "ssl_certificate", "iso_segments")
+				expectedTemplate = expectTemplate("base", "iam", "vpc", "lb_subnet", "cf_lb", "ssl_certificate", "iso_segments")
 				lb = storage.LB{
 					Type: "cf",
 				}
@@ -63,7 +63,7 @@ var _ = Describe("TemplateGenerator", func() {
 
 		Context("when a CF lb type is provided with a system domain", func() {
 			BeforeEach(func() {
-				expectedTemplate = expectTemplate("base", "iam", "vpc", "lb_subnet", "cf_lb", "credhub_lb", "ssl_certificate", "iso_segments", "cf_dns")
+				expectedTemplate = expectTemplate("base", "iam", "vpc", "lb_subnet", "cf_lb", "ssl_certificate", "iso_segments", "cf_dns")
 				lb = storage.LB{
 					Type:   "cf",
 					Domain: "some-domain",

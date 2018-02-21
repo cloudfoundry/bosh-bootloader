@@ -38,18 +38,16 @@ var _ = Describe("OpsGenerator", func() {
 		}
 
 		terraformManager.GetOutputsCall.Returns.Outputs = terraform.Outputs{Map: map[string]interface{}{
-			"internal_security_group":               "some-internal-security-group",
-			"cf_router_lb_name":                     "some-cf-router-lb-name",
-			"cf_router_lb_internal_security_group":  "some-cf-router-lb-internal-security-group",
-			"cf_router_lb_security_group":           "some-cf-router-lb-security-group",
-			"cf_ssh_lb_name":                        "some-cf-ssh-lb-name",
-			"cf_ssh_lb_internal_security_group":     "some-cf-ssh-lb-internal-security-group",
-			"cf_tcp_lb_name":                        "some-cf-tcp-lb-name",
-			"cf_tcp_lb_internal_security_group":     "some-cf-tcp-lb-internal-security-group",
-			"cf_credhub_lb_target_groups":           []string{"credhub-tg"},
-			"cf_credhub_lb_internal_security_group": "credhub-sg",
-			"concourse_lb_target_groups":            []string{"some-concourse-lb-target-group", "some-other-concourse-lb-target-group"},
-			"concourse_lb_internal_security_group":  "some-concourse-lb-internal-security-group",
+			"internal_security_group":              "some-internal-security-group",
+			"cf_router_lb_name":                    "some-cf-router-lb-name",
+			"cf_router_lb_internal_security_group": "some-cf-router-lb-internal-security-group",
+			"cf_router_lb_security_group":          "some-cf-router-lb-security-group",
+			"cf_ssh_lb_name":                       "some-cf-ssh-lb-name",
+			"cf_ssh_lb_internal_security_group":    "some-cf-ssh-lb-internal-security-group",
+			"cf_tcp_lb_name":                       "some-cf-tcp-lb-name",
+			"cf_tcp_lb_internal_security_group":    "some-cf-tcp-lb-internal-security-group",
+			"concourse_lb_target_groups":           []string{"some-concourse-lb-target-group", "some-other-concourse-lb-target-group"},
+			"concourse_lb_internal_security_group": "some-concourse-lb-internal-security-group",
 			"internal_az_subnet_id_mapping": map[string]interface{}{
 				"us-east-1c": "some-internal-subnet-ids-3",
 				"us-east-1a": "some-internal-subnet-ids-1",
@@ -138,8 +136,6 @@ cf_ssh_lb_internal_security_group: some-cf-ssh-lb-internal-security-group
 cf_tcp_lb_name: some-cf-tcp-lb-name
 cf_tcp_lb_internal_security_group: some-cf-tcp-lb-internal-security-group
 cf_iso_router_lb_name: some-cf-iso-seg-router-lb-name
-cf_credhub_lb_target_groups: [credhub-tg]
-cf_credhub_lb_internal_security_group: credhub-sg
 concourse_lb_target_groups: [some-concourse-lb-target-group, some-other-concourse-lb-target-group]
 concourse_lb_internal_security_group: some-concourse-lb-internal-security-group
 internal_az_subnet_cidr_mapping:
@@ -206,8 +202,6 @@ iso_az_subnet_id_mapping:
 				Entry("when cf_ssh_lb_internal_security_group is missing", "cf_ssh_lb_internal_security_group", "cf"),
 				Entry("when cf_tcp_lb_name", "cf_tcp_lb_name", "cf"),
 				Entry("when cf_tcp_lb_internal_security_group is missing", "cf_tcp_lb_internal_security_group", "cf"),
-				Entry("when cf_credhub_lb_target_groups is missing", "cf_credhub_lb_target_groups", "cf"),
-				Entry("when cf_credhub_lb_internal_security_group is missing", "cf_credhub_lb_internal_security_group", "cf"),
 
 				Entry("when concourse_lb_target_groups is missing", "concourse_lb_target_groups", "concourse"),
 				Entry("when concourse_lb_internal_security_group is missing", "concourse_lb_internal_security_group", "concourse"),
