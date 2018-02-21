@@ -109,7 +109,7 @@ resource "aws_iam_policy" "bosh" {
             "Resource": [
                 "*"
             ]
-        },
+        }
   ]
 }
 EOF
