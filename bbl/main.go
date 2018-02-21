@@ -91,8 +91,8 @@ func main() {
 	terraformExecutor := terraform.NewExecutor(terraformCmd, stateStore, afs, appConfig.Global.Debug)
 
 	// BOSH
-	hostKeyGetter := proxy.NewHostKeyGetter()
-	socks5Proxy := proxy.NewSocks5Proxy(hostKeyGetter)
+	hostKey := proxy.NewHostKey()
+	socks5Proxy := proxy.NewSocks5Proxy(hostKey)
 	boshCommand := bosh.NewCmd(os.Stderr)
 	boshExecutor := bosh.NewExecutor(boshCommand, afs, json.Unmarshal, json.Marshal)
 	sshKeyGetter := bosh.NewSSHKeyGetter(stateStore, afs)

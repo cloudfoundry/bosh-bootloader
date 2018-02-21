@@ -14,24 +14,22 @@ import (
 
 var netListen = net.Listen
 
-//go:generate counterfeiter . Proxy
-type Proxy interface {
-	Start(string, string) error
-	Addr() (string, error)
+type hostKey interface {
+	Get(username, privateKey, serverURL string) (ssh.PublicKey, error)
 }
 
 type DialFunc func(network, address string) (net.Conn, error)
 
 type Socks5Proxy struct {
-	hostKeyGetter KeyGetter
-	port          int
-	started       bool
+	hostKey hostKey
+	port    int
+	started bool
 }
 
-func NewSocks5Proxy(hostKeyGetter KeyGetter) *Socks5Proxy {
+func NewSocks5Proxy(hostKey hostKey) *Socks5Proxy {
 	return &Socks5Proxy{
-		hostKeyGetter: hostKeyGetter,
-		started:       false,
+		hostKey: hostKey,
+		started: false,
 	}
 }
 
@@ -40,7 +38,7 @@ func (s *Socks5Proxy) Start(key, url string) error {
 		return nil
 	}
 
-	dialer, err := s.Dialer(key, url)
+	dialer, err := s.Dialer("", key, url)
 	if err != nil {
 		return err
 	}
@@ -53,19 +51,23 @@ func (s *Socks5Proxy) Start(key, url string) error {
 	return nil
 }
 
-func (s *Socks5Proxy) Dialer(key, url string) (DialFunc, error) {
+func (s *Socks5Proxy) Dialer(username, key, url string) (DialFunc, error) {
+	if username == "" {
+		username = "jumpbox"
+	}
+
 	signer, err := ssh.ParsePrivateKey([]byte(key))
 	if err != nil {
 		return nil, fmt.Errorf("parse private key: %s", err)
 	}
 
-	hostKey, err := s.hostKeyGetter.Get(key, url)
+	hostKey, err := s.hostKey.Get(username, key, url)
 	if err != nil {
 		return nil, fmt.Errorf("get host key: %s", err)
 	}
 
 	clientConfig := &ssh.ClientConfig{
-		User: "jumpbox",
+		User: username,
 		Auth: []ssh.AuthMethod{
 			ssh.PublicKeys(signer),
 		},

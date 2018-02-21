@@ -9,7 +9,11 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-func StartTestSSHServer(httpServerURL, sshPrivateKey string) string {
+func StartTestSSHServer(httpServerURL, sshPrivateKey, userName string) string {
+	if userName == "" {
+		userName = "jumpbox"
+	}
+
 	signer, err := ssh.ParsePrivateKey([]byte(sshPrivateKey))
 	if err != nil {
 		log.Fatal("Failed to parse private key: ", err)
@@ -17,6 +21,10 @@ func StartTestSSHServer(httpServerURL, sshPrivateKey string) string {
 
 	config := &ssh.ServerConfig{
 		PublicKeyCallback: func(c ssh.ConnMetadata, pubKey ssh.PublicKey) (*ssh.Permissions, error) {
+			if c.User() != userName {
+				return nil, fmt.Errorf("unknown user: %q", c.User())
+			}
+
 			if string(signer.PublicKey().Marshal()) == string(pubKey.Marshal()) {
 				return nil, nil
 			}
