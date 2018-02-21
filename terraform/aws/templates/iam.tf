@@ -73,7 +73,13 @@ resource "aws_iam_policy" "bosh" {
         "ec2:RunInstances",
         "ec2:TerminateInstances",
         "ec2:RegisterImage",
-        "ec2:DeregisterImage"
+        "ec2:DeregisterImage",
+        "ec2:CancelSpotInstanceRequests",
+        "ec2:DescribeSpotInstanceRequests",
+        "ec2:RequestSpotInstances",
+        "ec2:CreateRoute",
+        "ec2:DescribeRouteTables",
+        "ec2:ReplaceRoute"
 	  ],
 	  "Effect": "Allow",
 	  "Resource": "*"
@@ -91,7 +97,19 @@ resource "aws_iam_policy" "bosh" {
 	  ],
 	  "Effect": "Allow",
 	  "Resource": "*"
-	}
+	},
+        {
+            "Effect": "Allow",
+            "Action": [
+                "kms:ReEncrypt*",
+                "kms:GenerateDataKey*",
+                "kms:CreateGrant",
+                "kms:DescribeKey*"
+            ],
+            "Resource": [
+                "*"
+            ]
+        },
   ]
 }
 EOF
