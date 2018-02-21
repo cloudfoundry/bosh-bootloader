@@ -7,41 +7,54 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-var _ = Describe("HostKeyGetter", func() {
+var _ = Describe("HostKey", func() {
 	Describe("Get", func() {
 		var (
-			hostKeyGetter proxy.HostKeyGetter
+			hostKey       proxy.HostKey
 			key           ssh.PublicKey
 			sshServerAddr string
 		)
 
 		BeforeEach(func() {
-			signer, err := ssh.ParsePrivateKey([]byte(sshPrivateKey))
+			signer, err := ssh.ParsePrivateKey([]byte(privateKey))
 			Expect(err).NotTo(HaveOccurred())
 			key = signer.PublicKey()
 
-			sshServerAddr = proxy.StartTestSSHServer("", sshPrivateKey)
+			sshServerAddr = proxy.StartTestSSHServer("", privateKey, "")
 
-			hostKeyGetter = proxy.NewHostKeyGetter()
+			hostKey = proxy.NewHostKey()
 		})
 
 		It("returns the host key", func() {
-			hostKey, err := hostKeyGetter.Get(sshPrivateKey, sshServerAddr)
+			hostKey, err := hostKey.Get("", privateKey, sshServerAddr)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(hostKey).To(Equal(key))
+		})
+
+		Context("when a username has been set", func() {
+			BeforeEach(func() {
+				sshServerAddr = proxy.StartTestSSHServer("", privateKey, "different-username")
+				hostKey = proxy.NewHostKey()
+			})
+
+			It("returns the host key", func() {
+				hostKey, err := hostKey.Get("different-username", privateKey, sshServerAddr)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(hostKey).To(Equal(key))
+			})
 		})
 
 		Context("failure cases", func() {
 			Context("when parse private key fails", func() {
 				It("returns an error", func() {
-					_, err := hostKeyGetter.Get("%%%", sshServerAddr)
+					_, err := hostKey.Get("", "%%%", sshServerAddr)
 					Expect(err).To(MatchError("ssh: no key found"))
 				})
 			})
 
 			Context("when dial fails", func() {
 				It("returns an error", func() {
-					_, err := hostKeyGetter.Get(sshPrivateKey, "some-bad-url")
+					_, err := hostKey.Get("", privateKey, "some-bad-url")
 					Expect(err).To(MatchError("dial tcp: address some-bad-url: missing port in address"))
 				})
 			})
