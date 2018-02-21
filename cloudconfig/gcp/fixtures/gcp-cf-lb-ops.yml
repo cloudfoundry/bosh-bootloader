@@ -26,12 +26,3 @@
       target_pool: ((tcp_router_target_pool))
       tags:
       - ((tcp_router_target_pool))
-
-- type: replace
-  path: /vm_extensions/-
-  value:
-    name: credhub-network-properties
-    cloud_properties:
-      target_pool: ((credhub_target_pool))
-      tags:
-      - ((credhub_target_pool))

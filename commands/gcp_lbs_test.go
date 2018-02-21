@@ -30,7 +30,6 @@ var _ = Describe("GCPLBs", func() {
 			"ssh_proxy_lb_ip":  "some-ssh-proxy-lb-ip",
 			"tcp_router_lb_ip": "some-tcp-router-lb-ip",
 			"ws_lb_ip":         "some-ws-lb-ip",
-			"credhub_lb_ip":    "some-credhub-lb-ip",
 			"concourse_lb_ip":  "some-concourse-lb-ip",
 		}}
 		logger = &fakes.Logger{}
@@ -52,7 +51,6 @@ var _ = Describe("GCPLBs", func() {
 				"CF SSH Proxy LB: some-ssh-proxy-lb-ip\n",
 				"CF TCP Router LB: some-tcp-router-lb-ip\n",
 				"CF WebSocket LB: some-ws-lb-ip\n",
-				"CF Credhub LB: some-credhub-lb-ip\n",
 			}))
 		})
 
@@ -63,7 +61,6 @@ var _ = Describe("GCPLBs", func() {
 					"ssh_proxy_lb_ip":           "some-ssh-proxy-lb-ip",
 					"tcp_router_lb_ip":          "some-tcp-router-lb-ip",
 					"ws_lb_ip":                  "some-ws-lb-ip",
-					"credhub_lb_ip":             "some-credhub-lb-ip",
 					"concourse_lb_ip":           "some-concourse-lb-ip",
 					"system_domain_dns_servers": []string{"name-server-1.", "name-server-2."},
 				}}
@@ -83,7 +80,6 @@ var _ = Describe("GCPLBs", func() {
 					"CF SSH Proxy LB: some-ssh-proxy-lb-ip\n",
 					"CF TCP Router LB: some-tcp-router-lb-ip\n",
 					"CF WebSocket LB: some-ws-lb-ip\n",
-					"CF Credhub LB: some-credhub-lb-ip\n",
 					"CF System Domain DNS servers: name-server-1. name-server-2.\n",
 				}))
 			})
@@ -102,7 +98,6 @@ var _ = Describe("GCPLBs", func() {
 							"cf_ssh_proxy_lb": "some-ssh-proxy-lb-ip",
 							"cf_tcp_router_lb": "some-tcp-router-lb-ip",
 							"cf_websocket_lb": "some-ws-lb-ip",
-							"cf_credhub_lb": "some-credhub-lb-ip",
 							"cf_system_domain_dns_servers": [
 								"name-server-1.",
 								"name-server-2."

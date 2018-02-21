@@ -50,7 +50,6 @@ var _ = Describe("GCPOpsGenerator", func() {
 			"ssh_proxy_target_pool":  "some-proxy-target-pool",
 			"tcp_router_target_pool": "some-tcp-router-target-pool",
 			"concourse_target_pool":  "some-concourse-target-pool",
-			"credhub_target_pool":    "some-credhub-target-pool",
 		}}
 
 		opsGenerator = gcp.NewOpsGenerator(terraformManager)
@@ -95,7 +94,6 @@ subnet_cidr_2: 10.0.32.0/24
 subnet_cidr_3: 10.0.48.0/24
 tcp_router_target_pool: some-tcp-router-target-pool
 concourse_target_pool: some-concourse-target-pool
-credhub_target_pool: some-credhub-target-pool
 `))
 		})
 		Context("when terraform output provider fails to retrieve", func() {

@@ -27,8 +27,7 @@ var _ = Describe("state query against a bbl 5.1.0 state file", func() {
 		Expect(stdout).To(Equal(`CF Router LB: 35.201.97.214
 CF SSH Proxy LB: 104.196.181.208
 CF TCP Router LB: 35.185.98.78
-CF WebSocket LB: 104.196.197.242
-CF Credhub LB: 35.196.150.246`))
+CF WebSocket LB: 104.196.197.242`))
 	})
 
 	It("bbl jumpbox-address", func() {

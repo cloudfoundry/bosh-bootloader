@@ -34,14 +34,12 @@ func (l GCPLBs) Execute(subcommandFlags []string, state storage.State) error {
 				SSHProxyLBIP           string   `json:"cf_ssh_proxy_lb,omitempty"`
 				TCPRouterLBIP          string   `json:"cf_tcp_router_lb,omitempty"`
 				WebSocketLBIP          string   `json:"cf_websocket_lb,omitempty"`
-				CredhubLBIP            string   `json:"cf_credhub_lb,omitempty"`
 				SystemDomainDNSServers []string `json:"cf_system_domain_dns_servers,omitempty"`
 			}{
 				RouterLBIP:             terraformOutputs.GetString("router_lb_ip"),
 				SSHProxyLBIP:           terraformOutputs.GetString("ssh_proxy_lb_ip"),
 				TCPRouterLBIP:          terraformOutputs.GetString("tcp_router_lb_ip"),
 				WebSocketLBIP:          terraformOutputs.GetString("ws_lb_ip"),
-				CredhubLBIP:            terraformOutputs.GetString("credhub_lb_ip"),
 				SystemDomainDNSServers: terraformOutputs.GetStringSlice("system_domain_dns_servers"),
 			})
 			if err != nil {
@@ -55,7 +53,6 @@ func (l GCPLBs) Execute(subcommandFlags []string, state storage.State) error {
 			l.logger.Printf("CF SSH Proxy LB: %s\n", terraformOutputs.GetString("ssh_proxy_lb_ip"))
 			l.logger.Printf("CF TCP Router LB: %s\n", terraformOutputs.GetString("tcp_router_lb_ip"))
 			l.logger.Printf("CF WebSocket LB: %s\n", terraformOutputs.GetString("ws_lb_ip"))
-			l.logger.Printf("CF Credhub LB: %s\n", terraformOutputs.GetString("credhub_lb_ip"))
 			dnsServers := terraformOutputs.GetStringSlice("system_domain_dns_servers")
 			if len(dnsServers) > 0 {
 				l.logger.Printf("CF System Domain DNS servers: %s\n", strings.Join(dnsServers, " "))
