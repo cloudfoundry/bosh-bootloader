@@ -13,17 +13,18 @@ import (
 
 var _ = Describe("StartTestSSHServer", func() {
 	var (
-		hostPort     string
-		clientConfig *ssh.ClientConfig
+		httpServerHostPort string
+		httpServer         *httptest.Server
+		clientConfig       *ssh.ClientConfig
 	)
 
 	BeforeEach(func() {
-		httpServer := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		httpServer = httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 			rw.WriteHeader(http.StatusOK)
 		}))
-		hostPort = strings.Split(httpServer.URL, "http://")[1]
+		httpServerHostPort = strings.Split(httpServer.URL, "http://")[1]
 
-		signer, err := ssh.ParsePrivateKey([]byte(privateKey))
+		signer, err := ssh.ParsePrivateKey([]byte(sshPrivateKey))
 		Expect(err).NotTo(HaveOccurred())
 
 		clientConfig = &ssh.ClientConfig{
@@ -36,7 +37,7 @@ var _ = Describe("StartTestSSHServer", func() {
 	})
 
 	It("accepts multiple requests", func() {
-		url := proxy.StartTestSSHServer(hostPort, privateKey, "")
+		url := proxy.StartTestSSHServer(httpServerHostPort, sshPrivateKey)
 
 		conn1, err := ssh.Dial("tcp", url, clientConfig)
 		Expect(err).NotTo(HaveOccurred())

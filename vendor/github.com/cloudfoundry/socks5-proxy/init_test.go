@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	privateKey = `-----BEGIN RSA PRIVATE KEY-----
+	sshPrivateKey = `-----BEGIN RSA PRIVATE KEY-----
 MIIEowIBAAKCAQEAoxA4a1jmeJHabb+ACuIjPdAEURB9GTbwjHJzJrGWw6ppQCKS
 QtCzgLY2WdKzZef9G0eSKF7YgVtLvMHM6O0ph4eChtH1gArMpU46DcOZH8LXvrlX
 d4z2aD4zvDwDbCP8HszOSCmQIy9UVxYD6wsOw4xBvOP0EDGK5jtM7nZ/vg9bMRtK
