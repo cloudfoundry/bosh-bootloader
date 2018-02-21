@@ -234,39 +234,39 @@ resource "aws_security_group_rule" "bosh_security_group_rule_tcp_ssh" {
 }
 
 resource "aws_security_group_rule" "bosh_security_group_rule_tcp_bosh_agent" {
-  security_group_id = "${aws_security_group.bosh_security_group.id}"
-  type              = "ingress"
-  protocol          = "tcp"
-  from_port         = 6868
-  to_port           = 6868
-  cidr_blocks       = ["${var.bosh_inbound_cidr}"]
+  security_group_id        = "${aws_security_group.bosh_security_group.id}"
+  type                     = "ingress"
+  protocol                 = "tcp"
+  from_port                = 6868
+  to_port                  = 6868
+  source_security_group_id = "${aws_security_group.jumpbox.id}"
 }
 
 resource "aws_security_group_rule" "bosh_security_group_rule_uaa" {
-  security_group_id = "${aws_security_group.bosh_security_group.id}"
-  type              = "ingress"
-  protocol          = "tcp"
-  from_port         = 8443
-  to_port           = 8443
-  cidr_blocks       = ["${var.bosh_inbound_cidr}"]
+  security_group_id        = "${aws_security_group.bosh_security_group.id}"
+  type                     = "ingress"
+  protocol                 = "tcp"
+  from_port                = 8443
+  to_port                  = 8443
+  source_security_group_id = "${aws_security_group.jumpbox.id}"
 }
 
 resource "aws_security_group_rule" "bosh_security_group_rule_credhub" {
-  security_group_id = "${aws_security_group.bosh_security_group.id}"
-  type              = "ingress"
-  protocol          = "tcp"
-  from_port         = 8844
-  to_port           = 8844
-  cidr_blocks       = ["${var.bosh_inbound_cidr}"]
+  security_group_id        = "${aws_security_group.bosh_security_group.id}"
+  type                     = "ingress"
+  protocol                 = "tcp"
+  from_port                = 8844
+  to_port                  = 8844
+  source_security_group_id = "${aws_security_group.jumpbox.id}"
 }
 
 resource "aws_security_group_rule" "bosh_security_group_rule_tcp_director_api" {
-  security_group_id = "${aws_security_group.bosh_security_group.id}"
-  type              = "ingress"
-  protocol          = "tcp"
-  from_port         = 25555
-  to_port           = 25555
-  cidr_blocks       = ["${var.bosh_inbound_cidr}"]
+  security_group_id        = "${aws_security_group.bosh_security_group.id}"
+  type                     = "ingress"
+  protocol                 = "tcp"
+  from_port                = 25555
+  to_port                  = 25555
+  source_security_group_id = "${aws_security_group.jumpbox.id}"
 }
 
 resource "aws_security_group_rule" "bosh_security_group_rule_tcp" {
