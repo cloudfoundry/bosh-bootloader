@@ -362,6 +362,42 @@ var _ = Describe("LoadState", func() {
 					})
 				})
 
+				Context("when the private key is passed in raw", func() {
+					var args []string
+
+					BeforeEach(func() {
+						args = []string{
+							"bbl",
+							"--iaas", "openstack",
+							"--openstack-internal-cidr", "internal-cidr",
+							"--openstack-external-ip", "external-ip",
+							"--openstack-auth-url", "auth-url",
+							"--openstack-az", "az",
+							"--openstack-default-key-name", "key-name",
+							"--openstack-default-security-group", "security-group",
+							"--openstack-network-id", "network-id",
+							"--openstack-password", "password",
+							"--openstack-username", "username",
+							"--openstack-project", "project",
+							"--openstack-domain", "domain",
+							"--openstack-region", "region",
+							"--openstack-private-key", "private-key",
+							"up",
+							"--name", "some-env-id",
+						}
+
+						fakeFileIO.StatCall.Returns.Error = errors.New("no file found")
+					})
+
+					It("uses the raw key", func() {
+						appConfig, err := c.Bootstrap(args)
+
+						state := appConfig.State
+						Expect(err).NotTo(HaveOccurred())
+						Expect(state.OpenStack.PrivateKey).To(Equal("private-key"))
+					})
+				})
+
 				Context("when configuration is passed in by env vars", func() {
 					var args []string
 
