@@ -40,7 +40,8 @@ var _ = Describe("Socks5Proxy", func() {
 		hostKey = &fakes.HostKey{}
 		hostKey.GetCall.Returns.PublicKey = signer.PublicKey()
 
-		socks5Proxy = proxy.NewSocks5Proxy(hostKey)
+
+		socks5Proxy = proxy.NewSocks5Proxy(hostKey, nil) //sock5 server defaults to a stdout logger for us
 	})
 
 	AfterEach(func() {
@@ -179,7 +180,7 @@ var _ = Describe("Socks5Proxy", func() {
 				hostKey = &fakes.HostKey{}
 				hostKey.GetCall.Returns.PublicKey = signer.PublicKey()
 
-				socks5Proxy = proxy.NewSocks5Proxy(hostKey)
+				socks5Proxy = proxy.NewSocks5Proxy(hostKey, nil) //sock5 server defaults to a stdout logger for us
 			})
 
 			It("returns a dialer that proxies to the jumpbox with a custom user", func() {

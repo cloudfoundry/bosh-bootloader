@@ -6,10 +6,11 @@ import (
 	"net"
 	"strconv"
 
-	socks5 "github.com/genevievelesperance/go-socks5"
+	socks5 "github.com/genevieve/go-socks5"
 
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/net/context"
+	"log"
 )
 
 var netListen = net.Listen
@@ -24,12 +25,14 @@ type Socks5Proxy struct {
 	hostKey hostKey
 	port    int
 	started bool
+	logger  *log.Logger
 }
 
-func NewSocks5Proxy(hostKey hostKey) *Socks5Proxy {
+func NewSocks5Proxy(hostKey hostKey, logger *log.Logger) *Socks5Proxy {
 	return &Socks5Proxy{
 		hostKey: hostKey,
 		started: false,
+		logger:  logger,
 	}
 }
 
@@ -87,6 +90,7 @@ func (s *Socks5Proxy) StartWithDialer(dialer DialFunc) error {
 		Dial: func(ctx context.Context, network, addr string) (net.Conn, error) {
 			return dialer(network, addr)
 		},
+		Logger: s.logger,
 	}
 
 	server, err := socks5.New(conf)
@@ -102,11 +106,7 @@ func (s *Socks5Proxy) StartWithDialer(dialer DialFunc) error {
 	}
 
 	go func() {
-		err = server.ListenAndServe("tcp", fmt.Sprintf("127.0.0.1:%d", s.port))
-		if err != nil {
-			// untested; commands that require the proxy will return errors
-			fmt.Printf("socks5 proxy: %s", err.Error())
-		}
+		server.ListenAndServe("tcp", fmt.Sprintf("127.0.0.1:%d", s.port))
 	}()
 
 	s.started = true

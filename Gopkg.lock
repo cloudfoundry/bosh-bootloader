@@ -35,7 +35,7 @@
   branch = "master"
   name = "github.com/cloudfoundry/socks5-proxy"
   packages = ["."]
-  revision = "0845050f30ac6f0b0d76d8bb856bf7e00fbebc48"
+  revision = "0c3440491f012604d9b0ca1f72b7550b88491378"
 
 [[projects]]
   name = "github.com/coreos/go-semver"
@@ -51,15 +51,15 @@
 
 [[projects]]
   branch = "master"
-  name = "github.com/genevieve/leftovers"
-  packages = ["aws","aws/common","aws/ec2","aws/elb","aws/elbv2","aws/iam","aws/rds","aws/s3","azure","gcp","gcp/common","gcp/compute","gcp/dns"]
-  revision = "a6b4a929c6dcc72a294891267098201fdfc43130"
+  name = "github.com/genevieve/go-socks5"
+  packages = ["."]
+  revision = "54f73bdb8a8e85a6611d3d29ab9bbf98c2a060d7"
 
 [[projects]]
   branch = "master"
-  name = "github.com/genevievelesperance/go-socks5"
-  packages = ["."]
-  revision = "f07e0bb84629ba30f60da69274cd1d9dbb4a1d08"
+  name = "github.com/genevieve/leftovers"
+  packages = ["aws","aws/common","aws/ec2","aws/elb","aws/elbv2","aws/iam","aws/rds","aws/s3","azure","gcp","gcp/common","gcp/compute","gcp/dns"]
+  revision = "a6b4a929c6dcc72a294891267098201fdfc43130"
 
 [[projects]]
   name = "github.com/go-ini/ini"
