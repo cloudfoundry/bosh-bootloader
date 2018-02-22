@@ -1,4 +1,4 @@
-# Getting Started - Azure
+# Getting started azure
 
 
 ## Azure Application Gateway

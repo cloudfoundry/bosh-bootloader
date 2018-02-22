@@ -1,4 +1,4 @@
-### Getting Started - AWS
+### Getting started aws
 
 This guide is a walkthrough for deploying a BOSH director with `bbl`
 on AWS. Upon completion, you will have the following:

@@ -1,4 +1,4 @@
-# How-To SSH
+# Howto ssh
 
 ## To the jumpbox
 

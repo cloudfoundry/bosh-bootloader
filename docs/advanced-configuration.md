@@ -1,4 +1,4 @@
-# Advanced Configuration
+# Advanced configuration
 
 ## Table of Contents
 * <a href='#opsfile'>Using an ops-file with bbl</a>

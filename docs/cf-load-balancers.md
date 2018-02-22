@@ -1,6 +1,8 @@
-# `bbl up --lb-type cf`
+# CF Load Balancers
 
-## `--iaas aws`
+## `bbl up --lb-type cf`
+
+### `--iaas aws`
 There are 3 elastic load balancers.
 
 1. **cf-ssh-lb**
@@ -28,7 +30,7 @@ There are 3 elastic load balancers.
 
 
 
-## `--iaas gcp`
+### `--iaas gcp`
 There are 5 load balancers.
 
 1. **cf-router-lb**
@@ -79,5 +81,5 @@ There are 5 load balancers.
       - a forwarding rule for `tcp:2222` to the target pool
 
 
-## `--iaas azure`
+### `--iaas azure`
 There is 1 application gateway.

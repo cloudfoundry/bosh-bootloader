@@ -1,4 +1,4 @@
-# Getting Started - GCP
+# Getting started gcp
 
 ## Creating a service account
 

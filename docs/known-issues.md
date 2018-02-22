@@ -1,4 +1,4 @@
-# Known Issues
+# Known issues
 
 ## Migrating from bbl v4.x to v5.x on AWS
 
