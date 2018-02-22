@@ -36,7 +36,7 @@
     
     
       
-        <title>Concourse - BBL</title>
+        <title>CF Load Balancers - BBL</title>
       
     
     
@@ -73,7 +73,7 @@
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="search">
     <label class="md-overlay" data-md-component="overlay" for="drawer"></label>
     
-      <a href="#concourse" tabindex="1" class="md-skip">
+      <a href="#cf-load-balancers" tabindex="1" class="md-skip">
         Skip to content
       </a>
     
@@ -99,7 +99,7 @@
                 BBL
               </span>
               <span class="md-header-nav__topic">
-                Concourse
+                CF Load Balancers
               </span>
             
           
@@ -192,11 +192,76 @@
       
       
 
+  
 
-  <li class="md-nav__item">
-    <a href="../cf-load-balancers/" title="CF Load Balancers" class="md-nav__link">
+
+  <li class="md-nav__item md-nav__item--active">
+    
+    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="toc">
+    
+      
+    
+    
+      <label class="md-nav__link md-nav__link--active" for="toc">
+        CF Load Balancers
+      </label>
+    
+    <a href="./" title="CF Load Balancers" class="md-nav__link md-nav__link--active">
       CF Load Balancers
     </a>
+    
+      
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#bbl-up-lb-type-cf" title="bbl up --lb-type cf" class="md-nav__link">
+    bbl up --lb-type cf
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#-iaas-aws" title="--iaas aws" class="md-nav__link">
+    --iaas aws
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-iaas-gcp" title="--iaas gcp" class="md-nav__link">
+    --iaas gcp
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-iaas-azure" title="--iaas azure" class="md-nav__link">
+    --iaas azure
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+    
   </li>
 
     
@@ -216,63 +281,11 @@
       
       
 
-  
 
-
-  <li class="md-nav__item md-nav__item--active">
-    
-    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="toc">
-    
-      
-    
-    
-      <label class="md-nav__link md-nav__link--active" for="toc">
-        Concourse
-      </label>
-    
-    <a href="./" title="Concourse" class="md-nav__link md-nav__link--active">
+  <li class="md-nav__item">
+    <a href="../concourse/" title="Concourse" class="md-nav__link">
       Concourse
     </a>
-    
-      
-<nav class="md-nav md-nav--secondary">
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="toc">Table of contents</label>
-    <ul class="md-nav__list" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#prerequisites" title="Prerequisites" class="md-nav__link">
-    Prerequisites
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#steps-for-gcp" title="Steps (for GCP)" class="md-nav__link">
-    Steps (for GCP)
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#verify" title="Verify" class="md-nav__link">
-    Verify
-  </a>
-  
-</li>
-      
-      
-      
-      
-      
-    </ul>
-  
-</nav>
-    
   </li>
 
     
@@ -405,23 +418,36 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#prerequisites" title="Prerequisites" class="md-nav__link">
-    Prerequisites
+  <a href="#bbl-up-lb-type-cf" title="bbl up --lb-type cf" class="md-nav__link">
+    bbl up --lb-type cf
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#-iaas-aws" title="--iaas aws" class="md-nav__link">
+    --iaas aws
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#steps-for-gcp" title="Steps (for GCP)" class="md-nav__link">
-    Steps (for GCP)
+        
+          <li class="md-nav__item">
+  <a href="#-iaas-gcp" title="--iaas gcp" class="md-nav__link">
+    --iaas gcp
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#verify" title="Verify" class="md-nav__link">
-    Verify
+        
+          <li class="md-nav__item">
+  <a href="#-iaas-azure" title="--iaas azure" class="md-nav__link">
+    --iaas azure
   </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -442,73 +468,136 @@
               
                 
                 
-                <h1 id="concourse">Concourse</h1>
-<p>This document will walk through deploying a concourse clustered
-install to AWS, GCP and Azure using <code>bbl</code> and <code>bosh</code>.</p>
-<h2 id="prerequisites">Prerequisites</h2>
-<ul>
-<li><code>bbl</code></li>
-<li><a href="https://bosh.io/docs/cli-v2.html">bosh v2</a></li>
-<li><a href="https://github.com/concourse/concourse-deployment">concourse/concourse-deployment</a></li>
-</ul>
-<h2 id="steps-for-gcp">Steps (for GCP)</h2>
+                <h1 id="cf-load-balancers">CF Load Balancers</h1>
+<h2 id="bbl-up-lb-type-cf"><code>bbl up --lb-type cf</code></h2>
+<h3 id="-iaas-aws"><code>--iaas aws</code></h3>
+<p>There are 3 elastic load balancers.</p>
 <ol>
-<li>Create an environment and upload a stemcell.</li>
-</ol>
-<p>```bash
-  bbl up --lb-type concourse</p>
-<p>export external_url="https://$(bbl lbs |awk -F':' '{print $2}' |sed 's/ //')"</p>
-<p>bosh upload-stemcell https://bosh.io/d/stemcells/bosh-google-kvm-ubuntu-trusty-go_agent</p>
-<p>cd $GOPATH/src/github.com/concourse/concourse-deployment/cluster
-  ```</p>
-<ol>
-<li>Create an ops-file in your current directory called <code>tls-vars.yml</code>:</li>
-</ol>
-<p>```yml
-  - type: replace
-    path: /variables/-
-    value:
-      name: atc_ca
-      type: certificate
-      options:
-        is_ca: true
-        common_name: atcCA</p>
-<ul>
 <li>
-<p>type: replace
-    path: /variables/-
-    value:
-      name: atc_tls
-      type: certificate
-      options:
-        ca: atc_ca
-  ```</p>
+<p><strong>cf-ssh-lb</strong></p>
+<ul>
+<li>deployment</li>
+<li>
+<p>destination vm <code>scheduler</code> with vm_extension <code>diego-ssh-proxy-network-properties</code></p>
 </li>
 <li>
-<p>Deploy concourse.</p>
+<p>forwarding</p>
 </li>
+<li><code>tcp:2222</code> -&gt; <code>tcp:2222</code></li>
 </ul>
-<p><code>bash
-  bosh deploy -d concourse concourse.yml \
-    -l ../versions.yml \
-    --vars-store cluster-creds.yml \
-    -o operations/no-auth.yml \
-    -o operations/privileged-http.yml \
-    -o operations/privileged-https.yml \
-    -o operations/tls.yml \
-    -o operations/tls-vars.yml \
-    -o operations/web-network-extension.yml \
-    --var network_name=default \
-    --var external_url=$external_url \
-    --var web_vm_type=default \
-    --var db_vm_type=default \
-    --var db_persistent_disk_type=10GB \
-    --var worker_vm_type=default \
-    --var deployment_name=concourse \
-    --var web_network_name=private \
-    --var web_network_vm_extension=lb \</code></p>
-<h2 id="verify">Verify</h2>
-<p>Point your browser to <code>$external_url</code>.</p>
+</li>
+<li>
+<p><strong>cf-tcp-lb</strong></p>
+<ul>
+<li>deployment</li>
+<li>
+<p>destination vm <code>tcp-router</code> with vm_extension <code>cf-tcp-router-network-properties</code></p>
+</li>
+<li>
+<p>forwarding</p>
+</li>
+<li><code>tcp:1024-1123</code> -&gt; <code>tcp:1024-1123</code></li>
+</ul>
+</li>
+<li>
+<p><strong>cf-router-lb</strong></p>
+<ul>
+<li>deployment</li>
+<li>
+<p>destination vm <code>router</code> with vm_extension <code>cf-router-network-properties</code></p>
+</li>
+<li>
+<p>forwarding</p>
+</li>
+<li><code>http:80</code>   -&gt; <code>http:80</code></li>
+<li><code>https:443</code> -&gt; <code>http:80</code></li>
+<li><code>tls:4443</code>  -&gt; <code>tcp:80</code></li>
+</ul>
+</li>
+</ol>
+<h3 id="-iaas-gcp"><code>--iaas gcp</code></h3>
+<p>There are 5 load balancers.</p>
+<ol>
+<li>
+<p><strong>cf-router-lb</strong></p>
+<ul>
+<li>deployment</li>
+<li>
+<p>destination vm <code>router</code> with vm_extension <code>cf-router-network-properties</code></p>
+</li>
+<li>
+<p>components</p>
+</li>
+<li>a backend service with an instance group per availability zone</li>
+<li>instance group per availability zone allowing <code>https:443</code></li>
+<li>a firewall rule allowing <code>tcp:80</code> &amp; <code>tcp:443</code> to the backend service</li>
+<li>a health check for <code>tcp:8080</code> &amp; <code>tcp:80</code></li>
+</ul>
+</li>
+<li>
+<p><strong>cf-ws-lb</strong></p>
+<ul>
+<li>deployment</li>
+<li>
+<p>destination vm <code>router</code> with vm_extension <code>cf-router-network-properties</code></p>
+</li>
+<li>
+<p>components</p>
+</li>
+<li>a target pool</li>
+<li>a forwarding rule allowing <code>tcp:443</code> to the target pool</li>
+<li>a forwarding rule allowing <code>tcp:80</code> to the target pool</li>
+<li>no firewall rule?</li>
+</ul>
+</li>
+<li>
+<p><strong>cf-credhub-lb</strong></p>
+<ul>
+<li>deployment</li>
+<li>
+<p>destination vm <code>some</code> with vm_extension <code>credhub-network-properties</code></p>
+</li>
+<li>
+<p>components</p>
+</li>
+<li>a target pool</li>
+<li>a firewall rule allowing <code>tcp:8844</code> to the target pool</li>
+<li>a forwarding rule for <code>tcp:8844</code> to the target pool</li>
+</ul>
+</li>
+<li>
+<p><strong>cf-tcp-router-lb</strong></p>
+<ul>
+<li>deployment</li>
+<li>
+<p>destination vm <code>tcp-router</code> with vm_extension <code>cf-tcp-router-network-properties</code></p>
+</li>
+<li>
+<p>components</p>
+</li>
+<li>a target pool</li>
+<li>a firewall rule allowing <code>tcp:1024-32768</code> to the target pool</li>
+<li>a forwarding rule for <code>tcp:1024-32768</code> to the target pool</li>
+</ul>
+</li>
+<li>
+<p><strong>cf-ssh-proxy-lb</strong></p>
+<ul>
+<li>deployment</li>
+<li>
+<p>destination vm <code>scheduler</code> with vm_extension <code>diego-ssh-proxy-network-properties</code></p>
+</li>
+<li>
+<p>components</p>
+</li>
+<li>a target pool</li>
+<li>a firewall rule allowing <code>tcp:2222</code> to the target pool</li>
+<li>a forwarding rule for <code>tcp:2222</code> to the target pool</li>
+</ul>
+</li>
+</ol>
+<h3 id="-iaas-azure"><code>--iaas azure</code></h3>
+<p>There is 1 application gateway.</p>
                 
                   
                 
@@ -527,7 +616,7 @@ install to AWS, GCP and Azure using <code>bbl</code> and <code>bosh</code>.</p>
     <div class="md-footer-nav">
       <nav class="md-footer-nav__inner md-grid">
         
-          <a href="../cleaning-up/" title="Cleaning up" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+          <a href="../advanced-configuration/" title="Advanced configuration" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
             <div class="md-flex__cell md-flex__cell--shrink">
               <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
             </div>
@@ -536,19 +625,19 @@ install to AWS, GCP and Azure using <code>bbl</code> and <code>bosh</code>.</p>
                 <span class="md-footer-nav__direction">
                   Previous
                 </span>
-                Cleaning up
+                Advanced configuration
               </span>
             </div>
           </a>
         
         
-          <a href="../credhub/" title="Credhub" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+          <a href="../cleaning-up/" title="Cleaning up" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
             <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
               <span class="md-flex__ellipsis">
                 <span class="md-footer-nav__direction">
                   Next
                 </span>
-                Credhub
+                Cleaning up
               </span>
             </div>
             <div class="md-flex__cell md-flex__cell--shrink">

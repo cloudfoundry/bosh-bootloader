@@ -36,7 +36,7 @@
     
     
       
-        <title>Cleaning up a BBL environment on AWS - BBL</title>
+        <title>Cleaning up - BBL</title>
       
     
     
@@ -73,10 +73,6 @@
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="search">
     <label class="md-overlay" data-md-component="overlay" for="drawer"></label>
     
-      <a href="#cleaning-up-a-bbl-environment-on-aws" tabindex="1" class="md-skip">
-        Skip to content
-      </a>
-    
     
       <header class="md-header" data-md-component="header">
   <nav class="md-header-nav md-grid">
@@ -99,7 +95,7 @@
                 BBL
               </span>
               <span class="md-header-nav__topic">
-                Cleaning up a BBL environment on AWS
+                Cleaning up
               </span>
             
           
@@ -182,8 +178,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../advanced/" title="Advanced Configuration" class="md-nav__link">
-      Advanced Configuration
+    <a href="../advanced-configuration/" title="Advanced configuration" class="md-nav__link">
+      Advanced configuration
     </a>
   </li>
 
@@ -194,8 +190,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../cf-lbs/" title="`bbl up --lb-type cf`" class="md-nav__link">
-      `bbl up --lb-type cf`
+    <a href="../cf-load-balancers/" title="CF Load Balancers" class="md-nav__link">
+      CF Load Balancers
     </a>
   </li>
 
@@ -211,11 +207,9 @@
     
     <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="toc">
     
-      
     
-    
-    <a href="./" title="Cleaning up a BBL environment on AWS" class="md-nav__link md-nav__link--active">
-      Cleaning up a BBL environment on AWS
+    <a href="./" title="Cleaning up" class="md-nav__link md-nav__link--active">
+      Cleaning up
     </a>
     
   </li>
@@ -287,6 +281,30 @@
 
 
   <li class="md-nav__item">
+    <a href="../getting-started-openstack/" title="Getting started openstack" class="md-nav__link">
+      Getting started openstack
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../getting-started-vsphere/" title="Getting started vsphere" class="md-nav__link">
+      Getting started vsphere
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
     <a href="../howto-ssh/" title="Howto ssh" class="md-nav__link">
       Howto ssh
     </a>
@@ -305,6 +323,18 @@
   </li>
 
     
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../migration-guide/" title="Migration guide" class="md-nav__link">
+      Migration guide
+    </a>
+  </li>
+
+    
   </ul>
 </nav>
                   </div>
@@ -312,54 +342,39 @@
               </div>
             
             
-              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
-                <div class="md-sidebar__scrollwrap">
-                  <div class="md-sidebar__inner">
-                    
-<nav class="md-nav md-nav--secondary">
-  
-  
-    
-  
-  
-</nav>
-                  </div>
-                </div>
-              </div>
-            
           
           <div class="md-content">
             <article class="md-content__inner md-typeset">
               
                 
                 
-                <h1 id="cleaning-up-a-bbl-environment-on-aws">Cleaning up a BBL environment on AWS</h1>
-<p>If <code>bbl</code> gets partway through creating an AWS environment and fails, or if it
-fails to destroy the environment, you may want to create another environment
-with the same name. If you want to do this, you have to clean up the artifacts
-from the old environment first.</p>
-<p>If that environment was created with version 5.2.0 or later of <code>bbl</code>, you can run:</p>
-<pre><code>terraform destroy -state=../vars/terraform.tfstate -var-file=../vars/terraform.tfvars
+                  <h1>Cleaning up</h1>
+                
+                <p>= Cleaning up</p>
+<p>In addition to creating resources for deploying BOSH, bbl has two subcommands for assisting you in cleaning up an environment after you are done with it: <code>bbl down</code> and <code>bbl cleanup-leftovers</code></p>
+<p>== bbl down
+If you have the state file for a working environment, then bbl will destroy everything it has created. As a safety precaution, BBL will not delete the environment if there are running VMs deployed by the BOSH director</p>
+<pre><code>
 </code></pre>
 
-<p>from the <code>terraform</code> subdirectory of the <code>bbl</code> state dir. (This applies to all IAASes, not just AWS.)</p>
-<p>If that command fails, or if the environment was created or last upped with a
-pre-5.2.0 version of <code>bbl</code>, you must clean up the resources manually.
-The resources that will prevent <code>bbl</code> from creating a new environment with the same name are:
-- VPC
-- IAM policies
-- IAM roles
-- Key Pairs</p>
-<p>These can be deleted in the console, under the VPC, IAM, and EC2 sections.
-Each resource name will include the name of the <code>bbl</code> environment.</p>
-<p>Deleting a VPC requires deleting all instances and load balancers manually first.</p>
-<p>If you have BOSH deployments in your VPC and your BOSH director is still working
-and accessible, it is recommended that you use <code>bosh delete-deployment</code> to clean
-these up, as it is easier and less error-prone than cleaning them up manually in the AWS console.</p>
-<p>In order to delete load balancers, you may try <code>bbl plan</code> withtout <code>lb</code> flags, although if
-<code>bbl</code> has failed previously on this environment, it's likely that this won't
-work properly. If it doesn't, you can delete them in the EC2/Load Balancing
-section of the AWS console.</p>
+<p>== bbl cleanup-leftovers
+Sometimes, <code>bbl down</code> isn't enough to do the job. Perhaps you are in one of these situations:
+<em> bbl down failed during deletion and lost enough information to 
+</em> The statefile is on a computer that you no longer have access to
+<em> You created some resources outside outside of BBL but are sure you want to nuke them
+</em> You are running BBL's integration tests and they failed, leaving a half-created environment</p>
+<p>To assist with these situations, we have incorporated the CLI utility <a href="https://github.com/genevieve/leftovers">leftovers</a> as a subcommand in bbl. You can think of <code>bbl cleanup-leftovers</code> as kind of like <code>bbl down --force</code>, however, <code>cleanup-leftovers</code> doesn't care if you have a state file at all, it will delete resources according to a filter. The filter is very important! If <code>--filter</code> is omitted, BBL will begin to delete <em>ALL</em> of your IaaS account's resources.</p>
+<p>For example, if you had a bbl environment with a name autogenerated by bbl you could supply part of the name to delete it:</p>
+<pre><code>export BBL_AWS_SECRET_ACCESS_KEY=foo
+export BBL_AWS_ACCESS_KEY_ID=bar
+bbl cleanup-leftovers --filter malawi --iaas aws
+</code></pre>
+
+<p>This will begin to delete each resource with a name or tag matching "malawi", confirming each one before deletion. Use caution with your filters, because you may have more than one environment with the same "Lake Name". To delete all resources with that name without needing to confirming each one individually use <code>--no-confim</code>:</p>
+<pre><code>bbl cleanup-leftovers --filter malawi --iaas aws --no-confirm
+</code></pre>
+
+<p><code>bbl cleanup-leftovers</code> will do the best it can to delete in an order such that all resources can be deleted without dependency errors. However, running cleanup-leftovers repeatedly may be enough to resolve dependency errors.</p>
                 
                   
                 
@@ -378,7 +393,7 @@ section of the AWS console.</p>
     <div class="md-footer-nav">
       <nav class="md-footer-nav__inner md-grid">
         
-          <a href="../cf-lbs/" title="`bbl up --lb-type cf`" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+          <a href="../cf-load-balancers/" title="CF Load Balancers" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
             <div class="md-flex__cell md-flex__cell--shrink">
               <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
             </div>
@@ -387,7 +402,7 @@ section of the AWS console.</p>
                 <span class="md-footer-nav__direction">
                   Previous
                 </span>
-                `bbl up --lb-type cf`
+                CF Load Balancers
               </span>
             </div>
           </a>
