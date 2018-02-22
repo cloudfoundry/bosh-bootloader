@@ -229,6 +229,7 @@ func main() {
 	commandSet := application.CommandSet{}
 	commandSet["help"] = usage
 	commandSet["version"] = commands.NewVersion(Version, logger)
+	commandSet["outputs"] = commands.NewOutputs(logger, terraformManager, stateValidator)
 	commandSet["up"] = up
 	commandSet["plan"] = plan
 	sshKeyDeleter := bosh.NewSSHKeyDeleter(stateStore, afs)

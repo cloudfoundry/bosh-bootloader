@@ -65,6 +65,7 @@ Environmental Detail Commands: Useful for automation and gaining access
   ssh-key                 Prints jumpbox SSH private key
   director-ssh-key        Prints director SSH private key
   lbs                     Prints load balancer(s) and DNS records
+  outputs                 Prints the outputs from terraform
 
 Troubleshooting Commands:
   help                    Prints usage

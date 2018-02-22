@@ -63,6 +63,8 @@ const (
 
 	LBsCommandUsage = "Prints attached load balancer(s)"
 
+	OutputsCommandUsage = "Prints the outputs from terraform."
+
 	VersionCommandUsage = "Prints version"
 
 	UsageCommandUsage = "Prints helpful message for the given command"
@@ -107,6 +109,8 @@ func (Rotate) Usage() string {
 }
 
 func (LBs) Usage() string { return LBsCommandUsage }
+
+func (Outputs) Usage() string { return OutputsCommandUsage }
 
 func (Version) Usage() string { return VersionCommandUsage }
 

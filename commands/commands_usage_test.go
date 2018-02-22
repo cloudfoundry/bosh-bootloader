@@ -122,6 +122,7 @@ var _ = Describe("Commands Usage", func() {
 		Expect(usageText).To(Equal(expectedDescription))
 	},
 		Entry("LBs", commands.LBs{}, "Prints attached load balancer(s)"),
+		Entry("outputs", commands.Outputs{}, "Prints the outputs from terraform."),
 		Entry("jumpbox-address", newStateQuery("jumpbox address"), "Prints BOSH jumpbox address"),
 		Entry("director-address", newStateQuery("director address"), "Prints BOSH director address"),
 		Entry("director-password", newStateQuery("director password"), "Prints BOSH director password"),
