@@ -82,6 +82,7 @@ func (b StateBootstrap) getBBLVersion(stateSchema int) string {
 		11: "5.1.0",
 		12: "5.1.0",
 		13: "5.4.0",
+		14: "6.0.0",
 	}
 	bblVersion, ok := stateToBBLVersion[stateSchema]
 	if ok {
