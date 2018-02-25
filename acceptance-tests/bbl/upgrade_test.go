@@ -92,8 +92,8 @@ var _ = Describe("Upgrade", func() {
 			Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 		})
 
-		By("verifying the director has a public ip", func() {
-			Expect(oldBBL.DirectorAddress()).NotTo(Equal("https://10.0.0.6:25555"))
+		By("verifying the director has a private ip", func() {
+			Expect(oldBBL.DirectorAddress()).To(Equal("https://10.0.0.6:25555"))
 		})
 
 		By("verifying the director exists", func() {
@@ -113,7 +113,7 @@ var _ = Describe("Upgrade", func() {
 
 		directorAddress := newBBL.DirectorAddress()
 
-		By("verifying the director has a non-public ip", func() {
+		By("verifying the director has the same private ip", func() {
 			Expect(directorAddress).To(Equal("https://10.0.0.6:25555"))
 		})
 
