@@ -96,6 +96,10 @@ var _ = Describe("Upgrade", func() {
 			Expect(oldBBL.DirectorAddress()).To(Equal("https://10.0.0.6:25555"))
 		})
 
+		By("exporting environment variables to talk to the director", func() {
+			newBBL.ExportBoshAllProxy()
+		})
+
 		By("verifying the director exists", func() {
 			exists, err := boshcli.DirectorExists(oldBBL.DirectorAddress(), oldBBL.DirectorUsername(), oldBBL.DirectorPassword(), oldBBL.SaveDirectorCA())
 			Expect(err).NotTo(HaveOccurred())
@@ -104,21 +108,11 @@ var _ = Describe("Upgrade", func() {
 
 		By("upgrading to the latest bbl", func() {
 			session := newBBL.Up()
-			Eventually(session, 60*time.Minute).Should(gexec.Exit(0))
-		})
-
-		By("exporting environment variables to talk to the director", func() {
-			newBBL.ExportBoshAllProxy()
-		})
-
-		directorAddress := newBBL.DirectorAddress()
-
-		By("verifying the director has the same private ip", func() {
-			Expect(directorAddress).To(Equal("https://10.0.0.6:25555"))
+			Eventually(session, 20*time.Minute).Should(gexec.Exit(0))
 		})
 
 		By("verifying the director still exists", func() {
-			exists, err := boshcli.DirectorExists(directorAddress, newBBL.DirectorUsername(), newBBL.DirectorPassword(), newBBL.SaveDirectorCA())
+			exists, err := boshcli.DirectorExists(newBBL.DirectorAddress(), newBBL.DirectorUsername(), newBBL.DirectorPassword(), newBBL.SaveDirectorCA())
 			Expect(err).NotTo(HaveOccurred())
 			Expect(exists).To(BeTrue())
 		})
