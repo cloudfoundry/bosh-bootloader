@@ -3,6 +3,7 @@ package aws
 import (
 	"errors"
 	"fmt"
+	"sync"
 
 	awslib "github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -32,27 +33,42 @@ type Leftovers struct {
 }
 
 func (l Leftovers) Delete(filter string) error {
-	var deletables []common.Deletable
+	deletables := [][]common.Deletable{}
 
 	for _, r := range l.resources {
 		list, err := r.List(filter)
+
 		if err != nil {
 			l.logger.Println(err.Error())
 		}
 
-		deletables = append(deletables, list...)
+		deletables = append(deletables, list)
 	}
 
-	for _, d := range deletables {
-		l.logger.Println(fmt.Sprintf("Deleting %s.", d.Name()))
+	var wg sync.WaitGroup
 
-		err := d.Delete()
+	for _, list := range deletables {
 
-		if err != nil {
-			l.logger.Println(err.Error())
-		} else {
-			l.logger.Println(fmt.Sprintf("SUCCESS deleting %s!", d.Name()))
+		for _, d := range list {
+
+			wg.Add(1)
+
+			l.logger.Println(fmt.Sprintf("Deleting %s.", d.Name()))
+
+			go func(d common.Deletable) {
+				defer wg.Done()
+
+				err := d.Delete()
+
+				if err != nil {
+					l.logger.Println(err.Error())
+				} else {
+					l.logger.Println(fmt.Sprintf("SUCCESS deleting %s!", d.Name()))
+				}
+			}(d)
 		}
+
+		wg.Wait()
 	}
 
 	return nil
@@ -116,8 +132,8 @@ func NewLeftovers(logger logger, accessKeyId, secretAccessKey, region string) (L
 
 			s3.NewBuckets(s3Client, logger, bucketManager),
 
-			rds.NewDBSubnetGroups(rdsClient, logger),
 			rds.NewDBInstances(rdsClient, logger),
+			rds.NewDBSubnetGroups(rdsClient, logger),
 		},
 	}, nil
 }

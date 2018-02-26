@@ -35,6 +35,10 @@ func (d DBInstances) List(filter string) ([]common.Deletable, error) {
 	for _, db := range dbInstances.DBInstances {
 		resource := NewDBInstance(d.client, db.DBInstanceIdentifier)
 
+		if *db.DBInstanceStatus == "deleting" {
+			continue
+		}
+
 		if !strings.Contains(resource.identifier, filter) {
 			continue
 		}

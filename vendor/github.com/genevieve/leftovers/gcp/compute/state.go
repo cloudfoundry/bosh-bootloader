@@ -120,7 +120,7 @@ func (s *state) Wait() error {
 				wait = 10 * time.Second
 			}
 
-			s.logger.Printf("Waiting %s before next try..\n", wait)
+			s.logger.Println("Waiting for operation to complete..")
 		}
 	}()
 

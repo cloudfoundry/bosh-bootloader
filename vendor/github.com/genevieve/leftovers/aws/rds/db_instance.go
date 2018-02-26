@@ -3,6 +3,7 @@ package rds
 import (
 	"fmt"
 
+	"github.com/aws/aws-sdk-go/aws"
 	awsrds "github.com/aws/aws-sdk-go/service/rds"
 )
 
@@ -23,6 +24,7 @@ func NewDBInstance(client dbInstancesClient, name *string) DBInstance {
 func (d DBInstance) Delete() error {
 	_, err := d.client.DeleteDBInstance(&awsrds.DeleteDBInstanceInput{
 		DBInstanceIdentifier: d.name,
+		SkipFinalSnapshot:    aws.Bool(true),
 	})
 
 	if err != nil {

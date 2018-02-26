@@ -35,6 +35,7 @@ var _ = Describe("DBInstances", func() {
 			client.DescribeDBInstancesCall.Returns.Output = &awsrds.DescribeDBInstancesOutput{
 				DBInstances: []*awsrds.DBInstance{{
 					DBInstanceIdentifier: aws.String("banana"),
+					DBInstanceStatus:     aws.String("status"),
 				}},
 			}
 			filter = "ban"
@@ -68,6 +69,25 @@ var _ = Describe("DBInstances", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(client.DescribeDBInstancesCall.CallCount).To(Equal(1))
+				Expect(logger.PromptCall.CallCount).To(Equal(0))
+				Expect(items).To(HaveLen(0))
+			})
+		})
+
+		Context("when the db instance is being deleted", func() {
+			BeforeEach(func() {
+				client.DescribeDBInstancesCall.Returns.Output = &awsrds.DescribeDBInstancesOutput{
+					DBInstances: []*awsrds.DBInstance{{
+						DBInstanceIdentifier: aws.String("banana"),
+						DBInstanceStatus:     aws.String("deleting"),
+					}},
+				}
+			})
+
+			It("does not return it in the list", func() {
+				items, err := dbInstances.List(filter)
+				Expect(err).NotTo(HaveOccurred())
+
 				Expect(logger.PromptCall.CallCount).To(Equal(0))
 				Expect(items).To(HaveLen(0))
 			})
