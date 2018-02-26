@@ -19,12 +19,7 @@ func NewOutputs(logger logger, terraformManager terraformManager, stateValidator
 }
 
 func (o Outputs) CheckFastFails(subcommandFlags []string, state storage.State) error {
-	err := o.stateValidator.Validate()
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return o.stateValidator.Validate()
 }
 
 func (o Outputs) Execute(subcommandFlags []string, state storage.State) error {
