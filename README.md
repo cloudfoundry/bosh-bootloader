@@ -10,7 +10,7 @@ on an IAAS. `bbl` currently supports AWS, GCP and Azure. Openstack and vSphere s
 
 - [AWS - Getting Started](docs/getting-started-aws.md)
 - [Deploying Concourse](docs/concourse.md)
-- [Advanced BOSH Configuration](docs/advanced.md)
+- [Advanced BOSH Configuration](docs/advanced-configuration.md)
 
 ## Prerequisites
 
