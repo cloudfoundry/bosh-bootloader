@@ -64,6 +64,14 @@ type BOSHExecutor struct {
 		}
 	}
 
+	PathCall struct {
+		CallCount int
+		Returns   struct {
+			Path  string
+			Error error
+		}
+	}
+
 	VersionCall struct {
 		CallCount int
 		Returns   struct {
@@ -113,6 +121,11 @@ func (e *BOSHExecutor) PlanDirector(input bosh.DirInput, deploymentDir, iaas str
 	e.PlanDirectorCall.Receives.Iaas = iaas
 
 	return e.PlanDirectorCall.Returns.Error
+}
+
+func (e *BOSHExecutor) Path() (string, error) {
+	e.PathCall.CallCount++
+	return e.PathCall.Returns.Path, e.PathCall.Returns.Error
 }
 
 func (e *BOSHExecutor) Version() (string, error) {

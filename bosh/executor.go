@@ -435,6 +435,10 @@ func (e Executor) deploymentExists(varsDir, deployment string) (bool, error) {
 	return true, nil
 }
 
+func (e Executor) Path() (string, error) {
+	return e.command.GetBOSHPath()
+}
+
 func (e Executor) Version() (string, error) {
 	args := []string{"-v"}
 	buffer := bytes.NewBuffer([]byte{})

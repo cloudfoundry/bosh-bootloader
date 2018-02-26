@@ -177,7 +177,7 @@ var _ = Describe("Plan", func() {
 
 		Context("when the version of BOSH is a dev build", func() {
 			It("does not fail", func() {
-				boshManager.VersionCall.Returns.Error = bosh.NewBOSHVersionError(errors.New("BOSH version could not be parsed"))
+				boshManager.VersionCall.Returns.Error = bosh.NewBOSHVersionError(errors.New("banana"))
 				err := command.CheckFastFails([]string{}, storage.State{Version: 999})
 
 				Expect(err).NotTo(HaveOccurred())
@@ -185,11 +185,14 @@ var _ = Describe("Plan", func() {
 		})
 
 		Context("when the version of the bosh-cli is lower than 2.0.48", func() {
-			It("returns an error", func() {
+			BeforeEach(func() {
 				boshManager.VersionCall.Returns.Version = "1.9.1"
-				err := command.CheckFastFails([]string{}, storage.State{Version: 999})
+				boshManager.PathCall.Returns.Path = "/bin/banana"
+			})
 
-				Expect(err).To(MatchError("BOSH version must be at least v2.0.48"))
+			It("returns an error", func() {
+				err := command.CheckFastFails([]string{}, storage.State{Version: 999})
+				Expect(err).To(MatchError("/bin/banana: bosh-cli version must be at least v2.0.48"))
 			})
 		})
 

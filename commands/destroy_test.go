@@ -30,14 +30,16 @@ var _ = Describe("Destroy", func() {
 		logger = &fakes.Logger{}
 		logger.PromptCall.Returns.Proceed = true
 
-		plan = &fakes.Plan{}
 		boshManager = &fakes.BOSHManager{}
 		boshManager.VersionCall.Returns.Version = "2.0.48"
+		boshManager.PathCall.Returns.Path = "/bin/bosh1"
+
+		plan = &fakes.Plan{}
 		stateStore = &fakes.StateStore{}
 		stateValidator = &fakes.StateValidator{}
-		terraformManager = &fakes.TerraformManager{}
 		networkDeletionValidator = &fakes.NetworkDeletionValidator{}
 
+		terraformManager = &fakes.TerraformManager{}
 		terraformManager.DestroyCall.Returns.BBLState = storage.State{ID: "some-state-id"}
 		terraformManager.IsPavedCall.Returns.IsPaved = true
 
@@ -49,10 +51,8 @@ var _ = Describe("Destroy", func() {
 		Context("when the BOSH version is less than 2.0.48 and there is a director", func() {
 			It("returns a helpful error message", func() {
 				boshManager.VersionCall.Returns.Version = "1.9.0"
-				err := destroy.CheckFastFails([]string{"--skip-if-missing"}, storage.State{
-					IAAS: "aws",
-				})
-				Expect(err).To(MatchError("BOSH version must be at least v2.0.48"))
+				err := destroy.CheckFastFails([]string{"--skip-if-missing"}, storage.State{IAAS: "aws"})
+				Expect(err).To(MatchError("/bin/bosh1: bosh-cli version must be at least v2.0.48"))
 			})
 		})
 

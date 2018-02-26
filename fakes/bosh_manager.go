@@ -46,6 +46,13 @@ type BOSHManager struct {
 			Error error
 		}
 	}
+	PathCall struct {
+		CallCount int
+		Returns   struct {
+			Path  string
+			Error error
+		}
+	}
 	VersionCall struct {
 		CallCount int
 		Returns   struct {
@@ -147,6 +154,11 @@ func (b *BOSHManager) GetJumpboxDeploymentVars(state storage.State, terraformOut
 	b.GetJumpboxDeploymentVarsCall.Receives.State = state
 	b.GetJumpboxDeploymentVarsCall.Receives.TerraformOutputs = terraformOutputs
 	return b.GetJumpboxDeploymentVarsCall.Returns.Vars
+}
+
+func (b *BOSHManager) Path() (string, error) {
+	b.PathCall.CallCount++
+	return b.PathCall.Returns.Path, b.PathCall.Returns.Error
 }
 
 func (b *BOSHManager) Version() (string, error) {
