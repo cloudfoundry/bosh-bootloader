@@ -56,7 +56,7 @@ install to AWS, GCP and Azure using `bbl` and `bosh`.
     -o operations/privileged-http.yml \
     -o operations/privileged-https.yml \
     -o operations/tls.yml \
-    -o operations/tls-vars.yml \
+    -o tls-vars.yml \
     -o operations/web-network-extension.yml \
     --var network_name=default \
     --var external_url=$external_url \
