@@ -68,24 +68,16 @@ func (d Destroy) CheckFastFails(subcommandFlags []string, state storage.State) e
 	}
 
 	var networkName string
-	if state.IAAS == "gcp" {
+	switch state.IAAS {
+	case "gcp":
 		networkName = terraformOutputs.GetString("network_name")
-		if networkName == "" {
-			return nil
-		}
-	} else if state.IAAS == "aws" {
+	case "aws":
 		networkName = terraformOutputs.GetString("vpc_id")
-		if networkName == "" {
-			return nil
-		}
-	} else if state.IAAS == "azure" {
+	case "azure":
 		networkName = terraformOutputs.GetString("bosh_network_name")
-		if networkName == "" {
-			return nil
-		}
-	} else if state.IAAS == "vsphere" || state.IAAS == "openstack" {
-		// we don't create or delete the network for vsphere
-		// and right now we don't do it for openstack either
+	}
+
+	if networkName == "" {
 		return nil
 	}
 
