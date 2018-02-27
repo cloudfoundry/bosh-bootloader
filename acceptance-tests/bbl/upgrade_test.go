@@ -22,7 +22,9 @@ var _ = Describe("Upgrade", func() {
 		newBBL  actors.BBL
 		boshcli actors.BOSHCLI
 		state   acceptance.State
-		f       *os.File
+
+		sshSession *gexec.Session
+		f          *os.File
 	)
 
 	BeforeEach(func() {
@@ -67,12 +69,17 @@ var _ = Describe("Upgrade", func() {
 	AfterEach(func() {
 		acceptance.SkipUnless("upgrade")
 
-		By("destroying with the old bbl", func() {
+		if sshSession != nil {
+			sshSession.Interrupt()
+			Eventually(sshSession, "5s").Should(gexec.Exit())
+		}
+
+		By("trying to destroy with the old bbl", func() {
 			session := oldBBL.Destroy()
 			Eventually(session, 10*time.Minute).Should(gexec.Exit())
 		})
 
-		By("destroying with the latest bbl", func() {
+		By("trying to destroy with the latest bbl", func() {
 			session := newBBL.Destroy()
 			Eventually(session, 10*time.Minute).Should(gexec.Exit())
 		})
@@ -96,8 +103,8 @@ var _ = Describe("Upgrade", func() {
 			Expect(oldBBL.DirectorAddress()).To(Equal("https://10.0.0.6:25555"))
 		})
 
-		By("exporting environment variables to talk to the director", func() {
-			newBBL.ExportBoshAllProxy()
+		By("starting an ssh tunnel to talk to the director", func() {
+			sshSession = oldBBL.StartSSHTunnel()
 		})
 
 		By("verifying the director exists", func() {
@@ -107,8 +114,15 @@ var _ = Describe("Upgrade", func() {
 		})
 
 		By("upgrading to the latest bbl", func() {
-			session := newBBL.Up()
+			session := newBBL.Plan()
+			Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
+
+			session = newBBL.Up()
 			Eventually(session, 20*time.Minute).Should(gexec.Exit(0))
+		})
+
+		By("exporting BOSH_ALL_PROXY to talk to the director", func() {
+			newBBL.ExportBoshAllProxy()
 		})
 
 		By("verifying the director still exists", func() {
