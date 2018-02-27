@@ -5,9 +5,6 @@
 * <a href='#terraform'>Customizing IaaS Paving with Terraform</a>
 * <a href='#boshlite'>Deploying BOSH lite on GCP</a>
 * <a href='#isoseg'>Deploying an isolation segment</a>
-* <a href='#director'>Deploy director with bosh create-env</a>
-* <a href='#concourse'>Deploy concourse with bosh create-env</a>
-
 
 ## <a name='opsfile'></a>Using an ops-file with bbl
 
