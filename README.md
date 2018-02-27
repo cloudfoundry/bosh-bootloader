@@ -69,7 +69,7 @@ date.
 ------------ | -------------
 ``bbl-state.json`` | Environment name, and bbl version metadata
 ``bosh-deployment`` | The latest [bosh-deployment](http://github.com/cloudfoundry/bosh-deployment) that has been tested with your version of bbl
-``create-director.sh`` | The BOSH cli command bbl will use to create your director when you run `bbl up`. See [docs/advanced](docs/advanced.md#opsfile) for help with modifying this.
+``create-director.sh`` | The BOSH cli command bbl will use to create your director when you run `bbl up`. See [docs/advanced-configuration](docs/advanced-configuration.md#opsfile) for help with modifying this.
 ``create-jumpbox.sh`` | The BOSH cli command bbl will use to create your jumpbox.
 ``delete-director.sh`` |The BOSH cli command bbl will use to delete your director.
 ``delete-jumpbox.sh`` | The BOSH cli command bbl will use to delete your jumpbox.
