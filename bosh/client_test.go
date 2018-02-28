@@ -54,8 +54,6 @@ var _ = Describe("Client", func() {
 		fakeBOSH = httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 			switch req.URL.Path {
 			case "/oauth/token":
-				username, password, _ = req.BasicAuth()
-
 				w.Header().Set("Content-Type", "application/json")
 
 				w.Write([]byte(`{
