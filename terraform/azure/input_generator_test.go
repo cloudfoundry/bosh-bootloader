@@ -66,7 +66,7 @@ var _ = Describe("InputGenerator", func() {
 		})
 
 		Context("given an LB system domain", func() {
-			It("returns sytem domain as input", func() {
+			It("returns system domain as input", func() {
 				state.LB.Domain = "example.com"
 				inputs, err := inputGenerator.Generate(state)
 				Expect(err).NotTo(HaveOccurred())

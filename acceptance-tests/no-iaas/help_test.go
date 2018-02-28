@@ -42,7 +42,7 @@ var _ = Describe("bbl", func() {
 				Expect(session.Out.Contents()).To(ContainSubstring("usage"))
 			})
 
-			It("prints out the help and errors on any unkown commands passed to it", func() {
+			It("prints out the help and errors on any unknown commands passed to it", func() {
 				args := []string{
 					"--help",
 					"some-invalid-command",
