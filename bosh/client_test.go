@@ -21,16 +21,13 @@ import (
 
 var _ = Describe("Client", func() {
 	var (
-		tlsConfig              *tls.Config
-		fakeBOSH               *httptest.Server
-		ca                     []byte
-		cloudConfig            []byte
-		token                  string
-		username               string
-		password               string
-		cloudConfigContentType string
-		httpClient             *http.Client
-		failStatus             int
+		tlsConfig   *tls.Config
+		fakeBOSH    *httptest.Server
+		ca          []byte
+		cloudConfig []byte
+		token       string
+		httpClient  *http.Client
+		failStatus  int
 	)
 
 	BeforeEach(func() {
@@ -84,10 +81,7 @@ var _ = Describe("Client", func() {
 					return
 				}
 
-				username, password, _ = req.BasicAuth()
-
 				token = req.Header.Get("Authorization")
-				cloudConfigContentType = req.Header.Get("Content-Type")
 
 				w.WriteHeader(http.StatusCreated)
 

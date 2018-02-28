@@ -23,7 +23,6 @@ var _ = Describe("Executor", func() {
 		fileIO     *fakes.FileIO
 		executor   terraform.Executor
 
-		tempDir      string
 		terraformDir string
 		varsDir      string
 		input        map[string]interface{}
@@ -41,9 +40,6 @@ var _ = Describe("Executor", func() {
 		executor = terraform.NewExecutor(cmd, stateStore, fileIO, true)
 
 		var err error
-		tempDir, err = ioutil.TempDir("", "")
-		Expect(err).NotTo(HaveOccurred())
-
 		terraformDir, err = ioutil.TempDir("", "terraform")
 		Expect(err).NotTo(HaveOccurred())
 		stateStore.GetTerraformDirCall.Returns.Directory = terraformDir

@@ -27,6 +27,9 @@ func (g gcpComputeClient) GetZones(region, projectID string) ([]string, error) {
 	}
 
 	zonesInProject, err := g.service.Zones.List(projectID).Do()
+	if err != nil {
+		return []string{}, err
+	}
 
 	zonesInRegion := []string{}
 	for _, zone := range zonesInProject.Items {

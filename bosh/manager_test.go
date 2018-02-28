@@ -191,9 +191,7 @@ director_ssl:
 
 	Describe("Jumpbox set-up", func() {
 		var (
-			deploymentVars string
-			createEnvArgs  []string
-			state          storage.State
+			state storage.State
 		)
 
 		BeforeEach(func() {
@@ -219,22 +217,6 @@ director_ssl:
 				},
 			}
 
-			deploymentVars = `internal_cidr: 10.0.0.0/24
-internal_gw: 10.0.0.1
-internal_ip: 10.0.0.5
-director_name: bosh-some-env-id
-external_ip: some-external-ip
-zone: some-zone
-network: some-network
-subnetwork: some-subnetwork
-tags:
-- some-jumpbox-tag
-- some-jumpbox-fw-tag
-project_id: some-project-id
-gcp_credentials_json: some-credential-json
-`
-
-			createEnvArgs = []string{"bosh", "create-env", "/path/to/manifest.yml", "etc"}
 			boshExecutor.CreateEnvCall.Returns.Variables = "jumpbox_ssh:\n  private_key: some-jumpbox-private-key"
 			fs.TempDirCall.Returns.Name = "/fake/file/bosh-jumpbox"
 		})
@@ -370,16 +352,10 @@ gcp_credentials_json: some-credential-json
 
 	Describe("DeleteJumpbox", func() {
 		var (
-			vars          string
 			incomingState storage.State
 			jumpboxState  map[string]interface{}
 		)
 		BeforeEach(func() {
-			vars = `jumpbox_ssh:
-  private_key: some-private-key
-  public_key: some-private-key
-`
-
 			jumpboxState = map[string]interface{}{
 				"key": "value",
 			}

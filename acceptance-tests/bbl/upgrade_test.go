@@ -21,7 +21,6 @@ var _ = Describe("Upgrade", func() {
 		oldBBL  actors.BBL
 		newBBL  actors.BBL
 		boshcli actors.BOSHCLI
-		state   acceptance.State
 
 		sshSession *gexec.Session
 		f          *os.File
@@ -63,7 +62,6 @@ var _ = Describe("Upgrade", func() {
 		oldBBL = actors.NewBBL(configuration.StateFileDir, f.Name(), configuration, envName)
 		newBBL = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, envName)
 		boshcli = actors.NewBOSHCLI()
-		state = acceptance.NewState(configuration.StateFileDir)
 	})
 
 	AfterEach(func() {

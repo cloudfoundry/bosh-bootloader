@@ -32,8 +32,6 @@ var _ = Describe("Cmd", func() {
 
 		boshArgs      string
 		boshArgsMutex sync.Mutex
-
-		tempDir string
 	)
 
 	var setFastFailBOSH = func(on bool) {
@@ -81,9 +79,6 @@ var _ = Describe("Cmd", func() {
 		var err error
 		pathToBOSH, err = gexec.Build("github.com/cloudfoundry/bosh-bootloader/fakes/bosh",
 			"--ldflags", fmt.Sprintf("-X main.backendURL=%s", fakeBOSHBackendServer.URL))
-		Expect(err).NotTo(HaveOccurred())
-
-		tempDir, err = ioutil.TempDir("", "")
 		Expect(err).NotTo(HaveOccurred())
 	})
 

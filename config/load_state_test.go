@@ -775,15 +775,13 @@ var _ = Describe("LoadState", func() {
 
 		Context("using GCP", func() {
 			var (
-				serviceAccountKeyPath string
-				serviceAccountKey     string
-				tempFile              *os.File
+				serviceAccountKey string
+				tempFile          *os.File
 			)
 			BeforeEach(func() {
 				var err error
 				tempFile, err = ioutil.TempFile("", "temp")
 				Expect(err).NotTo(HaveOccurred())
-				serviceAccountKeyPath = tempFile.Name()
 				serviceAccountKey = `{"project_id": "some-project-id"}`
 
 				fakeFileIO.TempFileCall.Returns.File = tempFile
