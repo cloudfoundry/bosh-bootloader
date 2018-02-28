@@ -236,7 +236,7 @@ var _ = Describe("Client", func() {
 			BeforeEach(func() {
 				ec2Client.DescribeInstancesCall.Returns.Output = &awsec2.DescribeInstancesOutput{
 					Reservations: []*awsec2.Reservation{
-						&awsec2.Reservation{
+						{
 							Instances: []*awsec2.Instance{{
 								Tags: []*awsec2.Tag{{
 									Key:   awslib.String("Name"),

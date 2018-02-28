@@ -80,12 +80,12 @@ var _ = Describe("Client", func() {
 
 				azureClient.ListCall.Returns.Result = compute.VirtualMachineListResult{
 					Value: &[]compute.VirtualMachine{
-						compute.VirtualMachine{
+						{
 							Tags: &map[string]*string{
 								"job": &boshString,
 							},
 						},
-						compute.VirtualMachine{
+						{
 							Tags: &map[string]*string{
 								"job": &jumpboxString,
 							},
@@ -111,12 +111,12 @@ var _ = Describe("Client", func() {
 
 				azureClient.ListCall.Returns.Result = compute.VirtualMachineListResult{
 					Value: &[]compute.VirtualMachine{
-						compute.VirtualMachine{
+						{
 							Tags: &map[string]*string{
 								"job": &boshString,
 							},
 						},
-						compute.VirtualMachine{
+						{
 							Name: &vmNameString,
 							Tags: &map[string]*string{
 								"job":        &jobString,
@@ -138,7 +138,7 @@ var _ = Describe("Client", func() {
 				vmNameString := "some-other-vm"
 				azureClient.ListCall.Returns.Result = compute.VirtualMachineListResult{
 					Value: &[]compute.VirtualMachine{
-						compute.VirtualMachine{
+						{
 							Name: &vmNameString,
 							Tags: &map[string]*string{},
 						},

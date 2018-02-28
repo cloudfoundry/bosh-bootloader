@@ -495,7 +495,7 @@ var _ = Describe("Migrator", func() {
 			Context("when the state cannot be saved", func() {
 				BeforeEach(func() {
 					store.SetCall.Returns = []fakes.SetCallReturn{
-						fakes.SetCallReturn{
+						{
 							Error: errors.New("tomato"),
 						},
 					}

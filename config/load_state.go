@@ -363,13 +363,13 @@ func ValidateIAAS(state storage.State) error {
 
 func NeedsIAASCreds(command string) bool {
 	_, ok := map[string]struct{}{
-		"up":                struct{}{},
-		"down":              struct{}{},
-		"plan":              struct{}{},
-		"destroy":           struct{}{},
-		"leftovers":         struct{}{},
-		"cleanup-leftovers": struct{}{},
-		"rotate":            struct{}{},
+		"up":                {},
+		"down":              {},
+		"plan":              {},
+		"destroy":           {},
+		"leftovers":         {},
+		"cleanup-leftovers": {},
+		"rotate":            {},
 	}[command]
 	return ok
 }

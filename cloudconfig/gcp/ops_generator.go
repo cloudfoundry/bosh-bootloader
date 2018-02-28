@@ -190,7 +190,7 @@ func (o *OpsGenerator) generateGCPOps(state storage.State) ([]op, error) {
 	}
 
 	var subnets []networkSubnet
-	for i, _ := range state.GCP.Zones {
+	for i := range state.GCP.Zones {
 		subnet := generateNetworkSubnet(i)
 		subnets = append(subnets, subnet)
 	}

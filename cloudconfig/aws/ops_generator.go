@@ -220,7 +220,7 @@ func (o OpsGenerator) generateOps(state storage.State) ([]op, error) {
 		return []op{}, fmt.Errorf("Retrieve availability zones: %s", err)
 	}
 
-	for i, _ := range azs {
+	for i := range azs {
 		azOp := createOp("replace", "/azs/-", az{
 			Name: fmt.Sprintf("z%d", i+1),
 			CloudProperties: azCloudProperties{
@@ -248,11 +248,11 @@ func (o OpsGenerator) generateOps(state storage.State) ([]op, error) {
 	switch state.LB.Type {
 	case "cf":
 		lbSecurityGroups := []map[string]string{
-			map[string]string{"name": "cf-router-network-properties", "lb": "((cf_router_lb_name))", "group": "((cf_router_lb_internal_security_group))"},
-			map[string]string{"name": "diego-ssh-proxy-network-properties", "lb": "((cf_ssh_lb_name))", "group": "((cf_ssh_lb_internal_security_group))"},
-			map[string]string{"name": "cf-tcp-router-network-properties", "lb": "((cf_tcp_lb_name))", "group": "((cf_tcp_lb_internal_security_group))"},
-			map[string]string{"name": "router-lb", "lb": "((cf_router_lb_name))", "group": "((cf_router_lb_internal_security_group))"},
-			map[string]string{"name": "ssh-proxy-lb", "lb": "((cf_ssh_lb_name))", "group": "((cf_ssh_lb_internal_security_group))"},
+			{"name": "cf-router-network-properties", "lb": "((cf_router_lb_name))", "group": "((cf_router_lb_internal_security_group))"},
+			{"name": "diego-ssh-proxy-network-properties", "lb": "((cf_ssh_lb_name))", "group": "((cf_ssh_lb_internal_security_group))"},
+			{"name": "cf-tcp-router-network-properties", "lb": "((cf_tcp_lb_name))", "group": "((cf_tcp_lb_internal_security_group))"},
+			{"name": "router-lb", "lb": "((cf_router_lb_name))", "group": "((cf_router_lb_internal_security_group))"},
+			{"name": "ssh-proxy-lb", "lb": "((cf_ssh_lb_name))", "group": "((cf_ssh_lb_internal_security_group))"},
 		}
 
 		for _, details := range lbSecurityGroups {

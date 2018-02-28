@@ -76,12 +76,12 @@ func (c *CloudConfigManager) Interpolate() (string, error) {
 	return c.InterpolateCall.Returns.CloudConfig, c.InterpolateCall.Returns.Error
 }
 
-func (c *CloudConfigManager) IsPresentCloudConfig() (bool) {
+func (c *CloudConfigManager) IsPresentCloudConfig() bool {
 	c.IsPresentCloudConfigCall.CallCount++
 	return c.IsPresentCloudConfigCall.Returns.IsPresent
 }
 
-func (c *CloudConfigManager) IsPresentCloudConfigVars() (bool) {
+func (c *CloudConfigManager) IsPresentCloudConfigVars() bool {
 	c.IsPresentCloudConfigVarsCall.CallCount++
 	return c.IsPresentCloudConfigVarsCall.Returns.IsPresent
 }
