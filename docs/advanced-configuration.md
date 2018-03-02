@@ -16,9 +16,8 @@ Director's deployment manifest. `bosh-deployment` contains many such ops files f
 ### Using the pre-made operations files
 You can provide any number of ops files or variables to `bosh create-env` by creating `create-director-override.sh`. This file will not be overridden by bbl. You can use `create-director.sh` as a template, and you can even edit that file instead, but if you do, your changes will be overridden the next time you run `bbl plan`.
 
-In this example, I use a local version of BOSH director that I have built based off of a branch:
+In this example, I use a local version of BOSH director that I have built based off of a branch by referencing an ops file that is included as part of `bosh-deployment`:
 ```diff
-#!/bin/sh
 bosh create-env \
   ${BBL_STATE_DIR}/bosh-deployment/bosh.yml \
   --state  ${BBL_STATE_DIR}/vars/bosh-state.json \
