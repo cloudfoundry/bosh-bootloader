@@ -19,7 +19,7 @@ type ClientProvider struct {
 }
 
 type socks5Proxy interface {
-	Start(string, string) error
+	Start(username string, key string, address string) error
 	Addr() (string, error)
 }
 
@@ -36,7 +36,7 @@ func (c ClientProvider) Dialer(jumpbox storage.Jumpbox) (proxy.Dialer, error) {
 		return nil, fmt.Errorf("get jumpbox ssh key: %s", err)
 	}
 
-	err = c.socks5Proxy.Start(privateKey, jumpbox.URL)
+	err = c.socks5Proxy.Start("", privateKey, jumpbox.URL)
 	if err != nil {
 		return nil, fmt.Errorf("start proxy: %s", err)
 	}

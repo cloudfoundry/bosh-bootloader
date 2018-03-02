@@ -40,7 +40,6 @@ var _ = Describe("Socks5Proxy", func() {
 		hostKey = &fakes.HostKey{}
 		hostKey.GetCall.Returns.PublicKey = signer.PublicKey()
 
-
 		socks5Proxy = proxy.NewSocks5Proxy(hostKey, nil) //sock5 server defaults to a stdout logger for us
 	})
 
@@ -49,51 +48,24 @@ var _ = Describe("Socks5Proxy", func() {
 	})
 
 	Describe("Start", func() {
-		It("starts a proxy to the jumpbox", func() {
-			err := socks5Proxy.Start(privateKey, serverURL)
-			Expect(err).NotTo(HaveOccurred())
-
-			// Wait for socks5 proxy to start
-			time.Sleep(1 * time.Second)
-
-			socks5Addr, err := socks5Proxy.Addr()
-			Expect(err).NotTo(HaveOccurred())
-
-			socks5Client, err := goproxy.SOCKS5("tcp", socks5Addr, nil, goproxy.Direct)
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(hostKey.GetCall.CallCount).To(Equal(1))
-			Expect(hostKey.GetCall.Receives.Username).To(Equal("jumpbox"))
-			Expect(hostKey.GetCall.Receives.PrivateKey).To(Equal(privateKey))
-			Expect(hostKey.GetCall.Receives.ServerURL).To(Equal(serverURL))
-
-			conn, err := socks5Client.Dial("tcp", httpServerHostPort)
-			Expect(err).NotTo(HaveOccurred())
-
-			_, err = conn.Write([]byte("GET / HTTP/1.0\r\n\r\n"))
-			Expect(err).NotTo(HaveOccurred())
-			defer conn.Close()
-
-			status, err := bufio.NewReader(conn).ReadString('\n')
-			Expect(status).To(Equal("HTTP/1.0 200 OK\r\n"))
-		})
-
-		Context("when starting the proxy a second time", func() {
-			It("no-ops on the second run", func() {
-				err := socks5Proxy.Start(privateKey, serverURL)
+		Context("when empty username is given", func() {
+			It("starts a proxy to the jumpbox", func() {
+				err := socks5Proxy.Start("", privateKey, serverURL)
 				Expect(err).NotTo(HaveOccurred())
 
 				// Wait for socks5 proxy to start
 				time.Sleep(1 * time.Second)
-
-				err = socks5Proxy.Start(privateKey, serverURL)
-				Expect(err).NotTo(HaveOccurred())
 
 				socks5Addr, err := socks5Proxy.Addr()
 				Expect(err).NotTo(HaveOccurred())
 
 				socks5Client, err := goproxy.SOCKS5("tcp", socks5Addr, nil, goproxy.Direct)
 				Expect(err).NotTo(HaveOccurred())
+
+				Expect(hostKey.GetCall.CallCount).To(Equal(1))
+				Expect(hostKey.GetCall.Receives.Username).To(Equal("jumpbox"))
+				Expect(hostKey.GetCall.Receives.PrivateKey).To(Equal(privateKey))
+				Expect(hostKey.GetCall.Receives.ServerURL).To(Equal(serverURL))
 
 				conn, err := socks5Client.Dial("tcp", httpServerHostPort)
 				Expect(err).NotTo(HaveOccurred())
@@ -105,16 +77,88 @@ var _ = Describe("Socks5Proxy", func() {
 				status, err := bufio.NewReader(conn).ReadString('\n')
 				Expect(status).To(Equal("HTTP/1.0 200 OK\r\n"))
 			})
+
+			Context("when starting the proxy a second time", func() {
+				It("no-ops on the second run", func() {
+					err := socks5Proxy.Start("", privateKey, serverURL)
+					Expect(err).NotTo(HaveOccurred())
+
+					// Wait for socks5 proxy to start
+					time.Sleep(1 * time.Second)
+
+					err = socks5Proxy.Start("", privateKey, serverURL)
+					Expect(err).NotTo(HaveOccurred())
+
+					socks5Addr, err := socks5Proxy.Addr()
+					Expect(err).NotTo(HaveOccurred())
+
+					socks5Client, err := goproxy.SOCKS5("tcp", socks5Addr, nil, goproxy.Direct)
+					Expect(err).NotTo(HaveOccurred())
+
+					conn, err := socks5Client.Dial("tcp", httpServerHostPort)
+					Expect(err).NotTo(HaveOccurred())
+
+					_, err = conn.Write([]byte("GET / HTTP/1.0\r\n\r\n"))
+					Expect(err).NotTo(HaveOccurred())
+					defer conn.Close()
+
+					status, err := bufio.NewReader(conn).ReadString('\n')
+					Expect(status).To(Equal("HTTP/1.0 200 OK\r\n"))
+				})
+			})
+
+			Context("when opening the port fails", func() {
+				It("returns an error", func() {
+					proxy.SetNetListen(func(string, string) (net.Listener, error) {
+						return nil, errors.New("coconut")
+					})
+
+					err := socks5Proxy.Start("", privateKey, serverURL)
+					Expect(err).To(MatchError("open port: coconut"))
+				})
+			})
 		})
 
-		Context("when opening the port fails", func() {
-			It("returns an error", func() {
-				proxy.SetNetListen(func(string, string) (net.Listener, error) {
-					return nil, errors.New("coconut")
-				})
+		Context("when a custom username is given", func() {
+			JustBeforeEach(func() {
+				serverURL = proxy.StartTestSSHServer(httpServerHostPort, privateKey, "custom-username")
 
-				err := socks5Proxy.Start(privateKey, serverURL)
-				Expect(err).To(MatchError("open port: coconut"))
+				signer, err := ssh.ParsePrivateKey([]byte(privateKey))
+				Expect(err).NotTo(HaveOccurred())
+
+				hostKey = &fakes.HostKey{}
+				hostKey.GetCall.Returns.PublicKey = signer.PublicKey()
+
+				socks5Proxy = proxy.NewSocks5Proxy(hostKey, nil) //sock5 server defaults to a stdout logger for us
+			})
+
+			It("returns a dialer that proxies to the jumpbox with a custom user", func() {
+				err := socks5Proxy.Start("custom-username", privateKey, serverURL)
+				Expect(err).NotTo(HaveOccurred())
+
+				// Wait for socks5 proxy to start
+				time.Sleep(1 * time.Second)
+
+				socks5Addr, err := socks5Proxy.Addr()
+				Expect(err).NotTo(HaveOccurred())
+
+				socks5Client, err := goproxy.SOCKS5("tcp", socks5Addr, nil, goproxy.Direct)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(hostKey.GetCall.CallCount).To(Equal(1))
+				Expect(hostKey.GetCall.Receives.Username).To(Equal("custom-username"))
+				Expect(hostKey.GetCall.Receives.PrivateKey).To(Equal(privateKey))
+				Expect(hostKey.GetCall.Receives.ServerURL).To(Equal(serverURL))
+
+				conn, err := socks5Client.Dial("tcp", httpServerHostPort)
+				Expect(err).NotTo(HaveOccurred())
+
+				_, err = conn.Write([]byte("GET / HTTP/1.0\r\n\r\n"))
+				Expect(err).NotTo(HaveOccurred())
+				defer conn.Close()
+
+				status, err := bufio.NewReader(conn).ReadString('\n')
+				Expect(status).To(Equal("HTTP/1.0 200 OK\r\n"))
 			})
 		})
 	})
@@ -208,7 +252,7 @@ var _ = Describe("Socks5Proxy", func() {
 	Describe("Addr", func() {
 		Context("when the proxy has been started", func() {
 			BeforeEach(func() {
-				err := socks5Proxy.Start(privateKey, serverURL)
+				err := socks5Proxy.Start("", privateKey, serverURL)
 				Expect(err).NotTo(HaveOccurred())
 
 				time.Sleep(1 * time.Second)

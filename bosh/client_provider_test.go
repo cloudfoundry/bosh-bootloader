@@ -61,8 +61,9 @@ var _ = Describe("Client Provider", func() {
 				Expect(socks5Client).To(Equal(fakeSocks5Client))
 
 				Expect(socks5Proxy.StartCall.CallCount).To(Equal(1))
-				Expect(socks5Proxy.StartCall.Receives.JumpboxPrivateKey).To(Equal("some-private-key"))
-				Expect(socks5Proxy.StartCall.Receives.JumpboxExternalURL).To(Equal("https://some-jumpbox"))
+				Expect(socks5Proxy.StartCall.Receives.Username).To(Equal(""))
+				Expect(socks5Proxy.StartCall.Receives.PrivateKey).To(Equal("some-private-key"))
+				Expect(socks5Proxy.StartCall.Receives.ExternalURL).To(Equal("https://some-jumpbox"))
 
 				Expect(socks5Proxy.AddrCall.CallCount).To(Equal(1))
 
