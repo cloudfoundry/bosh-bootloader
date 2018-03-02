@@ -8,15 +8,24 @@ const (
   - name: z1
     cloud_properties:
       datacenters:
-      - clusters: [((vcenter_cluster)): {}]
+      - name: ((vcenter_dc))
+        clusters:
+        - ((vcenter_cluster)):
+            resource_pool: ((vcenter_rp))
   - name: z2
     cloud_properties:
       datacenters:
-      - clusters: [((vcenter_cluster)): {}]
+      - name: ((vcenter_dc))
+        clusters:
+        - ((vcenter_cluster)):
+            resource_pool: ((vcenter_rp))
   - name: z3
     cloud_properties:
       datacenters:
-      - clusters: [((vcenter_cluster)): {}]
+      - name: ((vcenter_dc))
+        clusters:
+        - ((vcenter_cluster)):
+            resource_pool: ((vcenter_rp))
 
 - type: replace
   path: /compilation
