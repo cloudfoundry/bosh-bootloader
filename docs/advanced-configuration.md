@@ -14,9 +14,7 @@ Certain features of BOSH, particularly experimental features or tuning parameter
 Director's deployment manifest. `bosh-deployment` contains many such ops files for common features and options.
 
 ### Using the pre-made operations files
-You can provide any number of ops files or variables to `bosh create-env` by editing .This file will not be overridden by bbl unless `bbl plan` is
-called. If you modify this file, be sure to check your modifications in to git before running `bbl plan` again so that
-you may resolve conflicts if they arise.
+You can provide any number of ops files or variables to `bosh create-env` by creating `create-director-override.sh`. This file will not be overridden by bbl. You can use `create-director.sh` as a template, and you can even edit that file instead, but if you do, your changes will be overridden the next time you run `bbl plan`.
 
 In this example, I use a local version of BOSH director that I have built based off of a branch:
 ```diff
