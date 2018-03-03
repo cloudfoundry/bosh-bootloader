@@ -1,17 +1,17 @@
 # Advanced configuration
 
 ## Table of Contents
-* <a href='#opsfile'>Using an ops-file with bbl</a>
+* <a href='#opsfile'>Using a BOSH ops-file with bbl</a>
 * <a href='#terraform'>Customizing IaaS Paving with Terraform</a>
 * <a href='#boshlite'>Deploying BOSH lite on GCP</a>
 * <a href='#isoseg'>Deploying an isolation segment</a>
 
-## <a name='opsfile'></a>Using an ops-file with bbl
+## <a name='opsfile'></a>Using a BOSH ops-file with bbl
 
-### About ops-files
+### About BOSH ops-files
 
 Certain features of BOSH, particularly experimental features or tuning parameters, must be enabled by modifying your
-Director's deployment manifest. `bosh-deployment` contains many such ops files for common features and options.
+Director's deployment manifest. `bosh-deployment` contains many such [ops files](https://bosh.io/docs/terminology.html#operations-file) for common features and options.
 
 ### Using the pre-made operations files
 You can provide any number of ops files or variables to `bosh create-env` by creating `create-director-override.sh`. This file will not be overridden by bbl. You can use `create-director.sh` as a template, and you can even edit that file instead, but if you do, your changes will be overridden the next time you run `bbl plan`.
