@@ -1,7 +1,7 @@
 # bosh-bootloader
 Also known as `bbl` *(pronounced: "bubble")*, bosh-bootloader is a command line
 utility for standing up a [CloudFoundry](https://cloudfoundry.org/) or [Concourse](https://concourse.ci) installation
-on an IAAS. `bbl` currently supports AWS, GCP and Azure. Openstack and vSphere support are planned.
+on an IaaS. `bbl` currently supports AWS, GCP and Azure. Openstack and vSphere support are planned.
 
 * [CI](https://wings.concourse.ci/teams/cf-infrastructure/pipelines/bosh-bootloader)
 * [Tracker](https://www.pivotaltracker.com/n/projects/1488988)
@@ -36,16 +36,16 @@ $ brew install bbl
 
 ### Generic getting started guide
 
-1. Create the necessary IAAS user/account for bbl.
+1. Create the necessary IaaS user/account for bbl.
 
-1. `bbl up --iaas <MY IAAS>` with IAAS credentials as flags or environment variables.
+1. `bbl up --iaas <MY IaaS>` with IaaS credentials as flags or environment variables.
 
 1. `eval "$(bbl print-env)"` to target the director that you just created.
 
 1. `bosh ssh`, `bosh deploy` or `bosh env` should all just work with no further information needed from bbl.
 
 
-For detailed, IAAS specific instructions see your preferred IAAS's getting started guide:
+For detailed, IaaS specific instructions see your preferred IaaS's getting started guide:
 - [Azure - Getting Started](docs/getting-started-azure.md)
 - [GCP - Getting Started](docs/getting-started-gcp.md#creating-a-service-account)
 - [AWS - Getting Started](docs/getting-started-aws.md#creating-an-iam-user)
@@ -55,9 +55,9 @@ For detailed, IAAS specific instructions see your preferred IAAS's getting start
 1. Create an environment and target the BOSH director as described above
 
 1. `bbl plan --lb-type cf --cert cert --key key && bbl plan` with a certificate and key as flags or environment variables.
-(Continue to provide the IAAS credentials as flags or environment variables.)
+(Continue to provide the IaaS credentials as flags or environment variables.)
 
-1. `bosh deploy cf.yml -o operations/<MY IAAS>` using the [CF deployment manifest!](https://github.com/cloudfoundry/cf-deployment)
+1. `bosh deploy cf.yml -o operations/<MY IaaS>` using the [CF deployment manifest!](https://github.com/cloudfoundry/cf-deployment)
 
 ### Managing state
 
@@ -79,8 +79,8 @@ date.
 
 ### Tearing down an environment
 
-Once you are done kicking the tires on CF and BOSH, clean up your environment to save IAAS costs:
+Once you are done kicking the tires on CF and BOSH, clean up your environment to save IaaS costs:
 
 1. You must first delete any deployments on BOSH. e.g. `bosh -d cf delete-deployment`
 
-1. `bbl down` with your IAAS user/account information.
+1. `bbl down` with your IaaS user/account information.
