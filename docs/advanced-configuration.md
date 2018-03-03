@@ -32,7 +32,7 @@ bosh create-env \
 ```
 
 ### Authoring an ops-file
-The operations files provided by `bosh-deployment` may not meet your needs. In this case you will have to write your own
+The [operations files](http://bosh.io/docs/cli-ops-files.html) provided by `bosh-deployment` may not meet your needs. In this case you will have to write your own
 custom ops-file. Store it somewhere outside of the bosh-deployment directory. New versions of bbl will keep the
 bosh-deployment directory in sync with the latest configuration and releases, so modifications may be lost when
 `bbl plan` is run in the future. Consider storing it in the top level of your state directory if it is environmentally
