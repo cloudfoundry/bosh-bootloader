@@ -11,7 +11,7 @@
 ### About BOSH ops-files
 
 Certain features of BOSH, particularly experimental features or tuning parameters, must be enabled by modifying your
-Director's deployment manifest. `bosh-deployment` contains many such [ops files](https://bosh.io/docs/terminology.html#operations-file) for common features and options.
+Director's deployment manifest. [`bosh-deployment`](https://github.com/cloudfoundry/bosh-deployment) contains many such [ops files](https://bosh.io/docs/terminology.html#operations-file) for common features and options.
 
 ### Using the pre-made operations files
 You can provide any number of ops files or variables to `bosh create-env` by creating `create-director-override.sh`. This file will not be overridden by bbl. You can use `create-director.sh` as a template, and you can even edit that file instead, but if you do, your changes will be overridden the next time you run `bbl plan`.
