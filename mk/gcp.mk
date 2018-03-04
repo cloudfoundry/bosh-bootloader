@@ -32,7 +32,7 @@ endif
 #
 .DEFAULT_GOAL := help
 
-bbl-state.json: configure_bosh_cf_deployment
+bbl-state\.json: configure_bosh_cf_deployment
 	@$(BBL) $(BBL_MODE) up \
 	  --name $(BOSH_DIRECTOR) \
 	  --iaas gcp \
