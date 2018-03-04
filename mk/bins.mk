@@ -14,7 +14,7 @@ ifneq ($(PLATFORM),Darwin)
   $(error Only OS X is currently supported, please contribute support for your OS)
 endif
 
-GET := wget --continue --quiet --show-progress --content-disposition
+WGET := wget --continue --show-progress
 
 BBL := bbl-v$(BBL_VERSION)_osx
 BBL_URL := https://github.com/cloudfoundry/bosh-bootloader/releases/download/v$(BBL_VERSION)/$(BBL)
@@ -35,7 +35,7 @@ bin:
 
 bin/$(BBL): bin
 	@cd $(CURDIR)/bin && \
-	$(GET) "$(BBL_URL)" && \
+	$(WGET) --output-document=$(BBL) "$(BBL_URL)" && \
 	chmod +x $(BBL) && \
 	./$(BBL) version | grep $(BBL_VERSION) && \
 	ln -sf ./$(BBL) ./bbl
@@ -43,7 +43,7 @@ bbl: bin/$(BBL)
 
 bin/$(BOSH):
 	@cd $(CURDIR)/bin && \
-	$(GET) "$(BOSH_URL)" && \
+	$(WGET) --output-document=$(BOSH) "$(BOSH_URL)" && \
 	chmod +x $(BOSH) && \
 	./$(BOSH) --version | grep $(BOSH_VERSION) && \
 	ln -sf ./$(BOSH) ./bosh
@@ -52,7 +52,7 @@ bosh: bin/$(BOSH)
 bin/$(CF)/cf:
 	@cd $(CURDIR)/bin && \
 	mkdir -p $(CF) && \
-	$(GET) "$(CF_URL)" && \
+	$(WGET) --output-document=$(CF).tgz "$(CF_URL)" && \
 	tar zxf $(CF).tgz -C $(CF) && \
 	./$(CF)/cf --version | grep $(CF_VERSION) && \
 	ln -sf ./$(CF)/cf ./cf
@@ -61,7 +61,7 @@ cf: bin/$(CF)/cf
 bin/$(TERRAFORM)/terraform:
 	@cd $(CURDIR)/bin && \
 	mkdir -p $(TERRAFORM) && \
-	$(GET) "$(TERRAFORM_URL)" && \
+	$(WGET) --output-document=$(TERRAFORM).zip "$(TERRAFORM_URL)" && \
 	unzip $(TERRAFORM).zip -d $(TERRAFORM) && \
 	./$(TERRAFORM)/terraform --version | grep $(TERRAFORM_VERSION) && \
 	ln -sf ./$(TERRAFORM)/terraform ./terraform
