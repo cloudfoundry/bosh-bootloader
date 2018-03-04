@@ -63,7 +63,7 @@ interpolate_cf_deployment: bosh cf-deployment
 
 login_cf: bbl-state.json direnv bosh cf ## Login to Cloud Foundry
 	@CF_ADMIN_PASS="$(shell $(BOSH) interpolate cf-deployment-vars.yml --path /cf_admin_password)" ; \
-	$(CF) login -a $(CF_API) -u $(CF_USER) -p "$$CF_ADMIN_PASS" --skip-ssl-validation
+	cf login -a $(CF_API) -u $(CF_USER) -p "$$CF_ADMIN_PASS" --skip-ssl-validation
 
 tls-gen:
 	@git clone https://github.com/michaelklishin/tls-gen
