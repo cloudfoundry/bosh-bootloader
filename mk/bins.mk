@@ -33,13 +33,13 @@ TERRAFORM_URL := https://releases.hashicorp.com/terraform/$(TERRAFORM_VERSION)/$
 bin:
 	@mkdir -p $(CURDIR)/bin && touch $(CURDIR)/bin/.gitkeep
 
-bin/$(BBL): bin
+bin/$(BBL):
 	@cd $(CURDIR)/bin && \
 	$(WGET) --output-document=$(BBL) "$(BBL_URL)" && \
 	chmod +x $(BBL) && \
 	./$(BBL) version | grep $(BBL_VERSION) && \
 	ln -sf ./$(BBL) ./bbl
-bbl: bin/$(BBL)
+bbl: bin bin/$(BBL)
 
 bin/$(BOSH):
 	@cd $(CURDIR)/bin && \
@@ -47,7 +47,7 @@ bin/$(BOSH):
 	chmod +x $(BOSH) && \
 	./$(BOSH) --version | grep $(BOSH_VERSION) && \
 	ln -sf ./$(BOSH) ./bosh
-bosh: bin/$(BOSH)
+bosh: bin bin/$(BOSH)
 
 bin/$(CF)/cf:
 	@cd $(CURDIR)/bin && \
@@ -56,7 +56,7 @@ bin/$(CF)/cf:
 	tar zxf $(CF).tgz -C $(CF) && \
 	./$(CF)/cf --version | grep $(CF_VERSION) && \
 	ln -sf ./$(CF)/cf ./cf
-cf: bin/$(CF)/cf
+cf: bin bin/$(CF)/cf
 
 bin/$(TERRAFORM)/terraform:
 	@cd $(CURDIR)/bin && \
@@ -65,4 +65,4 @@ bin/$(TERRAFORM)/terraform:
 	unzip $(TERRAFORM).zip -d $(TERRAFORM) && \
 	./$(TERRAFORM)/terraform --version | grep $(TERRAFORM_VERSION) && \
 	ln -sf ./$(TERRAFORM)/terraform ./terraform
-terraform: bin/$(TERRAFORM)/terraform
+terraform: bin bin/$(TERRAFORM)/terraform
