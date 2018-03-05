@@ -1,6 +1,7 @@
 package compute
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -11,6 +12,7 @@ type state struct {
 
 type stateRefreshFunc func() (result interface{}, state string, err error)
 
+// Copied from terraform-provider-google implementation for compute operation polling.
 func (s *state) Wait() error {
 	notfoundTick := 0
 	targetOccurence := 0
@@ -76,7 +78,7 @@ func (s *state) Wait() error {
 			if res == nil {
 				notfoundTick++
 				if notfoundTick > notFoundChecks {
-					result.Error = err
+					result.Error = fmt.Errorf("%s", err)
 					resultCh <- result
 					return
 				}

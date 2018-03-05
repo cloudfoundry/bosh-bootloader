@@ -1,3 +1,2 @@
 - Can we filter the disks list api call with len of users eq 0?
 - Add resource type to logging.
-- Instead of skipping final snapshot for rds instance, take one using the final identifier

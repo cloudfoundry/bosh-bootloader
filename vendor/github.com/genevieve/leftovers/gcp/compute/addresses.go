@@ -42,15 +42,11 @@ func (a Addresses) List(filter string) ([]common.Deletable, error) {
 	for _, address := range addresses {
 		resource := NewAddress(a.client, address.Name, a.regions[address.Region])
 
-		if len(address.Users) > 0 {
-			continue
-		}
-
 		if !strings.Contains(address.Name, filter) {
 			continue
 		}
 
-		proceed := a.logger.Prompt(fmt.Sprintf("Are you sure you want to delete address %s?", address.Name))
+		proceed := a.logger.Prompt(fmt.Sprintf("Are you sure you want to delete address %s with %d user(s)?", address.Name, len(address.Users)))
 		if !proceed {
 			continue
 		}

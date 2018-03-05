@@ -48,19 +48,15 @@ func (l Leftovers) Delete(filter string) error {
 	var wg sync.WaitGroup
 
 	for _, list := range deletables {
-
 		for _, d := range list {
-
 			wg.Add(1)
-
-			l.logger.Println(fmt.Sprintf("Deleting %s.", d.Name()))
 
 			go func(d common.Deletable) {
 				defer wg.Done()
 
-				err := d.Delete()
+				l.logger.Println(fmt.Sprintf("Deleting %s.", d.Name()))
 
-				if err != nil {
+				if err := d.Delete(); err != nil {
 					l.logger.Println(err.Error())
 				} else {
 					l.logger.Println(fmt.Sprintf("SUCCESS deleting %s!", d.Name()))
