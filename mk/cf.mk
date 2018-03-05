@@ -10,6 +10,14 @@ CF_API ?= api.$(CF_DOMAIN)
 CF_USER ?= admin
 
 CF_OPS_FILES ?=
+#
+# Multi-line example:
+#
+# 	 define CF_OPS_FILES
+# 	 --ops-file cf-deployment/operations/use-compiled-releases.yml \
+# 	 --ops-file cf-deployment/operations/scale-to-one-az.yml \
+# 	 --ops-file cf-deployment-customizations.yml
+# 	 endef
 
 export CF_HOME 	:= $(CURDIR)/.cf
 
@@ -47,19 +55,13 @@ deploy_cf: bbl-state.json direnv bosh interpolate_cf_deployment upload_compiled_
 	@$(BOSH) --deployment cf deploy --no-redact \
 	  --vars-store cf-deployment-vars.yml \
 	  --var system_domain=$(CF_DOMAIN) \
-	  --ops-file cf-deployment/operations/use-compiled-releases.yml \
-	  --ops-file cf-deployment/operations/scale-to-one-az.yml \
-	  --ops-file cf-deployment-customizations.yml \
-	  cf-deployment/cf-deployment.yml
+	  $(CF_OPS_FILES) cf-deployment/cf-deployment.yml
 
 interpolate_cf_deployment: bosh cf-deployment
 	@$(BOSH) --non-interactive interpolate \
 	  --vars-store cf-deployment-vars.yml --var-errs \
 	  --var system_domain=$(CF_DOMAIN) \
-	  --ops-file cf-deployment/operations/use-compiled-releases.yml \
-	  --ops-file cf-deployment/operations/scale-to-one-az.yml \
-	  --ops-file cf-deployment-customizations.yml \
-	  cf-deployment/cf-deployment.yml
+	  $(CF_OPS_FILES) cf-deployment/cf-deployment.yml
 
 login_cf: bbl-state.json direnv bosh cf ## Login to Cloud Foundry
 	@CF_ADMIN_PASS="$(shell $(BOSH) interpolate cf-deployment-vars.yml --path /cf_admin_password)" ; \
