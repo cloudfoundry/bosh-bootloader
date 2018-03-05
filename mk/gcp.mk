@@ -32,6 +32,15 @@ endif
 #
 .DEFAULT_GOAL := help
 
+define ENVRC =
+PATH_add bin
+eval "$$(bbl print-env)"
+export CF_HOME="$$(expand_path ./.cf)"
+endef
+export ENVRC
+.envrc:
+	@echo "$$ENVRC" > .envrc
+
 bbl-state\.json: configure_bosh_cf_deployment
 	@$(BBL) $(BBL_MODE) up \
 	  --name $(BOSH_DIRECTOR) \
@@ -53,7 +62,7 @@ d-e-s-t-r-o-y: bbl terraform bbl-state.json ## Destroy all IaaS resources, inclu
 	  --iaas gcp --gcp-region $(GCP_REGION) \
 	  --gcp-service-account-key $(CURDIR)/$(GCP_SERVICE_ACCOUNT_KEY)
 
-direnv: bbl .cf
+direnv: bbl .cf .envrc
 	@direnv allow $(CURDIR) || ( echo "Please install direnv: https://direnv.net"; exit 127 )
 
 help:
