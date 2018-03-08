@@ -159,7 +159,8 @@ func main() {
 				log.Fatalf("\n\n%s\n", err)
 			}
 		case "vsphere":
-			leftovers, err = vsphereleftovers.NewLeftovers(logger, appConfig.State.VSphere.VCenterIP, appConfig.State.VSphere.VCenterUser, appConfig.State.VSphere.VCenterPassword, appConfig.State.VSphere.VCenterDC)
+			vSphereLogger := application.NewLogger(os.Stdout, os.Stdin)
+			leftovers, err = vsphereleftovers.NewLeftovers(vSphereLogger, appConfig.State.VSphere.VCenterIP, appConfig.State.VSphere.VCenterUser, appConfig.State.VSphere.VCenterPassword, appConfig.State.VSphere.VCenterDC)
 			if err != nil {
 				log.Fatalf("\n\n%s\n", err)
 			}
