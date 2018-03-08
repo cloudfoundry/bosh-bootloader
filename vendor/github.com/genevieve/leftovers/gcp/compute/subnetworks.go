@@ -46,7 +46,7 @@ func (n Subnetworks) List(filter string) ([]common.Deletable, error) {
 			continue
 		}
 
-		proceed := n.logger.Prompt(fmt.Sprintf("Are you sure you want to delete subnetwork %s?", subnetwork.Name))
+		proceed := n.logger.Prompt(fmt.Sprintf("Are you sure you want to delete subnetwork %s (Network:%s)?", subnetwork.Name, subnetwork.Network))
 		if !proceed {
 			continue
 		}

@@ -67,6 +67,12 @@
   version = "v1.2.0"
 
 [[projects]]
+  name = "github.com/vmware/govmomi"
+  packages = [".","find","list","nfc","object","property","session","task","vim25","vim25/debug","vim25/methods","vim25/mo","vim25/progress","vim25/soap","vim25/types","vim25/xml"]
+  revision = "58d927a6c3241af7f51cff7915920a616b7af3ee"
+  version = "v0.17.0"
+
+[[projects]]
   branch = "master"
   name = "golang.org/x/net"
   packages = ["context","context/ctxhttp","html","html/atom","html/charset"]
@@ -111,6 +117,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "28d44d168a1ea364b80829ead74dc963a0f4c5dc3a07acba12916b11edd84c60"
+  inputs-digest = "2a3df26d177d668be24053798ac130318fae79f4dcabf833df4589da6501bc8e"
   solver-name = "gps-cdcl"
   solver-version = 1

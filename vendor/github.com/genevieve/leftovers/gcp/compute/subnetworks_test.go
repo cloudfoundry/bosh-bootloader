@@ -34,8 +34,9 @@ var _ = Describe("Subnetworks", func() {
 			logger.PromptCall.Returns.Proceed = true
 			client.ListSubnetworksCall.Returns.Output = &gcpcompute.SubnetworkList{
 				Items: []*gcpcompute.Subnetwork{{
-					Name:   "banana-subnetwork",
-					Region: "https://region-1",
+					Name:    "banana-subnetwork",
+					Network: "banana-network",
+					Region:  "https://region-1",
 				}},
 			}
 			filter = "banana"
@@ -48,7 +49,7 @@ var _ = Describe("Subnetworks", func() {
 			Expect(client.ListSubnetworksCall.CallCount).To(Equal(1))
 			Expect(client.ListSubnetworksCall.Receives.Region).To(Equal("region-1"))
 
-			Expect(logger.PromptCall.Receives.Message).To(Equal("Are you sure you want to delete subnetwork banana-subnetwork?"))
+			Expect(logger.PromptCall.Receives.Message).To(Equal("Are you sure you want to delete subnetwork banana-subnetwork (Network:banana-network)?"))
 
 			Expect(list).To(HaveLen(1))
 		})
