@@ -31,6 +31,15 @@ var _ = Describe("CleanupLeftovers", func() {
 			Expect(deleter.DeleteCall.Receives.Filter).To(Equal(filter))
 		})
 
+		Context("on vsphere", func() {
+			Context("without a filter", func() {
+				It("returns a helpful error message", func() {
+					err := cleanup.Execute([]string{}, storage.State{IAAS: "vsphere"})
+					Expect(err).To(MatchError(ContainSubstring("cleanup-leftovers on vSphere requires a filter.")))
+				})
+			})
+		})
+
 		Context("when parsing flags throws an error", func() {
 			It("returns a helpful message", func() {
 				err := cleanup.Execute([]string{"--filter"}, storage.State{})

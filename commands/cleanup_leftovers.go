@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/cloudfoundry/bosh-bootloader/flags"
@@ -35,8 +36,13 @@ func (l CleanupLeftovers) Execute(subcommandFlags []string, state storage.State)
 		return fmt.Errorf("Parsing cleanup-leftovers args: %s", err)
 	}
 
-	if state.IAAS == "vsphere" || state.IAAS == "openstack" {
-		// we don't create network infrastructure on vsphere or openstack
+	if state.IAAS == "vsphere" && filter == "" {
+		// vSphere requires a filter
+		return errors.New("cleanup-leftovers on vSphere requires a filter.\nProvide a filter using the --filter or -f flag.")
+	}
+
+	if state.IAAS == "openstack" {
+		// we don't create network infrastructure on openstack
 		// and we don't tear it down either
 		return nil
 	}

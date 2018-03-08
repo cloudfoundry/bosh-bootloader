@@ -38,6 +38,7 @@ import (
 	awsleftovers "github.com/genevieve/leftovers/aws"
 	azureleftovers "github.com/genevieve/leftovers/azure"
 	gcpleftovers "github.com/genevieve/leftovers/gcp"
+	vsphereleftovers "github.com/genevieve/leftovers/vsphere"
 )
 
 var Version = "dev"
@@ -154,6 +155,11 @@ func main() {
 			networkClient = azureClient
 
 			leftovers, err = azureleftovers.NewLeftovers(logger, appConfig.State.Azure.ClientID, appConfig.State.Azure.ClientSecret, appConfig.State.Azure.SubscriptionID, appConfig.State.Azure.TenantID)
+			if err != nil {
+				log.Fatalf("\n\n%s\n", err)
+			}
+		case "vsphere":
+			leftovers, err = vsphereleftovers.NewLeftovers(logger, appConfig.State.VSphere.VCenterIP, appConfig.State.VSphere.VCenterUser, appConfig.State.VSphere.VCenterPassword, appConfig.State.VSphere.VCenterDC)
 			if err != nil {
 				log.Fatalf("\n\n%s\n", err)
 			}
