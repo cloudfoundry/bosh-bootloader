@@ -353,22 +353,19 @@ func (e Executor) CreateEnv(input DirInput, state storage.State) (string, error)
 		os.Setenv("BBL_OPENSTACK_PASSWORD", state.OpenStack.Password)
 	}
 
-	cmd := exec.Command(createEnvScript) // the way this is tied to the filesystem makes for weird tests
+	cmd := exec.Command(createEnvScript)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
 	err = cmd.Run()
 	if err != nil {
-		return "", fmt.Errorf("Run bosh create-env: %s", err)
+		return "", fmt.Errorf("Running %s: %s", createEnvScript, err)
 	}
 
-	varsStoreFileName := fmt.Sprintf("%s-vars-store.yml", input.Deployment)
-	varsStoreContents, err := e.fs.ReadFile(filepath.Join(input.VarsDir, varsStoreFileName))
-	if err != nil {
-		return "", fmt.Errorf("Reading vars file for %s deployment: %s", input.Deployment, err) // not tested
-	}
+	name := fmt.Sprintf("%s-vars-store.yml", input.Deployment)
+	contents, _ := e.fs.ReadFile(filepath.Join(input.VarsDir, name))
 
-	return string(varsStoreContents), nil
+	return string(contents), nil
 }
 
 func (e Executor) DeleteEnv(input DirInput, state storage.State) error {
@@ -406,7 +403,7 @@ func (e Executor) DeleteEnv(input DirInput, state storage.State) error {
 		os.Setenv("BBL_VSPHERE_VCENTER_PASSWORD", state.VSphere.VCenterPassword)
 	}
 
-	cmd := exec.Command(deleteEnvScript) // the way this is tied to the filesystem makes for weird tests
+	cmd := exec.Command(deleteEnvScript)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 

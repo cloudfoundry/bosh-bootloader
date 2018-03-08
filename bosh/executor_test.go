@@ -700,7 +700,7 @@ var _ = Describe("Executor", func() {
 
 			It("returns an error", func() {
 				vars, err := executor.CreateEnv(dirInput, state)
-				Expect(err).To(MatchError("Run bosh create-env: exit status 1"))
+				Expect(err).To(MatchError(fmt.Sprintf("Running %s: exit status 1", createEnvPath)))
 				Expect(vars).To(Equal(""))
 			})
 		})
