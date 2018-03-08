@@ -57,9 +57,9 @@
 
 [[projects]]
   name = "github.com/genevieve/leftovers"
-  packages = ["aws","aws/common","aws/ec2","aws/elb","aws/elbv2","aws/iam","aws/rds","aws/s3","azure","gcp","gcp/common","gcp/compute","gcp/dns"]
-  revision = "9bfee6dc15c6b52fa629ee9ce3247dd6319d50da"
-  version = "v0.14.0"
+  packages = ["aws","aws/common","aws/ec2","aws/elb","aws/elbv2","aws/iam","aws/rds","aws/s3","azure","gcp","gcp/common","gcp/compute","gcp/dns","vsphere"]
+  revision = "52c825f1c1dacbd400c7d65a309c13119b144c03"
+  version = "v0.15.0"
 
 [[projects]]
   name = "github.com/go-ini/ini"
@@ -121,6 +121,12 @@
   version = "v1.0.2"
 
 [[projects]]
+  name = "github.com/vmware/govmomi"
+  packages = [".","find","list","nfc","object","property","session","task","vim25","vim25/debug","vim25/methods","vim25/mo","vim25/progress","vim25/soap","vim25/types","vim25/xml"]
+  revision = "58d927a6c3241af7f51cff7915920a616b7af3ee"
+  version = "v0.17.0"
+
+[[projects]]
   branch = "master"
   name = "golang.org/x/crypto"
   packages = ["curve25519","ed25519","ed25519/internal/edwards25519","pkcs12","pkcs12/internal/rc2","ssh"]
@@ -171,6 +177,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "d2072181285ece9386688087c25acca2df2f882ba6231f89c89c3e9e4d86b316"
+  inputs-digest = "c45ff9bbaad6ef282653dcc0ad2fdea99c68c15de4f3ee3830f6f71ec592bf08"
   solver-name = "gps-cdcl"
   solver-version = 1
