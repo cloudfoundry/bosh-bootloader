@@ -27,3 +27,7 @@ func (g GlobalHealthCheck) Delete() error {
 func (g GlobalHealthCheck) Name() string {
 	return g.name
 }
+
+func (g GlobalHealthCheck) Type() string {
+	return "global health check"
+}

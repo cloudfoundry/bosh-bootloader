@@ -75,3 +75,7 @@ func (b Bucket) Delete() error {
 func (b Bucket) Name() string {
 	return b.identifier
 }
+
+func (b Bucket) Type() string {
+	return "bucket"
+}

@@ -40,6 +40,16 @@ var _ = Describe("CleanupLeftovers", func() {
 			})
 		})
 
+		Context("with --dry-run", func() {
+			It("lists rather than deleting resources", func() {
+				err := cleanup.Execute([]string{"--dry-run", "--filter", filter}, storage.State{})
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(deleter.ListCall.CallCount).To(Equal(1))
+				Expect(deleter.ListCall.Receives.Filter).To(Equal(filter))
+			})
+		})
+
 		Context("when parsing flags throws an error", func() {
 			It("returns a helpful message", func() {
 				err := cleanup.Execute([]string{"--filter"}, storage.State{})

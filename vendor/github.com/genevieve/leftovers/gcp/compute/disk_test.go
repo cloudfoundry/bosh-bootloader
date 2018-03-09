@@ -54,4 +54,10 @@ var _ = Describe("Disk", func() {
 			Expect(disk.Name()).To(Equal(name))
 		})
 	})
+
+	Describe("Type", func() {
+		It("returns \"disk\"", func() {
+			Expect(disk.Type()).To(Equal("disk"))
+		})
+	})
 })

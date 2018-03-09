@@ -51,4 +51,10 @@ var _ = Describe("GlobalForwardingRule", func() {
 			Expect(globalForwardingRule.Name()).To(Equal(name))
 		})
 	})
+
+	Describe("Type", func() {
+		It("returns \"global forwarding rule\"", func() {
+			Expect(globalForwardingRule.Type()).To(Equal("global forwarding rule"))
+		})
+	})
 })

@@ -37,3 +37,7 @@ func (a Address) Delete() error {
 func (a Address) Name() string {
 	return a.identifier
 }
+
+func (a Address) Type() string {
+	return "address"
+}

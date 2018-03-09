@@ -11,11 +11,13 @@ var _ = Describe("Flags", func() {
 	var (
 		f         flags.Flags
 		stringVal string
+		boolVal   bool
 	)
 
 	BeforeEach(func() {
 		f = flags.New("test")
 		f.String(&stringVal, "string", "")
+		f.Bool(&boolVal, "bool")
 	})
 
 	Describe("Parse", func() {
@@ -23,6 +25,12 @@ var _ = Describe("Flags", func() {
 			err := f.Parse([]string{"--string", "string_value"})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(stringVal).To(Equal("string_value"))
+		})
+
+		It("can parse boolean flags", func() {
+			err := f.Parse([]string{"--bool"})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(boolVal).To(BeTrue())
 		})
 	})
 

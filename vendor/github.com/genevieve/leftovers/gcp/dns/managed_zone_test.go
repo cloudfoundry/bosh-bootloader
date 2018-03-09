@@ -67,4 +67,10 @@ var _ = Describe("ManagedZone", func() {
 			Expect(managedZone.Name()).To(Equal(name))
 		})
 	})
+
+	Describe("Type", func() {
+		It("returns \"managed zone\"", func() {
+			Expect(managedZone.Type()).To(Equal("managed zone"))
+		})
+	})
 })

@@ -37,3 +37,7 @@ func (d DBInstance) Delete() error {
 func (d DBInstance) Name() string {
 	return d.identifier
 }
+
+func (d DBInstance) Type() string {
+	return "db instance"
+}

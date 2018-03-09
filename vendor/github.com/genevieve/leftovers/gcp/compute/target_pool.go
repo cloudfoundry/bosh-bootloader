@@ -29,3 +29,7 @@ func (t TargetPool) Delete() error {
 func (t TargetPool) Name() string {
 	return t.name
 }
+
+func (t TargetPool) Type() string {
+	return "target pool"
+}

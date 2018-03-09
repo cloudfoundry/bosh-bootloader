@@ -102,4 +102,10 @@ var _ = Describe("Policy", func() {
 			Expect(policy.Name()).To(Equal("the-name"))
 		})
 	})
+
+	Describe("Type", func() {
+		It("returns \"policy\"", func() {
+			Expect(policy.Type()).To(Equal("policy"))
+		})
+	})
 })

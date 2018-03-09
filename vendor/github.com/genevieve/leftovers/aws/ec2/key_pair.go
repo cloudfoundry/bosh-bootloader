@@ -35,3 +35,7 @@ func (k KeyPair) Delete() error {
 func (k KeyPair) Name() string {
 	return k.identifier
 }
+
+func (k KeyPair) Type() string {
+	return "key pair"
+}

@@ -51,4 +51,10 @@ var _ = Describe("Firewall", func() {
 			Expect(firewall.Name()).To(Equal(name))
 		})
 	})
+
+	Describe("Type", func() {
+		It("returns \"firewall\"", func() {
+			Expect(firewall.Type()).To(Equal("firewall"))
+		})
+	})
 })

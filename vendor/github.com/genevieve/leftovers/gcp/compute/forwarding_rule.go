@@ -29,3 +29,7 @@ func (f ForwardingRule) Delete() error {
 func (f ForwardingRule) Name() string {
 	return f.name
 }
+
+func (f ForwardingRule) Type() string {
+	return "forwarding rule"
+}

@@ -29,3 +29,7 @@ func (g Group) Delete() error {
 func (g Group) Name() string {
 	return g.identifier
 }
+
+func (g Group) Type() string {
+	return "resource group"
+}

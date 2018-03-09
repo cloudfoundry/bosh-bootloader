@@ -51,4 +51,10 @@ var _ = Describe("TargetHttpProxy", func() {
 			Expect(targetHttpProxy.Name()).To(Equal(name))
 		})
 	})
+
+	Describe("Type", func() {
+		It("returns \"target http proxy\"", func() {
+			Expect(targetHttpProxy.Type()).To(Equal("target http proxy"))
+		})
+	})
 })

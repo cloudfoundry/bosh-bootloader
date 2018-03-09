@@ -51,4 +51,10 @@ var _ = Describe("KeyPair", func() {
 			Expect(keyPair.Name()).To(Equal("the-name"))
 		})
 	})
+
+	Describe("Type", func() {
+		It("returns \"key pair\"", func() {
+			Expect(keyPair.Type()).To(Equal("key pair"))
+		})
+	})
 })

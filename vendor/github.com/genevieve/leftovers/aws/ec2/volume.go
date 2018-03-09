@@ -35,3 +35,7 @@ func (v Volume) Delete() error {
 func (v Volume) Name() string {
 	return v.identifier
 }
+
+func (v Volume) Type() string {
+	return "volume"
+}

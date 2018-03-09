@@ -51,4 +51,10 @@ var _ = Describe("BackendService", func() {
 			Expect(backendService.Name()).To(Equal(name))
 		})
 	})
+
+	Describe("Type", func() {
+		It("returns \"backend service\"", func() {
+			Expect(backendService.Type()).To(Equal("backend service"))
+		})
+	})
 })

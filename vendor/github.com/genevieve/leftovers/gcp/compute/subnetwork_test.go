@@ -54,4 +54,10 @@ var _ = Describe("Subnetwork", func() {
 			Expect(subnetwork.Name()).To(Equal(name))
 		})
 	})
+
+	Describe("Type", func() {
+		It("returns \"subnetwork\"", func() {
+			Expect(subnetwork.Type()).To(Equal("subnetwork"))
+		})
+	})
 })

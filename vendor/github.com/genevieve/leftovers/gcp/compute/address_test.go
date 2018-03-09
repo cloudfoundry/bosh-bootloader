@@ -54,4 +54,10 @@ var _ = Describe("Address", func() {
 			Expect(address.Name()).To(Equal(name))
 		})
 	})
+
+	Describe("Type", func() {
+		It("returns \"address\"", func() {
+			Expect(address.Type()).To(Equal("address"))
+		})
+	})
 })

@@ -35,3 +35,7 @@ func (s ServerCertificate) Delete() error {
 func (s ServerCertificate) Name() string {
 	return s.identifier
 }
+
+func (s ServerCertificate) Type() string {
+	return "server certificate"
+}

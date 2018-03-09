@@ -59,4 +59,10 @@ var _ = Describe("Tag", func() {
 			Expect(tag.Name()).To(Equal("the-value"))
 		})
 	})
+
+	Describe("Type", func() {
+		It("returns \"tag\"", func() {
+			Expect(tag.Type()).To(Equal("tag"))
+		})
+	})
 })

@@ -27,3 +27,7 @@ func (f Firewall) Delete() error {
 func (f Firewall) Name() string {
 	return f.name
 }
+
+func (f Firewall) Type() string {
+	return "firewall"
+}

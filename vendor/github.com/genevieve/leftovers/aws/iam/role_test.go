@@ -67,4 +67,10 @@ var _ = Describe("Role", func() {
 			Expect(role.Name()).To(Equal("the-name"))
 		})
 	})
+
+	Describe("Type", func() {
+		It("returns \"role\"", func() {
+			Expect(role.Type()).To(Equal("role"))
+		})
+	})
 })

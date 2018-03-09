@@ -54,4 +54,10 @@ var _ = Describe("InstanceGroup", func() {
 			Expect(instanceGroup.Name()).To(Equal(name))
 		})
 	})
+
+	Describe("Type", func() {
+		It("returns \"instance group\"", func() {
+			Expect(instanceGroup.Type()).To(Equal("instance group"))
+		})
+	})
 })

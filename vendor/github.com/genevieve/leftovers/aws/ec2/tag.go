@@ -40,3 +40,7 @@ func (t Tag) Delete() error {
 func (t Tag) Name() string {
 	return t.identifier
 }
+
+func (t Tag) Type() string {
+	return "tag"
+}

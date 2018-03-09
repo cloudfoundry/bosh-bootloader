@@ -51,4 +51,10 @@ var _ = Describe("ServerCertificate", func() {
 			Expect(serverCertificate.Name()).To(Equal("the-name"))
 		})
 	})
+
+	Describe("Type", func() {
+		It("returns \"server certificate\"", func() {
+			Expect(serverCertificate.Type()).To(Equal("server certificate"))
+		})
+	})
 })

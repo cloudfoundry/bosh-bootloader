@@ -51,3 +51,7 @@ func (i Instance) Delete() error {
 func (i Instance) Name() string {
 	return i.identifier
 }
+
+func (i Instance) Type() string {
+	return "instance"
+}

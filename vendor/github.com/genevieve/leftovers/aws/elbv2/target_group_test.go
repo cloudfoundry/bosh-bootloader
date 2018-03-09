@@ -53,4 +53,10 @@ var _ = Describe("TargetGroup", func() {
 			Expect(targetGroup.Name()).To(Equal("the-name"))
 		})
 	})
+
+	Describe("Type", func() {
+		It("returns \"target group\"", func() {
+			Expect(targetGroup.Type()).To(Equal("target group"))
+		})
+	})
 })

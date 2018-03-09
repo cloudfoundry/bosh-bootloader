@@ -101,4 +101,10 @@ var _ = Describe("Vpc", func() {
 			Expect(vpc.Name()).To(Equal("the-id"))
 		})
 	})
+
+	Describe("Type", func() {
+		It("returns \"vpc\"", func() {
+			Expect(vpc.Type()).To(Equal("vpc"))
+		})
+	})
 })

@@ -35,3 +35,7 @@ func (l LoadBalancer) Delete() error {
 func (l LoadBalancer) Name() string {
 	return l.identifier
 }
+
+func (l LoadBalancer) Type() string {
+	return "load balancer"
+}

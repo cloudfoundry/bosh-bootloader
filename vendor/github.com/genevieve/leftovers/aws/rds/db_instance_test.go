@@ -54,4 +54,10 @@ var _ = Describe("DBInstance", func() {
 			Expect(dbInstance.Name()).To(Equal("the-name"))
 		})
 	})
+
+	Describe("Type", func() {
+		It("returns \"db instance\"", func() {
+			Expect(dbInstance.Type()).To(Equal("db instance"))
+		})
+	})
 })

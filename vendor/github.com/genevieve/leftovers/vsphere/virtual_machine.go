@@ -56,3 +56,7 @@ func (v VirtualMachine) Name() string {
 	name, _ := v.vm.Common.ObjectName(context.Background())
 	return name
 }
+
+func (v VirtualMachine) Type() string {
+	return "virtual machine"
+}

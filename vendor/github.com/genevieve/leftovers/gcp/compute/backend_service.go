@@ -27,3 +27,7 @@ func (b BackendService) Delete() error {
 func (b BackendService) Name() string {
 	return b.name
 }
+
+func (b BackendService) Type() string {
+	return "backend service"
+}

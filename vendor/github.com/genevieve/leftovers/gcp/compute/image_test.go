@@ -51,4 +51,10 @@ var _ = Describe("Image", func() {
 			Expect(image.Name()).To(Equal(name))
 		})
 	})
+
+	Describe("Type", func() {
+		It("returns \"image\"", func() {
+			Expect(image.Type()).To(Equal("image"))
+		})
+	})
 })

@@ -54,3 +54,7 @@ func (p Policy) Delete() error {
 func (p Policy) Name() string {
 	return p.identifier
 }
+
+func (p Policy) Type() string {
+	return "policy"
+}

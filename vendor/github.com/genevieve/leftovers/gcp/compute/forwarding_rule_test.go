@@ -54,4 +54,10 @@ var _ = Describe("ForwardingRule", func() {
 			Expect(forwardingRule.Name()).To(Equal(name))
 		})
 	})
+
+	Describe("Type", func() {
+		It("returns \"forwarding rule\"", func() {
+			Expect(forwardingRule.Type()).To(Equal("forwarding rule"))
+		})
+	})
 })

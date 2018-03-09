@@ -27,3 +27,7 @@ func (i Image) Delete() error {
 func (i Image) Name() string {
 	return i.name
 }
+
+func (i Image) Type() string {
+	return "image"
+}

@@ -1,4 +1,4 @@
-package common
+package vsphere
 
 type Deletable interface {
 	Delete() error

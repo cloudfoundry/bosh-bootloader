@@ -35,3 +35,7 @@ func (m ManagedZone) Delete() error {
 func (m ManagedZone) Name() string {
 	return m.name
 }
+
+func (m ManagedZone) Type() string {
+	return "managed zone"
+}

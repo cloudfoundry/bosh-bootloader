@@ -51,4 +51,10 @@ var _ = Describe("GlobalAddress", func() {
 			Expect(globalAddress.Name()).To(Equal(name))
 		})
 	})
+
+	Describe("Type", func() {
+		It("returns \"global address\"", func() {
+			Expect(globalAddress.Type()).To(Equal("global address"))
+		})
+	})
 })

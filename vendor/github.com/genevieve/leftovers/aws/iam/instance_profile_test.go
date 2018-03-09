@@ -17,14 +17,16 @@ var _ = Describe("InstanceProfile", func() {
 		instanceProfile iam.InstanceProfile
 		client          *fakes.InstanceProfilesClient
 		name            *string
+		logger          *fakes.Logger
 	)
 
 	BeforeEach(func() {
 		client = &fakes.InstanceProfilesClient{}
 		name = aws.String("the-name")
 		roles := []*awsiam.Role{}
+		logger = &fakes.Logger{}
 
-		instanceProfile = iam.NewInstanceProfile(client, name, roles)
+		instanceProfile = iam.NewInstanceProfile(client, name, roles, logger)
 	})
 
 	Describe("Delete", func() {
@@ -46,11 +48,48 @@ var _ = Describe("InstanceProfile", func() {
 				Expect(err).To(MatchError("FAILED deleting instance profile the-name: banana"))
 			})
 		})
+
+		Context("when there are roles", func() {
+			BeforeEach(func() {
+				roles := []*awsiam.Role{{RoleName: aws.String("the-role")}}
+				instanceProfile = iam.NewInstanceProfile(client, name, roles, logger)
+			})
+
+			It("removes the roles and uses them in the name", func() {
+				err := instanceProfile.Delete()
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(client.RemoveRoleFromInstanceProfileCall.CallCount).To(Equal(1))
+				Expect(client.RemoveRoleFromInstanceProfileCall.Receives.Input.InstanceProfileName).To(Equal(aws.String("the-name")))
+				Expect(client.RemoveRoleFromInstanceProfileCall.Receives.Input.RoleName).To(Equal(aws.String("the-role")))
+
+				Expect(logger.PrintfCall.Messages).To(Equal([]string{
+					"SUCCESS removing role the-role from instance profile the-name (Role:the-role)\n",
+				}))
+			})
+
+			Context("when the client fails to remove the role from the instance profile", func() {
+				BeforeEach(func() {
+					client.RemoveRoleFromInstanceProfileCall.Returns.Error = errors.New("some error")
+				})
+
+				It("logs the error and returns the profile in the list", func() {
+					err := instanceProfile.Delete()
+					Expect(err).To(MatchError("ERROR removing role the-role from instance profile the-name (Role:the-role): some error\n"))
+				})
+			})
+		})
 	})
 
 	Describe("Name", func() {
 		It("returns the identifier", func() {
 			Expect(instanceProfile.Name()).To(Equal("the-name"))
+		})
+	})
+
+	Describe("Type", func() {
+		It("returns \"instance profile\"", func() {
+			Expect(instanceProfile.Type()).To(Equal("instance profile"))
 		})
 	})
 })

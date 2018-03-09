@@ -29,3 +29,7 @@ func (s Subnetwork) Delete() error {
 func (s Subnetwork) Name() string {
 	return s.name
 }
+
+func (s Subnetwork) Type() string {
+	return "subnetwork"
+}

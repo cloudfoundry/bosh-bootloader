@@ -27,3 +27,7 @@ func (u UrlMap) Delete() error {
 func (u UrlMap) Name() string {
 	return u.name
 }
+
+func (u UrlMap) Type() string {
+	return "url map"
+}

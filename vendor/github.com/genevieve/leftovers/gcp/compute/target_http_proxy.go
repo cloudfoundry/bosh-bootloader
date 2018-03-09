@@ -27,3 +27,7 @@ func (t TargetHttpProxy) Delete() error {
 func (t TargetHttpProxy) Name() string {
 	return t.name
 }
+
+func (t TargetHttpProxy) Type() string {
+	return "target http proxy"
+}

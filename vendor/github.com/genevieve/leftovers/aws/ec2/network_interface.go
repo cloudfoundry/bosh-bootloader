@@ -47,3 +47,7 @@ func (n NetworkInterface) Delete() error {
 func (n NetworkInterface) Name() string {
 	return n.identifier
 }
+
+func (n NetworkInterface) Type() string {
+	return "network interface"
+}

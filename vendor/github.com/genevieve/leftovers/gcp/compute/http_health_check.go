@@ -27,3 +27,7 @@ func (h HttpHealthCheck) Delete() error {
 func (h HttpHealthCheck) Name() string {
 	return h.name
 }
+
+func (h HttpHealthCheck) Type() string {
+	return "http health check"
+}

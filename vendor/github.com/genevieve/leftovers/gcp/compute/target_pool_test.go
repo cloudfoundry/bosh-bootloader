@@ -54,4 +54,10 @@ var _ = Describe("TargetPool", func() {
 			Expect(targetPool.Name()).To(Equal(name))
 		})
 	})
+
+	Describe("Type", func() {
+		It("returns \"target pool\"", func() {
+			Expect(targetPool.Type()).To(Equal("target pool"))
+		})
+	})
 })

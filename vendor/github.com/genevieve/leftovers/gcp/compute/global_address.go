@@ -27,3 +27,7 @@ func (g GlobalAddress) Delete() error {
 func (g GlobalAddress) Name() string {
 	return g.name
 }
+
+func (g GlobalAddress) Type() string {
+	return "global address"
+}

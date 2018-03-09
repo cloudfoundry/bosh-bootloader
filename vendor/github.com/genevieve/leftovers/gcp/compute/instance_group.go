@@ -29,3 +29,7 @@ func (i InstanceGroup) Delete() error {
 func (i InstanceGroup) Name() string {
 	return i.name
 }
+
+func (i InstanceGroup) Type() string {
+	return "instance group"
+}

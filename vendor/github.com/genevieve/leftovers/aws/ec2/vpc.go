@@ -74,3 +74,7 @@ func (v Vpc) Delete() error {
 func (v Vpc) Name() string {
 	return v.identifier
 }
+
+func (v Vpc) Type() string {
+	return "vpc"
+}

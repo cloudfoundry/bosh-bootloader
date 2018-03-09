@@ -27,3 +27,7 @@ func (n Network) Delete() error {
 func (n Network) Name() string {
 	return n.name
 }
+
+func (n Network) Type() string {
+	return "network"
+}

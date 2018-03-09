@@ -29,3 +29,7 @@ func (a Address) Delete() error {
 func (a Address) Name() string {
 	return a.name
 }
+
+func (a Address) Type() string {
+	return "address"
+}

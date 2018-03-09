@@ -23,6 +23,10 @@ func (f Flags) String(v *string, name string, value string) {
 	f.set.StringVar(v, name, value, "")
 }
 
+func (f Flags) Bool(v *bool, name string) {
+	f.set.BoolVar(v, name, false, "")
+}
+
 func (f Flags) Parse(args []string) error {
 	return f.set.Parse(args)
 }

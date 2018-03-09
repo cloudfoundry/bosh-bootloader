@@ -51,4 +51,10 @@ var _ = Describe("Bucket", func() {
 			Expect(bucket.Name()).To(Equal("the-name"))
 		})
 	})
+
+	Describe("Type", func() {
+		It("returns \"bucket\"", func() {
+			Expect(bucket.Type()).To(Equal("bucket"))
+		})
+	})
 })

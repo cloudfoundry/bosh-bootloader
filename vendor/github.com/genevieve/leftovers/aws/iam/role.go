@@ -42,3 +42,7 @@ func (r Role) Delete() error {
 func (r Role) Name() string {
 	return r.identifier
 }
+
+func (r Role) Type() string {
+	return "role"
+}

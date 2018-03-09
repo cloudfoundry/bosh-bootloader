@@ -52,4 +52,10 @@ var _ = Describe("Group", func() {
 			})
 		})
 	})
+
+	Describe("Type", func() {
+		It("returns \"resource group\"", func() {
+			Expect(group.Type()).To(Equal("resource group"))
+		})
+	})
 })

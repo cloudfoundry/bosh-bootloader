@@ -40,3 +40,7 @@ func (f Folder) Delete() error {
 func (f Folder) Name() string {
 	return f.name
 }
+
+func (f Folder) Type() string {
+	return "folder"
+}

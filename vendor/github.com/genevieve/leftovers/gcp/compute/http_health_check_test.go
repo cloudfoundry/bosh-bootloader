@@ -51,4 +51,10 @@ var _ = Describe("HttpHealthCheck", func() {
 			Expect(httpHealthCheck.Name()).To(Equal(name))
 		})
 	})
+
+	Describe("Type", func() {
+		It("returns \"http health check\"", func() {
+			Expect(httpHealthCheck.Type()).To(Equal("http health check"))
+		})
+	})
 })

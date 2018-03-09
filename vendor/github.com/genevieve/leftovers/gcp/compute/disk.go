@@ -29,3 +29,7 @@ func (d Disk) Delete() error {
 func (d Disk) Name() string {
 	return d.name
 }
+
+func (d Disk) Type() string {
+	return "disk"
+}

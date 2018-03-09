@@ -49,7 +49,6 @@ var _ = Describe("InstanceProfiles", func() {
 			Expect(logger.PromptCall.Receives.Message).To(Equal("Are you sure you want to delete instance profile banana-profile?"))
 
 			Expect(items).To(HaveLen(1))
-			// Expect(items).To(HaveKeyWithValue("banana-profile", ""))
 		})
 
 		Context("when the instance profile name does not contain the filter", func() {
@@ -71,57 +70,6 @@ var _ = Describe("InstanceProfiles", func() {
 			It("returns the error and does not try deleting them", func() {
 				_, err := instanceProfiles.List(filter)
 				Expect(err).To(MatchError("Listing instance profiles: listing error"))
-			})
-		})
-
-		Context("when there are roles", func() {
-			BeforeEach(func() {
-				client.ListInstanceProfilesCall.Returns.Output = &awsiam.ListInstanceProfilesOutput{
-					InstanceProfiles: []*awsiam.InstanceProfile{{
-						InstanceProfileName: aws.String("banana-profile"),
-						Roles:               []*awsiam.Role{{RoleName: aws.String("the-role")}},
-					}},
-				}
-			})
-
-			It("removes the roles and uses them in the name", func() {
-				items, err := instanceProfiles.List(filter)
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(client.RemoveRoleFromInstanceProfileCall.CallCount).To(Equal(1))
-				Expect(client.RemoveRoleFromInstanceProfileCall.Receives.Input.InstanceProfileName).To(Equal(aws.String("banana-profile")))
-				Expect(client.RemoveRoleFromInstanceProfileCall.Receives.Input.RoleName).To(Equal(aws.String("the-role")))
-
-				Expect(logger.PrintfCall.Messages).To(Equal([]string{
-					"SUCCESS removing role the-role from instance profile banana-profile (Role:the-role)\n",
-				}))
-
-				Expect(items).To(HaveLen(1))
-				// Expect(items).To(HaveKeyWithValue("banana-profile", ""))
-			})
-		})
-
-		Context("when the client fails to remove the role from the instance profile", func() {
-			BeforeEach(func() {
-				client.ListInstanceProfilesCall.Returns.Output = &awsiam.ListInstanceProfilesOutput{
-					InstanceProfiles: []*awsiam.InstanceProfile{{
-						InstanceProfileName: aws.String("banana-profile"),
-						Roles:               []*awsiam.Role{{RoleName: aws.String("the-role")}},
-					}},
-				}
-				client.RemoveRoleFromInstanceProfileCall.Returns.Error = errors.New("some error")
-			})
-
-			It("logs the error and returns the profile in the list", func() {
-				items, err := instanceProfiles.List(filter)
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(logger.PrintfCall.Messages).To(Equal([]string{
-					"ERROR removing role the-role from instance profile banana-profile (Role:the-role): some error\n",
-				}))
-
-				Expect(items).To(HaveLen(1))
-				// Expect(items).To(HaveKeyWithValue("banana-profile", ""))
 			})
 		})
 

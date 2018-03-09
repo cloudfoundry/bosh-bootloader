@@ -34,7 +34,7 @@ func (i InstanceProfiles) List(filter string) ([]common.Deletable, error) {
 
 	var resources []common.Deletable
 	for _, p := range profiles.InstanceProfiles {
-		resource := NewInstanceProfile(i.client, p.InstanceProfileName, p.Roles)
+		resource := NewInstanceProfile(i.client, p.InstanceProfileName, p.Roles, i.logger)
 
 		if !strings.Contains(resource.identifier, filter) {
 			continue
@@ -43,20 +43,6 @@ func (i InstanceProfiles) List(filter string) ([]common.Deletable, error) {
 		proceed := i.logger.Prompt(fmt.Sprintf("Are you sure you want to delete instance profile %s?", resource.identifier))
 		if !proceed {
 			continue
-		}
-
-		for _, r := range p.Roles {
-			role := *r.RoleName
-
-			_, err := i.client.RemoveRoleFromInstanceProfile(&awsiam.RemoveRoleFromInstanceProfileInput{
-				InstanceProfileName: resource.name,
-				RoleName:            r.RoleName,
-			})
-			if err == nil {
-				i.logger.Printf("SUCCESS removing role %s from instance profile %s\n", role, resource.identifier)
-			} else {
-				i.logger.Printf("ERROR removing role %s from instance profile %s: %s\n", role, resource.identifier, err)
-			}
 		}
 
 		resources = append(resources, resource)

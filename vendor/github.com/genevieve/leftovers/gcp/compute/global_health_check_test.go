@@ -51,4 +51,10 @@ var _ = Describe("GlobalHealthCheck", func() {
 			Expect(globalHealthCheck.Name()).To(Equal(name))
 		})
 	})
+
+	Describe("Type", func() {
+		It("returns \"global health check\"", func() {
+			Expect(globalHealthCheck.Type()).To(Equal("global health check"))
+		})
+	})
 })

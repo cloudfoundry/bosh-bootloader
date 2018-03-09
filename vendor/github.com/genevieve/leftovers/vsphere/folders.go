@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/genevieve/leftovers/aws/common"
 	"github.com/vmware/govmomi/object"
 )
 
@@ -24,13 +23,13 @@ func NewFolders(client client, logger logger) Folders {
 	}
 }
 
-func (v Folders) List(filter string) ([]common.Deletable, error) {
+func (v Folders) List(filter string) ([]Deletable, error) {
 	root, err := v.client.GetRootFolder(filter)
 	if err != nil {
 		return nil, fmt.Errorf("Getting root folder: %s", err)
 	}
 
-	var deletable []common.Deletable
+	var deletable []Deletable
 
 	ctx := context.Background()
 

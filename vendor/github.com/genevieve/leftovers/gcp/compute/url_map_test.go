@@ -51,4 +51,10 @@ var _ = Describe("UrlMap", func() {
 			Expect(urlMap.Name()).To(Equal(name))
 		})
 	})
+
+	Describe("Type", func() {
+		It("returns \"url map\"", func() {
+			Expect(urlMap.Type()).To(Equal("url map"))
+		})
+	})
 })

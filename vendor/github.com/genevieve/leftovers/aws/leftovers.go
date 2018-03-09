@@ -32,6 +32,26 @@ type Leftovers struct {
 	resources []resource
 }
 
+func (l Leftovers) List(filter string) {
+	var deletables []common.Deletable
+
+	l.logger.NoConfirm()
+
+	for _, r := range l.resources {
+		list, err := r.List(filter)
+
+		if err != nil {
+			l.logger.Println(err.Error())
+		}
+
+		deletables = append(deletables, list...)
+	}
+
+	for _, d := range deletables {
+		l.logger.Println(fmt.Sprintf("%s: %s", d.Type(), d.Name()))
+	}
+}
+
 func (l Leftovers) Delete(filter string) error {
 	deletables := [][]common.Deletable{}
 

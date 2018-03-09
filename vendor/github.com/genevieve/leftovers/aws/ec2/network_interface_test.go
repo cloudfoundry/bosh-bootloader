@@ -52,4 +52,10 @@ var _ = Describe("NetworkInterface", func() {
 			Expect(networkInterface.Name()).To(Equal("the-id"))
 		})
 	})
+
+	Describe("Type", func() {
+		It("returns \"network interface\"", func() {
+			Expect(networkInterface.Type()).To(Equal("network interface"))
+		})
+	})
 })

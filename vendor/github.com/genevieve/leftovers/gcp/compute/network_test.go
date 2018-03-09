@@ -51,4 +51,10 @@ var _ = Describe("Network", func() {
 			Expect(network.Name()).To(Equal(name))
 		})
 	})
+
+	Describe("Type", func() {
+		It("returns \"network\"", func() {
+			Expect(network.Type()).To(Equal("network"))
+		})
+	})
 })

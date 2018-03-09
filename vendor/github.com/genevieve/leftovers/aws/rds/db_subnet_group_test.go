@@ -51,4 +51,10 @@ var _ = Describe("DBSubnetGroup", func() {
 			Expect(dbSubnetGroup.Name()).To(Equal("the-name"))
 		})
 	})
+
+	Describe("Type", func() {
+		It("returns \"db subnet group\"", func() {
+			Expect(dbSubnetGroup.Type()).To(Equal("db subnet group"))
+		})
+	})
 })

@@ -10,6 +10,13 @@ type FilteredDeleter struct {
 			Error error
 		}
 	}
+
+	ListCall struct {
+		CallCount int
+		Receives  struct {
+			Filter string
+		}
+	}
 }
 
 func (l *FilteredDeleter) Delete(filter string) error {
@@ -17,4 +24,9 @@ func (l *FilteredDeleter) Delete(filter string) error {
 	l.DeleteCall.Receives.Filter = filter
 
 	return l.DeleteCall.Returns.Error
+}
+
+func (l *FilteredDeleter) List(filter string) {
+	l.ListCall.CallCount++
+	l.ListCall.Receives.Filter = filter
 }

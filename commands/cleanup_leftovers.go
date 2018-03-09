@@ -10,6 +10,7 @@ import (
 
 type FilteredDeleter interface {
 	Delete(filter string) error
+	List(filter string)
 }
 
 type CleanupLeftovers struct {
@@ -27,9 +28,13 @@ func (l CleanupLeftovers) CheckFastFails(subcommandFlags []string, state storage
 }
 
 func (l CleanupLeftovers) Execute(subcommandFlags []string, state storage.State) error {
-	var filter string
+	var (
+		filter string
+		dryRun bool
+	)
 	f := flags.New("cleanup-leftovers")
 	f.String(&filter, "filter", "")
+	f.Bool(&dryRun, "dry-run")
 
 	err := f.Parse(subcommandFlags)
 	if err != nil {
@@ -44,6 +49,11 @@ func (l CleanupLeftovers) Execute(subcommandFlags []string, state storage.State)
 	if state.IAAS == "openstack" {
 		// we don't create network infrastructure on openstack
 		// and we don't tear it down either
+		return nil
+	}
+
+	if dryRun {
+		l.deleter.List(filter)
 		return nil
 	}
 

@@ -27,3 +27,7 @@ func (g GlobalForwardingRule) Delete() error {
 func (g GlobalForwardingRule) Name() string {
 	return g.name
 }
+
+func (g GlobalForwardingRule) Type() string {
+	return "global forwarding rule"
+}

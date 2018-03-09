@@ -49,3 +49,7 @@ func (u User) Delete() error {
 func (u User) Name() string {
 	return u.identifier
 }
+
+func (u User) Type() string {
+	return "user"
+}

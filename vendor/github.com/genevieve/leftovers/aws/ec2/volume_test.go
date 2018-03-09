@@ -51,4 +51,10 @@ var _ = Describe("Volume", func() {
 			Expect(volume.Name()).To(Equal("the-id"))
 		})
 	})
+
+	Describe("Type", func() {
+		It("returns \"volume\"", func() {
+			Expect(volume.Type()).To(Equal("volume"))
+		})
+	})
 })
