@@ -79,6 +79,55 @@ resource "aws_lb_target_group" "alb_router_80" {
   }
 }
 
+resource "aws_security_group" "cf_router_lb_internal_security_group" {
+  name        = "${var.env_id}-cf-router-lb-internal-security-group"
+  description = "CF Router Internal"
+  vpc_id      = "${local.vpc_id}"
+
+  ingress {
+    security_groups = ["${aws_security_group.cf_router_lb_security_group.id}"]
+    protocol        = "tcp"
+    from_port       = 80
+    to_port         = 80
+  }
+
+  ingress {
+    security_groups = ["${aws_security_group.cf_router_lb_security_group.id}"]
+    protocol        = "tcp"
+    from_port       = 8080
+    to_port         = 8080
+  }
+
+  ingress {
+    security_groups = ["${aws_security_group.cf_router_lb_security_group.id}"]
+    protocol        = "tcp"
+    from_port       = 443
+    to_port         = 443
+  }
+
+  ingress {
+    security_groups = ["${aws_security_group.cf_router_lb_security_group.id}"]
+    protocol        = "tcp"
+    from_port       = 4443
+    to_port         = 4443
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags {
+    Name = "${var.env_id}-cf-router-lb-internal-security-group"
+  }
+
+  lifecycle {
+    ignore_changes = ["name"]
+  }
+}
+
 resource "aws_elb" "cf_router_lb" {
   count = 0
   name  = "${var.short_env_id}-cf-router-lb"
