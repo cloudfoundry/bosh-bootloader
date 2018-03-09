@@ -1,0 +1,7 @@
+- type: replace
+  path: /vm_extensions/name=cf-router-network-properties/cloud_properties?
+  value:
+    lb_target_groups: ((cf_router_lb_target_groups))
+    security_groups:
+    - ((cf_router_lb_internal_security_group))
+    - ((internal_security_group))
