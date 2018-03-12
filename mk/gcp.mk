@@ -57,10 +57,15 @@ $(GCP_SERVICE_ACCOUNT_KEY): ## Create a Google Cloud service account
 	  gcloud iam service-accounts keys create --iam-account='$(GCP_SERVICE_ACCOUNT)@$(GCP_PROJECT).iam.gserviceaccount.com' $(GCP_SERVICE_ACCOUNT_KEY) && \
 	  gcloud projects add-iam-policy-binding $(GCP_PROJECT) --member='serviceAccount:$(GCP_SERVICE_ACCOUNT)@$(GCP_PROJECT).iam.gserviceaccount.com' --role='roles/editor'
 
-d-e-s-t-r-o-y: bbl terraform bbl-state.json ## Destroy all IaaS resources, including the BOSH Director, CF and all other BOSH deployments
+d-e-s-t-r-o-y: bbl terraform bbl-state.json delete_deployments clean ## Destroy all IaaS resources, including the BOSH Director, CF and all other BOSH deployments
 	@$(BBL) $(BBL_MODE) destroy \
 	  --iaas gcp --gcp-region $(GCP_REGION) \
 	  --gcp-service-account-key $(CURDIR)/$(GCP_SERVICE_ACCOUNT_KEY)
+
+delete_deployments: bbl-state.json direnv bosh ## Delete all BOSH deployments
+	@DEPLOYMENTS=($(shell $(BOSH) deployments --column=name)); \
+	  for deployment in $$DEPLOYMENTS; do \
+	  $(BOSH) -d "$$deployment" delete-deployment --force; done
 
 direnv: bbl .cf .envrc
 	@direnv allow $(CURDIR) || ( echo "Please install direnv: https://direnv.net"; exit 127 )
