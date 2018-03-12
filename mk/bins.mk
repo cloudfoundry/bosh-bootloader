@@ -40,6 +40,8 @@ bin/$(BBL):
 	./$(BBL) version | grep $(BBL_VERSION) && \
 	ln -sf ./$(BBL) ./bbl
 bbl: bin bin/$(BBL)
+bbl_releases:
+	@open https://github.com/cloudfoundry/bosh-bootloader/releases
 
 bin/$(BOSH):
 	@cd $(CURDIR)/bin && \
@@ -48,6 +50,8 @@ bin/$(BOSH):
 	./$(BOSH) --version | grep $(BOSH_VERSION) && \
 	ln -sf ./$(BOSH) ./bosh
 bosh: bin bin/$(BOSH)
+bosh_releases:
+	@open https://github.com/cloudfoundry/bosh-cli/releases
 
 bin/$(CF)/cf:
 	@cd $(CURDIR)/bin && \
@@ -57,6 +61,8 @@ bin/$(CF)/cf:
 	./$(CF)/cf --version | grep $(CF_VERSION) && \
 	ln -sf ./$(CF)/cf ./cf
 cf: bin bin/$(CF)/cf
+cf_releases:
+	@open https://github.com/cloudfoundry/cli/releases
 
 bin/$(TERRAFORM)/terraform:
 	@cd $(CURDIR)/bin && \
@@ -66,3 +72,5 @@ bin/$(TERRAFORM)/terraform:
 	./$(TERRAFORM)/terraform --version | grep $(TERRAFORM_VERSION) && \
 	ln -sf ./$(TERRAFORM)/terraform ./terraform
 terraform: bin bin/$(TERRAFORM)/terraform
+terraform_releases:
+	@open https://github.com/hashicorp/terraform/releases
