@@ -73,7 +73,7 @@ update_bosh: bbl-state\.json ## Update BOSH Director
 update_gcloud:
 	@gcloud components update
 
-upload_latest_stemcell: bbl-state.json direnv bosh ## Upload latest stemcell to BOSH Director
+update_stemcell: bbl-state.json direnv bosh ## Upload latest stemcell to BOSH Director
 	@$(BOSH) upload-stemcell https://bosh.io/d/stemcells/bosh-google-kvm-ubuntu-trusty-go_agent
 
 MK_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
