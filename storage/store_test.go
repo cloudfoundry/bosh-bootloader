@@ -224,13 +224,23 @@ var _ = Describe("Store", func() {
 					}
 				},
 				Entry("cloud-config", "cloud-config", true),
-				Entry("terraform", "terraform", true),
+				Entry("terraform", "terraform", false),
+				Entry(".terraform", ".terraform", true),
 				Entry("bosh-deployment", "bosh-deployment", true),
 				Entry("jumpbox-deployment", "jumpbox-deployment", true),
 				Entry("vars", "vars", true),
 				Entry("bbl-ops-files", "bbl-ops-files", true),
 				Entry("non-bbl directory", "foo", false),
 			)
+
+			It("removes bbl-created terraform templates", func() {
+				bblTerraformTemplate := filepath.Join(tempDir, "terraform", "bbl-template.tf")
+
+				err := store.Set(storage.State{})
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(fileIO.RemoveCall.Receives).To(ContainElement(fakes.RemoveReceive{Name: bblTerraformTemplate}))
+			})
 
 			Context("when the bbl-state.json file does not exist", func() {
 				It("does nothing", func() {
