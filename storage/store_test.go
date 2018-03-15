@@ -74,7 +74,7 @@ var _ = Describe("Store", func() {
 						VCenterPassword: "password",
 						VCenterIP:       "ip",
 						VCenterDC:       "dc",
-						Cluster:         "cluster",
+						VCenterCluster:  "cluster",
 						VCenterRP:       "rp",
 						Network:         "network",
 						VCenterDS:       "ds",
