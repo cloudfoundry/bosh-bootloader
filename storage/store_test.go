@@ -223,7 +223,6 @@ var _ = Describe("Store", func() {
 						}))
 					}
 				},
-				Entry("cloud-config", "cloud-config", true),
 				Entry(".terraform", ".terraform", true),
 				Entry("bosh-deployment", "bosh-deployment", true),
 				Entry("jumpbox-deployment", "jumpbox-deployment", true),
@@ -232,40 +231,91 @@ var _ = Describe("Store", func() {
 				Entry("non-bbl directory", "foo", false),
 			)
 
-			Context("when the terraform directory contains only bbl files", func() {
-				BeforeEach(func() {
-					fileIO.ReadDirCall.Returns.FileInfos = []os.FileInfo{fakes.FileInfo{FileName: "bbl-template.tf"}}
+			Describe("cloud-config", func() {
+				Context("when the cloud-config directory contains only bbl files", func() {
+					BeforeEach(func() {
+						fileIO.ReadDirCall.Returns.FileInfos = []os.FileInfo{
+							fakes.FileInfo{FileName: "cloud-config.yml"},
+							fakes.FileInfo{FileName: "ops.yml"},
+						}
+					})
+
+					It("removes the directory", func() {
+						err := store.Set(storage.State{})
+						Expect(err).NotTo(HaveOccurred())
+
+						Expect(fileIO.RemoveAllCall.Receives).To(ContainElement(fakes.RemoveAllReceive{
+							Path: filepath.Join(tempDir, "cloud-config"),
+						}))
+					})
 				})
 
-				It("removes the directory", func() {
-					err := store.Set(storage.State{})
-					Expect(err).NotTo(HaveOccurred())
+				Context("when the cloud-config directory has user-provided files", func() {
+					var (
+						cloudConfigBase string
+						cloudConfigOps  string
+					)
 
-					Expect(fileIO.RemoveAllCall.Receives).To(ContainElement(fakes.RemoveAllReceive{
-						Path: filepath.Join(tempDir, "terraform"),
-					}))
+					BeforeEach(func() {
+						fileIO.ReadDirCall.Returns.FileInfos = []os.FileInfo{
+							fakes.FileInfo{FileName: "cloud-config.yml"},
+							fakes.FileInfo{FileName: "ops.yml"},
+							fakes.FileInfo{FileName: "user-provided-file"},
+						}
+
+						cloudConfigBase = filepath.Join(tempDir, "cloud-config", "cloud-config.yml")
+						cloudConfigOps = filepath.Join(tempDir, "cloud-config", "ops.yml")
+					})
+
+					It("removes bbl-created cloud-config files", func() {
+						err := store.Set(storage.State{})
+						Expect(err).NotTo(HaveOccurred())
+
+						Expect(fileIO.RemoveCall.Receives).To(ContainElement(fakes.RemoveReceive{Name: cloudConfigBase}))
+						Expect(fileIO.RemoveCall.Receives).To(ContainElement(fakes.RemoveReceive{Name: cloudConfigOps}))
+						Expect(fileIO.RemoveAllCall.Receives).NotTo(ContainElement(fakes.RemoveAllReceive{
+							Path: filepath.Join(tempDir, "cloud-config"),
+						}))
+					})
 				})
 			})
 
-			Context("when the terraform directory has user-provided files", func() {
-				var bblTerraformTemplate string
-				BeforeEach(func() {
-					fileIO.ReadDirCall.Returns.FileInfos = []os.FileInfo{
-						fakes.FileInfo{FileName: "bbl-template.tf"},
-						fakes.FileInfo{FileName: "user-provided-file"},
-					}
+			Describe("terraform", func() {
+				Context("when the terraform directory contains only bbl files", func() {
+					BeforeEach(func() {
+						fileIO.ReadDirCall.Returns.FileInfos = []os.FileInfo{fakes.FileInfo{FileName: "bbl-template.tf"}}
+					})
 
-					bblTerraformTemplate = filepath.Join(tempDir, "terraform", "bbl-template.tf")
+					It("removes the directory", func() {
+						err := store.Set(storage.State{})
+						Expect(err).NotTo(HaveOccurred())
+
+						Expect(fileIO.RemoveAllCall.Receives).To(ContainElement(fakes.RemoveAllReceive{
+							Path: filepath.Join(tempDir, "terraform"),
+						}))
+					})
 				})
 
-				It("removes bbl-created terraform templates", func() {
-					err := store.Set(storage.State{})
-					Expect(err).NotTo(HaveOccurred())
+				Context("when the terraform directory has user-provided files", func() {
+					var bblTerraformTemplate string
+					BeforeEach(func() {
+						fileIO.ReadDirCall.Returns.FileInfos = []os.FileInfo{
+							fakes.FileInfo{FileName: "bbl-template.tf"},
+							fakes.FileInfo{FileName: "user-provided-file"},
+						}
 
-					Expect(fileIO.RemoveCall.Receives).To(ContainElement(fakes.RemoveReceive{Name: bblTerraformTemplate}))
-					Expect(fileIO.RemoveAllCall.Receives).NotTo(ContainElement(fakes.RemoveAllReceive{
-						Path: filepath.Join(tempDir, "terraform"),
-					}))
+						bblTerraformTemplate = filepath.Join(tempDir, "terraform", "bbl-template.tf")
+					})
+
+					It("removes bbl-created terraform templates", func() {
+						err := store.Set(storage.State{})
+						Expect(err).NotTo(HaveOccurred())
+
+						Expect(fileIO.RemoveCall.Receives).To(ContainElement(fakes.RemoveReceive{Name: bblTerraformTemplate}))
+						Expect(fileIO.RemoveAllCall.Receives).NotTo(ContainElement(fakes.RemoveAllReceive{
+							Path: filepath.Join(tempDir, "terraform"),
+						}))
+					})
 				})
 			})
 

@@ -63,9 +63,6 @@ func (s Store) Set(state State) error {
 			d, _ := getDirFunc()
 			return s.fs.RemoveAll(d)
 		}
-		if err := rmdir(s.GetCloudConfigDir); err != nil {
-			return err
-		}
 		if err := rmdir(s.GetDirectorDeploymentDir); err != nil {
 			return err
 		}
@@ -87,6 +84,19 @@ func (s Store) Set(state State) error {
 			}
 		} else {
 			_ = s.fs.Remove(filepath.Join(tfDir, "bbl-template.tf"))
+		}
+
+		ccDir, _ := s.GetCloudConfigDir()
+		ccFiles, _ := s.fs.ReadDir(ccDir)
+		if len(ccFiles) == 2 &&
+			((ccFiles[0].Name() == "cloud-config.yml" && ccFiles[1].Name() == "ops.yml") ||
+				(ccFiles[0].Name() == "ops.yml" && ccFiles[1].Name() == "cloud-config.yml")) {
+			if err := s.fs.RemoveAll(ccDir); err != nil {
+				return err
+			}
+		} else {
+			_ = s.fs.Remove(filepath.Join(ccDir, "cloud-config.yml"))
+			_ = s.fs.Remove(filepath.Join(ccDir, "ops.yml"))
 		}
 
 		_ = s.fs.RemoveAll(filepath.Join(s.dir, ".terraform"))
