@@ -224,7 +224,6 @@ var _ = Describe("Store", func() {
 					}
 				},
 				Entry("cloud-config", "cloud-config", true),
-				Entry("terraform", "terraform", false),
 				Entry(".terraform", ".terraform", true),
 				Entry("bosh-deployment", "bosh-deployment", true),
 				Entry("jumpbox-deployment", "jumpbox-deployment", true),
@@ -233,13 +232,41 @@ var _ = Describe("Store", func() {
 				Entry("non-bbl directory", "foo", false),
 			)
 
-			It("removes bbl-created terraform templates", func() {
-				bblTerraformTemplate := filepath.Join(tempDir, "terraform", "bbl-template.tf")
+			Context("when the terraform directory contains only bbl files", func() {
+				BeforeEach(func() {
+					fileIO.ReadDirCall.Returns.FileInfos = []os.FileInfo{fakes.FileInfo{FileName: "bbl-template.tf"}}
+				})
 
-				err := store.Set(storage.State{})
-				Expect(err).NotTo(HaveOccurred())
+				It("removes the directory", func() {
+					err := store.Set(storage.State{})
+					Expect(err).NotTo(HaveOccurred())
 
-				Expect(fileIO.RemoveCall.Receives).To(ContainElement(fakes.RemoveReceive{Name: bblTerraformTemplate}))
+					Expect(fileIO.RemoveAllCall.Receives).To(ContainElement(fakes.RemoveAllReceive{
+						Path: filepath.Join(tempDir, "terraform"),
+					}))
+				})
+			})
+
+			Context("when the terraform directory has user-provided files", func() {
+				var bblTerraformTemplate string
+				BeforeEach(func() {
+					fileIO.ReadDirCall.Returns.FileInfos = []os.FileInfo{
+						fakes.FileInfo{FileName: "bbl-template.tf"},
+						fakes.FileInfo{FileName: "user-provided-file"},
+					}
+
+					bblTerraformTemplate = filepath.Join(tempDir, "terraform", "bbl-template.tf")
+				})
+
+				It("removes bbl-created terraform templates", func() {
+					err := store.Set(storage.State{})
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(fileIO.RemoveCall.Receives).To(ContainElement(fakes.RemoveReceive{Name: bblTerraformTemplate}))
+					Expect(fileIO.RemoveAllCall.Receives).NotTo(ContainElement(fakes.RemoveAllReceive{
+						Path: filepath.Join(tempDir, "terraform"),
+					}))
+				})
 			})
 
 			Context("when the bbl-state.json file does not exist", func() {

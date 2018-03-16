@@ -35,6 +35,7 @@ type stateStoreFs interface {
 	fileio.AllRemover
 	fileio.Stater
 	fileio.AllMkdirer
+	fileio.DirReader
 }
 
 func NewStore(dir string, fs stateStoreFs) Store {
@@ -78,8 +79,17 @@ func (s Store) Set(state State) error {
 			return err
 		}
 
+		tfDir, _ := s.GetTerraformDir()
+		tfFiles, _ := s.fs.ReadDir(tfDir)
+		if len(tfFiles) == 1 && tfFiles[0].Name() == "bbl-template.tf" {
+			if err := s.fs.RemoveAll(tfDir); err != nil {
+				return err
+			}
+		} else {
+			_ = s.fs.Remove(filepath.Join(tfDir, "bbl-template.tf"))
+		}
+
 		_ = s.fs.RemoveAll(filepath.Join(s.dir, ".terraform"))
-		_ = s.fs.Remove(filepath.Join(s.dir, "terraform", "bbl-template.tf"))
 		_ = s.fs.Remove(filepath.Join(s.dir, "create-jumpbox.sh"))
 		_ = s.fs.Remove(filepath.Join(s.dir, "create-director.sh"))
 		_ = s.fs.Remove(filepath.Join(s.dir, "delete-jumpbox.sh"))
