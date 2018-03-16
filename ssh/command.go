@@ -1,7 +1,6 @@
 package ssh
 
 import (
-	"fmt"
 	"io"
 	"os/exec"
 )
@@ -22,8 +21,6 @@ func NewCmd(in io.Reader, out, err io.Writer) Cmd {
 
 func (c Cmd) Run(args []string) error {
 	command := exec.Command("ssh", args...)
-
-	fmt.Printf("ssh %+v\n", args)
 
 	command.Stdin = c.in
 	command.Stdout = c.out
