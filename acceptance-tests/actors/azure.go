@@ -8,6 +8,7 @@ import (
 	"github.com/Azure/go-autorest/autorest/adal"
 	"github.com/Azure/go-autorest/autorest/azure"
 	acceptance "github.com/cloudfoundry/bosh-bootloader/acceptance-tests"
+	"github.com/cloudfoundry/bosh-bootloader/testhelpers"
 
 	. "github.com/onsi/gomega"
 )
@@ -19,14 +20,10 @@ type azureLBHelper struct {
 
 func NewAzureLBHelper(config acceptance.Config) azureLBHelper {
 	oauthConfig, err := adal.NewOAuthConfig(azure.PublicCloud.ActiveDirectoryEndpoint, config.AzureTenantID)
-	if err != nil {
-		panic(err)
-	}
+	Expect(err).NotTo(HaveOccurred())
 
 	servicePrincipalToken, err := adal.NewServicePrincipalToken(*oauthConfig, config.AzureClientID, config.AzureClientSecret, azure.PublicCloud.ResourceManagerEndpoint)
-	if err != nil {
-		panic(err)
-	}
+	Expect(err).NotTo(HaveOccurred())
 
 	agc := network.NewApplicationGatewaysClient(config.AzureSubscriptionID)
 	agc.ManagementClient.Authorizer = autorest.NewBearerAuthorizer(servicePrincipalToken)
@@ -71,8 +68,16 @@ func (z azureLBHelper) getApplicationGateway(resourceGroupName, applicationGatew
 }
 
 func (z azureLBHelper) GetLBArgs() []string {
+	certPath, err := testhelpers.WriteContentsToTempFile(testhelpers.PFX_BASE64)
+	Expect(err).NotTo(HaveOccurred())
+	keyPath, err := testhelpers.WriteContentsToTempFile(testhelpers.PFX_PASSWORD)
+	Expect(err).NotTo(HaveOccurred())
+
 	return []string{
-		"--lb-type", "concourse",
+		"--lb-type", "cf",
+		"--lb-cert", certPath,
+		"--lb-key", keyPath,
+		"--lb-domain", "azure.example.com",
 	}
 }
 
@@ -81,17 +86,17 @@ func (z azureLBHelper) VerifyCloudConfigExtensions(vmExtensions []string) {
 }
 
 func (z azureLBHelper) ConfirmLBsExist(envID string) {
-	exists, err := z.getLoadBalancer(envID, fmt.Sprintf("%s-concourse-lb", envID))
+	exists, err := z.getLoadBalancer(envID, fmt.Sprintf("%s-cf-lb", envID))
 	Expect(err).NotTo(HaveOccurred())
 	Expect(exists).To(BeTrue())
 }
 
 func (z azureLBHelper) ConfirmNoLBsExist(envID string) {
-	exists, err := z.getLoadBalancer(envID, fmt.Sprintf("%s-concourse-lb", envID))
+	exists, err := z.getLoadBalancer(envID, fmt.Sprintf("%s-cf-lb", envID))
 	Expect(err).NotTo(HaveOccurred())
 	Expect(exists).To(BeFalse())
 }
 
 func (z azureLBHelper) VerifyBblLBOutput(stdout string) {
-	Expect(stdout).To(MatchRegexp("Concourse LB:.*"))
+	Expect(stdout).To(MatchRegexp("CF LB:.*"))
 }
