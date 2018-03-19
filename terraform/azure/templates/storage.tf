@@ -1,5 +1,11 @@
+resource "random_string" "prefix"{
+  length = 4
+  upper = false
+  special = false
+}
+
 resource "azurerm_storage_account" "bosh" {
-  name                = "${var.simple_env_id}"
+  name                = "${random_string.prefix.result}${var.simple_env_id}"
   resource_group_name = "${azurerm_resource_group.bosh.name}"
 
   location                 = "${var.region}"
