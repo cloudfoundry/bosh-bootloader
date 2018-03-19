@@ -125,7 +125,7 @@ resource "azurerm_application_gateway" "cf" {
     cookie_based_affinity = "Disabled"
     port                  = 80
     protocol              = "Http"
-    request_timeout       = 1
+    request_timeout       = 10
     probe_name            = "health-probe"
   }
 
