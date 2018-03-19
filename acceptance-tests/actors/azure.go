@@ -1,6 +1,7 @@
 package actors
 
 import (
+	"encoding/base64"
 	"fmt"
 
 	"github.com/Azure/azure-sdk-for-go/arm/network"
@@ -68,7 +69,9 @@ func (z azureLBHelper) getApplicationGateway(resourceGroupName, applicationGatew
 }
 
 func (z azureLBHelper) GetLBArgs() []string {
-	certPath, err := testhelpers.WriteContentsToTempFile(testhelpers.PFX_BASE64)
+	decodedCert, err := base64.StdEncoding.DecodeString(testhelpers.PFX_BASE64)
+	Expect(err).NotTo(HaveOccurred())
+	certPath, err := testhelpers.WriteByteContentsToTempFile(decodedCert)
 	Expect(err).NotTo(HaveOccurred())
 	keyPath, err := testhelpers.WriteContentsToTempFile(testhelpers.PFX_PASSWORD)
 	Expect(err).NotTo(HaveOccurred())
