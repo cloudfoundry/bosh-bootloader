@@ -21,5 +21,5 @@ resource "azurerm_dns_a_record" "bosh" {
   zone_name           = "${azurerm_dns_zone.cf.name}"
   resource_group_name = "${azurerm_resource_group.bosh.name}"
   ttl                 = "300"
-  records             = ["${data.azurerm_public_ip.bosh.ip_address}"]
+  records             = ["${azurerm_public_ip.bosh.ip_address}"]
 }
