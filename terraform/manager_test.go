@@ -286,7 +286,7 @@ var _ = Describe("Manager", func() {
 					executor.VersionCall.Returns.Version = "0.0.1"
 
 					err := manager.ValidateVersion()
-					Expect(err).To(MatchError("Terraform version must be at least v0.10.0"))
+					Expect(err).To(MatchError("Terraform version must be at least v0.11.0"))
 				})
 			})
 
