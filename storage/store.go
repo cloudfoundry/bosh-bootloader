@@ -84,6 +84,7 @@ func (s Store) Set(state State) error {
 			}
 		} else {
 			_ = s.fs.Remove(filepath.Join(tfDir, "bbl-template.tf"))
+			_ = s.fs.RemoveAll(filepath.Join(tfDir, ".terraform"))
 		}
 
 		ccDir, _ := s.GetCloudConfigDir()
