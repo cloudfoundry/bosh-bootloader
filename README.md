@@ -19,7 +19,7 @@ on an IaaS. `bbl` currently supports AWS, GCP and Azure. Openstack and vSphere s
 The following should be installed on your local machine
 - [bosh-cli](https://bosh.io/docs/cli-v2.html)
 - [bosh create-env dependencies](https://bosh.io/docs/cli-env-deps.html)
-- [terraform](https://www.terraform.io/downloads.html) >= 0.10.0
+- [terraform](https://www.terraform.io/downloads.html) >= 0.11.0
 - ruby (necessary for bosh create-env)
 
 ### Install bosh-bootloader using a package manager
