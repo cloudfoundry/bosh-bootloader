@@ -85,17 +85,17 @@ func (z azureLBHelper) GetLBArgs() []string {
 }
 
 func (z azureLBHelper) VerifyCloudConfigExtensions(vmExtensions []string) {
-	Expect(vmExtensions).To(ContainElement("lb"))
+	Expect(vmExtensions).To(ContainElement("cf-router-network-properties"))
 }
 
 func (z azureLBHelper) ConfirmLBsExist(envID string) {
-	exists, err := z.getLoadBalancer(envID, fmt.Sprintf("%s-cf-lb", envID))
+	exists, err := z.getApplicationGateway(envID, fmt.Sprintf("%s-cf", envID))
 	Expect(err).NotTo(HaveOccurred())
 	Expect(exists).To(BeTrue())
 }
 
 func (z azureLBHelper) ConfirmNoLBsExist(envID string) {
-	exists, err := z.getLoadBalancer(envID, fmt.Sprintf("%s-cf-lb", envID))
+	exists, err := z.getApplicationGateway(envID, fmt.Sprintf("%s-cf", envID))
 	Expect(err).NotTo(HaveOccurred())
 	Expect(exists).To(BeFalse())
 }
