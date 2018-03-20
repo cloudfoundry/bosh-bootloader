@@ -14,6 +14,17 @@ import (
 var (
 	marshalIndent = json.MarshalIndent
 	uuidNewV4     = uuid.NewV4
+	bblManaged    = map[string]struct{}{
+		"bbl.tfvars":               struct{}{},
+		"bosh-state.json":          struct{}{},
+		"director-vars-file.yml":   struct{}{},
+		"director-vars-store.yml":  struct{}{},
+		"jumpbox-state.json":       struct{}{},
+		"jumpbox-vars-file.yml":    struct{}{},
+		"jumpbox-vars-store.yml":   struct{}{},
+		"terraform.tfstate":        struct{}{},
+		"terraform.tfstate.backup": struct{}{},
+	}
 )
 
 const (
@@ -69,36 +80,28 @@ func (s Store) Set(state State) error {
 		if err := rmdir(s.GetJumpboxDeploymentDir); err != nil {
 			return err
 		}
-		if err := rmdir(s.GetVarsDir); err != nil {
-			return err
-		}
 		if err := rmdir(s.GetBblOpsFilesDir); err != nil {
 			return err
 		}
 
 		tfDir, _ := s.GetTerraformDir()
-		tfFiles, _ := s.fs.ReadDir(tfDir)
-		if len(tfFiles) == 1 && tfFiles[0].Name() == "bbl-template.tf" {
-			if err := s.fs.RemoveAll(tfDir); err != nil {
-				return err
-			}
-		} else {
-			_ = s.fs.Remove(filepath.Join(tfDir, "bbl-template.tf"))
-			_ = s.fs.RemoveAll(filepath.Join(tfDir, ".terraform"))
-		}
+		_ = s.fs.Remove(filepath.Join(tfDir, "bbl-template.tf"))
+		_ = s.fs.Remove(filepath.Join(tfDir, ".terraform"))
+		_ = s.fs.Remove(tfDir)
 
 		ccDir, _ := s.GetCloudConfigDir()
-		ccFiles, _ := s.fs.ReadDir(ccDir)
-		if len(ccFiles) == 2 &&
-			((ccFiles[0].Name() == "cloud-config.yml" && ccFiles[1].Name() == "ops.yml") ||
-				(ccFiles[0].Name() == "ops.yml" && ccFiles[1].Name() == "cloud-config.yml")) {
-			if err := s.fs.RemoveAll(ccDir); err != nil {
-				return err
+		_ = s.fs.Remove(filepath.Join(ccDir, "cloud-config.yml"))
+		_ = s.fs.Remove(filepath.Join(ccDir, "ops.yml"))
+		_ = s.fs.Remove(ccDir)
+
+		vDir, _ := s.GetVarsDir()
+		vFiles, _ := s.fs.ReadDir(vDir)
+		for _, f := range vFiles {
+			if _, ok := bblManaged[f.Name()]; ok {
+				_ = s.fs.Remove(filepath.Join(vDir, f.Name()))
 			}
-		} else {
-			_ = s.fs.Remove(filepath.Join(ccDir, "cloud-config.yml"))
-			_ = s.fs.Remove(filepath.Join(ccDir, "ops.yml"))
 		}
+		_ = s.fs.Remove(filepath.Join(s.dir, "vars"))
 
 		_ = s.fs.RemoveAll(filepath.Join(s.dir, ".terraform"))
 		_ = s.fs.Remove(filepath.Join(s.dir, "create-jumpbox.sh"))
