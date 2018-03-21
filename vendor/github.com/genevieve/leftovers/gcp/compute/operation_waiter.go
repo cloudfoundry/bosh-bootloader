@@ -1,6 +1,7 @@
 package compute
 
 import (
+	"fmt"
 	"strings"
 
 	gcpcompute "google.golang.org/api/compute/v1"
@@ -52,8 +53,13 @@ func (c *operationWaiter) refreshFunc() stateRefreshFunc {
 		} else {
 			op, err = c.service.GlobalOperations.Get(c.project, c.op.Name).Do()
 		}
+
 		if err != nil {
-			return nil, "", err
+			return nil, "", fmt.Errorf("Refreshing operation request: %s", err)
+		}
+
+		if op.Error != nil && len(op.Error.Errors) > 0 {
+			return nil, "", fmt.Errorf("Operation error: %s", op.Error.Errors[0].Message)
 		}
 
 		return op, op.Status, nil

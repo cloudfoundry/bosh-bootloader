@@ -1,6 +1,7 @@
 package compute
 
 import (
+	"errors"
 	"fmt"
 	"time"
 )
@@ -66,19 +67,9 @@ func (s *state) Wait() error {
 			}
 
 			if res == nil {
-				targetOccurence++
-				if targetOccurence == 1 {
-					result.Done = true
-					resultCh <- result
-					return
-				}
-				continue
-			}
-
-			if res == nil {
 				notfoundTick++
 				if notfoundTick > notFoundChecks {
-					result.Error = fmt.Errorf("%s", err)
+					result.Error = fmt.Errorf("Resource not found: %s", err)
 					resultCh <- result
 					return
 				}
@@ -97,16 +88,14 @@ func (s *state) Wait() error {
 					continue
 				}
 
-				for _, allowed := range []string{"PENDING", "RUNNING"} {
-					if currentState == allowed {
-						found = true
-						targetOccurence = 0
-						break
-					}
+				if currentState == "PENDING" || currentState == "RUNNING" {
+					found = true
+					targetOccurence = 0
+					break
 				}
 
 				if !found {
-					result.Error = err
+					result.Error = fmt.Errorf("Unexpected state: %s", err)
 					resultCh <- result
 					return
 				}
@@ -137,7 +126,13 @@ func (s *state) Wait() error {
 			}
 
 			if r.Done {
-				return r.Error
+				if r.Error != nil {
+					return fmt.Errorf("Reached DONE state with error: %s", r.Error)
+				}
+				if r.Result == nil {
+					return errors.New("Reached DONE state with no result.")
+				}
+				return nil
 			}
 
 			lastResult = r
@@ -154,7 +149,13 @@ func (s *state) Wait() error {
 				select {
 				case r, ok := <-resultCh:
 					if r.Done {
-						return r.Error
+						if r.Error != nil {
+							return fmt.Errorf("Reached DONE state with error: %s", r.Error)
+						}
+						if r.Result == nil {
+							return errors.New("Reached DONE state with no result.")
+						}
+						return nil
 					}
 
 					if !ok {
@@ -168,7 +169,7 @@ func (s *state) Wait() error {
 				}
 			}
 
-			return lastResult.Error
+			return fmt.Errorf("Timeout error: %s", lastResult.Error)
 		}
 	}
 }

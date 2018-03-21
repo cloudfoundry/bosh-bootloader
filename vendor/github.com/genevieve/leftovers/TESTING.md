@@ -43,3 +43,14 @@ export LEFTOVERS_ACCEPTANCE=azure
 ginkgo -r -p -race acceptance
 ```
 
+## vSphere
+
+```
+export BBL_VSPHERE_VCENTER_IP=
+export BBL_VSPHERE_VCENTER_PASSWORD=
+export BBL_VSPHERE_VCENTER_USER=
+export BBL_VSPHERE_VCENTER_DC=
+export LEFTOVERS_ACCEPTANCE=vsphere
+
+ginkgo -r -p -race acceptance
+```
