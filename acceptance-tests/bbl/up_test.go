@@ -58,7 +58,7 @@ var _ = Describe("up", func() {
 		}
 		args = append(args, iaasHelper.GetLBArgs()...)
 		session := bbl.Up(args...)
-		Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
+		Eventually(session, 60*time.Minute).Should(gexec.Exit(0))
 
 		By("exporting bosh environment variables", func() {
 			bbl.ExportBoshAllProxy()
@@ -128,7 +128,7 @@ var _ = Describe("up", func() {
 			Eventually(session, 1*time.Minute).Should(gexec.Exit(0))
 
 			session = bbl.Up()
-			Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
+			Eventually(session, 60*time.Minute).Should(gexec.Exit(0))
 		})
 
 		By("confirming that the load balancers no longer exist", func() {

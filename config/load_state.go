@@ -146,6 +146,19 @@ func (c Config) Bootstrap(args []string) (application.Configuration, error) {
 	}, nil
 }
 
+func NeedsIAASCreds(command string) bool {
+	_, ok := map[string]struct{}{
+		"up":                {},
+		"down":              {},
+		"plan":              {},
+		"destroy":           {},
+		"leftovers":         {},
+		"cleanup-leftovers": {},
+		"rotate":            {},
+	}[command]
+	return ok
+}
+
 func (c Config) updateIAASState(globalFlags globalFlags, state storage.State) (storage.State, error) {
 	if globalFlags.IAAS != "" {
 		if state.IAAS != "" && globalFlags.IAAS != state.IAAS {
@@ -219,7 +232,7 @@ func (c Config) updateVSphereState(globalFlags globalFlags, state storage.State)
 	copyFlagToState(globalFlags.VSphereVCenterIP, &state.VSphere.VCenterIP)
 	copyFlagToState(globalFlags.VSphereVCenterDC, &state.VSphere.VCenterDC)
 	copyFlagToState(globalFlags.VSphereVCenterRP, &state.VSphere.VCenterRP)
-	copyFlagToState(globalFlags.VSphereCluster, &state.VSphere.Cluster)
+	copyFlagToState(globalFlags.VSphereVCenterCluster, &state.VSphere.VCenterCluster)
 	copyFlagToState(globalFlags.VSphereNetwork, &state.VSphere.Network)
 	copyFlagToState(globalFlags.VSphereVCenterDS, &state.VSphere.VCenterDS)
 	copyFlagToState(globalFlags.VSphereSubnet, &state.VSphere.Subnet)
@@ -328,28 +341,15 @@ func ValidateIAAS(state storage.State) error {
 	var err error
 	switch state.IAAS {
 	case "aws":
-		creds := []string{state.AWS.AccessKeyID, state.AWS.SecretAccessKey, state.AWS.Region}
-		err = validate("AWS", creds)
-
+		err = aws(state.AWS)
 	case "azure":
-		creds := []string{state.Azure.ClientID, state.Azure.ClientSecret, state.Azure.Region, state.Azure.SubscriptionID, state.Azure.TenantID}
-		err = validate("Azure", creds)
-
+		err = azure(state.Azure)
 	case "gcp":
-		creds := []string{state.GCP.ServiceAccountKey, state.GCP.Region}
-		err = validate("GCP", creds)
-
+		err = gcp(state.GCP)
 	case "vsphere":
-		creds := []string{state.VSphere.VCenterUser, state.VSphere.VCenterPassword, state.VSphere.VCenterIP, state.VSphere.VCenterIP,
-			state.VSphere.VCenterDC, state.VSphere.Cluster, state.VSphere.VCenterRP, state.VSphere.Network, state.VSphere.VCenterDS, state.VSphere.Subnet}
-		err = validate("vSphere", creds)
-
+		err = vsphere(state.VSphere)
 	case "openstack":
-		creds := []string{state.OpenStack.InternalCidr, state.OpenStack.ExternalIP, state.OpenStack.AuthURL, state.OpenStack.AZ, state.OpenStack.DefaultKeyName,
-			state.OpenStack.DefaultSecurityGroup, state.OpenStack.NetworkID, state.OpenStack.Password, state.OpenStack.Username, state.OpenStack.Project,
-			state.OpenStack.Domain, state.OpenStack.Region, state.OpenStack.PrivateKey}
-		err = validate("OpenStack", creds)
-
+		err = openstack(state.OpenStack)
 	default:
 		err = errors.New("--iaas [gcp, aws, azure, vsphere, openstack] must be provided or BBL_IAAS must be set")
 	}
@@ -361,24 +361,120 @@ func ValidateIAAS(state storage.State) error {
 	return nil
 }
 
-func NeedsIAASCreds(command string) bool {
-	_, ok := map[string]struct{}{
-		"up":                {},
-		"down":              {},
-		"plan":              {},
-		"destroy":           {},
-		"leftovers":         {},
-		"cleanup-leftovers": {},
-		"rotate":            {},
-	}[command]
-	return ok
+const CRED_ERROR = "Missing %s. To see all required credentials run `bbl plan --help`."
+
+func aws(state storage.AWS) error {
+	if state.AccessKeyID == "" {
+		return fmt.Errorf(CRED_ERROR, "--aws-access-key-id")
+	}
+	if state.SecretAccessKey == "" {
+		return fmt.Errorf(CRED_ERROR, "--aws-secret-access-key")
+	}
+	if state.Region == "" {
+		return fmt.Errorf(CRED_ERROR, "--aws-region")
+	}
+	return nil
 }
 
-func validate(iaas string, creds []string) error {
-	for _, s := range creds {
-		if s == "" {
-			return fmt.Errorf("There are %s credentials missing. To see all required credentials run `bbl plan --help`.", iaas)
-		}
+func azure(state storage.Azure) error {
+	if state.ClientID == "" {
+		return fmt.Errorf(CRED_ERROR, "--azure-client-id")
+	}
+	if state.ClientSecret == "" {
+		return fmt.Errorf(CRED_ERROR, "--azure-client-secret")
+	}
+	if state.Region == "" {
+		return fmt.Errorf(CRED_ERROR, "--azure-region")
+	}
+	if state.SubscriptionID == "" {
+		return fmt.Errorf(CRED_ERROR, "--azure-subscription-id")
+	}
+	if state.TenantID == "" {
+		return fmt.Errorf(CRED_ERROR, "--azure-tenant-id")
+	}
+	return nil
+}
+
+func gcp(state storage.GCP) error {
+	if state.ServiceAccountKey == "" {
+		return fmt.Errorf(CRED_ERROR, "--gcp-service-account-key")
+	}
+	if state.Region == "" {
+		return fmt.Errorf(CRED_ERROR, "--gcp-region")
+	}
+	return nil
+}
+
+func openstack(state storage.OpenStack) error {
+	if state.InternalCidr == "" {
+		return fmt.Errorf(CRED_ERROR, "--openstack-internal-cidr")
+	}
+	if state.ExternalIP == "" {
+		return fmt.Errorf(CRED_ERROR, "--openstack-external-ip")
+	}
+	if state.AuthURL == "" {
+		return fmt.Errorf(CRED_ERROR, "--openstack-auth-url")
+	}
+	if state.AZ == "" {
+		return fmt.Errorf(CRED_ERROR, "--openstack-az")
+	}
+	if state.DefaultKeyName == "" {
+		return fmt.Errorf(CRED_ERROR, "--openstack-default-key-name")
+	}
+	if state.DefaultSecurityGroup == "" {
+		return fmt.Errorf(CRED_ERROR, "--openstack-default-security-group")
+	}
+	if state.NetworkID == "" {
+		return fmt.Errorf(CRED_ERROR, "--openstack-network-id")
+	}
+	if state.Username == "" {
+		return fmt.Errorf(CRED_ERROR, "--openstack-username")
+	}
+	if state.Password == "" {
+		return fmt.Errorf(CRED_ERROR, "--openstack-password")
+	}
+	if state.Project == "" {
+		return fmt.Errorf(CRED_ERROR, "--openstack-project")
+	}
+	if state.Domain == "" {
+		return fmt.Errorf(CRED_ERROR, "--openstack-domain")
+	}
+	if state.Region == "" {
+		return fmt.Errorf(CRED_ERROR, "--openstack-region")
+	}
+	if state.PrivateKey == "" {
+		return fmt.Errorf(CRED_ERROR, "--openstack-private-key")
+	}
+	return nil
+}
+
+func vsphere(state storage.VSphere) error {
+	if state.VCenterUser == "" {
+		return fmt.Errorf(CRED_ERROR, "--vsphere-vcenter-user")
+	}
+	if state.VCenterPassword == "" {
+		return fmt.Errorf(CRED_ERROR, "--vsphere-vcenter-password")
+	}
+	if state.VCenterIP == "" {
+		return fmt.Errorf(CRED_ERROR, "--vsphere-vcenter-ip")
+	}
+	if state.VCenterDC == "" {
+		return fmt.Errorf(CRED_ERROR, "--vsphere-vcenter-dc")
+	}
+	if state.VCenterRP == "" {
+		return fmt.Errorf(CRED_ERROR, "--vsphere-vcenter-rp")
+	}
+	if state.VCenterDS == "" {
+		return fmt.Errorf(CRED_ERROR, "--vsphere-vcenter-ds")
+	}
+	if state.VCenterCluster == "" {
+		return fmt.Errorf(CRED_ERROR, "--vsphere-vcenter-cluster")
+	}
+	if state.Network == "" {
+		return fmt.Errorf(CRED_ERROR, "--vsphere-network")
+	}
+	if state.Subnet == "" {
+		return fmt.Errorf(CRED_ERROR, "--vsphere-subnet")
 	}
 	return nil
 }

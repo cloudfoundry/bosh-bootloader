@@ -74,7 +74,7 @@ var _ = Describe("Store", func() {
 						VCenterPassword: "password",
 						VCenterIP:       "ip",
 						VCenterDC:       "dc",
-						Cluster:         "cluster",
+						VCenterCluster:  "cluster",
 						VCenterRP:       "rp",
 						Network:         "network",
 						VCenterDS:       "ds",
@@ -223,14 +223,96 @@ var _ = Describe("Store", func() {
 						}))
 					}
 				},
-				Entry("cloud-config", "cloud-config", true),
-				Entry("terraform", "terraform", true),
+				Entry(".terraform", ".terraform", true),
 				Entry("bosh-deployment", "bosh-deployment", true),
 				Entry("jumpbox-deployment", "jumpbox-deployment", true),
-				Entry("vars", "vars", true),
 				Entry("bbl-ops-files", "bbl-ops-files", true),
 				Entry("non-bbl directory", "foo", false),
 			)
+
+			Describe("cloud-config", func() {
+				var (
+					cloudConfigBase string
+					cloudConfigOps  string
+				)
+				BeforeEach(func() {
+					cloudConfigBase = filepath.Join(tempDir, "cloud-config", "cloud-config.yml")
+					cloudConfigOps = filepath.Join(tempDir, "cloud-config", "ops.yml")
+				})
+
+				It("removes the ops file, base file, and directory", func() {
+					err := store.Set(storage.State{})
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(fileIO.RemoveCall.Receives).To(ContainElement(fakes.RemoveReceive{Name: cloudConfigBase}))
+					Expect(fileIO.RemoveCall.Receives).To(ContainElement(fakes.RemoveReceive{Name: cloudConfigOps}))
+					Expect(fileIO.RemoveCall.Receives).To(ContainElement(fakes.RemoveReceive{
+						Name: filepath.Join(tempDir, "cloud-config"),
+					}))
+				})
+			})
+
+			Describe("vars", func() {
+				Context("when the vars directory contains only bbl files", func() {
+					BeforeEach(func() {
+						fileIO.ReadDirCall.Returns.FileInfos = []os.FileInfo{
+							fakes.FileInfo{FileName: "bbl.tfvars"},
+							fakes.FileInfo{FileName: "bosh-state.json"},
+							fakes.FileInfo{FileName: "director-vars-file.yml"},
+							fakes.FileInfo{FileName: "director-vars-store.yml"},
+							fakes.FileInfo{FileName: "jumpbox-state.json"},
+							fakes.FileInfo{FileName: "jumpbox-vars-file.yml"},
+							fakes.FileInfo{FileName: "jumpbox-vars-store.yml"},
+							fakes.FileInfo{FileName: "terraform.tfstate"},
+							fakes.FileInfo{FileName: "terraform.tfstate.backup"},
+						}
+					})
+
+					It("removes the directory", func() {
+						err := store.Set(storage.State{})
+						Expect(err).NotTo(HaveOccurred())
+
+						Expect(fileIO.RemoveCall.Receives).To(ContainElement(fakes.RemoveReceive{
+							Name: filepath.Join(tempDir, "vars", "bbl.tfvars"),
+						}))
+						Expect(fileIO.RemoveCall.Receives).To(ContainElement(fakes.RemoveReceive{
+							Name: filepath.Join(tempDir, "vars"),
+						}))
+					})
+				})
+
+				Context("when the vars directory contains user managed files", func() {
+					BeforeEach(func() {
+						fileIO.ReadDirCall.Returns.FileInfos = []os.FileInfo{
+							fakes.FileInfo{FileName: "user-managed-file"},
+							fakes.FileInfo{FileName: "terraform.tfstate.backup"},
+						}
+					})
+
+					It("spares user managed files", func() {
+						err := store.Set(storage.State{})
+						Expect(err).NotTo(HaveOccurred())
+
+						Expect(fileIO.RemoveCall.Receives).NotTo(ContainElement(fakes.RemoveReceive{
+							Name: filepath.Join(tempDir, "vars", "user-managed-file"),
+						}))
+					})
+				})
+			})
+
+			Describe("terraform", func() {
+				It("removes the bbl template and directory", func() {
+					bblTerraformTemplate := filepath.Join(tempDir, "terraform", "bbl-template.tf")
+
+					err := store.Set(storage.State{})
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(fileIO.RemoveCall.Receives).To(ContainElement(fakes.RemoveReceive{Name: bblTerraformTemplate}))
+					Expect(fileIO.RemoveCall.Receives).To(ContainElement(fakes.RemoveReceive{
+						Name: filepath.Join(tempDir, "terraform"),
+					}))
+				})
+			})
 
 			Context("when the bbl-state.json file does not exist", func() {
 				It("does nothing", func() {

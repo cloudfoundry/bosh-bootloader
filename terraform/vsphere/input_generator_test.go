@@ -19,8 +19,8 @@ var _ = Describe("InputGenerator", func() {
 				EnvID: "banana",
 				VSphere: storage.VSphere{
 					Subnet:          "10.0.0.0/24",
-					Cluster:         "the-cluster",
 					Network:         "the-network",
+					VCenterCluster:  "the-cluster",
 					VCenterUser:     "the-user",
 					VCenterPassword: "the-password",
 					VCenterIP:       "the-ip",

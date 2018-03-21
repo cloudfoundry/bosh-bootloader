@@ -1,6 +1,7 @@
 data "azurerm_public_ip" "cf-lb" {
   name                = "${var.env_id}-cf-lb-ip"
   resource_group_name = "${azurerm_resource_group.bosh.name}"
+  depends_on = ["azurerm_application_gateway.cf"]
 }
 
 resource "azurerm_dns_zone" "cf" {
@@ -21,5 +22,5 @@ resource "azurerm_dns_a_record" "bosh" {
   zone_name           = "${azurerm_dns_zone.cf.name}"
   resource_group_name = "${azurerm_resource_group.bosh.name}"
   ttl                 = "300"
-  records             = ["${data.azurerm_public_ip.bosh.ip_address}"]
+  records             = ["${azurerm_public_ip.bosh.ip_address}"]
 }

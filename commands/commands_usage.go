@@ -141,6 +141,10 @@ func (s SSHKey) Usage() string {
 	return SSHKeyCommandUsage
 }
 
+func (s SSH) Usage() string {
+	return ""
+}
+
 func (s StateQuery) Usage() string {
 	switch s.propertyName {
 	case EnvIDPropertyName:

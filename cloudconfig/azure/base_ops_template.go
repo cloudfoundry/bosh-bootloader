@@ -58,7 +58,6 @@ const (
   value:
     ephemeral_disk:
       size: 10240
-      type: gp2
     instance_type: Standard_F1
 
 - type: replace
@@ -66,7 +65,6 @@ const (
   value:
     ephemeral_disk:
       size: 10240
-      type: gp2
     instance_type: Standard_F2
 
 - type: replace
@@ -74,7 +72,6 @@ const (
   value:
     ephemeral_disk:
       size: 10240
-      type: gp2
     instance_type: Standard_F4
 
 - type: replace
@@ -82,7 +79,6 @@ const (
   value:
     ephemeral_disk:
       size: 10240
-      type: gp2
     instance_type: Standard_D12_v2
 
 - type: replace
@@ -90,7 +86,6 @@ const (
   value:
     ephemeral_disk:
       size: 10240
-      type: gp2
     instance_type: Standard_GS2
 
 - type: replace
@@ -98,7 +93,6 @@ const (
   value:
     ephemeral_disk:
       size: 10240
-      type: gp2
     instance_type: Standard_D1
 `
 )

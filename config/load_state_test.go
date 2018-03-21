@@ -547,10 +547,10 @@ var _ = Describe("LoadState", func() {
 						Expect(state.VSphere.VCenterPassword).To(Equal("password"))
 						Expect(state.VSphere.VCenterIP).To(Equal("ip"))
 						Expect(state.VSphere.VCenterDC).To(Equal("dc"))
-						Expect(state.VSphere.Cluster).To(Equal("cluster"))
+						Expect(state.VSphere.VCenterCluster).To(Equal("cluster"))
 						Expect(state.VSphere.VCenterRP).To(Equal("rp"))
-						Expect(state.VSphere.Network).To(Equal("network"))
 						Expect(state.VSphere.VCenterDS).To(Equal("ds"))
+						Expect(state.VSphere.Network).To(Equal("network"))
 						Expect(state.VSphere.Subnet).To(Equal("subnet"))
 					})
 
@@ -591,7 +591,7 @@ var _ = Describe("LoadState", func() {
 						Expect(state.VSphere.VCenterPassword).To(Equal("password"))
 						Expect(state.VSphere.VCenterIP).To(Equal("ip"))
 						Expect(state.VSphere.VCenterDC).To(Equal("dc"))
-						Expect(state.VSphere.Cluster).To(Equal("cluster"))
+						Expect(state.VSphere.VCenterCluster).To(Equal("cluster"))
 						Expect(state.VSphere.VCenterRP).To(Equal("rp"))
 						Expect(state.VSphere.Network).To(Equal("network"))
 						Expect(state.VSphere.VCenterDS).To(Equal("ds"))
@@ -616,7 +616,7 @@ var _ = Describe("LoadState", func() {
 							VCenterPassword: "password",
 							VCenterIP:       "ip",
 							VCenterDC:       "dc",
-							Cluster:         "cluster",
+							VCenterCluster:  "cluster",
 							VCenterRP:       "rp",
 							Network:         "network",
 							VCenterDS:       "ds",
@@ -1181,36 +1181,68 @@ var _ = Describe("LoadState", func() {
 					IAAS: "not-a-real-iaas",
 				},
 				"--iaas [gcp, aws, azure, vsphere, openstack] must be provided or BBL_IAAS must be set"),
-			Entry("when any AWS credential is missing",
+			Entry("when an AWS credential is missing",
 				storage.State{
 					IAAS: "aws",
-					AWS:  storage.AWS{},
+					AWS: storage.AWS{
+						SecretAccessKey: "value",
+						Region:          "value",
+					},
 				},
-				"There are AWS credentials missing. To see all required credentials run `bbl plan --help`."),
-			Entry("when any GCP credential is missing",
+				"Missing --aws-access-key-id. To see all required credentials run `bbl plan --help`."),
+			Entry("when a GCP credential is missing",
 				storage.State{
 					IAAS: "gcp",
-					GCP:  storage.GCP{},
+					GCP: storage.GCP{
+						ServiceAccountKey: "value",
+					},
 				},
-				"There are GCP credentials missing. To see all required credentials run `bbl plan --help`."),
-			Entry("when any Azure credential is missing",
+				"Missing --gcp-region. To see all required credentials run `bbl plan --help`."),
+			Entry("when an Azure credential is missing",
 				storage.State{
-					IAAS:  "azure",
-					Azure: storage.Azure{},
+					IAAS: "azure",
+					Azure: storage.Azure{
+						Region:         "value",
+						TenantID:       "value",
+						SubscriptionID: "value",
+						ClientSecret:   "value",
+					},
 				},
-				"There are Azure credentials missing. To see all required credentials run `bbl plan --help`."),
-			Entry("when any vSphere credential is missing",
+				"Missing --azure-client-id. To see all required credentials run `bbl plan --help`."),
+			Entry("when a vSphere credential is missing",
 				storage.State{
-					IAAS:    "vsphere",
-					VSphere: storage.VSphere{},
+					IAAS: "vsphere",
+					VSphere: storage.VSphere{
+						VCenterUser:     "value",
+						VCenterPassword: "value",
+						VCenterIP:       "value",
+						VCenterDC:       "value",
+						VCenterRP:       "value",
+						VCenterDS:       "value",
+						VCenterCluster:  "value",
+						Network:         "value",
+					},
 				},
-				"There are vSphere credentials missing. To see all required credentials run `bbl plan --help`."),
+				"Missing --vsphere-subnet. To see all required credentials run `bbl plan --help`."),
 			Entry("when any OpenStack credential is missing",
 				storage.State{
-					IAAS:      "openstack",
-					OpenStack: storage.OpenStack{},
+					IAAS: "openstack",
+					OpenStack: storage.OpenStack{
+						InternalCidr:         "value",
+						ExternalIP:           "value",
+						AuthURL:              "value",
+						AZ:                   "value",
+						DefaultKeyName:       "value",
+						DefaultSecurityGroup: "value",
+						NetworkID:            "value",
+						Password:             "value",
+						Username:             "value",
+						Project:              "value",
+						Domain:               "value",
+						PrivateKey:           "value",
+					},
 				},
-				"There are OpenStack credentials missing. To see all required credentials run `bbl plan --help`."),
+				"Missing --openstack-region. To see all required credentials run `bbl plan --help`."),
 		)
 	})
 })

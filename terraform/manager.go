@@ -66,13 +66,13 @@ func (m Manager) ValidateVersion() error {
 		return err
 	}
 
-	minimumVersion, err := semver.NewVersion("0.10.0")
+	minimumVersion, err := semver.NewVersion("0.11.0")
 	if err != nil {
 		return err
 	}
 
 	if currentVersion.LessThan(*minimumVersion) {
-		return errors.New("Terraform version must be at least v0.10.0")
+		return errors.New("Terraform version must be at least v0.11.0")
 	}
 
 	return nil

@@ -18,6 +18,7 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/config"
 	"github.com/cloudfoundry/bosh-bootloader/gcp"
 	"github.com/cloudfoundry/bosh-bootloader/helpers"
+	"github.com/cloudfoundry/bosh-bootloader/ssh"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/cloudfoundry/bosh-bootloader/terraform"
 	proxy "github.com/cloudfoundry/socks5-proxy"
@@ -85,6 +86,7 @@ func main() {
 	stateValidator := application.NewStateValidator(appConfig.Global.StateDir)
 	certificateValidator := certs.NewValidator()
 	lbArgsHandler := commands.NewLBArgsHandler(certificateValidator)
+	sshCmd := ssh.NewCmd(os.Stdin, os.Stdout, os.Stderr)
 
 	// Terraform
 	terraformOutputBuffer := bytes.NewBuffer([]byte{})
@@ -256,6 +258,7 @@ func main() {
 	commandSet["env-id"] = commands.NewStateQuery(logger, stateValidator, terraformManager, commands.EnvIDPropertyName)
 	commandSet["latest-error"] = commands.NewLatestError(logger, stateValidator)
 	commandSet["print-env"] = commands.NewPrintEnv(logger, stderrLogger, stateValidator, allProxyGetter, credhubGetter, terraformManager, afs)
+	commandSet["ssh"] = commands.NewSSH(sshCmd, sshKeyGetter, afs, ssh.RandomPort{})
 
 	app := application.New(commandSet, appConfig, usage)
 
