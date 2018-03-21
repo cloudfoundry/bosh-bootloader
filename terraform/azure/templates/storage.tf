@@ -1,11 +1,11 @@
-resource "random_string" "postfix"{
-  length = 4
-  upper = false
+resource "random_string" "account" {
+  length  = 4
+  upper   = false
   special = false
 }
 
 resource "azurerm_storage_account" "bosh" {
-  name                = "${var.simple_env_id}${random_string.postfix.result}"
+  name                = "${var.simple_env_id}${random_string.account.result}"
   resource_group_name = "${azurerm_resource_group.bosh.name}"
 
   location                 = "${var.region}"
@@ -14,6 +14,10 @@ resource "azurerm_storage_account" "bosh" {
 
   tags {
     environment = "${var.env_id}"
+  }
+
+  lifecycle {
+    ignore_changes = ["name"]
   }
 }
 
