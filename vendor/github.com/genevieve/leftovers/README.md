@@ -69,7 +69,6 @@ Help Options:
 ## What's being deleted by IAAS:
 
 ### AWS
-#### What can you delete with this?
 
   ```diff
   + iam instance profiles (& detaching roles)
@@ -93,26 +92,17 @@ Help Options:
   + s3 buckets
   + rds db instances
   + rds db subnet groups
-  ```
-
-#### What's up next?
-
-  ```diff
   - iam group policies
   - ec2 eips
   ```
 
 ### Microsoft Azure
 
-#### What can you delete with this?
-
   ```diff
   + resource groups
   ```
 
 ### GCP
-
-#### What can you delete with this?
 
   ```diff
   + compute addresses
@@ -132,27 +122,19 @@ Help Options:
   + compute target https proxies
   + compute target http proxies
   + compute url maps
+  - compute vm instance templates
   + compute vm instances
   + compute vm instance groups
+  + compute vm instance group managers
   + dns managed zones
   + dns record sets
-  ```
-#### What's up next?
-
-  ```diff
   - compute routes
-  - compute vm instance templates
   - compute snapshots
   ```
 
 ### vSphere
 
-#### What can you delete with this?
-
   ```diff
   + virtual machines
   + empty folders
   ```
-
-#### What's up next?
-

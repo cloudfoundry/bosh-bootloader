@@ -18,8 +18,10 @@ type client struct {
 	httpHealthChecks      *gcpcompute.HttpHealthChecksService
 	httpsHealthChecks     *gcpcompute.HttpsHealthChecksService
 	images                *gcpcompute.ImagesService
+	instanceTemplates     *gcpcompute.InstanceTemplatesService
 	instances             *gcpcompute.InstancesService
 	instanceGroups        *gcpcompute.InstanceGroupsService
+	instanceGroupManagers *gcpcompute.InstanceGroupManagersService
 	firewalls             *gcpcompute.FirewallsService
 	forwardingRules       *gcpcompute.ForwardingRulesService
 	globalForwardingRules *gcpcompute.GlobalForwardingRulesService
@@ -46,8 +48,10 @@ func NewClient(project string, service *gcpcompute.Service, logger logger) clien
 		httpHealthChecks:      service.HttpHealthChecks,
 		httpsHealthChecks:     service.HttpsHealthChecks,
 		images:                service.Images,
+		instanceTemplates:     service.InstanceTemplates,
 		instances:             service.Instances,
 		instanceGroups:        service.InstanceGroups,
+		instanceGroupManagers: service.InstanceGroupManagers,
 		firewalls:             service.Firewalls,
 		forwardingRules:       service.ForwardingRules,
 		globalForwardingRules: service.GlobalForwardingRules,
@@ -110,12 +114,28 @@ func (c client) DeleteInstance(zone, instance string) error {
 	return c.wait(c.instances.Delete(c.project, zone, instance))
 }
 
+func (c client) ListInstanceTemplates() (*gcpcompute.InstanceTemplateList, error) {
+	return c.instanceTemplates.List(c.project).Do()
+}
+
+func (c client) DeleteInstanceTemplate(instanceTemplate string) error {
+	return c.wait(c.instanceTemplates.Delete(c.project, instanceTemplate))
+}
+
 func (c client) ListInstanceGroups(zone string) (*gcpcompute.InstanceGroupList, error) {
 	return c.instanceGroups.List(c.project, zone).Do()
 }
 
 func (c client) DeleteInstanceGroup(zone, instanceGroup string) error {
 	return c.wait(c.instanceGroups.Delete(c.project, zone, instanceGroup))
+}
+
+func (c client) ListInstanceGroupManagers(zone string) (*gcpcompute.InstanceGroupManagerList, error) {
+	return c.instanceGroupManagers.List(c.project, zone).Do()
+}
+
+func (c client) DeleteInstanceGroupManager(zone, instanceGroupManager string) error {
+	return c.wait(c.instanceGroupManagers.Delete(c.project, zone, instanceGroupManager))
 }
 
 func (c client) ListGlobalHealthChecks() (*gcpcompute.HealthCheckList, error) {

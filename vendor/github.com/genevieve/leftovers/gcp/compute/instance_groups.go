@@ -42,11 +42,11 @@ func (i InstanceGroups) List(filter string) ([]common.Deletable, error) {
 	for _, group := range groups {
 		resource := NewInstanceGroup(i.client, group.Name, i.zones[group.Zone])
 
-		if !strings.Contains(group.Name, filter) {
+		if !strings.Contains(resource.Name(), filter) {
 			continue
 		}
 
-		proceed := i.logger.Prompt(fmt.Sprintf("Are you sure you want to delete instance group %s?", group.Name))
+		proceed := i.logger.Prompt(fmt.Sprintf("Are you sure you want to delete %s %s?", resource.Type(), resource.Name()))
 		if !proceed {
 			continue
 		}

@@ -67,12 +67,12 @@ func (l Leftovers) Delete(filter string) error {
 			go func(d common.Deletable) {
 				defer wg.Done()
 
-				l.logger.Println(fmt.Sprintf("Deleting %s.", d.Name()))
+				l.logger.Println(fmt.Sprintf("Deleting %s: %s.", d.Type(), d.Name()))
 
 				if err := d.Delete(); err != nil {
 					l.logger.Println(err.Error())
 				} else {
-					l.logger.Println(fmt.Sprintf("SUCCESS deleting %s!", d.Name()))
+					l.logger.Println(fmt.Sprintf("SUCCESS deleting %s: %s!", d.Type(), d.Name()))
 				}
 			}(d)
 		}
@@ -140,6 +140,8 @@ func NewLeftovers(logger logger, keyPath string) (Leftovers, error) {
 			compute.NewUrlMaps(client, logger),
 			compute.NewTargetPools(client, logger, regions),
 			compute.NewBackendServices(client, logger),
+			compute.NewInstanceTemplates(client, logger),
+			compute.NewInstanceGroupManagers(client, logger, zones),
 			compute.NewInstances(client, logger, zones),
 			compute.NewInstanceGroups(client, logger, zones),
 			compute.NewGlobalHealthChecks(client, logger),
