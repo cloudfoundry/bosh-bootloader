@@ -5,8 +5,12 @@ data "azurerm_public_ip" "cf-lb" {
 }
 
 resource "azurerm_dns_zone" "cf" {
-  name                = "${var.env_id}.${var.system_domain}"
+  name                = "${var.system_domain}"
   resource_group_name = "${azurerm_resource_group.bosh.name}"
+
+  tags {
+    environment = "${var.env_id}"
+  }
 }
 
 resource "azurerm_dns_a_record" "cf" {

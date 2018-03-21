@@ -85,7 +85,7 @@ resource "azurerm_application_gateway" "cf" {
     name                = "health-probe"
     protocol            = "Http"
     path                = "/"
-    host                = "api.${var.env_id}.${var.system_domain}"
+    host                = "api.${var.system_domain}"
     interval            = 30
     timeout             = 30
     unhealthy_threshold = 3
