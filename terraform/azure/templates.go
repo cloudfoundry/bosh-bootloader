@@ -92,10 +92,7 @@ func templatesCf_dnsTf() (*asset, error) {
 		return nil, err
 	}
 
-<<<<<<< HEAD
-	info := bindataFileInfo{name: "templates/cf_dns.tf", size: 887, mode: os.FileMode(480), modTime: time.Unix(1521444431, 0)}
-	info := bindataFileInfo{name: "templates/cf_dns.tf", size: 932, mode: os.FileMode(480), modTime: time.Unix(1521569332, 0)}
->>>>>>> upstream/master
+	info := bindataFileInfo{name: "templates/cf_dns.tf", size: 932, mode: os.FileMode(480), modTime: time.Unix(1521606971, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -115,10 +112,7 @@ func templatesCf_lbTf() (*asset, error) {
 		return nil, err
 	}
 
-<<<<<<< HEAD
-	info := bindataFileInfo{name: "templates/cf_lb.tf", size: 6468, mode: os.FileMode(480), modTime: time.Unix(1521443832, 0)}
-	info := bindataFileInfo{name: "templates/cf_lb.tf", size: 6469, mode: os.FileMode(480), modTime: time.Unix(1521569246, 0)}
->>>>>>> upstream/master
+	info := bindataFileInfo{name: "templates/cf_lb.tf", size: 6469, mode: os.FileMode(480), modTime: time.Unix(1521606950, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -138,10 +132,7 @@ func templatesConcourse_lbTf() (*asset, error) {
 		return nil, err
 	}
 
-<<<<<<< HEAD
 	info := bindataFileInfo{name: "templates/concourse_lb.tf", size: 3940, mode: os.FileMode(480), modTime: time.Unix(1521102103, 0)}
-	info := bindataFileInfo{name: "templates/concourse_lb.tf", size: 3940, mode: os.FileMode(480), modTime: time.Unix(1519854618, 0)}
->>>>>>> upstream/master
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -161,10 +152,7 @@ func templatesNetworkTf() (*asset, error) {
 		return nil, err
 	}
 
-<<<<<<< HEAD
 	info := bindataFileInfo{name: "templates/network.tf", size: 523, mode: os.FileMode(480), modTime: time.Unix(1521102103, 0)}
-	info := bindataFileInfo{name: "templates/network.tf", size: 523, mode: os.FileMode(480), modTime: time.Unix(1519854618, 0)}
->>>>>>> upstream/master
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -184,10 +172,7 @@ func templatesNetwork_security_groupTf() (*asset, error) {
 		return nil, err
 	}
 
-<<<<<<< HEAD
 	info := bindataFileInfo{name: "templates/network_security_group.tf", size: 3060, mode: os.FileMode(480), modTime: time.Unix(1521102103, 0)}
-	info := bindataFileInfo{name: "templates/network_security_group.tf", size: 3060, mode: os.FileMode(480), modTime: time.Unix(1519854618, 0)}
->>>>>>> upstream/master
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -207,10 +192,7 @@ func templatesOutputTf() (*asset, error) {
 		return nil, err
 	}
 
-<<<<<<< HEAD
 	info := bindataFileInfo{name: "templates/output.tf", size: 1626, mode: os.FileMode(480), modTime: time.Unix(1521102103, 0)}
-	info := bindataFileInfo{name: "templates/output.tf", size: 1626, mode: os.FileMode(480), modTime: time.Unix(1519854618, 0)}
->>>>>>> upstream/master
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -230,15 +212,12 @@ func templatesResource_groupTf() (*asset, error) {
 		return nil, err
 	}
 
-<<<<<<< HEAD
 	info := bindataFileInfo{name: "templates/resource_group.tf", size: 461, mode: os.FileMode(480), modTime: time.Unix(1521102103, 0)}
-	info := bindataFileInfo{name: "templates/resource_group.tf", size: 461, mode: os.FileMode(480), modTime: time.Unix(1519854618, 0)}
->>>>>>> upstream/master
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
 
-var _templatesStorageTf = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xcc\x91\xbf\x6e\xc2\x30\x10\xc6\xf7\x3c\xc5\xc9\x62\xce\xd4\x95\xb9\x7b\x79\x00\xeb\x70\x8e\x60\xc9\x39\x5b\xe7\x4b\xd4\x16\xe5\xdd\x2b\x1b\x08\x10\xa9\x85\xb1\x19\xe3\xcf\xbf\xef\x8f\x85\x72\x1c\xc5\x11\x18\x41\xee\xe2\x60\xb3\x8a\xe7\xde\x80\x49\x42\x07\xff\x69\x4e\x0d\x40\x20\xee\xf5\x08\x5b\x78\x6b\x00\xc6\x94\x48\x60\x0b\x07\x0c\x99\x1a\x80\x9c\xc8\x79\x0c\xcb\x9f\xb9\x69\x6e\x50\xfc\x1e\x85\xa4\x50\xa3\x60\x4f\x16\x9d\x8b\x23\xab\x01\xb3\x8f\xf9\x68\xa0\xd0\x19\x07\x82\xd5\xb7\x05\xb3\x39\x3d\x24\x6a\xcf\x79\x5a\xa1\x3c\x06\x9d\x37\xa7\x09\xa5\xcd\x7e\x48\x81\x2c\xf1\x64\x7d\x37\x9b\x06\xe0\x6a\x6d\x7b\x89\x63\xb2\x95\x5d\x61\xd7\x24\x8f\x82\xb6\xc4\x68\x8b\x6a\x36\x4d\x69\x1a\x1d\xaa\x8f\xbc\xce\x73\x66\x14\x4b\xa1\xde\x47\xae\x5e\x97\x32\x56\x3d\xc9\x5a\xbc\x53\xe4\x0e\xa5\xbb\xd7\x09\xa5\xe0\xcf\x7c\xab\x5f\xa9\x06\x7b\xff\xd8\x55\x63\xc5\x3e\xd7\x35\x00\x88\x27\x2f\x91\x07\x62\xbd\xd9\xde\x55\x9c\xff\x9e\xd8\x45\x56\xf4\x4c\xf2\x74\xe4\x1a\xb4\x4a\x7e\x19\x0e\x5e\x9e\x0e\x60\xf5\xc2\x17\xc0\xc3\xfd\x95\x64\x05\x58\x72\x97\x73\xca\x79\x99\x28\x89\x9f\x50\xc9\xbc\x5e\x3b\x2b\x0d\x8e\x42\x78\x52\x7d\x91\xfd\xeb\xfa\xfb\x10\xf7\xa5\xfb\x4f\x00\x00\x00\xff\xff\x9f\xe2\xb3\x75\xaa\x03\x00\x00")
+var _templatesStorageTf = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xcc\x91\x31\x6e\xc3\x30\x0c\x45\x77\x9f\x82\x10\x32\x7b\xea\x9a\xb9\x7b\x73\x00\x81\x91\x19\x47\x80\x4c\x09\x14\x6d\xb4\x0d\x7c\xf7\x42\xaa\xe3\x34\x06\xda\x64\x6c\xc6\xf8\xfb\xf1\xfd\x6f\xa1\x1c\x47\x71\x04\x46\x90\xbb\x38\xd8\xac\xe2\xb9\x37\x60\x52\xcc\x7a\xf2\xef\xe6\xd2\x00\x04\xe2\x5e\xcf\xb0\x87\x97\x06\x60\x4c\x89\x04\xf6\x70\xc2\x90\xa9\x01\xc8\x89\x9c\xc7\xb0\xfe\x33\x37\xcd\x8d\x8a\x9f\xa3\x90\x14\x6c\x14\xec\xc9\xa2\x73\x71\x64\x35\x60\x8e\x31\x9f\x0d\x14\x3a\xe3\x40\xb0\xf9\xed\xc1\xec\x2e\x13\x4a\x9b\xfd\x90\x02\x59\xe2\xc9\xfa\x6e\xde\x5d\xee\x34\xdb\x45\xb2\x15\xca\x63\xd0\xd9\x34\x00\xd7\xdb\xb6\x97\x38\x26\x5b\xe1\x95\x76\x55\xb9\x0f\xb4\xc5\xa3\x2d\xa9\xd9\x34\xa5\x6a\x74\xa8\x3e\xf2\x56\xe8\x66\x24\xd4\xfb\xc8\xf5\xd6\xd2\xc6\xaa\x27\xd9\x86\x0f\x8a\xdc\xa1\x74\x3f\x73\x42\x29\xf8\x6f\xbe\xd5\x8f\x54\xc5\x5e\xdf\x0e\xf5\xb0\x62\x9f\xeb\x1c\x00\xc4\x93\x97\xc8\x03\xb1\xde\xce\x2e\x0b\x14\xdc\xfc\xf7\xc6\x2e\xb2\xa2\x67\x92\x87\x2b\x57\xd1\x1a\xf9\x65\x38\x78\x7a\x3a\x80\xcd\x27\x5e\x00\x77\xef\x6f\x22\x1b\xc0\xea\x5d\x9e\x53\xce\xeb\x44\x49\xfc\x84\x4a\xe6\xf9\xda\x59\x69\x70\x14\xc2\x83\xea\x6b\xec\x5f\xd7\x3f\x86\x78\x2c\xdd\xbf\x02\x00\x00\xff\xff\x45\x0b\x7d\xb6\xac\x03\x00\x00")
 
 func templatesStorageTfBytes() ([]byte, error) {
 	return bindataRead(
@@ -253,10 +232,7 @@ func templatesStorageTf() (*asset, error) {
 		return nil, err
 	}
 
-<<<<<<< HEAD
-	info := bindataFileInfo{name: "templates/storage.tf", size: 938, mode: os.FileMode(480), modTime: time.Unix(1521444431, 0)}
-	info := bindataFileInfo{name: "templates/storage.tf", size: 823, mode: os.FileMode(480), modTime: time.Unix(1519854618, 0)}
->>>>>>> upstream/master
+	info := bindataFileInfo{name: "templates/storage.tf", size: 940, mode: os.FileMode(480), modTime: time.Unix(1521606995, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -276,10 +252,7 @@ func templatesTlsTf() (*asset, error) {
 		return nil, err
 	}
 
-<<<<<<< HEAD
 	info := bindataFileInfo{name: "templates/tls.tf", size: 81, mode: os.FileMode(480), modTime: time.Unix(1521102103, 0)}
-	info := bindataFileInfo{name: "templates/tls.tf", size: 81, mode: os.FileMode(480), modTime: time.Unix(1519854618, 0)}
->>>>>>> upstream/master
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -299,10 +272,7 @@ func templatesVarsTf() (*asset, error) {
 		return nil, err
 	}
 
-<<<<<<< HEAD
 	info := bindataFileInfo{name: "templates/vars.tf", size: 483, mode: os.FileMode(480), modTime: time.Unix(1521102103, 0)}
-	info := bindataFileInfo{name: "templates/vars.tf", size: 483, mode: os.FileMode(480), modTime: time.Unix(1519854618, 0)}
->>>>>>> upstream/master
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
