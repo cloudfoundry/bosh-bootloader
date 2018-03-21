@@ -89,13 +89,13 @@ func (z azureLBHelper) VerifyCloudConfigExtensions(vmExtensions []string) {
 }
 
 func (z azureLBHelper) ConfirmLBsExist(envID string) {
-	exists, err := z.getApplicationGateway(envID, fmt.Sprintf("%s-cf", envID))
+	exists, err := z.getApplicationGateway(envID, fmt.Sprintf("%s-app-gateway", envID))
 	Expect(err).NotTo(HaveOccurred())
 	Expect(exists).To(BeTrue())
 }
 
 func (z azureLBHelper) ConfirmNoLBsExist(envID string) {
-	exists, err := z.getApplicationGateway(envID, fmt.Sprintf("%s-cf", envID))
+	exists, err := z.getApplicationGateway(envID, fmt.Sprintf("%s-app-gateway", envID))
 	Expect(err).NotTo(HaveOccurred())
 	Expect(exists).To(BeFalse())
 }
