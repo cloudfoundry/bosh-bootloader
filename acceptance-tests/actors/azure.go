@@ -69,7 +69,7 @@ func (z azureLBHelper) GetLBArgs() []string {
 }
 
 func (z azureLBHelper) VerifyCloudConfigExtensions(vmExtensions []string) {
-	Expect(vmExtensions).To(ContainElement("cf-router-network-properties"))
+	Expect(vmExtensions).To(ContainElement("lb"))
 }
 
 func (z azureLBHelper) ConfirmLBsExist(envID string) {
