@@ -1,7 +1,6 @@
 package actors
 
 import (
-	"encoding/base64"
 	"fmt"
 
 	"github.com/Azure/azure-sdk-for-go/arm/network"
@@ -9,7 +8,6 @@ import (
 	"github.com/Azure/go-autorest/autorest/adal"
 	"github.com/Azure/go-autorest/autorest/azure"
 	acceptance "github.com/cloudfoundry/bosh-bootloader/acceptance-tests"
-	"github.com/cloudfoundry/bosh-bootloader/testhelpers"
 
 	. "github.com/onsi/gomega"
 )
@@ -50,7 +48,6 @@ func (z azureLBHelper) getLoadBalancer(resourceGroupName, loadBalancerName strin
 		}
 		return false, err
 	}
-
 	return true, nil
 }
 
@@ -64,24 +61,11 @@ func (z azureLBHelper) getApplicationGateway(resourceGroupName, applicationGatew
 		}
 		return false, err
 	}
-
 	return true, nil
 }
 
 func (z azureLBHelper) GetLBArgs() []string {
-	decodedCert, err := base64.StdEncoding.DecodeString(testhelpers.PFX_BASE64)
-	Expect(err).NotTo(HaveOccurred())
-	certPath, err := testhelpers.WriteByteContentsToTempFile(decodedCert)
-	Expect(err).NotTo(HaveOccurred())
-	keyPath, err := testhelpers.WriteContentsToTempFile(testhelpers.PFX_PASSWORD)
-	Expect(err).NotTo(HaveOccurred())
-
-	return []string{
-		"--lb-type", "cf",
-		"--lb-cert", certPath,
-		"--lb-key", keyPath,
-		"--lb-domain", "azure.example.com",
-	}
+	return []string{"--lb-type", "concourse"}
 }
 
 func (z azureLBHelper) VerifyCloudConfigExtensions(vmExtensions []string) {
@@ -89,17 +73,17 @@ func (z azureLBHelper) VerifyCloudConfigExtensions(vmExtensions []string) {
 }
 
 func (z azureLBHelper) ConfirmLBsExist(envID string) {
-	exists, err := z.getApplicationGateway(envID, fmt.Sprintf("%s-app-gateway", envID))
+	exists, err := z.getLoadBalancer(envID, fmt.Sprintf("%s-concourse-lb", envID))
 	Expect(err).NotTo(HaveOccurred())
 	Expect(exists).To(BeTrue())
 }
 
 func (z azureLBHelper) ConfirmNoLBsExist(envID string) {
-	exists, err := z.getApplicationGateway(envID, fmt.Sprintf("%s-app-gateway", envID))
+	exists, err := z.getLoadBalancer(envID, fmt.Sprintf("%s-concourse-lb", envID))
 	Expect(err).NotTo(HaveOccurred())
 	Expect(exists).To(BeFalse())
 }
 
 func (z azureLBHelper) VerifyBblLBOutput(stdout string) {
-	Expect(stdout).To(MatchRegexp("CF LB:.*"))
+	Expect(stdout).To(MatchRegexp("Concourse LB:.*"))
 }
