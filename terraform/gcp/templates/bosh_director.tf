@@ -105,29 +105,19 @@ resource "google_compute_firewall" "internal" {
 }
 
 locals {
-  network                = "${google_compute_network.bbl-network.name}"
-  subnetwork             = "${google_compute_subnetwork.bbl-subnet.name}"
-  director_name          = "bosh-${var.env_id}"
-  internal_cidr          = "${cidrsubnet(var.subnet_cidr, 8, 0)}"
-  internal_gw            = "${cidrhost(local.internal_cidr, 1)}"
-  jumpbox_internal_ip    = "${cidrhost(local.internal_cidr, 5)}"
-  director_internal_ip   = "${cidrhost(local.internal_cidr, 6)}"
-  bosh_open_tag_name     = "${google_compute_firewall.bosh-open.name}"
-  bosh_director_tag_name = "${google_compute_firewall.bosh-director.name}"
-  jumpbox_tag_name       = "${var.env_id}-jumpbox"
-  internal_tag_name      = "${google_compute_firewall.internal.name}"
+  internal_cidr = "${cidrsubnet(var.subnet_cidr, 8, 0)}"
 }
 
 output "network" {
-  value = "${local.network}"
+  value = "${google_compute_network.bbl-network.name}"
 }
 
 output "subnetwork" {
-  value = "${local.subnetwork}"
+  value = "${google_compute_subnetwork.bbl-subnet.name}"
 }
 
 output "director_name" {
-  value = "${local.director_name}"
+  value = "bosh-${var.env_id}"
 }
 
 output "internal_cidr" {
@@ -135,30 +125,28 @@ output "internal_cidr" {
 }
 
 output "internal_gw" {
-  value = "${local.internal_gw}"
+  value = "${cidrhost(local.internal_cidr, 1)}"
 }
 
 output "jumpbox__internal_ip" {
-  value = "${local.jumpbox_internal_ip}"
+  value = "${cidrhost(local.internal_cidr, 5)}"
 }
 
 output "director__internal_ip" {
-  value = "${local.director_internal_ip}"
+  value = "${cidrhost(local.internal_cidr, 6)}"
 }
 
 output "jumpbox__tags" {
   value = [
-    "${local.bosh_open_tag_name}",
-    "${local.jumpbox_tag_name}",
+    "${google_compute_firewall.bosh-open.name}",
+    "${var.env_id}-jumpbox",
   ]
 }
 
 output "director__tags" {
-  value = [
-    "${local.bosh_director_tag_name}",
-  ]
+  value = ["${google_compute_firewall.bosh-director.name}"]
 }
 
 output "internal_tag_name" {
-  value = "${local.internal_tag_name}"
+  value = "${google_compute_firewall.internal.name}"
 }
