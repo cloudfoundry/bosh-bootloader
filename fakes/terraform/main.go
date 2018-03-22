@@ -66,6 +66,7 @@ func main() {
 		fmt.Printf("working directory: %s\n", dir)
 		fmt.Printf("data directory: %s\n", os.Getenv("TF_DATA_DIR"))
 		fmt.Printf("terraform %s/n", removeBrackets(fmt.Sprintf("%+v", os.Args)))
+		fmt.Printf("environment variables: %s\n", os.Environ())
 	}
 }
 

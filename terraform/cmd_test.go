@@ -37,7 +37,6 @@ var _ = Describe("Run", func() {
 		outputBuffer = bytes.NewBuffer([]byte{})
 
 		defaultArgs = []string{"apply", "-state=/tmp/terraform.tfstate", "/tmp"}
-
 		cmd = terraform.NewCmd(fakeStderr, io.MultiWriter(outputBuffer, GinkgoWriter), "some-terraform-dir")
 
 		fakeTerraformBackendServer = ghttp.NewServer()
@@ -86,6 +85,15 @@ var _ = Describe("Run", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(fakeStdout).To(ContainSubstring("apply -state=/tmp/terraform.tfstate /tmp"))
+			})
+		})
+
+		Context("when called with extra envs", func() {
+			It("doesn't fail.", func() {
+				err := cmd.RunWithEnv(fakeStdout, defaultArgs, []string{"WHATEVER=1"}, true)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(fakeStdout).To(ContainSubstring("WHATEVER=1"))
 			})
 		})
 	})

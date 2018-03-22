@@ -22,8 +22,15 @@ func NewCmd(stderr, outputBuffer io.Writer, tfDataDir string) Cmd {
 }
 
 func (c Cmd) Run(stdout io.Writer, args []string, debug bool) error {
+	return c.RunWithEnv(stdout, args, []string{}, debug)
+}
+
+func (c Cmd) RunWithEnv(stdout io.Writer, args []string, extraEnvVars []string, debug bool) error {
 	command := exec.Command("terraform", args...)
-	command.Env = append(os.Environ(), fmt.Sprintf("TF_DATA_DIR=%s", c.tfDataDir))
+
+	command.Env = os.Environ()
+	command.Env = append(command.Env, fmt.Sprintf("TF_DATA_DIR=%s", c.tfDataDir))
+	command.Env = append(command.Env, extraEnvVars...)
 
 	if debug {
 		command.Stdout = io.MultiWriter(stdout, c.outputBuffer)

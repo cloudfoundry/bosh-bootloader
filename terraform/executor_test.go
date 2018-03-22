@@ -257,6 +257,9 @@ var _ = Describe("Executor", func() {
 					"-var-file", userProvidedVarsPathC,
 					terraformDir,
 				}))
+
+				// be sure we don't leak env vars from destroy
+				Expect(cmd.RunCall.Receives.Env).NotTo(ContainElement("TF_WARN_OUTPUT_ERRORS=1"))
 			})
 		})
 
@@ -318,6 +321,7 @@ var _ = Describe("Executor", func() {
 					terraformDir,
 				}))
 				Expect(cmd.RunCall.Receives.Debug).To(BeTrue())
+				Expect(cmd.RunCall.Receives.Env).To(ContainElement("TF_WARN_OUTPUT_ERRORS=1"))
 			})
 		})
 

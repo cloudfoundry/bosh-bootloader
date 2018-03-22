@@ -16,15 +16,17 @@ type TerraformCmd struct {
 		Receives    struct {
 			Stdout io.Writer
 			Args   []string
+			Env    []string
 			Debug  bool
 		}
 	}
 }
 
-func (t *TerraformCmd) Run(stdout io.Writer, args []string, debug bool) error {
+func (t *TerraformCmd) RunWithEnv(stdout io.Writer, args []string, env []string, debug bool) error {
 	t.RunCall.CallCount++
 	t.RunCall.Receives.Stdout = stdout
 	t.RunCall.Receives.Args = args
+	t.RunCall.Receives.Env = env
 	t.RunCall.Receives.Debug = debug
 
 	switch args[0] {
@@ -48,4 +50,8 @@ func (t *TerraformCmd) Run(stdout io.Writer, args []string, debug bool) error {
 	}
 
 	return nil
+}
+
+func (t *TerraformCmd) Run(stdout io.Writer, args []string, debug bool) error {
+	return t.RunWithEnv(stdout, args, []string{}, debug)
 }

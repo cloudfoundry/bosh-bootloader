@@ -32,6 +32,7 @@ type tfOutput struct {
 
 type terraformCmd interface {
 	Run(stdout io.Writer, args []string, debug bool) error
+	RunWithEnv(stdout io.Writer, args []string, envs []string, debug bool) error
 }
 
 type stateStore interface {
@@ -106,6 +107,10 @@ func formatVars(inputs map[string]interface{}) string {
 }
 
 func (e Executor) runTFCommand(args []string) error {
+	return e.runTFCommandWithEnvs(args, []string{})
+}
+
+func (e Executor) runTFCommandWithEnvs(args, envs []string) error {
 	varsDir, err := e.stateStore.GetVarsDir()
 	if err != nil {
 		return fmt.Errorf("Get vars dir: %s", err)
@@ -132,7 +137,7 @@ func (e Executor) runTFCommand(args []string) error {
 	// TODO: test this after things pass-ish and we fix cmd
 	args = append(args, terraformDir)
 
-	err = e.cmd.Run(os.Stdout, args, e.debug)
+	err = e.cmd.RunWithEnv(os.Stdout, args, envs, e.debug)
 	if err != nil {
 		if e.debug {
 			return err
@@ -172,7 +177,7 @@ func (e Executor) Destroy(credentials map[string]string) error {
 		arg := fmt.Sprintf("%s=%s", key, value)
 		args = append(args, "-var", arg)
 	}
-	return e.runTFCommand(args)
+	return e.runTFCommandWithEnvs(args, []string{"TF_WARN_OUTPUT_ERRORS=1"})
 }
 
 func (e Executor) Version() (string, error) {
