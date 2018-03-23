@@ -109,15 +109,7 @@ func NewLeftovers(logger logger, keyPath string) (Leftovers, error) {
 	if err != nil {
 		return Leftovers{}, fmt.Errorf("Creating gcp client: %s", err)
 	}
-
 	client := compute.NewClient(p.ProjectId, service, logger)
-
-	dnsService, err := gcpdns.New(config.Client(context.Background()))
-	if err != nil {
-		return Leftovers{}, fmt.Errorf("Creating gcp client: %s", err)
-	}
-
-	dnsClient := dns.NewClient(p.ProjectId, dnsService, logger)
 
 	regions, err := client.ListRegions()
 	if err != nil {
@@ -128,6 +120,12 @@ func NewLeftovers(logger logger, keyPath string) (Leftovers, error) {
 	if err != nil {
 		return Leftovers{}, fmt.Errorf("Listing zones: %s", err)
 	}
+
+	dnsService, err := gcpdns.New(config.Client(context.Background()))
+	if err != nil {
+		return Leftovers{}, fmt.Errorf("Creating gcp client: %s", err)
+	}
+	dnsClient := dns.NewClient(p.ProjectId, dnsService, logger)
 
 	return Leftovers{
 		logger: logger,

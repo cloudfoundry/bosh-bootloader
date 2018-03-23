@@ -1,6 +1,8 @@
 package compute
 
 import (
+	"fmt"
+
 	gcpcompute "google.golang.org/api/compute/v1"
 	"google.golang.org/api/googleapi"
 )
@@ -269,15 +271,10 @@ type request interface {
 func (c client) wait(request request) error {
 	op, err := request.Do()
 	if err != nil {
-		return err
+		return fmt.Errorf("Do request: %s", err)
 	}
 
-	waiter := &operationWaiter{
-		op:      op,
-		service: c.service,
-		project: c.project,
-		logger:  c.logger,
-	}
+	waiter := NewOperationWaiter(op, c.service, c.project, c.logger)
 
 	return waiter.Wait()
 }

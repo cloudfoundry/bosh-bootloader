@@ -1,8 +1,8 @@
 package compute
 
 import (
-	"errors"
 	"fmt"
+	"log"
 	"time"
 )
 
@@ -13,15 +13,17 @@ type state struct {
 
 type stateRefreshFunc func() (result interface{}, state string, err error)
 
+var refreshGracePeriod = 30 * time.Second
+
 // Copied from terraform-provider-google implementation for compute operation polling.
-func (s *state) Wait() error {
+func (s *state) Wait() (interface{}, error) {
 	notfoundTick := 0
 	targetOccurence := 0
 	notFoundChecks := 20
-	delay := 10 * time.Second
-	timeout := 10 * time.Minute
+	continuousTargetOccurence := 1
+	target := "DONE"
 	minTimeout := 2 * time.Second
-	refreshGracePeriod := 30 * time.Second
+	delay := 10 * time.Second
 
 	type Result struct {
 		Result interface{}
@@ -30,25 +32,31 @@ func (s *state) Wait() error {
 		Done   bool
 	}
 
-	resultCh := make(chan Result, 1)
-	cancellationCh := make(chan struct{})
+	// Read every result from the refresh loop, waiting for a positive result.Done.
+	resCh := make(chan Result, 1)
+	// cancellation channel for the refresh loop
+	cancelCh := make(chan struct{})
 
 	result := Result{}
 
 	go func() {
-		defer close(resultCh)
+		defer close(resCh)
 
 		time.Sleep(delay)
 
+		// start with 0 delay for the first loop
 		var wait time.Duration
 
 		for {
-			resultCh <- result
+			// store the last result
+			resCh <- result
 
+			// wait and watch for cancellation
 			select {
-			case <-cancellationCh:
+			case <-cancelCh:
 				return
 			case <-time.After(wait):
+				// first round had no wait
 				if wait == 0 {
 					wait = 100 * time.Millisecond
 				}
@@ -62,45 +70,52 @@ func (s *state) Wait() error {
 			}
 
 			if err != nil {
-				resultCh <- result
+				resCh <- result
 				return
 			}
 
 			if res == nil {
+				// If we didn't find the resource, check if we have been
+				// not finding it for awhile, and if so, report an error.
 				notfoundTick++
 				if notfoundTick > notFoundChecks {
 					result.Error = fmt.Errorf("Resource not found: %s", err)
-					resultCh <- result
+					resCh <- result
 					return
 				}
 			} else {
+				// Reset the counter for when a resource isn't found
 				notfoundTick = 0
 				found := false
 
-				if currentState == "DONE" {
+				if currentState == target {
 					found = true
 					targetOccurence++
-					if targetOccurence == 1 {
+					if continuousTargetOccurence == targetOccurence {
 						result.Done = true
-						resultCh <- result
+						resCh <- result
 						return
 					}
 					continue
 				}
 
-				if currentState == "PENDING" || currentState == "RUNNING" {
-					found = true
-					targetOccurence = 0
-					break
+				for _, allowed := range []string{"PENDING", "RUNNING"} {
+					if currentState == allowed {
+						found = true
+						targetOccurence = 0
+						break
+					}
 				}
 
 				if !found {
-					result.Error = fmt.Errorf("Unexpected state: %s", err)
-					resultCh <- result
+					result.Error = fmt.Errorf("Unexpected state %s: %s", result.State, err)
+					resCh <- result
 					return
 				}
 			}
 
+			// Wait between refreshes using exponential backoff, except when
+			// waiting for the target state to reoccur.
 			if targetOccurence == 0 {
 				wait *= 2
 			}
@@ -111,65 +126,62 @@ func (s *state) Wait() error {
 				wait = 10 * time.Second
 			}
 
-			s.logger.Println("Waiting for operation to complete..")
+			log.Printf("Waiting %s before next try", wait)
 		}
 	}()
 
+	// store the last value result from the refresh loop
 	lastResult := Result{}
 
-	afterTimeout := time.After(timeout)
+	timeout := time.After(10 * time.Minute)
 	for {
 		select {
-		case r, ok := <-resultCh:
+		case r, ok := <-resCh:
+			// channel closed, so return the last result
 			if !ok {
-				return lastResult.Error
+				return lastResult.Result, lastResult.Error
 			}
 
+			// we reached the intended state
 			if r.Done {
-				if r.Error != nil {
-					return fmt.Errorf("Reached DONE state with error: %s", r.Error)
-				}
-				if r.Result == nil {
-					return errors.New("Reached DONE state with no result.")
-				}
-				return nil
+				return r.Result, r.Error
 			}
 
+			// still waiting, store the last result
 			lastResult = r
 
-		case <-afterTimeout:
-			s.logger.Printf("Timeout after %s\n", timeout)
-			s.logger.Printf("Starting %s refresh grace period\n", refreshGracePeriod)
+		case <-timeout:
+			// cancel the goroutine and start our grace period timer
+			close(cancelCh)
+			timeout := time.After(refreshGracePeriod)
 
-			close(cancellationCh)
-			afterTimeout := time.After(refreshGracePeriod)
-
+			// we need a for loop and a label to break on, because we may have
+			// an extra response value to read, but still want to wait for the
+			// channel to close.
 		forSelect:
 			for {
 				select {
-				case r, ok := <-resultCh:
+				case r, ok := <-resCh:
 					if r.Done {
-						if r.Error != nil {
-							return fmt.Errorf("Reached DONE state with error: %s", r.Error)
-						}
-						if r.Result == nil {
-							return errors.New("Reached DONE state with no result.")
-						}
-						return nil
+						// the last refresh loop reached the desired state
+						return r.Result, r.Error
 					}
 
 					if !ok {
+						// the goroutine returned
 						break forSelect
 					}
 
+					// target state not reached, save the result for the
+					// TimeoutError and wait for the channel to close
 					lastResult = r
-				case <-afterTimeout:
-					s.logger.Printf("Exceeded refresh grace period\n")
+				case <-timeout:
+					log.Println("[ERROR] WaitForState exceeded refresh grace period")
 					break forSelect
 				}
 			}
 
-			return fmt.Errorf("Timeout error: %s", lastResult.Error)
+			return nil, fmt.Errorf("Timeout waiting for state to be DONE: %s", lastResult.Error)
 		}
 	}
 }
