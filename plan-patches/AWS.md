@@ -1,6 +1,12 @@
 ## AWS
 
-## iso-segs-aws
+## Patches
+* <a href='#iso-segs-aws'>Add Isolation Segments</a>
+* <a href='#tf-backend-aws'>Use S3 Bucket for Terraform State</a>
+* <a href='#iam-profile-aws'>Provide IAM Instance Profile for BOSH Director</a>
+* <a href='#acm-aws'>Use ACM for Load Balancer Certs</a>
+
+## <a name='iso-segs-aws'></a> iso-segs-aws
 
 To create an isolation segment on aws, the files in this directory
 should be copied to your bbl state directory.
@@ -18,8 +24,7 @@ TF_VAR_isolation_segments="1" bbl up
 ```
 
 
-## tf-backend-aws
-
+## <a name='tf-backend-aws'></a> tf-backend-aws
 Stores the terraform state in a given bucket on Amazon S3.
 
 ```
@@ -42,7 +47,7 @@ bbl up
 ```
 
 
-## iam-profile-aws
+## <a name='iam-profile-aws'></a> iam-profile-aws
 
 To use an existing iam instance profile on aws, the files in this directory
 should be copied to your bbl state directory.
@@ -67,12 +72,12 @@ Providing the iam instance profile the bosh director means that the iam policy f
 the user you give to bbl does not require `iam:*` permissions.
 
 
-## acm-aws
+## <a name='acm-aws'></a> acm-aws
 
 This is a patch for using AWS Certificate Manager to issue load balancer TLS certs.
 
-First you're going to need a Route53 Zone for your system domain. Because ACM needs to verify that you own the domain
-that it's going to produce certs for, this must be done prior to bbl'ing up.
+First you're going to need a Route53 Zone for your system domain. ACM will verify that you own the domain
+that it's going to produce certs for. This must be done prior to bbl'ing up.
 
 1. Pick your system domain, then go to the AWS console and create a hosted zone to match.
 
