@@ -39,7 +39,7 @@ var _ = Describe("Executor", func() {
 
 		BeforeEach(func() {
 			cmd = &fakes.BOSHCommand{}
-			cmd.RunStub = func(stdout io.Writer, args []string) error {
+			cmd.RunStub = func(stdout io.Writer, workingDirectory string, args []string) error {
 				stdout.Write([]byte("some-manifest"))
 				return nil
 			}
@@ -931,7 +931,7 @@ var _ = Describe("Executor", func() {
 		)
 		BeforeEach(func() {
 			cmd = &fakes.BOSHCommand{}
-			cmd.RunStub = func(stdout io.Writer, args []string) error {
+			cmd.RunStub = func(stdout io.Writer, workingDirectory string, args []string) error {
 				stdout.Write([]byte("some-text version 1.1.1 some-other-text"))
 				return nil
 			}
@@ -943,7 +943,7 @@ var _ = Describe("Executor", func() {
 			_, err := executor.Version()
 			Expect(err).NotTo(HaveOccurred())
 
-			_, args := cmd.RunArgsForCall(0)
+			_, _, args := cmd.RunArgsForCall(0)
 			Expect(args).To(Equal([]string{"-v"}))
 		})
 
@@ -970,7 +970,7 @@ var _ = Describe("Executor", func() {
 
 				BeforeEach(func() {
 					expectedError = bosh.NewBOSHVersionError(errors.New("BOSH version could not be parsed"))
-					cmd.RunStub = func(stdout io.Writer, args []string) error {
+					cmd.RunStub = func(stdout io.Writer, workingDirectory string, args []string) error {
 						stdout.Write([]byte(""))
 						return nil
 					}
@@ -1004,7 +1004,7 @@ type behavesLikePlanFs interface {
 }
 
 func behavesLikePlan(expectedArgs []string, cmd *fakes.BOSHCommand, fs behavesLikePlanFs, executor bosh.Executor, input bosh.DirInput, deploymentDir, iaas, stateDir string) {
-	cmd.RunStub = func(stdout io.Writer, args []string) error {
+	cmd.RunStub = func(stdout io.Writer, workingDirectory string, args []string) error {
 		stdout.Write([]byte("some-manifest"))
 		return nil
 	}

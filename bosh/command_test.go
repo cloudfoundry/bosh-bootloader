@@ -24,6 +24,8 @@ var _ = Describe("Cmd", func() {
 
 		cmd bosh.Cmd
 
+		tempDir string
+
 		fakeBOSHBackendServer *httptest.Server
 		pathToBOSH            string
 
@@ -91,14 +93,15 @@ var _ = Describe("Cmd", func() {
 		It("runs bosh with args", func() {
 			os.Setenv("PATH", filepath.Dir(pathToBOSH))
 
-			err := cmd.Run(stdout, []string{"create-env", "some-arg"})
+			err := cmd.Run(stdout, tempDir, []string{"create-env", "some-arg"})
 			Expect(err).NotTo(HaveOccurred())
 
 			boshArgsMutex.Lock()
 			defer boshArgsMutex.Unlock()
 			Expect(boshArgs).To(Equal(`["create-env","some-arg"]`))
 
-			Expect(string(stdout.Bytes())).To(ContainSubstring("create-env some-arg"))
+			Expect(stdout).To(MatchRegexp(fmt.Sprintf("working directory: (.*)%s", tempDir)))
+			Expect(stdout).To(ContainSubstring("create-env some-arg"))
 		})
 	})
 
@@ -111,14 +114,15 @@ var _ = Describe("Cmd", func() {
 			err = os.Setenv("PATH", filepath.Dir(bosh2))
 			Expect(err).NotTo(HaveOccurred())
 
-			err = cmd.Run(stdout, []string{"create-env", "some-arg"})
+			err = cmd.Run(stdout, tempDir, []string{"create-env", "some-arg"})
 			Expect(err).NotTo(HaveOccurred())
 
 			boshArgsMutex.Lock()
 			defer boshArgsMutex.Unlock()
 			Expect(boshArgs).To(Equal(`["create-env","some-arg"]`))
 
-			Expect(string(stdout.Bytes())).To(ContainSubstring("create-env some-arg"))
+			Expect(stdout).To(MatchRegexp(fmt.Sprintf("working directory: (.*)%s", tempDir)))
+			Expect(stdout).To(ContainSubstring("create-env some-arg"))
 		})
 	})
 
@@ -135,7 +139,7 @@ var _ = Describe("Cmd", func() {
 			It("returns an error", func() {
 				os.Setenv("PATH", filepath.Dir(pathToBOSH))
 
-				err := cmd.Run(stdout, []string{"create-env"})
+				err := cmd.Run(stdout, tempDir, []string{"create-env"})
 				Expect(err).To(MatchError("exit status 1"))
 				Expect(stderr.String()).To(ContainSubstring("failed to bosh"))
 			})

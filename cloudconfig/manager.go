@@ -33,7 +33,7 @@ type logger interface {
 }
 
 type command interface {
-	Run(stdout io.Writer, args []string) error
+	Run(stdout io.Writer, cloudConfigDirectory string, args []string) error
 }
 
 type OpsGenerator interface {
@@ -169,7 +169,7 @@ func (m Manager) Interpolate() (string, error) {
 	}
 
 	buf := bytes.NewBuffer([]byte{})
-	err = m.command.Run(buf, args)
+	err = m.command.Run(buf, cloudConfigDir, args)
 	if err != nil {
 		return "", err
 	}

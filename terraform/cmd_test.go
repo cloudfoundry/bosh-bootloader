@@ -22,8 +22,7 @@ var _ = Describe("Run", func() {
 		fakeStdout   *bytes.Buffer
 		fakeStderr   *bytes.Buffer
 		outputBuffer *bytes.Buffer
-
-		defaultArgs []string
+		defaultArgs  []string
 
 		cmd terraform.Cmd
 
@@ -36,7 +35,7 @@ var _ = Describe("Run", func() {
 		fakeStderr = bytes.NewBuffer([]byte{})
 		outputBuffer = bytes.NewBuffer([]byte{})
 
-		defaultArgs = []string{"apply", "-state=/tmp/terraform.tfstate", "/tmp"}
+		defaultArgs = []string{"apply"}
 		cmd = terraform.NewCmd(fakeStderr, io.MultiWriter(outputBuffer, GinkgoWriter), "some-terraform-dir")
 
 		fakeTerraformBackendServer = ghttp.NewServer()
@@ -62,7 +61,7 @@ var _ = Describe("Run", func() {
 		})
 
 		It("runs terraform with args", func() {
-			err := cmd.Run(fakeStdout, defaultArgs, false)
+			err := cmd.Run(fakeStdout, "/tmp", defaultArgs, false)
 			Expect(err).NotTo(HaveOccurred())
 
 			By("does not write terraform output to stdout", func() {
@@ -71,26 +70,18 @@ var _ = Describe("Run", func() {
 			})
 		})
 
-		It("sets TF_DATA_DIR to the provided .terraform directory", func() {
-			err := cmd.Run(nil, defaultArgs, false)
-			Expect(err).NotTo(HaveOccurred())
-
-			outputBufferContents := string(outputBuffer.Bytes())
-			Expect(outputBufferContents).To(ContainSubstring("data directory: some-terraform-dir"))
-		})
-
 		Context("when debug is true", func() {
 			It("redirects command stdout to provided stdout", func() {
-				err := cmd.Run(fakeStdout, defaultArgs, true)
+				err := cmd.Run(fakeStdout, "/tmp", defaultArgs, true)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(fakeStdout).To(ContainSubstring("apply -state=/tmp/terraform.tfstate /tmp"))
+				Expect(string(fakeStdout.Bytes())).To(ContainSubstring("terraform apply"))
 			})
 		})
 
 		Context("when called with extra envs", func() {
 			It("doesn't fail.", func() {
-				err := cmd.RunWithEnv(fakeStdout, defaultArgs, []string{"WHATEVER=1"}, true)
+				err := cmd.RunWithEnv(fakeStdout, "/tmp", defaultArgs, []string{"WHATEVER=1"}, true)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(fakeStdout).To(ContainSubstring("WHATEVER=1"))
@@ -104,7 +95,7 @@ var _ = Describe("Run", func() {
 		})
 
 		It("returns an error and redirects command stderr to the provided buffer", func() {
-			err := cmd.Run(fakeStdout, []string{"-state=/tmp/terraform.tfstate", "fast-fail"}, false)
+			err := cmd.Run(fakeStdout, "", []string{"fast-fail"}, false)
 			Expect(err).To(MatchError("exit status 1"))
 
 			outputBufferContents := string(outputBuffer.Bytes())
@@ -113,7 +104,7 @@ var _ = Describe("Run", func() {
 
 		Context("when debug is true", func() {
 			It("redirects command stderr to provided stderr and buffer", func() {
-				_ = cmd.Run(fakeStdout, []string{"-state=/tmp/terraform.tfstate", "fast-fail"}, true)
+				_ = cmd.Run(fakeStdout, "", []string{"fast-fail"}, true)
 				Expect(fakeStderr).To(ContainSubstring("failed to terraform"))
 
 				outputBufferContents := string(outputBuffer.Bytes())

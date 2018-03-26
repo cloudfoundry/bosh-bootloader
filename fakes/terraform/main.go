@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -15,7 +14,6 @@ import (
 
 var (
 	backendURL string
-	stateFile  *string
 )
 
 func main() {
@@ -23,18 +21,9 @@ func main() {
 		log.Fatal("failed to terraform")
 	}
 
-	if os.Args[1] == "apply" {
-		flagSet := flag.NewFlagSet("apply", flag.PanicOnError)
-		stateFile = flagSet.String("state", "fake-terraform.tfstate", "output tfvars")
-		flagSet.Parse(os.Args[2:])
-	} else {
-		stateFile = flag.String("state", "fake-terraform.tfstate", "output tfvars")
-		flag.Parse()
-	}
-
 	if contains(os.Args, "region=fail-to-terraform") {
 		fmt.Printf("received args: %+v\n", os.Args)
-		err := ioutil.WriteFile(*stateFile, []byte(`{"key":"partial-apply"}`), storage.StateMode)
+		err := ioutil.WriteFile("terraform.tfstate", []byte(`{"key":"partial-apply"}`), storage.StateMode)
 		if err != nil {
 			panic(err)
 		}
@@ -53,7 +42,7 @@ func main() {
 			panic(err)
 		}
 
-		err = ioutil.WriteFile(*stateFile, []byte(`{"key":"value"}`), storage.StateMode)
+		err = ioutil.WriteFile("terraform.tfstate", []byte(`{"key":"value"}`), storage.StateMode)
 		if err != nil {
 			panic(err)
 		}
@@ -65,7 +54,7 @@ func main() {
 
 		fmt.Printf("working directory: %s\n", dir)
 		fmt.Printf("data directory: %s\n", os.Getenv("TF_DATA_DIR"))
-		fmt.Printf("terraform %s/n", removeBrackets(fmt.Sprintf("%+v", os.Args)))
+		fmt.Printf("terraform %s\n", removeBrackets(fmt.Sprintf("%+v", os.Args)))
 		fmt.Printf("environment variables: %s\n", os.Environ())
 	}
 }

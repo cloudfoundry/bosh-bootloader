@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
@@ -27,9 +28,11 @@ var _ = Describe("Executor", func() {
 		varsDir      string
 		input        map[string]interface{}
 
-		tfStatePath string
+		tfStatePath       string
+		relativeStatePath string
 
-		tfVarsPath string
+		tfVarsPath       string
+		relativeVarsPath string
 	)
 
 	BeforeEach(func() {
@@ -49,8 +52,12 @@ var _ = Describe("Executor", func() {
 		stateStore.GetVarsDirCall.Returns.Directory = varsDir
 
 		tfStatePath = filepath.Join(varsDir, "terraform.tfstate")
+		relativeStatePath, err = filepath.Rel(terraformDir, tfStatePath)
+		Expect(err).NotTo(HaveOccurred())
 
 		tfVarsPath = filepath.Join(varsDir, "bbl.tfvars")
+		relativeVarsPath, err = filepath.Rel(terraformDir, tfVarsPath)
+		Expect(err).NotTo(HaveOccurred())
 
 		input = map[string]interface{}{"project_id": "some-project-id"}
 	})
@@ -61,7 +68,7 @@ var _ = Describe("Executor", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(cmd.RunCall.CallCount).To(Equal(1))
-			Expect(cmd.RunCall.Receives.Args).To(Equal([]string{"init", terraformDir}))
+			Expect(cmd.RunCall.Receives.Args).To(Equal([]string{"init"}))
 		})
 
 		Context("when getting terraform dir fails", func() {
@@ -204,13 +211,13 @@ var _ = Describe("Executor", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("passing the correct args and dir to run command", func() {
+				Expect(cmd.RunCall.Receives.WorkingDirectory).To(Equal(terraformDir))
 				Expect(cmd.RunCall.Receives.Args).To(ConsistOf([]string{
 					"apply",
 					"--auto-approve",
 					"-var", "some-cert=some-cert-value",
-					"-state", tfStatePath,
-					"-var-file", tfVarsPath,
-					terraformDir,
+					"-state", relativeStatePath,
+					"-var-file", relativeVarsPath,
 				}))
 				Expect(cmd.RunCall.Receives.Debug).To(BeTrue())
 			})
@@ -218,8 +225,8 @@ var _ = Describe("Executor", func() {
 
 		Context("when other vars files are in the directory", func() {
 			var (
-				userProvidedVarsPathA string
-				userProvidedVarsPathC string
+				relativeUserProvidedVarsPathA string
+				relativeUserProvidedVarsPathC string
 			)
 			BeforeEach(func() {
 				fileIO.ReadDirCall.Returns.FileInfos = []os.FileInfo{
@@ -237,8 +244,8 @@ var _ = Describe("Executor", func() {
 					},
 				}
 
-				userProvidedVarsPathA = filepath.Join(varsDir, "awesome-user-vars.tfvars")
-				userProvidedVarsPathC = filepath.Join(varsDir, "custom-user-vars.tfvars")
+				relativeUserProvidedVarsPathA = strings.Replace(relativeVarsPath, "bbl", "awesome-user-vars", 1)
+				relativeUserProvidedVarsPathC = strings.Replace(relativeVarsPath, "bbl", "custom-user-vars", 1)
 			})
 
 			It("passes all user provided tfvars files to the run command in alphabetic order", func() {
@@ -251,11 +258,10 @@ var _ = Describe("Executor", func() {
 					"apply",
 					"--auto-approve",
 					"-var", "some-cert=some-cert-value",
-					"-state", tfStatePath,
-					"-var-file", userProvidedVarsPathA,
-					"-var-file", tfVarsPath,
-					"-var-file", userProvidedVarsPathC,
-					terraformDir,
+					"-state", relativeStatePath,
+					"-var-file", relativeUserProvidedVarsPathA,
+					"-var-file", relativeVarsPath,
+					"-var-file", relativeUserProvidedVarsPathC,
 				}))
 
 				// be sure we don't leak env vars from destroy
@@ -312,13 +318,13 @@ var _ = Describe("Executor", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("passing the correct args and dir to run command", func() {
+				Expect(cmd.RunCall.Receives.WorkingDirectory).To(Equal(terraformDir))
 				Expect(cmd.RunCall.Receives.Args).To(ConsistOf([]string{
 					"destroy",
 					"-force",
 					"-var", "some-cert=some-cert-value",
-					"-state", tfStatePath,
-					"-var-file", tfVarsPath,
-					terraformDir,
+					"-state", relativeStatePath,
+					"-var-file", relativeVarsPath,
 				}))
 				Expect(cmd.RunCall.Receives.Debug).To(BeTrue())
 				Expect(cmd.RunCall.Receives.Env).To(ContainElement("TF_WARN_OUTPUT_ERRORS=1"))
@@ -440,7 +446,8 @@ var _ = Describe("Executor", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(output).To(Equal("some-external-ip"))
 
-			Expect(cmd.RunCall.Receives.Args).To(Equal([]string{"output", "external_ip", "-state", tfStatePath, terraformDir}))
+			Expect(cmd.RunCall.Receives.WorkingDirectory).To(Equal(terraformDir))
+			Expect(cmd.RunCall.Receives.Args).To(Equal([]string{"output", "external_ip", "-state", tfStatePath}))
 			Expect(cmd.RunCall.Receives.Debug).To(BeTrue())
 		})
 
@@ -515,9 +522,8 @@ var _ = Describe("Executor", func() {
 				"external_ip":      "some-external-ip",
 			}))
 
-			Expect(cmd.RunCall.Receives.Args).To(Equal([]string{
-				"output", "--json", "-state", tfStatePath,
-			}))
+			Expect(cmd.RunCall.Receives.WorkingDirectory).To(Equal(varsDir))
+			Expect(cmd.RunCall.Receives.Args).To(Equal([]string{"output", "--json"}))
 			Expect(cmd.RunCall.Receives.Debug).To(BeTrue())
 		})
 
@@ -558,7 +564,7 @@ var _ = Describe("Executor", func() {
 			Context("when it fails to unmarshal the terraform outputs", func() {
 				BeforeEach(func() {
 					cmd.RunCall.Stub = func(stdout io.Writer) {
-						fmt.Fprintf(stdout, "%%%")
+						fmt.Fprint(stdout, "%%%")
 					}
 				})
 

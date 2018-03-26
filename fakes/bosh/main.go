@@ -21,6 +21,11 @@ func main() {
 
 		postArgsToBackendServer(os.Args[1], os.Args[1:])
 
+		dir, err := os.Getwd()
+		if err != nil {
+			panic(err)
+		}
+		fmt.Printf("working directory: %s\n", dir)
 		fmt.Printf("bosh %s/n", removeBrackets(fmt.Sprintf("%+v", os.Args)))
 	}
 }

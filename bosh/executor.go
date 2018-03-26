@@ -36,7 +36,7 @@ type DirInput struct {
 
 type command interface {
 	GetBOSHPath() (string, error)
-	Run(stdout io.Writer, args []string) error
+	Run(stdout io.Writer, workingDirectory string, args []string) error
 }
 
 type setupFile struct {
@@ -439,7 +439,7 @@ func (e Executor) Path() (string, error) {
 func (e Executor) Version() (string, error) {
 	args := []string{"-v"}
 	buffer := bytes.NewBuffer([]byte{})
-	err := e.command.Run(buffer, args)
+	err := e.command.Run(buffer, "", args)
 	if err != nil {
 		return "", err
 	}

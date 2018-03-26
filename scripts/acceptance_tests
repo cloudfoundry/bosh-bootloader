@@ -8,7 +8,9 @@ function main() {
   root_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 
   if [ -z "${packages}" ]; then
-    packages="bbl"
+    echo "Usage: ./scripts/acceptance_tests packages...
+Example: ./scripts/acceptance_tests bbl"
+    return
   fi
 
   local parallelFlag

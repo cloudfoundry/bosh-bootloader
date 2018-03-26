@@ -33,13 +33,14 @@ func (c Cmd) GetBOSHPath() (string, error) {
 	return boshPath, nil
 }
 
-func (c Cmd) Run(stdout io.Writer, args []string) error {
+func (c Cmd) Run(stdout io.Writer, workingDirectory string, args []string) error {
 	boshPath, err := c.GetBOSHPath()
 	if err != nil {
 		return err
 	}
 
 	command := exec.Command(boshPath, args...)
+	command.Dir = workingDirectory
 
 	command.Stdout = stdout
 	command.Stderr = c.stderr
