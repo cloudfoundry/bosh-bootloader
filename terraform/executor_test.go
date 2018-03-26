@@ -577,7 +577,17 @@ var _ = Describe("Executor", func() {
 	})
 
 	Describe("IsPaved", func() {
-		Context("when the state store fails to return the vars directory", func() {
+		Context("when the state store fails to get the terraform directory", func() {
+			It("returns an error", func() {
+				stateStore.GetTerraformDirCall.Returns.Error = errors.New("guava")
+
+				_, err := executor.IsPaved()
+
+				Expect(err).To(MatchError("Get terraform dir: guava"))
+			})
+		})
+
+		Context("when the state store fails to get the vars directory", func() {
 			It("returns an error", func() {
 				stateStore.GetVarsDirCall.Returns.Error = errors.New("guava")
 
@@ -586,22 +596,43 @@ var _ = Describe("Executor", func() {
 				Expect(err).To(MatchError("Get vars dir: guava"))
 			})
 		})
-		Context("when the terraform.tfstate file does not exist", func() {
-			It("returns false", func() {
-				fileIO.StatCall.Returns.Error = errors.New("pear")
 
+		Context("when terraform show returns No state", func() {
+			BeforeEach(func() {
+				cmd.RunCall.Stub = func(stdout io.Writer) {
+					fmt.Fprint(stdout, "No state.")
+				}
+			})
+			It("returns false", func() {
 				isPaved, err := executor.IsPaved()
 
 				Expect(err).NotTo(HaveOccurred())
 				Expect(isPaved).To(Equal(false))
 			})
 		})
-		Context("when the terraform.tfstate file does exist", func() {
+
+		Context("when terraform show returns outputs", func() {
+			BeforeEach(func() {
+				cmd.RunCall.Stub = func(stdout io.Writer) {
+					fmt.Fprint(stdout, "Pretty much anything else.")
+				}
+			})
 			It("returns true", func() {
 				isPaved, err := executor.IsPaved()
 
 				Expect(err).NotTo(HaveOccurred())
 				Expect(isPaved).To(Equal(true))
+			})
+		})
+
+		Context("when it fails to call terraform command run", func() {
+			BeforeEach(func() {
+				cmd.RunCall.Returns.Errors = []error{nil, errors.New("failed")}
+			})
+
+			It("returns an error", func() {
+				_, err := executor.IsPaved()
+				Expect(err).To(MatchError("Run terraform show: failed"))
 			})
 		})
 	})

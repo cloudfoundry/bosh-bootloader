@@ -280,14 +280,36 @@ func (e Executor) Outputs() (map[string]interface{}, error) {
 }
 
 func (e Executor) IsPaved() (bool, error) {
+	terraformDir, err := e.stateStore.GetTerraformDir()
+	if err != nil {
+		return false, fmt.Errorf("Get terraform dir: %s", err)
+	}
+
+	err = e.cmd.Run(os.Stdout, terraformDir, []string{"init"}, false)
+	if err != nil {
+		return false, fmt.Errorf("Run terraform init in terraform dir: %s", err)
+	}
+
 	varsDir, err := e.stateStore.GetVarsDir()
 	if err != nil {
 		return false, fmt.Errorf("Get vars dir: %s", err)
 	}
 
-	if _, err := e.fs.Stat(filepath.Join(varsDir, "terraform.tfstate")); err != nil {
-		return false, nil
-	} else {
-		return true, nil
+	buffer := bytes.NewBuffer([]byte{})
+	args := []string{"show"}
+	_, err = e.fs.Stat(filepath.Join(varsDir, "terraform.tfstate"))
+	if err == nil {
+		args = append(args, "-state", filepath.Join(varsDir, "terraform.tfstate"))
 	}
+
+	err = e.cmd.Run(buffer, terraformDir, args, true)
+	if err != nil {
+		return false, fmt.Errorf("Run terraform show: %s", err)
+	}
+
+	if string(buffer.Bytes()) == "No state." {
+		return false, nil
+	}
+
+	return true, nil
 }
