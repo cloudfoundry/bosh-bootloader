@@ -58,7 +58,7 @@ func NewExecutor(cmd terraformCmd, stateStore stateStore, fs fs, debug bool) Exe
 func (e Executor) Setup(template string, input map[string]interface{}) error {
 	terraformDir, err := e.stateStore.GetTerraformDir()
 	if err != nil {
-		return fmt.Errorf("Get terraform dir: %s", err)
+		return err
 	}
 
 	err = e.fs.WriteFile(filepath.Join(terraformDir, "bbl-template.tf"), []byte(template), storage.StateMode)
@@ -68,7 +68,7 @@ func (e Executor) Setup(template string, input map[string]interface{}) error {
 
 	varsDir, err := e.stateStore.GetVarsDir()
 	if err != nil {
-		return fmt.Errorf("Get vars dir: %s", err)
+		return err
 	}
 
 	err = os.MkdirAll(filepath.Join(terraformDir, ".terraform"), os.ModePerm)
@@ -113,14 +113,14 @@ func (e Executor) runTFCommand(args []string) error {
 func (e Executor) runTFCommandWithEnvs(args, envs []string) error {
 	varsDir, err := e.stateStore.GetVarsDir()
 	if err != nil {
-		return fmt.Errorf("Get vars dir: %s", err)
+		return err
 	}
 
 	tfStatePath := filepath.Join(varsDir, "terraform.tfstate")
 
 	terraformDir, err := e.stateStore.GetTerraformDir()
 	if err != nil {
-		return fmt.Errorf("Get terraform dir: %s", err)
+		return err
 	}
 	relativeStatePath, err := filepath.Rel(terraformDir, tfStatePath)
 	if err != nil {
@@ -162,7 +162,7 @@ func (e Executor) runTFCommandWithEnvs(args, envs []string) error {
 func (e Executor) Init() error {
 	terraformDir, err := e.stateStore.GetTerraformDir()
 	if err != nil {
-		return fmt.Errorf("Get terraform dir: %s", err)
+		return err
 	}
 
 	err = e.cmd.Run(os.Stdout, terraformDir, []string{"init"}, e.debug)
@@ -211,12 +211,12 @@ func (e Executor) Version() (string, error) {
 func (e Executor) Output(outputName string) (string, error) {
 	terraformDir, err := e.stateStore.GetTerraformDir()
 	if err != nil {
-		return "", fmt.Errorf("Get terraform dir: %s", err)
+		return "", err
 	}
 
 	varsDir, err := e.stateStore.GetVarsDir()
 	if err != nil {
-		return "", fmt.Errorf("Get vars dir: %s", err)
+		return "", err
 	}
 
 	err = e.cmd.Run(os.Stdout, terraformDir, []string{"init"}, e.debug)
@@ -241,12 +241,12 @@ func (e Executor) Output(outputName string) (string, error) {
 func (e Executor) Outputs() (map[string]interface{}, error) {
 	terraformDir, err := e.stateStore.GetTerraformDir()
 	if err != nil {
-		return map[string]interface{}{}, fmt.Errorf("Get terraform dir: %s", err)
+		return map[string]interface{}{}, err
 	}
 
 	varsDir, err := e.stateStore.GetVarsDir()
 	if err != nil {
-		return map[string]interface{}{}, fmt.Errorf("Get vars dir: %s", err)
+		return map[string]interface{}{}, err
 	}
 
 	err = e.cmd.Run(os.Stdout, terraformDir, []string{"init"}, false)
@@ -282,7 +282,7 @@ func (e Executor) Outputs() (map[string]interface{}, error) {
 func (e Executor) IsPaved() (bool, error) {
 	terraformDir, err := e.stateStore.GetTerraformDir()
 	if err != nil {
-		return false, fmt.Errorf("Get terraform dir: %s", err)
+		return false, err
 	}
 
 	err = e.cmd.Run(os.Stdout, terraformDir, []string{"init"}, false)
@@ -292,7 +292,7 @@ func (e Executor) IsPaved() (bool, error) {
 
 	varsDir, err := e.stateStore.GetVarsDir()
 	if err != nil {
-		return false, fmt.Errorf("Get vars dir: %s", err)
+		return false, err
 	}
 
 	buffer := bytes.NewBuffer([]byte{})

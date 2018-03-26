@@ -29,10 +29,9 @@ func NewSSHKeyDeleter(stateStore stateStore, fs deleterFs) SSHKeyDeleter {
 }
 
 func (s SSHKeyDeleter) Delete() error {
-	var err error
 	varsDir, err := s.stateStore.GetVarsDir()
 	if err != nil {
-		return fmt.Errorf("Get vars dir: %s", err)
+		return err
 	}
 
 	varsStore := filepath.Join(varsDir, "jumpbox-vars-store.yml")

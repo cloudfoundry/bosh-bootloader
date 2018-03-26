@@ -118,7 +118,7 @@ director_ssl:
 					stateStore.GetVarsDirCall.Returns.Error = errors.New("pineapple")
 
 					err := boshManager.InitializeDirector(storage.State{})
-					Expect(err).To(MatchError("Get vars dir: pineapple"))
+					Expect(err).To(MatchError("pineapple"))
 				})
 			})
 
@@ -127,7 +127,7 @@ director_ssl:
 					stateStore.GetDirectorDeploymentDirCall.Returns.Error = errors.New("pineapple")
 
 					err := boshManager.InitializeDirector(storage.State{})
-					Expect(err).To(MatchError("Get deployment dir: pineapple"))
+					Expect(err).To(MatchError("pineapple"))
 				})
 			})
 		})
@@ -170,7 +170,7 @@ director_ssl:
 						stateStore.GetVarsDirCall.Returns.Error = errors.New("pineapple")
 
 						_, err := boshManager.CreateDirector(storage.State{}, terraformOutputs)
-						Expect(err).To(MatchError("Get vars dir: pineapple"))
+						Expect(err).To(MatchError("pineapple"))
 					})
 				})
 
@@ -241,7 +241,7 @@ director_ssl:
 						stateStore.GetVarsDirCall.Returns.Error = errors.New("kiwi")
 
 						err := boshManager.InitializeJumpbox(state)
-						Expect(err).To(MatchError("Get vars dir: kiwi"))
+						Expect(err).To(MatchError("kiwi"))
 					})
 				})
 
@@ -250,7 +250,7 @@ director_ssl:
 						stateStore.GetJumpboxDeploymentDirCall.Returns.Error = errors.New("kiwi")
 
 						err := boshManager.InitializeJumpbox(state)
-						Expect(err).To(MatchError("Get deployment dir: kiwi"))
+						Expect(err).To(MatchError("kiwi"))
 					})
 				})
 			})
@@ -311,7 +311,7 @@ director_ssl:
 						stateStore.GetVarsDirCall.Returns.Error = errors.New("kiwi")
 
 						_, err := boshManager.CreateJumpbox(state, terraformOutputs)
-						Expect(err).To(MatchError("Get vars dir: kiwi"))
+						Expect(err).To(MatchError("kiwi"))
 					})
 				})
 

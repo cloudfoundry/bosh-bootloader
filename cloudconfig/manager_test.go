@@ -100,7 +100,7 @@ var _ = Describe("Manager", func() {
 
 				It("returns an error", func() {
 					err := manager.Initialize(storage.State{})
-					Expect(err).To(MatchError("Get cloud config dir: carrot"))
+					Expect(err).To(MatchError("carrot"))
 				})
 			})
 
@@ -163,7 +163,7 @@ var _ = Describe("Manager", func() {
 
 				It("returns an error", func() {
 					err := manager.GenerateVars(storage.State{})
-					Expect(err).To(MatchError("Get vars dir: eggplant"))
+					Expect(err).To(MatchError("eggplant"))
 				})
 			})
 
@@ -324,7 +324,7 @@ var _ = Describe("Manager", func() {
 
 				It("returns an error", func() {
 					_, err := manager.Interpolate()
-					Expect(err).To(MatchError("Get cloud config dir: carrot"))
+					Expect(err).To(MatchError("carrot"))
 				})
 			})
 
@@ -335,7 +335,7 @@ var _ = Describe("Manager", func() {
 
 				It("returns an error", func() {
 					_, err := manager.Interpolate()
-					Expect(err).To(MatchError("Get vars dir: eggplant"))
+					Expect(err).To(MatchError("eggplant"))
 				})
 			})
 

@@ -90,7 +90,7 @@ var _ = Describe("SSHKeyDeleter", func() {
 			})
 			It("returns an error", func() {
 				err := sshKeyDeleter.Delete()
-				Expect(err).To(MatchError("Get vars dir: potato"))
+				Expect(err).To(MatchError("potato"))
 			})
 		})
 	})

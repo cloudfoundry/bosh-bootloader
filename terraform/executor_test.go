@@ -78,7 +78,7 @@ var _ = Describe("Executor", func() {
 
 			It("returns an error", func() {
 				err := executor.Init()
-				Expect(err).To(MatchError("Get terraform dir: canteloupe"))
+				Expect(err).To(MatchError("canteloupe"))
 			})
 		})
 
@@ -121,7 +121,7 @@ var _ = Describe("Executor", func() {
 
 				It("returns an error", func() {
 					err := executor.Setup("some-template", input)
-					Expect(err).To(MatchError("Get terraform dir: canteloupe"))
+					Expect(err).To(MatchError("canteloupe"))
 				})
 			})
 
@@ -143,7 +143,7 @@ var _ = Describe("Executor", func() {
 
 				It("returns an error", func() {
 					err := executor.Setup("", input)
-					Expect(err).To(MatchError("Get vars dir: coconut"))
+					Expect(err).To(MatchError("coconut"))
 				})
 			})
 
@@ -339,7 +339,7 @@ var _ = Describe("Executor", func() {
 
 				It("returns an error", func() {
 					err := executor.Destroy(credentials)
-					Expect(err).To(MatchError("Get terraform dir: kiwi"))
+					Expect(err).To(MatchError("kiwi"))
 				})
 			})
 
@@ -350,7 +350,7 @@ var _ = Describe("Executor", func() {
 
 				It("returns an error", func() {
 					err := executor.Destroy(credentials)
-					Expect(err).To(MatchError("Get vars dir: banana"))
+					Expect(err).To(MatchError("banana"))
 				})
 			})
 
@@ -459,7 +459,7 @@ var _ = Describe("Executor", func() {
 
 				It("returns an error", func() {
 					_, err := executor.Output("external_ip")
-					Expect(err).To(MatchError("Get terraform dir: failed"))
+					Expect(err).To(MatchError("failed"))
 				})
 			})
 
@@ -470,7 +470,7 @@ var _ = Describe("Executor", func() {
 
 				It("returns an error", func() {
 					_, err := executor.Output("external_ip")
-					Expect(err).To(MatchError("Get vars dir: failed"))
+					Expect(err).To(MatchError("failed"))
 				})
 			})
 
@@ -535,7 +535,7 @@ var _ = Describe("Executor", func() {
 
 				It("returns an error", func() {
 					_, err := executor.Outputs()
-					Expect(err).To(MatchError("Get vars dir: failed"))
+					Expect(err).To(MatchError("failed"))
 				})
 			})
 
@@ -583,7 +583,7 @@ var _ = Describe("Executor", func() {
 
 				_, err := executor.IsPaved()
 
-				Expect(err).To(MatchError("Get terraform dir: guava"))
+				Expect(err).To(MatchError("guava"))
 			})
 		})
 
@@ -593,7 +593,7 @@ var _ = Describe("Executor", func() {
 
 				_, err := executor.IsPaved()
 
-				Expect(err).To(MatchError("Get vars dir: guava"))
+				Expect(err).To(MatchError("guava"))
 			})
 		})
 

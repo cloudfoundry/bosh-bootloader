@@ -70,7 +70,7 @@ func NewManager(logger logger, cmd command, stateStore stateStore, opsGenerator 
 func (m Manager) Initialize(state storage.State) error {
 	cloudConfigDir, err := m.stateStore.GetCloudConfigDir()
 	if err != nil {
-		return fmt.Errorf("Get cloud config dir: %s", err)
+		return err
 	}
 
 	err = m.fs.WriteFile(filepath.Join(cloudConfigDir, "cloud-config.yml"), []byte(BaseCloudConfig), storage.StateMode)
@@ -94,7 +94,7 @@ func (m Manager) Initialize(state storage.State) error {
 func (m Manager) GenerateVars(state storage.State) error {
 	varsDir, err := m.stateStore.GetVarsDir()
 	if err != nil {
-		return fmt.Errorf("Get vars dir: %s", err)
+		return err
 	}
 
 	vars, err := m.opsGenerator.GenerateVars(state)
@@ -142,12 +142,12 @@ func (m Manager) IsPresentCloudConfigVars() bool {
 func (m Manager) Interpolate() (string, error) {
 	cloudConfigDir, err := m.stateStore.GetCloudConfigDir()
 	if err != nil {
-		return "", fmt.Errorf("Get cloud config dir: %s", err)
+		return "", err
 	}
 
 	varsDir, err := m.stateStore.GetVarsDir()
 	if err != nil {
-		return "", fmt.Errorf("Get vars dir: %s", err)
+		return "", err
 	}
 
 	args := []string{

@@ -91,14 +91,14 @@ func (m *Manager) Version() (string, error) {
 func (m *Manager) InitializeJumpbox(state storage.State) error {
 	varsDir, err := m.stateStore.GetVarsDir()
 	if err != nil {
-		return fmt.Errorf("Get vars dir: %s", err)
+		return err
 	}
 
 	stateDir := m.stateStore.GetStateDir()
 
 	deploymentDir, err := m.stateStore.GetJumpboxDeploymentDir()
 	if err != nil {
-		return fmt.Errorf("Get deployment dir: %s", err)
+		return err
 	}
 
 	iaasInputs := DirInput{
@@ -119,7 +119,7 @@ func (m *Manager) CreateJumpbox(state storage.State, terraformOutputs terraform.
 
 	varsDir, err := m.stateStore.GetVarsDir()
 	if err != nil {
-		return storage.State{}, fmt.Errorf("Get vars dir: %s", err)
+		return storage.State{}, err
 	}
 
 	stateDir := m.stateStore.GetStateDir()
@@ -170,14 +170,14 @@ func (m *Manager) CreateJumpbox(state storage.State, terraformOutputs terraform.
 func (m *Manager) InitializeDirector(state storage.State) error {
 	varsDir, err := m.stateStore.GetVarsDir()
 	if err != nil {
-		return fmt.Errorf("Get vars dir: %s", err)
+		return err
 	}
 
 	stateDir := m.stateStore.GetStateDir()
 
 	directorDeploymentDir, err := m.stateStore.GetDirectorDeploymentDir()
 	if err != nil {
-		return fmt.Errorf("Get deployment dir: %s", err)
+		return err
 	}
 
 	iaasInputs := DirInput{
@@ -198,7 +198,7 @@ func (m *Manager) CreateDirector(state storage.State, terraformOutputs terraform
 
 	varsDir, err := m.stateStore.GetVarsDir()
 	if err != nil {
-		return storage.State{}, fmt.Errorf("Get vars dir: %s", err)
+		return storage.State{}, err
 	}
 
 	stateDir := m.stateStore.GetStateDir()
@@ -259,7 +259,7 @@ func (m *Manager) DeleteDirector(state storage.State, terraformOutputs terraform
 
 	varsDir, err := m.stateStore.GetVarsDir()
 	if err != nil {
-		return fmt.Errorf("Get vars dir: %s", err)
+		return err
 	}
 
 	stateDir := m.stateStore.GetStateDir()
@@ -307,7 +307,7 @@ func (m *Manager) DeleteJumpbox(state storage.State, terraformOutputs terraform.
 
 	varsDir, err := m.stateStore.GetVarsDir()
 	if err != nil {
-		return fmt.Errorf("Get vars dir: %s", err)
+		return err
 	}
 
 	stateDir := m.stateStore.GetStateDir()

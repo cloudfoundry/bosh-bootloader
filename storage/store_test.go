@@ -449,7 +449,7 @@ var _ = Describe("Store", func() {
 
 				It("returns an error", func() {
 					cloudConfigDir, err := store.GetCloudConfigDir()
-					Expect(err).To(MatchError(ContainSubstring("not a directory")))
+					Expect(err).To(MatchError("Get cloud-config dir: not a directory"))
 					Expect(cloudConfigDir).To(Equal(""))
 				})
 			})

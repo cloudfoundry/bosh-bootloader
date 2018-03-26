@@ -170,7 +170,7 @@ func (s Store) getDir(name string) (string, error) {
 	dir := filepath.Join(s.dir, name)
 	err := s.fs.MkdirAll(dir, os.ModePerm)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("Get %s dir: %s", name, err)
 	}
 	return dir, nil
 }
