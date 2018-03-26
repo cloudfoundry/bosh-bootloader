@@ -258,6 +258,7 @@ var _ = Describe("Store", func() {
 						fileIO.ReadDirCall.Returns.FileInfos = []os.FileInfo{
 							fakes.FileInfo{FileName: "bbl.tfvars"},
 							fakes.FileInfo{FileName: "bosh-state.json"},
+							fakes.FileInfo{FileName: "cloud-config-vars.yml"},
 							fakes.FileInfo{FileName: "director-vars-file.yml"},
 							fakes.FileInfo{FileName: "director-vars-store.yml"},
 							fakes.FileInfo{FileName: "jumpbox-state.json"},

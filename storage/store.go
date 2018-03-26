@@ -17,6 +17,7 @@ var (
 	bblManaged    = map[string]struct{}{
 		"bbl.tfvars":               struct{}{},
 		"bosh-state.json":          struct{}{},
+		"cloud-config-vars.yml":    struct{}{},
 		"director-vars-file.yml":   struct{}{},
 		"director-vars-store.yml":  struct{}{},
 		"jumpbox-state.json":       struct{}{},
