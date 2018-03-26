@@ -317,7 +317,11 @@ func (c Config) readKey(path string) (string, string, error) {
 	if err != nil {
 		return "", "", fmt.Errorf("Reading key: %v", err)
 	}
-	return path, string(keyBytes), nil
+	absPath, err := filepath.Abs(path)
+	if err != nil {
+		return "", "", fmt.Errorf("Getting absolute path to key: %v", err)
+	}
+	return absPath, string(keyBytes), nil
 }
 
 func (c Config) getGCPProjectID(key string) (string, error) {
