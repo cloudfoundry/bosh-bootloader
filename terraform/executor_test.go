@@ -522,8 +522,8 @@ var _ = Describe("Executor", func() {
 				"external_ip":      "some-external-ip",
 			}))
 
-			Expect(cmd.RunCall.Receives.WorkingDirectory).To(Equal(varsDir))
-			Expect(cmd.RunCall.Receives.Args).To(Equal([]string{"output", "--json"}))
+			Expect(cmd.RunCall.Receives.WorkingDirectory).To(Equal(terraformDir))
+			Expect(cmd.RunCall.Receives.Args).To(Equal([]string{"output", "--json", "-state", filepath.Join(varsDir, "terraform.tfstate")}))
 			Expect(cmd.RunCall.Receives.Debug).To(BeTrue())
 		})
 
@@ -546,7 +546,7 @@ var _ = Describe("Executor", func() {
 
 				It("returns an error", func() {
 					_, err := executor.Outputs()
-					Expect(err).To(MatchError("Run terraform init in vars dir: failed"))
+					Expect(err).To(MatchError("Run terraform init in terraform dir: failed"))
 				})
 			})
 
