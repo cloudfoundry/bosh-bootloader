@@ -1,6 +1,12 @@
-## AWS
+## AWS Plan Patches
 
-## Patches
+Plan patches can be used to customize the IAAS
+environment and bosh director that is created by
+`bbl up`.
+
+A patch is a directory with a set of files
+organized in the same hierarchy as the bbl-state dir.
+
 * <a href='#iso-segs-aws'>Add Isolation Segments</a>
 * <a href='#tf-backend-aws'>Use S3 Bucket for Terraform State</a>
 * <a href='#iam-profile-aws'>Provide IAM Instance Profile for BOSH Director</a>

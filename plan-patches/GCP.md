@@ -1,4 +1,4 @@
-# Plan Patches
+# GCP Plan Patches
 
 Plan patches can be used to customize the IAAS
 environment and bosh director that is created by
@@ -7,7 +7,14 @@ environment and bosh director that is created by
 A patch is a directory with a set of files
 organized in the same hierarchy as the bbl-state dir.
 
-## bosh-lite-gcp
+* <a href='#bosh-lite-gcp'>Deploy BOSH-Lite</a>
+* <a href='#restricted-instance-groups-gcp'>Create 2 Instance Groups</a>
+* <a href='#iso-segs-gcp'>Add Isolation Segments</a>
+* <a href='#tf-backend-gcp'>Use GCS Bucket for Terraform State</a>
+* <a href='#byobastion-gcp'>Bring Your Own Bastion</a>
+* <a href='#cfcr-gcp'>Deploy CFCR</a>
+
+## <a name='bosh-lite-gcp'></a>bosh-lite-gcp
 
 To create a bosh lite on gcp, the files in `bosh-lite-gcp`
 should be copied to your bbl state directory.
@@ -25,13 +32,13 @@ bbl up
 ```
 
 
-## restricted-instance-groups-gcp
+## <a name='restricted-instance-groups-gcp'></a>restricted-instance-groups-gcp
 
 To create two instance groups instead of an instance group for every zone on gcp,
 you can use the steps above with the `restricted-instance-groups-gcp` patch
 provided here.
 
-## iso-segs-gcp
+## <a name='iso-segs-gcp'></a>iso-segs-gcp
 
 Creates a single routing isolation segment on GCP, including dedicated load balancers and firewall rules.
 
@@ -44,7 +51,7 @@ Disclaimer: this is a testing/development quality patch.  It has not been subjec
 Please don't run it in production!
 
 
-## tf-backend-gcp
+## <a name='tf-backend-gcp'></a>tf-backend-gcp
 
 Stores the terraform state in a bucket in Google Cloud Storage.
 
@@ -67,7 +74,7 @@ Then you can bbl up.
 bbl up
 ```
 
-## byobastion-gcp
+## <a name='byobastion-gcp'></a>byobastion-gcp
 
 To use your own bastion on gcp, the files in `byobastion-gcp`
 should be copied to your bbl state directory.
@@ -117,7 +124,7 @@ The steps might look like such:
     bosh deploy ...
     ```
 
-## cfcr-gcp
+## <a name='cfcr-gcp'></a>cfcr-gcp
 
 Steps to deploy cfcr with bbl:
 
