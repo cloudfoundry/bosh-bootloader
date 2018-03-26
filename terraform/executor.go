@@ -299,7 +299,7 @@ func (e Executor) IsPaved() (bool, error) {
 	args := []string{"show"}
 	_, err = e.fs.Stat(filepath.Join(varsDir, "terraform.tfstate"))
 	if err == nil {
-		args = append(args, "-state", filepath.Join(varsDir, "terraform.tfstate"))
+		args = append(args, filepath.Join(varsDir, "terraform.tfstate"))
 	}
 
 	err = e.cmd.Run(buffer, terraformDir, args, true)
