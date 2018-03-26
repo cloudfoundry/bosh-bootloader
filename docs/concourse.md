@@ -17,7 +17,7 @@ install to AWS, GCP and Azure using `bbl` and `bosh`.
   bbl up --lb-type concourse
 
   export external_url="https://$(bbl lbs |awk -F':' '{print $2}' |sed 's/ //')"
-  
+
   eval "$(bbl print-env)"
 
   bosh upload-stemcell https://bosh.io/d/stemcells/bosh-google-kvm-ubuntu-trusty-go_agent
