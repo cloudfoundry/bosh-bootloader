@@ -6,6 +6,13 @@
 
 **BUG FIXES:**
 
+## v6.6.0
+**FEATURES / IMPROVEMENTS:**
+* We have added bbl ssh --director and bbl ssh --jumpbox to assist you in this tedious and common step taken during debugging your environment.
+
+**BUG FIXES:**
+* We now promise to consistently not to remove any custom files from the state directory after you bbl down.
+
 ## v6.0.0 (January 26, 2018)
 
 **BACKWARD INCOMPATIBILITIES / NOTES:**
