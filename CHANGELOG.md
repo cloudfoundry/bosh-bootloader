@@ -66,3 +66,30 @@ cf-deployment-concourse-tasks or bosh-deployment-resource.
 **BUG FIXES:**
 * Fixes jumpbox related commands on Azure that were broken in `5.0.0`.
 
+
+## v4.0.0 (July 28, 2017)
+
+**BACKWARD INCOMPATIBILITIES / NOTES:**
+* BBL 4.0 is a breaking change, but only for AWS environments. While I emphasize
+the POTENTIALLY BREAKING part we have gone to great lengths to automatically
+migrate users and test this migration progress to make it as smooth as possible
+while we migrate you from cloudformation to Terraform. This migration will happen
+the next time you attempt to modify your infrastructure using 4.0 or above.
+* AWS users will however experience downtime on load-balanced services (gorouter
+or atc). If you have a non-ephemeral environment with uptime concerns, open an
+issue and we can help suggest a zero downtime migration.
+
+To migrate and restore load balancing teams must:
+1. Install terraform if you haven't already
+1. run bbl create-lbs again (or just bbl up if you don't use load balancers).
+1. `bosh recreate router`, `atc`, and other vms that use the load balancer VM extensions (or ignore this step if you don't use load balancers)
+
+**FEATURES / IMPROVEMENTS:**
+* IAM instance profiles. Fewer IaaS credentials on fewer disks.
+* The full suite of loadbalancers that GCP already supports
+* Error messages without opening up AWS console to look at CloudFormation
+* A DNS zone with the names of these loadbalancers if they use bbl create-lbs --domain.
+* A lot of stealth-mode changes to the --jumpbox feature flag
+
+**BUG FIXES:**
+
