@@ -87,7 +87,7 @@ func (s Store) Set(state State) error {
 
 		tfDir, _ := s.GetTerraformDir()
 		_ = s.fs.Remove(filepath.Join(tfDir, "bbl-template.tf"))
-		_ = s.fs.Remove(filepath.Join(tfDir, ".terraform"))
+		_ = s.fs.RemoveAll(filepath.Join(tfDir, ".terraform"))
 		_ = s.fs.Remove(tfDir)
 
 		ccDir, _ := s.GetCloudConfigDir()
