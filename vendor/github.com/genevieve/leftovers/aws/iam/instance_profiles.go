@@ -26,7 +26,30 @@ func NewInstanceProfiles(client instanceProfilesClient, logger logger) InstanceP
 	}
 }
 
+func (i InstanceProfiles) ListAll(filter string) ([]common.Deletable, error) {
+	return i.get(filter)
+}
+
 func (i InstanceProfiles) List(filter string) ([]common.Deletable, error) {
+	resources, err := i.get(filter)
+	if err != nil {
+		return nil, err
+	}
+
+	var delete []common.Deletable
+	for _, r := range resources {
+		proceed := i.logger.PromptWithDetails(r.Type(), r.Name())
+		if !proceed {
+			continue
+		}
+
+		delete = append(delete, r)
+	}
+
+	return delete, nil
+}
+
+func (i InstanceProfiles) get(filter string) ([]common.Deletable, error) {
 	profiles, err := i.client.ListInstanceProfiles(&awsiam.ListInstanceProfilesInput{})
 	if err != nil {
 		return nil, fmt.Errorf("Listing instance profiles: %s", err)
@@ -36,12 +59,7 @@ func (i InstanceProfiles) List(filter string) ([]common.Deletable, error) {
 	for _, p := range profiles.InstanceProfiles {
 		resource := NewInstanceProfile(i.client, p.InstanceProfileName, p.Roles, i.logger)
 
-		if !strings.Contains(resource.identifier, filter) {
-			continue
-		}
-
-		proceed := i.logger.Prompt(fmt.Sprintf("Are you sure you want to delete instance profile %s?", resource.identifier))
-		if !proceed {
+		if !strings.Contains(resource.Name(), filter) {
 			continue
 		}
 

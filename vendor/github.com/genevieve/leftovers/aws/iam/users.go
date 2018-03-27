@@ -29,7 +29,30 @@ func NewUsers(client usersClient, logger logger, policies userPolicies, accessKe
 	}
 }
 
+func (u Users) ListAll(filter string) ([]common.Deletable, error) {
+	return u.getUsers(filter)
+}
+
 func (u Users) List(filter string) ([]common.Deletable, error) {
+	resources, err := u.getUsers(filter)
+	if err != nil {
+		return nil, err
+	}
+
+	var delete []common.Deletable
+	for _, r := range resources {
+		proceed := u.logger.PromptWithDetails(r.Type(), r.Name())
+		if !proceed {
+			continue
+		}
+
+		delete = append(delete, r)
+	}
+
+	return delete, nil
+}
+
+func (u Users) getUsers(filter string) ([]common.Deletable, error) {
 	users, err := u.client.ListUsers(&awsiam.ListUsersInput{})
 	if err != nil {
 		return nil, fmt.Errorf("Listing users: %s", err)
@@ -40,11 +63,6 @@ func (u Users) List(filter string) ([]common.Deletable, error) {
 		resource := NewUser(u.client, u.policies, u.accessKeys, r.UserName)
 
 		if !strings.Contains(resource.identifier, filter) {
-			continue
-		}
-
-		proceed := u.logger.Prompt(fmt.Sprintf("Are you sure you want to delete user %s?", resource.identifier))
-		if !proceed {
 			continue
 		}
 

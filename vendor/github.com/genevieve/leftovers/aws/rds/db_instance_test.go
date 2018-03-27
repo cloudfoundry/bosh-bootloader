@@ -44,7 +44,7 @@ var _ = Describe("DBInstance", func() {
 
 			It("returns the error", func() {
 				err := dbInstance.Delete()
-				Expect(err).To(MatchError("FAILED deleting db instance the-name: banana"))
+				Expect(err).To(MatchError("FAILED deleting RDS DB Instance the-name: banana"))
 			})
 		})
 	})
@@ -57,7 +57,7 @@ var _ = Describe("DBInstance", func() {
 
 	Describe("Type", func() {
 		It("returns \"db instance\"", func() {
-			Expect(dbInstance.Type()).To(Equal("db instance"))
+			Expect(dbInstance.Type()).To(Equal("RDS DB Instance"))
 		})
 	})
 })

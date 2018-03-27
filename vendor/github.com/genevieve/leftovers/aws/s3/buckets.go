@@ -30,10 +30,33 @@ func NewBuckets(client bucketsClient, logger logger, manager bucketManager) Buck
 	}
 }
 
+func (b Buckets) ListAll(filter string) ([]common.Deletable, error) {
+	return b.get(filter)
+}
+
 func (b Buckets) List(filter string) ([]common.Deletable, error) {
+	resources, err := b.get(filter)
+	if err != nil {
+		return nil, err
+	}
+
+	var delete []common.Deletable
+	for _, r := range resources {
+		proceed := b.logger.PromptWithDetails(r.Type(), r.Name())
+		if !proceed {
+			continue
+		}
+
+		delete = append(delete, r)
+	}
+
+	return delete, nil
+}
+
+func (b Buckets) get(filter string) ([]common.Deletable, error) {
 	buckets, err := b.client.ListBuckets(&awss3.ListBucketsInput{})
 	if err != nil {
-		return nil, fmt.Errorf("Listing buckets: %s", err)
+		return nil, fmt.Errorf("Listing S3 Buckets: %s", err)
 	}
 
 	var resources []common.Deletable
@@ -45,11 +68,6 @@ func (b Buckets) List(filter string) ([]common.Deletable, error) {
 		}
 
 		if !b.manager.IsInRegion(resource.identifier) {
-			continue
-		}
-
-		proceed := b.logger.Prompt(fmt.Sprintf("Are you sure you want to delete bucket %s?", resource.identifier))
-		if !proceed {
 			continue
 		}
 

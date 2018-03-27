@@ -20,12 +20,14 @@ type userPolicies interface {
 type UserPolicies struct {
 	client userPoliciesClient
 	logger logger
+	rtype  string
 }
 
 func NewUserPolicies(client userPoliciesClient, logger logger) UserPolicies {
 	return UserPolicies{
 		client: client,
 		logger: logger,
+		rtype:  "IAM User Policy",
 	}
 }
 
@@ -43,9 +45,9 @@ func (o UserPolicies) Delete(userName string) error {
 			PolicyArn: p.PolicyArn,
 		})
 		if err == nil {
-			o.logger.Printf("SUCCESS detaching user policy %s\n", n)
+			o.logger.Printf("SUCCESS detaching %s %s\n", o.rtype, n)
 		} else {
-			o.logger.Printf("ERROR detaching user policy %s: %s\n", n, err)
+			o.logger.Printf("ERROR detaching %s %s: %s\n", o.rtype, n, err)
 		}
 
 		_, err = o.client.DeleteUserPolicy(&awsiam.DeleteUserPolicyInput{
@@ -53,11 +55,15 @@ func (o UserPolicies) Delete(userName string) error {
 			PolicyName: p.PolicyName,
 		})
 		if err == nil {
-			o.logger.Printf("SUCCESS deleting user policy %s\n", n)
+			o.logger.Printf("SUCCESS deleting %s %s\n", o.rtype, n)
 		} else {
-			o.logger.Printf("ERROR deleting user policy %s: %s\n", n, err)
+			o.logger.Printf("ERROR deleting %s %s: %s\n", o.rtype, n, err)
 		}
 	}
 
 	return nil
+}
+
+func (o UserPolicies) Type() string {
+	return o.rtype
 }

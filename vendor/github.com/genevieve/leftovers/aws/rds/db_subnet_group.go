@@ -10,6 +10,7 @@ type DBSubnetGroup struct {
 	client     dbSubnetGroupsClient
 	name       *string
 	identifier string
+	rtype      string
 }
 
 func NewDBSubnetGroup(client dbSubnetGroupsClient, name *string) DBSubnetGroup {
@@ -17,6 +18,7 @@ func NewDBSubnetGroup(client dbSubnetGroupsClient, name *string) DBSubnetGroup {
 		client:     client,
 		name:       name,
 		identifier: *name,
+		rtype:      "RDS DB Subnet Group",
 	}
 }
 
@@ -26,7 +28,7 @@ func (d DBSubnetGroup) Delete() error {
 	})
 
 	if err != nil {
-		return fmt.Errorf("FAILED deleting db subnet group %s: %s", d.identifier, err)
+		return fmt.Errorf("FAILED deleting %s %s: %s", d.rtype, d.identifier, err)
 	}
 
 	return nil
@@ -37,5 +39,5 @@ func (d DBSubnetGroup) Name() string {
 }
 
 func (d DBSubnetGroup) Type() string {
-	return "db subnet group"
+	return d.rtype
 }

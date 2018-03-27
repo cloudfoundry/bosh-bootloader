@@ -46,7 +46,7 @@ var _ = Describe("Role", func() {
 
 			It("returns the error", func() {
 				err := role.Delete()
-				Expect(err).To(MatchError("FAILED deleting policies for the-name: banana"))
+				Expect(err).To(MatchError("FAILED deleting policies for IAM Role the-name: banana"))
 			})
 		})
 
@@ -57,7 +57,7 @@ var _ = Describe("Role", func() {
 
 			It("returns the error", func() {
 				err := role.Delete()
-				Expect(err).To(MatchError("FAILED deleting role the-name: banana"))
+				Expect(err).To(MatchError("FAILED deleting IAM Role the-name: banana"))
 			})
 		})
 	})
@@ -70,7 +70,7 @@ var _ = Describe("Role", func() {
 
 	Describe("Type", func() {
 		It("returns \"role\"", func() {
-			Expect(role.Type()).To(Equal("role"))
+			Expect(role.Type()).To(Equal("IAM Role"))
 		})
 	})
 })

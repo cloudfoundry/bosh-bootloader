@@ -31,14 +31,11 @@ var _ = Describe("TargetGroups", func() {
 		var filter string
 
 		BeforeEach(func() {
-			logger.PromptCall.Returns.Proceed = true
+			logger.PromptWithDetailsCall.Returns.Proceed = true
 			client.DescribeTargetGroupsCall.Returns.Output = &awselbv2.DescribeTargetGroupsOutput{
 				TargetGroups: []*awselbv2.TargetGroup{{
 					TargetGroupName: aws.String("precursor-banana"),
 					TargetGroupArn:  aws.String("precursor-arn"),
-				}, {
-					TargetGroupName: aws.String("banana"),
-					TargetGroupArn:  aws.String("arn"),
 				}},
 			}
 			filter = "banana"
@@ -48,21 +45,23 @@ var _ = Describe("TargetGroups", func() {
 			items, err := targetGroups.List(filter)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(logger.PromptCall.CallCount).To(Equal(2))
+			Expect(client.DescribeTargetGroupsCall.CallCount).To(Equal(1))
 
-			Expect(items).To(HaveLen(2))
-			// Expect(items).To(HaveKeyWithValue("banana", "arn"))
-			// Expect(items).To(HaveKeyWithValue("precursor-banana", "precursor-arn"))
+			Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(1))
+			Expect(logger.PromptWithDetailsCall.Receives.Type).To(Equal("target group"))
+			Expect(logger.PromptWithDetailsCall.Receives.Name).To(Equal("precursor-banana"))
+
+			Expect(items).To(HaveLen(1))
 		})
 
 		Context("when the client fails to describe target groups", func() {
 			BeforeEach(func() {
-				client.DescribeTargetGroupsCall.Returns.Error = errors.New("banana")
+				client.DescribeTargetGroupsCall.Returns.Error = errors.New("error")
 			})
 
 			It("returns the error", func() {
 				_, err := targetGroups.List(filter)
-				Expect(err).To(MatchError("Describing target groups: banana"))
+				Expect(err).To(MatchError("Describing target groups: error"))
 			})
 		})
 
@@ -71,23 +70,21 @@ var _ = Describe("TargetGroups", func() {
 				items, err := targetGroups.List("kiwi")
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(logger.PromptCall.CallCount).To(Equal(0))
-				Expect(client.DeleteTargetGroupCall.CallCount).To(Equal(0))
+				Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(0))
 				Expect(items).To(HaveLen(0))
 			})
 		})
 
 		Context("when the user doesn't want to delete", func() {
 			BeforeEach(func() {
-				logger.PromptCall.Returns.Proceed = false
+				logger.PromptWithDetailsCall.Returns.Proceed = false
 			})
 
 			It("does not return it in the list", func() {
 				items, err := targetGroups.List(filter)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(logger.PromptCall.CallCount).To(Equal(2))
-				Expect(client.DeleteTargetGroupCall.CallCount).To(Equal(0))
+				Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(1))
 				Expect(items).To(HaveLen(0))
 			})
 		})

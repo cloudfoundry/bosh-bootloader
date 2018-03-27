@@ -15,6 +15,7 @@ var _ = Describe("InstanceProfiles", func() {
 	var (
 		client *fakes.InstanceProfilesClient
 		logger *fakes.Logger
+		filter string
 
 		instanceProfiles iam.InstanceProfiles
 	)
@@ -22,31 +23,30 @@ var _ = Describe("InstanceProfiles", func() {
 	BeforeEach(func() {
 		client = &fakes.InstanceProfilesClient{}
 		logger = &fakes.Logger{}
+		filter = "banana"
 
 		instanceProfiles = iam.NewInstanceProfiles(client, logger)
 	})
 
 	Describe("List", func() {
-		var filter string
-
 		BeforeEach(func() {
-			logger.PromptCall.Returns.Proceed = true
+			logger.PromptWithDetailsCall.Returns.Proceed = true
 			client.ListInstanceProfilesCall.Returns.Output = &awsiam.ListInstanceProfilesOutput{
 				InstanceProfiles: []*awsiam.InstanceProfile{{
 					InstanceProfileName: aws.String("banana-profile"),
 				}},
 			}
-			filter = "banana"
 		})
 
-		It("detaches roles and returns a list of instance profiles to delete", func() {
+		It("returns a list of instance profiles to delete", func() {
 			items, err := instanceProfiles.List(filter)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(client.ListInstanceProfilesCall.CallCount).To(Equal(1))
 
-			Expect(logger.PromptCall.CallCount).To(Equal(1))
-			Expect(logger.PromptCall.Receives.Message).To(Equal("Are you sure you want to delete instance profile banana-profile?"))
+			Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(1))
+			Expect(logger.PromptWithDetailsCall.Receives.Type).To(Equal("IAM Instance Profile"))
+			Expect(logger.PromptWithDetailsCall.Receives.Name).To(Equal("banana-profile"))
 
 			Expect(items).To(HaveLen(1))
 		})
@@ -56,7 +56,7 @@ var _ = Describe("InstanceProfiles", func() {
 				items, err := instanceProfiles.List("kiwi")
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(logger.PromptCall.CallCount).To(Equal(0))
+				Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(0))
 
 				Expect(items).To(HaveLen(0))
 			})
@@ -75,14 +75,14 @@ var _ = Describe("InstanceProfiles", func() {
 
 		Context("when the user responds no to the prompt", func() {
 			BeforeEach(func() {
-				logger.PromptCall.Returns.Proceed = false
+				logger.PromptWithDetailsCall.Returns.Proceed = false
 			})
 
 			It("does not return it in the list", func() {
 				items, err := instanceProfiles.List(filter)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(logger.PromptCall.Receives.Message).To(Equal("Are you sure you want to delete instance profile banana-profile?"))
+				Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(1))
 
 				Expect(items).To(HaveLen(0))
 			})

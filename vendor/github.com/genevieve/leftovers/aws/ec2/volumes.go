@@ -24,25 +24,45 @@ func NewVolumes(client volumesClient, logger logger) Volumes {
 	}
 }
 
+func (v Volumes) ListAll(filter string) ([]common.Deletable, error) {
+	return v.get(filter)
+}
+
 func (v Volumes) List(filter string) ([]common.Deletable, error) {
+	resources, err := v.get(filter)
+	if err != nil {
+		return nil, err
+	}
+
+	var delete []common.Deletable
+	for _, r := range resources {
+		proceed := v.logger.PromptWithDetails(r.Type(), r.Name())
+		if !proceed {
+			continue
+		}
+
+		delete = append(delete, r)
+	}
+
+	return delete, nil
+}
+
+func (v Volumes) get(filter string) ([]common.Deletable, error) {
 	output, err := v.client.DescribeVolumes(&awsec2.DescribeVolumesInput{})
 	if err != nil {
 		return nil, fmt.Errorf("Describing volumes: %s", err)
 	}
 
-	var volumes []common.Deletable
+	var resources []common.Deletable
 	for _, volume := range output.Volumes {
+		resource := NewVolume(v.client, volume.VolumeId)
+
 		if *volume.State != "available" {
 			continue
 		}
 
-		proceed := v.logger.Prompt(fmt.Sprintf("Are you sure you want to delete volume %s?", *volume.VolumeId))
-		if !proceed {
-			continue
-		}
-
-		volumes = append(volumes, NewVolume(v.client, volume.VolumeId))
+		resources = append(resources, resource)
 	}
 
-	return volumes, nil
+	return resources, nil
 }

@@ -35,7 +35,30 @@ func NewVpcs(client vpcsClient,
 	}
 }
 
+func (v Vpcs) ListAll(filter string) ([]common.Deletable, error) {
+	return v.get(filter)
+}
+
 func (v Vpcs) List(filter string) ([]common.Deletable, error) {
+	resources, err := v.get(filter)
+	if err != nil {
+		return nil, err
+	}
+
+	var delete []common.Deletable
+	for _, r := range resources {
+		proceed := v.logger.PromptWithDetails(r.Type(), r.Name())
+		if !proceed {
+			continue
+		}
+
+		delete = append(delete, r)
+	}
+
+	return delete, nil
+}
+
+func (v Vpcs) get(filter string) ([]common.Deletable, error) {
 	output, err := v.client.DescribeVpcs(&awsec2.DescribeVpcsInput{})
 	if err != nil {
 		return nil, fmt.Errorf("Describing vpcs: %s", err)
@@ -50,11 +73,6 @@ func (v Vpcs) List(filter string) ([]common.Deletable, error) {
 		}
 
 		if !strings.Contains(resource.identifier, filter) {
-			continue
-		}
-
-		proceed := v.logger.Prompt(fmt.Sprintf("Are you sure you want to delete vpc %s?", resource.identifier))
-		if !proceed {
 			continue
 		}
 

@@ -41,7 +41,7 @@ var _ = Describe("ServerCertificate", func() {
 
 			It("returns the error", func() {
 				err := serverCertificate.Delete()
-				Expect(err).To(MatchError("FAILED deleting server certificate the-name: banana"))
+				Expect(err).To(MatchError("FAILED deleting IAM Server Certificate the-name: banana"))
 			})
 		})
 	})
@@ -54,7 +54,7 @@ var _ = Describe("ServerCertificate", func() {
 
 	Describe("Type", func() {
 		It("returns \"server certificate\"", func() {
-			Expect(serverCertificate.Type()).To(Equal("server certificate"))
+			Expect(serverCertificate.Type()).To(Equal("IAM Server Certificate"))
 		})
 	})
 })

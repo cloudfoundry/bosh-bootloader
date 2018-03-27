@@ -11,6 +11,7 @@ type Bucket struct {
 	client     bucketsClient
 	name       *string
 	identifier string
+	rtype      string
 }
 
 func NewBucket(client bucketsClient, name *string) Bucket {
@@ -18,6 +19,7 @@ func NewBucket(client bucketsClient, name *string) Bucket {
 		client:     client,
 		name:       name,
 		identifier: *name,
+		rtype:      "S3 Bucket",
 	}
 }
 
@@ -66,7 +68,7 @@ func (b Bucket) Delete() error {
 			return b.Delete()
 		}
 
-		return fmt.Errorf("FAILED deleting bucket %s: %s", *b.name, err)
+		return fmt.Errorf("FAILED deleting %s %s: %s", b.rtype, b.identifier, err)
 	}
 
 	return nil
@@ -77,5 +79,5 @@ func (b Bucket) Name() string {
 }
 
 func (b Bucket) Type() string {
-	return "bucket"
+	return b.rtype
 }

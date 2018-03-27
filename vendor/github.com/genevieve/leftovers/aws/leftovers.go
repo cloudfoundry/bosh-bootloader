@@ -25,69 +25,12 @@ import (
 
 type resource interface {
 	List(filter string) ([]common.Deletable, error)
+	ListAll(filter string) ([]common.Deletable, error)
 }
 
 type Leftovers struct {
 	logger    logger
 	resources []resource
-}
-
-func (l Leftovers) List(filter string) {
-	var deletables []common.Deletable
-
-	l.logger.NoConfirm()
-
-	for _, r := range l.resources {
-		list, err := r.List(filter)
-
-		if err != nil {
-			l.logger.Println(err.Error())
-		}
-
-		deletables = append(deletables, list...)
-	}
-
-	for _, d := range deletables {
-		l.logger.Println(fmt.Sprintf("%s: %s", d.Type(), d.Name()))
-	}
-}
-
-func (l Leftovers) Delete(filter string) error {
-	deletables := [][]common.Deletable{}
-
-	for _, r := range l.resources {
-		list, err := r.List(filter)
-
-		if err != nil {
-			l.logger.Println(err.Error())
-		}
-
-		deletables = append(deletables, list)
-	}
-
-	var wg sync.WaitGroup
-
-	for _, list := range deletables {
-		for _, d := range list {
-			wg.Add(1)
-
-			go func(d common.Deletable) {
-				defer wg.Done()
-
-				l.logger.Println(fmt.Sprintf("Deleting %s.", d.Name()))
-
-				if err := d.Delete(); err != nil {
-					l.logger.Println(err.Error())
-				} else {
-					l.logger.Println(fmt.Sprintf("SUCCESS deleting %s!", d.Name()))
-				}
-			}(d)
-		}
-
-		wg.Wait()
-	}
-
-	return nil
 }
 
 func NewLeftovers(logger logger, accessKeyId, secretAccessKey, region string) (Leftovers, error) {
@@ -127,10 +70,10 @@ func NewLeftovers(logger logger, accessKeyId, secretAccessKey, region string) (L
 	return Leftovers{
 		logger: logger,
 		resources: []resource{
+			iam.NewInstanceProfiles(iamClient, logger),
 			iam.NewRoles(iamClient, logger, rolePolicies),
 			iam.NewUsers(iamClient, logger, userPolicies, accessKeys),
 			iam.NewPolicies(iamClient, logger),
-			iam.NewInstanceProfiles(iamClient, logger),
 			iam.NewServerCertificates(iamClient, logger),
 
 			ec2.NewAddresses(ec2Client, logger),
@@ -152,4 +95,58 @@ func NewLeftovers(logger logger, accessKeyId, secretAccessKey, region string) (L
 			rds.NewDBSubnetGroups(rdsClient, logger),
 		},
 	}, nil
+}
+
+func (l Leftovers) List(filter string) {
+	var all []common.Deletable
+	for _, r := range l.resources {
+		list, err := r.ListAll(filter)
+		if err != nil {
+			l.logger.Println(err.Error())
+		}
+
+		all = append(all, list...)
+	}
+
+	for _, r := range all {
+		l.logger.Println(fmt.Sprintf("%s: %s", r.Type(), r.Name()))
+	}
+}
+
+func (l Leftovers) Delete(filter string) error {
+	deletables := [][]common.Deletable{}
+
+	for _, r := range l.resources {
+		list, err := r.List(filter)
+		if err != nil {
+			l.logger.Println(err.Error())
+		}
+
+		deletables = append(deletables, list)
+	}
+
+	var wg sync.WaitGroup
+
+	for _, resources := range deletables {
+		for _, r := range resources {
+			wg.Add(1)
+
+			go func(r common.Deletable) {
+				defer wg.Done()
+
+				l.logger.Println(fmt.Sprintf("Deleting %s.", r.Name()))
+
+				err := r.Delete()
+				if err != nil {
+					l.logger.Println(err.Error())
+				} else {
+					l.logger.Println(fmt.Sprintf("SUCCESS deleting %s!", r.Name()))
+				}
+			}(r)
+		}
+
+		wg.Wait()
+	}
+
+	return nil
 }

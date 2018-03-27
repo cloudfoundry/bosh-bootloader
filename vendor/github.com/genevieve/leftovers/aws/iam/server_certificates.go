@@ -25,7 +25,30 @@ func NewServerCertificates(client serverCertificatesClient, logger logger) Serve
 	}
 }
 
+func (s ServerCertificates) ListAll(filter string) ([]common.Deletable, error) {
+	return s.getServerCertificates(filter)
+}
+
 func (s ServerCertificates) List(filter string) ([]common.Deletable, error) {
+	resources, err := s.getServerCertificates(filter)
+	if err != nil {
+		return nil, err
+	}
+
+	var delete []common.Deletable
+	for _, r := range resources {
+		proceed := s.logger.PromptWithDetails(r.Type(), r.Name())
+		if !proceed {
+			continue
+		}
+
+		delete = append(delete, r)
+	}
+
+	return delete, nil
+}
+
+func (s ServerCertificates) getServerCertificates(filter string) ([]common.Deletable, error) {
 	certificates, err := s.client.ListServerCertificates(&awsiam.ListServerCertificatesInput{})
 	if err != nil {
 		return nil, fmt.Errorf("Listing server certificates: %s", err)
@@ -35,12 +58,7 @@ func (s ServerCertificates) List(filter string) ([]common.Deletable, error) {
 	for _, c := range certificates.ServerCertificateMetadataList {
 		resource := NewServerCertificate(s.client, c.ServerCertificateName)
 
-		if !strings.Contains(resource.identifier, filter) {
-			continue
-		}
-
-		proceed := s.logger.Prompt(fmt.Sprintf("Are you sure you want to delete server certificate %s?", resource.identifier))
-		if !proceed {
+		if !strings.Contains(resource.Name(), filter) {
 			continue
 		}
 

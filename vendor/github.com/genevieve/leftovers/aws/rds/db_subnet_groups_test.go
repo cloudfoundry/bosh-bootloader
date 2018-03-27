@@ -31,7 +31,7 @@ var _ = Describe("DBSubnetGroups", func() {
 		var filter string
 
 		BeforeEach(func() {
-			logger.PromptCall.Returns.Proceed = true
+			logger.PromptWithDetailsCall.Returns.Proceed = true
 			client.DescribeDBSubnetGroupsCall.Returns.Output = &awsrds.DescribeDBSubnetGroupsOutput{
 				DBSubnetGroups: []*awsrds.DBSubnetGroup{{
 					DBSubnetGroupName: aws.String("banana"),
@@ -45,8 +45,8 @@ var _ = Describe("DBSubnetGroups", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(client.DescribeDBSubnetGroupsCall.CallCount).To(Equal(1))
-
-			Expect(logger.PromptCall.Receives.Message).To(Equal("Are you sure you want to delete db subnet group banana?"))
+			Expect(logger.PromptWithDetailsCall.Receives.Type).To(Equal("RDS DB Subnet Group"))
+			Expect(logger.PromptWithDetailsCall.Receives.Name).To(Equal("banana"))
 
 			Expect(items).To(HaveLen(1))
 		})
@@ -58,7 +58,7 @@ var _ = Describe("DBSubnetGroups", func() {
 
 			It("returns the error", func() {
 				_, err := dbSubnetGroups.List(filter)
-				Expect(err).To(MatchError("Describing db subnet groups: some error"))
+				Expect(err).To(MatchError("Describing RDS DB Subnet Groups: some error"))
 			})
 		})
 
@@ -68,21 +68,21 @@ var _ = Describe("DBSubnetGroups", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(client.DescribeDBSubnetGroupsCall.CallCount).To(Equal(1))
-				Expect(logger.PromptCall.CallCount).To(Equal(0))
+				Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(0))
 				Expect(items).To(HaveLen(0))
 			})
 		})
 
 		Context("when the user responds no to the prompt", func() {
 			BeforeEach(func() {
-				logger.PromptCall.Returns.Proceed = false
+				logger.PromptWithDetailsCall.Returns.Proceed = false
 			})
 
 			It("does not return it in the list", func() {
 				items, err := dbSubnetGroups.List(filter)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(logger.PromptCall.Receives.Message).To(Equal("Are you sure you want to delete db subnet group banana?"))
+				Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(1))
 				Expect(items).To(HaveLen(0))
 			})
 		})

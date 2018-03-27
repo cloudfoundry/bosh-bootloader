@@ -46,7 +46,7 @@ var _ = Describe("Instance", func() {
 
 			It("returns the error", func() {
 				err := instance.Delete()
-				Expect(err).To(MatchError("FAILED terminating instance the-id (KeyPairName:the-key-name): banana"))
+				Expect(err).To(MatchError("FAILED deleting EC2 Instance the-id (KeyPairName:the-key-name): banana"))
 			})
 		})
 	})
@@ -59,7 +59,7 @@ var _ = Describe("Instance", func() {
 
 	Describe("Type", func() {
 		It("returns \"instance\"", func() {
-			Expect(instance.Type()).To(Equal("instance"))
+			Expect(instance.Type()).To(Equal("EC2 Instance"))
 		})
 	})
 })

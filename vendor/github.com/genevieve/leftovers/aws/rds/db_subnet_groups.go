@@ -25,10 +25,33 @@ func NewDBSubnetGroups(client dbSubnetGroupsClient, logger logger) DBSubnetGroup
 	}
 }
 
+func (d DBSubnetGroups) ListAll(filter string) ([]common.Deletable, error) {
+	return d.get(filter)
+}
+
 func (d DBSubnetGroups) List(filter string) ([]common.Deletable, error) {
+	resources, err := d.get(filter)
+	if err != nil {
+		return nil, err
+	}
+
+	var delete []common.Deletable
+	for _, r := range resources {
+		proceed := d.logger.PromptWithDetails(r.Type(), r.Name())
+		if !proceed {
+			continue
+		}
+
+		delete = append(delete, r)
+	}
+
+	return delete, nil
+}
+
+func (d DBSubnetGroups) get(filter string) ([]common.Deletable, error) {
 	dbSubnetGroups, err := d.client.DescribeDBSubnetGroups(&awsrds.DescribeDBSubnetGroupsInput{})
 	if err != nil {
-		return nil, fmt.Errorf("Describing db subnet groups: %s", err)
+		return nil, fmt.Errorf("Describing RDS DB Subnet Groups: %s", err)
 	}
 
 	var resources []common.Deletable
@@ -36,11 +59,6 @@ func (d DBSubnetGroups) List(filter string) ([]common.Deletable, error) {
 		resource := NewDBSubnetGroup(d.client, db.DBSubnetGroupName)
 
 		if !strings.Contains(resource.identifier, filter) {
-			continue
-		}
-
-		proceed := d.logger.Prompt(fmt.Sprintf("Are you sure you want to delete db subnet group %s?", resource.identifier))
-		if !proceed {
 			continue
 		}
 

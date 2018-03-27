@@ -11,6 +11,7 @@ type Address struct {
 	publicIp     *string
 	allocationId *string
 	identifier   string
+	rtype        string
 }
 
 func NewAddress(client addressesClient, publicIp, allocationId *string) Address {
@@ -19,6 +20,7 @@ func NewAddress(client addressesClient, publicIp, allocationId *string) Address 
 		publicIp:     publicIp,
 		allocationId: allocationId,
 		identifier:   *publicIp,
+		rtype:        "EC2 Address",
 	}
 }
 
@@ -28,7 +30,7 @@ func (a Address) Delete() error {
 	})
 
 	if err != nil {
-		return fmt.Errorf("FAILED releasing address %s: %s", a.identifier, err)
+		return fmt.Errorf("FAILED deleting %s %s: %s", a.rtype, a.identifier, err)
 	}
 
 	return nil
@@ -39,5 +41,5 @@ func (a Address) Name() string {
 }
 
 func (a Address) Type() string {
-	return "address"
+	return a.rtype
 }

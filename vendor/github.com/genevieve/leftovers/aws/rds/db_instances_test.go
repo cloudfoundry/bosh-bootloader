@@ -31,7 +31,7 @@ var _ = Describe("DBInstances", func() {
 		var filter string
 
 		BeforeEach(func() {
-			logger.PromptCall.Returns.Proceed = true
+			logger.PromptWithDetailsCall.Returns.Proceed = true
 			client.DescribeDBInstancesCall.Returns.Output = &awsrds.DescribeDBInstancesOutput{
 				DBInstances: []*awsrds.DBInstance{{
 					DBInstanceIdentifier: aws.String("banana"),
@@ -46,8 +46,8 @@ var _ = Describe("DBInstances", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(client.DescribeDBInstancesCall.CallCount).To(Equal(1))
-
-			Expect(logger.PromptCall.Receives.Message).To(Equal("Are you sure you want to delete db instance banana?"))
+			Expect(logger.PromptWithDetailsCall.Receives.Type).To(Equal("RDS DB Instance"))
+			Expect(logger.PromptWithDetailsCall.Receives.Name).To(Equal("banana"))
 
 			Expect(items).To(HaveLen(1))
 		})
@@ -59,7 +59,7 @@ var _ = Describe("DBInstances", func() {
 
 			It("returns the error", func() {
 				_, err := dbInstances.List(filter)
-				Expect(err).To(MatchError("Describing db instances: some error"))
+				Expect(err).To(MatchError("Describing RDS DB Instances: some error"))
 			})
 		})
 
@@ -69,7 +69,7 @@ var _ = Describe("DBInstances", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(client.DescribeDBInstancesCall.CallCount).To(Equal(1))
-				Expect(logger.PromptCall.CallCount).To(Equal(0))
+				Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(0))
 				Expect(items).To(HaveLen(0))
 			})
 		})
@@ -88,21 +88,21 @@ var _ = Describe("DBInstances", func() {
 				items, err := dbInstances.List(filter)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(logger.PromptCall.CallCount).To(Equal(0))
+				Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(0))
 				Expect(items).To(HaveLen(0))
 			})
 		})
 
 		Context("when the user responds no to the prompt", func() {
 			BeforeEach(func() {
-				logger.PromptCall.Returns.Proceed = false
+				logger.PromptWithDetailsCall.Returns.Proceed = false
 			})
 
 			It("does not return it in the list", func() {
 				items, err := dbInstances.List(filter)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(logger.PromptCall.Receives.Message).To(Equal("Are you sure you want to delete db instance banana?"))
+				Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(1))
 				Expect(items).To(HaveLen(0))
 			})
 		})

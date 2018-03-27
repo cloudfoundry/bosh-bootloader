@@ -30,7 +30,7 @@ var _ = Describe("KeyPairs", func() {
 		var filter string
 
 		BeforeEach(func() {
-			logger.PromptCall.Returns.Proceed = true
+			logger.PromptWithDetailsCall.Returns.Proceed = true
 			client.DescribeKeyPairsCall.Returns.Output = &awsec2.DescribeKeyPairsOutput{
 				KeyPairs: []*awsec2.KeyPairInfo{{
 					KeyName: aws.String("banana"),
@@ -44,11 +44,11 @@ var _ = Describe("KeyPairs", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(client.DescribeKeyPairsCall.CallCount).To(Equal(1))
-
-			Expect(logger.PromptCall.Receives.Message).To(Equal("Are you sure you want to delete key pair banana?"))
+			Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(1))
+			Expect(logger.PromptWithDetailsCall.Receives.Type).To(Equal("key pair"))
+			Expect(logger.PromptWithDetailsCall.Receives.Name).To(Equal("banana"))
 
 			Expect(items).To(HaveLen(1))
-			// Expect(items).To(HaveKeyWithValue("banana", ""))
 		})
 
 		Context("when the client fails to list key pairs", func() {
@@ -67,21 +67,21 @@ var _ = Describe("KeyPairs", func() {
 				items, err := keys.List("kiwi")
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(logger.PromptCall.CallCount).To(Equal(0))
+				Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(0))
 				Expect(items).To(HaveLen(0))
 			})
 		})
 
 		Context("when the user responds no to the prompt", func() {
 			BeforeEach(func() {
-				logger.PromptCall.Returns.Proceed = false
+				logger.PromptWithDetailsCall.Returns.Proceed = false
 			})
 
 			It("does not delete the key pair", func() {
 				items, err := keys.List(filter)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(logger.PromptCall.Receives.Message).To(Equal("Are you sure you want to delete key pair banana?"))
+				Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(1))
 				Expect(items).To(HaveLen(0))
 			})
 		})

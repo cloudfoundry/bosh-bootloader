@@ -27,7 +27,30 @@ func NewRoles(client rolesClient, logger logger, policies rolePolicies) Roles {
 	}
 }
 
-func (r Roles) List(filter string) ([]common.Deletable, error) {
+func (r Roles) ListAll(filter string) ([]common.Deletable, error) {
+	return r.getRoles(filter)
+}
+
+func (o Roles) List(filter string) ([]common.Deletable, error) {
+	resources, err := o.getRoles(filter)
+	if err != nil {
+		return nil, err
+	}
+
+	var delete []common.Deletable
+	for _, r := range resources {
+		proceed := o.logger.PromptWithDetails(r.Type(), r.Name())
+		if !proceed {
+			continue
+		}
+
+		delete = append(delete, r)
+	}
+
+	return delete, nil
+}
+
+func (r Roles) getRoles(filter string) ([]common.Deletable, error) {
 	roles, err := r.client.ListRoles(&awsiam.ListRolesInput{})
 	if err != nil {
 		return nil, fmt.Errorf("Listing roles: %s", err)
@@ -37,12 +60,7 @@ func (r Roles) List(filter string) ([]common.Deletable, error) {
 	for _, role := range roles.Roles {
 		resource := NewRole(r.client, r.policies, role.RoleName)
 
-		if !strings.Contains(resource.identifier, filter) {
-			continue
-		}
-
-		proceed := r.logger.Prompt(fmt.Sprintf("Are you sure you want to delete role %s?", resource.identifier))
-		if !proceed {
+		if !strings.Contains(resource.Name(), filter) {
 			continue
 		}
 

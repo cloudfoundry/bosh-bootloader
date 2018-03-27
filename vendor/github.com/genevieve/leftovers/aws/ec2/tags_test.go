@@ -30,7 +30,7 @@ var _ = Describe("Tags", func() {
 		var filter string
 
 		BeforeEach(func() {
-			logger.PromptCall.Returns.Proceed = true
+			logger.PromptWithDetailsCall.Returns.Proceed = true
 			client.DescribeTagsCall.Returns.Output = &awsec2.DescribeTagsOutput{
 				Tags: []*awsec2.TagDescription{{
 					Key:        aws.String("the-key"),
@@ -46,11 +46,11 @@ var _ = Describe("Tags", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(client.DescribeTagsCall.CallCount).To(Equal(1))
-
-			Expect(logger.PromptCall.Receives.Message).To(Equal("Are you sure you want to delete tag banana-tag?"))
+			Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(1))
+			Expect(logger.PromptWithDetailsCall.Receives.Type).To(Equal("tag"))
+			Expect(logger.PromptWithDetailsCall.Receives.Name).To(Equal("banana-tag"))
 
 			Expect(items).To(HaveLen(1))
-			// Expect(items).To(HaveKeyWithValue("the-key", "the-resource-id"))
 		})
 
 		Context("when the client fails to list tags", func() {
@@ -70,21 +70,21 @@ var _ = Describe("Tags", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(client.DescribeTagsCall.CallCount).To(Equal(1))
-				Expect(logger.PromptCall.CallCount).To(Equal(0))
+				Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(0))
 				Expect(items).To(HaveLen(0))
 			})
 		})
 
 		Context("when the user responds no to the prompt", func() {
 			BeforeEach(func() {
-				logger.PromptCall.Returns.Proceed = false
+				logger.PromptWithDetailsCall.Returns.Proceed = false
 			})
 
 			It("does not return it in the list", func() {
 				items, err := tags.List(filter)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(logger.PromptCall.Receives.Message).To(Equal("Are you sure you want to delete tag banana-tag?"))
+				Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(1))
 				Expect(items).To(HaveLen(0))
 			})
 		})

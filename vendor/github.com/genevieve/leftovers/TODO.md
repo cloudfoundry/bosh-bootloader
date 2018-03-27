@@ -1,3 +1,0 @@
-- Can we filter the disks list api call with len of users eq 0?
-- Add resource type to logging.
-- What if the vsphere resources took in a root folder object that we could mock?

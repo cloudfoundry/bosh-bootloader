@@ -20,12 +20,14 @@ type internetGateways interface {
 type InternetGateways struct {
 	client internetGatewaysClient
 	logger logger
+	rtype  string
 }
 
 func NewInternetGateways(client internetGatewaysClient, logger logger) InternetGateways {
 	return InternetGateways{
 		client: client,
 		logger: logger,
+		rtype:  "EC2 Internet Gateway",
 	}
 }
 
@@ -37,7 +39,7 @@ func (n InternetGateways) Delete(vpcId string) error {
 		}},
 	})
 	if err != nil {
-		return fmt.Errorf("Describing internet gateways: %s", err)
+		return fmt.Errorf("Describing EC2 Internet Gateways: %s", err)
 	}
 
 	for _, i := range igws.InternetGateways {
@@ -48,18 +50,18 @@ func (n InternetGateways) Delete(vpcId string) error {
 			VpcId:             aws.String(vpcId),
 		})
 		if err == nil {
-			n.logger.Printf("SUCCESS detaching internet gateway %s\n", igwId)
+			n.logger.Printf("SUCCESS detaching %s %s\n", n.rtype, igwId)
 		} else {
-			n.logger.Printf("ERROR detaching internet gateway %s: %s\n", igwId, err)
+			n.logger.Printf("ERROR detaching %s %s: %s\n", n.rtype, igwId, err)
 		}
 
 		_, err = n.client.DeleteInternetGateway(&awsec2.DeleteInternetGatewayInput{
 			InternetGatewayId: i.InternetGatewayId,
 		})
 		if err == nil {
-			n.logger.Printf("SUCCESS deleting internet gateway %s\n", igwId)
+			n.logger.Printf("SUCCESS deleting %s %s\n", n.rtype, igwId)
 		} else {
-			n.logger.Printf("ERROR deleting internet gateway %s: %s\n", igwId, err)
+			n.logger.Printf("ERROR deleting %s %s: %s\n", n.rtype, igwId, err)
 		}
 	}
 

@@ -10,6 +10,7 @@ type ServerCertificate struct {
 	client     serverCertificatesClient
 	name       *string
 	identifier string
+	rtype      string
 }
 
 func NewServerCertificate(client serverCertificatesClient, name *string) ServerCertificate {
@@ -17,6 +18,7 @@ func NewServerCertificate(client serverCertificatesClient, name *string) ServerC
 		client:     client,
 		name:       name,
 		identifier: *name,
+		rtype:      "IAM Server Certificate",
 	}
 }
 
@@ -26,7 +28,7 @@ func (s ServerCertificate) Delete() error {
 	})
 
 	if err != nil {
-		return fmt.Errorf("FAILED deleting server certificate %s: %s", s.identifier, err)
+		return fmt.Errorf("FAILED deleting %s %s: %s", s.rtype, s.identifier, err)
 	}
 
 	return nil
@@ -37,5 +39,5 @@ func (s ServerCertificate) Name() string {
 }
 
 func (s ServerCertificate) Type() string {
-	return "server certificate"
+	return s.rtype
 }

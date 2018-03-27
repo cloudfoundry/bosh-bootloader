@@ -69,7 +69,7 @@ var _ = Describe("Policy", func() {
 
 				It("returns the error", func() {
 					err := policy.Delete()
-					Expect(err).To(MatchError("FAILED deleting version v1 of policy the-name: banana"))
+					Expect(err).To(MatchError("FAILED deleting version v1 of IAM Policy the-name: banana"))
 				})
 			})
 		})
@@ -81,7 +81,7 @@ var _ = Describe("Policy", func() {
 
 			It("returns the error", func() {
 				err := policy.Delete()
-				Expect(err).To(MatchError("FAILED deleting policy the-name: banana"))
+				Expect(err).To(MatchError("FAILED deleting IAM Policy the-name: banana"))
 			})
 		})
 
@@ -92,7 +92,7 @@ var _ = Describe("Policy", func() {
 
 			It("returns the error", func() {
 				err := policy.Delete()
-				Expect(err).To(MatchError("FAILED listing versions for policy the-name: banana"))
+				Expect(err).To(MatchError("FAILED listing versions for IAM Policy the-name: banana"))
 			})
 		})
 	})
@@ -105,7 +105,7 @@ var _ = Describe("Policy", func() {
 
 	Describe("Type", func() {
 		It("returns \"policy\"", func() {
-			Expect(policy.Type()).To(Equal("policy"))
+			Expect(policy.Type()).To(Equal("IAM Policy"))
 		})
 	})
 })

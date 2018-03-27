@@ -16,6 +16,7 @@ var _ = Describe("Roles", func() {
 		client   *fakes.RolesClient
 		logger   *fakes.Logger
 		policies *fakes.RolePolicies
+		filter   string
 
 		roles iam.Roles
 	)
@@ -24,21 +25,19 @@ var _ = Describe("Roles", func() {
 		client = &fakes.RolesClient{}
 		logger = &fakes.Logger{}
 		policies = &fakes.RolePolicies{}
+		filter = "banana"
 
 		roles = iam.NewRoles(client, logger, policies)
 	})
 
 	Describe("List", func() {
-		var filter string
-
 		BeforeEach(func() {
-			logger.PromptCall.Returns.Proceed = true
+			logger.PromptWithDetailsCall.Returns.Proceed = true
 			client.ListRolesCall.Returns.Output = &awsiam.ListRolesOutput{
 				Roles: []*awsiam.Role{{
 					RoleName: aws.String("banana-role"),
 				}},
 			}
-			filter = "banana"
 		})
 
 		It("returns a list of iam roles and associated policies to delete", func() {
@@ -46,11 +45,11 @@ var _ = Describe("Roles", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(client.ListRolesCall.CallCount).To(Equal(1))
-
-			Expect(logger.PromptCall.CallCount).To(Equal(1))
+			Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(1))
+			Expect(logger.PromptWithDetailsCall.Receives.Type).To(Equal("IAM Role"))
+			Expect(logger.PromptWithDetailsCall.Receives.Name).To(Equal("banana-role"))
 
 			Expect(items).To(HaveLen(1))
-			// Expect(items).To(HaveKeyWithValue("banana-role", ""))
 		})
 
 		Context("when the client fails to list roles", func() {
@@ -69,21 +68,21 @@ var _ = Describe("Roles", func() {
 				items, err := roles.List("kiwi")
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(logger.PromptCall.CallCount).To(Equal(0))
+				Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(0))
 				Expect(items).To(HaveLen(0))
 			})
 		})
 
 		Context("when the user responds no to the prompt", func() {
 			BeforeEach(func() {
-				logger.PromptCall.Returns.Proceed = false
+				logger.PromptWithDetailsCall.Returns.Proceed = false
 			})
 
 			It("does not return it in the list", func() {
 				items, err := roles.List(filter)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(logger.PromptCall.Receives.Message).To(Equal("Are you sure you want to delete role banana-role?"))
+				Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(1))
 				Expect(items).To(HaveLen(0))
 			})
 		})

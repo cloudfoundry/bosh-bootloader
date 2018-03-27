@@ -12,6 +12,7 @@ type User struct {
 	accessKeys accessKeys
 	name       *string
 	identifier string
+	rtype      string
 }
 
 func NewUser(client usersClient, policies userPolicies, accessKeys accessKeys, name *string) User {
@@ -21,18 +22,19 @@ func NewUser(client usersClient, policies userPolicies, accessKeys accessKeys, n
 		accessKeys: accessKeys,
 		name:       name,
 		identifier: *name,
+		rtype:      "IAM User",
 	}
 }
 
 func (u User) Delete() error {
 	err := u.accessKeys.Delete(*u.name)
 	if err != nil {
-		return fmt.Errorf("FAILED deleting access keys for %s: %s", u.identifier, err)
+		return fmt.Errorf("FAILED deleting access keys for %s %s: %s", u.rtype, u.identifier, err)
 	}
 
 	err = u.policies.Delete(*u.name)
 	if err != nil {
-		return fmt.Errorf("FAILED deleting policies for %s: %s", u.identifier, err)
+		return fmt.Errorf("FAILED deleting policies for %s %s: %s", u.rtype, u.identifier, err)
 	}
 
 	_, err = u.client.DeleteUser(&awsiam.DeleteUserInput{
@@ -40,7 +42,7 @@ func (u User) Delete() error {
 	})
 
 	if err != nil {
-		return fmt.Errorf("FAILED deleting user %s: %s", u.identifier, err)
+		return fmt.Errorf("FAILED deleting %s %s: %s", u.rtype, u.identifier, err)
 	}
 
 	return err
@@ -51,5 +53,5 @@ func (u User) Name() string {
 }
 
 func (u User) Type() string {
-	return "user"
+	return u.rtype
 }

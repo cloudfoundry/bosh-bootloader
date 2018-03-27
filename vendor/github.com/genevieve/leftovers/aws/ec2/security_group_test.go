@@ -25,10 +25,8 @@ var _ = Describe("SecurityGroup", func() {
 		id = aws.String("the-id")
 		groupName = aws.String("the-group-name")
 		tags := []*awsec2.Tag{}
-		ingressPerms := []*awsec2.IpPermission{}
-		egressPerms := []*awsec2.IpPermission{}
 
-		securityGroup = ec2.NewSecurityGroup(client, id, groupName, tags, ingressPerms, egressPerms)
+		securityGroup = ec2.NewSecurityGroup(client, id, groupName, tags)
 	})
 
 	Describe("Delete", func() {
@@ -50,65 +48,6 @@ var _ = Describe("SecurityGroup", func() {
 				Expect(err).To(MatchError("FAILED deleting security group the-group-name: banana"))
 			})
 		})
-
-		Context("when the client has ingress rules", func() {
-			BeforeEach(func() {
-				ingressPerms := []*awsec2.IpPermission{{
-					IpProtocol: aws.String("tcp"),
-				}}
-
-				securityGroup = ec2.NewSecurityGroup(client, id, groupName, []*awsec2.Tag{}, ingressPerms, []*awsec2.IpPermission{})
-			})
-
-			It("revokes them", func() {
-				err := securityGroup.Delete()
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(client.RevokeSecurityGroupIngressCall.CallCount).To(Equal(1))
-				Expect(client.RevokeSecurityGroupIngressCall.Receives.Input.GroupId).To(Equal(aws.String("the-group-name")))
-				Expect(client.RevokeSecurityGroupIngressCall.Receives.Input.IpPermissions[0].IpProtocol).To(Equal(aws.String("tcp")))
-			})
-
-			Context("when the client fails to revoke ingress rules", func() {
-				BeforeEach(func() {
-					client.RevokeSecurityGroupIngressCall.Returns.Error = errors.New("some error")
-				})
-
-				It("logs the error", func() {
-					err := securityGroup.Delete()
-					Expect(err).To(MatchError("ERROR revoking security group ingress for the-group-name: some error\n"))
-				})
-			})
-		})
-
-		Context("when the client has egress rules", func() {
-			BeforeEach(func() {
-				egressPerms := []*awsec2.IpPermission{{
-					IpProtocol: aws.String("tcp"),
-				}}
-				securityGroup = ec2.NewSecurityGroup(client, id, groupName, []*awsec2.Tag{}, []*awsec2.IpPermission{}, egressPerms)
-			})
-
-			It("revokes them", func() {
-				err := securityGroup.Delete()
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(client.RevokeSecurityGroupEgressCall.CallCount).To(Equal(1))
-				Expect(client.RevokeSecurityGroupEgressCall.Receives.Input.GroupId).To(Equal(aws.String("the-group-name")))
-				Expect(client.RevokeSecurityGroupEgressCall.Receives.Input.IpPermissions[0].IpProtocol).To(Equal(aws.String("tcp")))
-			})
-
-			Context("when the client fails to revoke egress rules", func() {
-				BeforeEach(func() {
-					client.RevokeSecurityGroupEgressCall.Returns.Error = errors.New("some error")
-				})
-
-				It("logs the error", func() {
-					err := securityGroup.Delete()
-					Expect(err).To(MatchError("ERROR revoking security group egress for the-group-name: some error\n"))
-				})
-			})
-		})
 	})
 
 	Describe("Name", func() {
@@ -118,7 +57,7 @@ var _ = Describe("SecurityGroup", func() {
 	})
 
 	Describe("Type", func() {
-		It("returns \"security group\"", func() {
+		It("returns the type", func() {
 			Expect(securityGroup.Type()).To(Equal("security group"))
 		})
 	})

@@ -25,7 +25,30 @@ func NewNetworkInterfaces(client networkInterfacesClient, logger logger) Network
 	}
 }
 
+func (e NetworkInterfaces) ListAll(filter string) ([]common.Deletable, error) {
+	return e.get(filter)
+}
+
 func (e NetworkInterfaces) List(filter string) ([]common.Deletable, error) {
+	resources, err := e.get(filter)
+	if err != nil {
+		return nil, err
+	}
+
+	var delete []common.Deletable
+	for _, r := range resources {
+		proceed := e.logger.PromptWithDetails(r.Type(), r.Name())
+		if !proceed {
+			continue
+		}
+
+		delete = append(delete, r)
+	}
+
+	return delete, nil
+}
+
+func (e NetworkInterfaces) get(filter string) ([]common.Deletable, error) {
 	networkInterfaces, err := e.client.DescribeNetworkInterfaces(&awsec2.DescribeNetworkInterfacesInput{})
 	if err != nil {
 		return nil, fmt.Errorf("Describing network interfaces: %s", err)
@@ -36,11 +59,6 @@ func (e NetworkInterfaces) List(filter string) ([]common.Deletable, error) {
 		resource := NewNetworkInterface(e.client, i.NetworkInterfaceId, i.TagSet)
 
 		if !strings.Contains(resource.identifier, filter) {
-			continue
-		}
-
-		proceed := e.logger.Prompt(fmt.Sprintf("Are you sure you want to delete network interface %s?", resource.identifier))
-		if !proceed {
 			continue
 		}
 

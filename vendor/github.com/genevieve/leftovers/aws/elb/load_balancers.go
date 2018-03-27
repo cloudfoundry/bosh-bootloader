@@ -25,7 +25,30 @@ func NewLoadBalancers(client loadBalancersClient, logger logger) LoadBalancers {
 	}
 }
 
+func (l LoadBalancers) ListAll(filter string) ([]common.Deletable, error) {
+	return l.get(filter)
+}
+
 func (l LoadBalancers) List(filter string) ([]common.Deletable, error) {
+	resources, err := l.get(filter)
+	if err != nil {
+		return nil, err
+	}
+
+	var delete []common.Deletable
+	for _, r := range resources {
+		proceed := l.logger.PromptWithDetails(r.Type(), r.Name())
+		if !proceed {
+			continue
+		}
+
+		delete = append(delete, r)
+	}
+
+	return delete, nil
+}
+
+func (l LoadBalancers) get(filter string) ([]common.Deletable, error) {
 	loadBalancers, err := l.client.DescribeLoadBalancers(&awselb.DescribeLoadBalancersInput{})
 	if err != nil {
 		return nil, fmt.Errorf("Describing load balancers: %s", err)
@@ -36,11 +59,6 @@ func (l LoadBalancers) List(filter string) ([]common.Deletable, error) {
 		resource := NewLoadBalancer(l.client, lb.LoadBalancerName)
 
 		if !strings.Contains(resource.identifier, filter) {
-			continue
-		}
-
-		proceed := l.logger.Prompt(fmt.Sprintf("Are you sure you want to delete load balancer %s?", resource.identifier))
-		if !proceed {
 			continue
 		}
 

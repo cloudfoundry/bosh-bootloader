@@ -33,7 +33,7 @@ var _ = Describe("Vpcs", func() {
 		var filter string
 
 		BeforeEach(func() {
-			logger.PromptCall.Returns.Proceed = true
+			logger.PromptWithDetailsCall.Returns.Proceed = true
 			client.DescribeVpcsCall.Returns.Output = &awsec2.DescribeVpcsOutput{
 				Vpcs: []*awsec2.Vpc{{
 					IsDefault: aws.Bool(false),
@@ -52,11 +52,11 @@ var _ = Describe("Vpcs", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(client.DescribeVpcsCall.CallCount).To(Equal(1))
-
-			Expect(logger.PromptCall.Receives.Message).To(Equal("Are you sure you want to delete vpc the-vpc-id (Name:banana)?"))
+			Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(1))
+			Expect(logger.PromptWithDetailsCall.Receives.Type).To(Equal("vpc"))
+			Expect(logger.PromptWithDetailsCall.Receives.Name).To(Equal("the-vpc-id (Name:banana)"))
 
 			Expect(items).To(HaveLen(1))
-			// Expect(items).To(HaveKeyWithValue("the-vpc-id (Name:banana)", "the-vpc-id"))
 		})
 
 		Context("when the vpc tags contain the filter", func() {
@@ -81,7 +81,6 @@ var _ = Describe("Vpcs", func() {
 			It("does not return it in the list", func() {
 				items, err := vpcs.List(filter)
 				Expect(err).NotTo(HaveOccurred())
-
 				Expect(items).To(HaveLen(0))
 			})
 		})
@@ -100,9 +99,8 @@ var _ = Describe("Vpcs", func() {
 				items, err := vpcs.List("the-vpc")
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(logger.PromptCall.Receives.Message).To(Equal("Are you sure you want to delete vpc the-vpc-id?"))
+				Expect(logger.PromptWithDetailsCall.Receives.Name).To(Equal("the-vpc-id"))
 				Expect(items).To(HaveLen(1))
-				// Expect(items).To(HaveKeyWithValue("the-vpc-id", "the-vpc-id"))
 			})
 		})
 
@@ -119,14 +117,14 @@ var _ = Describe("Vpcs", func() {
 
 		Context("when the user responds no to the prompt", func() {
 			BeforeEach(func() {
-				logger.PromptCall.Returns.Proceed = false
+				logger.PromptWithDetailsCall.Returns.Proceed = false
 			})
 
 			It("does not return it in the list", func() {
 				items, err := vpcs.List(filter)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(logger.PromptCall.Receives.Message).To(Equal("Are you sure you want to delete vpc the-vpc-id (Name:banana)?"))
+				Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(1))
 				Expect(items).To(HaveLen(0))
 			})
 		})

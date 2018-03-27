@@ -11,6 +11,7 @@ type Policy struct {
 	name       *string
 	arn        *string
 	identifier string
+	rtype      string
 }
 
 func NewPolicy(client policiesClient, name, arn *string) Policy {
@@ -19,13 +20,14 @@ func NewPolicy(client policiesClient, name, arn *string) Policy {
 		name:       name,
 		arn:        arn,
 		identifier: *name,
+		rtype:      "IAM Policy",
 	}
 }
 
 func (p Policy) Delete() error {
 	versions, err := p.client.ListPolicyVersions(&awsiam.ListPolicyVersionsInput{PolicyArn: p.arn})
 	if err != nil {
-		return fmt.Errorf("FAILED listing versions for policy %s: %s", p.identifier, err)
+		return fmt.Errorf("FAILED listing versions for %s %s: %s", p.rtype, p.identifier, err)
 	}
 
 	for _, v := range versions.Versions {
@@ -35,7 +37,7 @@ func (p Policy) Delete() error {
 				VersionId: v.VersionId,
 			})
 			if err != nil {
-				return fmt.Errorf("FAILED deleting version %s of policy %s: %s", *v.VersionId, p.identifier, err)
+				return fmt.Errorf("FAILED deleting version %s of %s %s: %s", *v.VersionId, p.rtype, p.identifier, err)
 			}
 		}
 	}
@@ -45,7 +47,7 @@ func (p Policy) Delete() error {
 	})
 
 	if err != nil {
-		return fmt.Errorf("FAILED deleting policy %s: %s", p.identifier, err)
+		return fmt.Errorf("FAILED deleting %s %s: %s", p.rtype, p.identifier, err)
 	}
 
 	return nil
@@ -56,5 +58,5 @@ func (p Policy) Name() string {
 }
 
 func (p Policy) Type() string {
-	return "policy"
+	return p.rtype
 }

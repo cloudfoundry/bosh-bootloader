@@ -54,8 +54,8 @@ var _ = Describe("InternetGateways", func() {
 			Expect(client.DeleteInternetGatewayCall.Receives.Input.InternetGatewayId).To(Equal(aws.String("the-gateway-id")))
 
 			Expect(logger.PrintfCall.Messages).To(Equal([]string{
-				"SUCCESS detaching internet gateway the-gateway-id\n",
-				"SUCCESS deleting internet gateway the-gateway-id\n",
+				"SUCCESS detaching EC2 Internet Gateway the-gateway-id\n",
+				"SUCCESS deleting EC2 Internet Gateway the-gateway-id\n",
 			}))
 		})
 
@@ -66,7 +66,7 @@ var _ = Describe("InternetGateways", func() {
 
 			It("returns the error and does not try deleting them", func() {
 				err := gateways.Delete("banana")
-				Expect(err).To(MatchError("Describing internet gateways: some error"))
+				Expect(err).To(MatchError("Describing EC2 Internet Gateways: some error"))
 
 				Expect(client.DetachInternetGatewayCall.CallCount).To(Equal(0))
 				Expect(client.DeleteInternetGatewayCall.CallCount).To(Equal(0))
@@ -84,8 +84,8 @@ var _ = Describe("InternetGateways", func() {
 
 				Expect(client.DeleteInternetGatewayCall.CallCount).To(Equal(1))
 				Expect(logger.PrintfCall.Messages).To(Equal([]string{
-					"ERROR detaching internet gateway the-gateway-id: some error\n",
-					"SUCCESS deleting internet gateway the-gateway-id\n",
+					"ERROR detaching EC2 Internet Gateway the-gateway-id: some error\n",
+					"SUCCESS deleting EC2 Internet Gateway the-gateway-id\n",
 				}))
 			})
 		})
@@ -100,8 +100,8 @@ var _ = Describe("InternetGateways", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(logger.PrintfCall.Messages).To(Equal([]string{
-					"SUCCESS detaching internet gateway the-gateway-id\n",
-					"ERROR deleting internet gateway the-gateway-id: some error\n",
+					"SUCCESS detaching EC2 Internet Gateway the-gateway-id\n",
+					"ERROR deleting EC2 Internet Gateway the-gateway-id: some error\n",
 				}))
 			})
 		})

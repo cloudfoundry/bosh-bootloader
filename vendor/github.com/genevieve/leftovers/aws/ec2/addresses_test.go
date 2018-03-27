@@ -30,7 +30,7 @@ var _ = Describe("Addresses", func() {
 		var filter string
 
 		BeforeEach(func() {
-			logger.PromptCall.Returns.Proceed = true
+			logger.PromptWithDetailsCall.Returns.Proceed = true
 			client.DescribeAddressesCall.Returns.Output = &awsec2.DescribeAddressesOutput{
 				Addresses: []*awsec2.Address{{
 					PublicIp:     aws.String("banana"),
@@ -46,7 +46,8 @@ var _ = Describe("Addresses", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(client.DescribeAddressesCall.CallCount).To(Equal(1))
-			Expect(logger.PromptCall.Receives.Message).To(Equal("Are you sure you want to release address banana?"))
+			Expect(logger.PromptWithDetailsCall.Receives.Type).To(Equal("EC2 Address"))
+			Expect(logger.PromptWithDetailsCall.Receives.Name).To(Equal("banana"))
 
 			Expect(items).To(HaveLen(1))
 		})
@@ -59,7 +60,7 @@ var _ = Describe("Addresses", func() {
 
 		Context("when the address is in use by an instance", func() {
 			BeforeEach(func() {
-				logger.PromptCall.Returns.Proceed = true
+				logger.PromptWithDetailsCall.Returns.Proceed = true
 				client.DescribeAddressesCall.Returns.Output = &awsec2.DescribeAddressesOutput{
 					Addresses: []*awsec2.Address{{
 						PublicIp:   aws.String("banana"),
@@ -73,7 +74,7 @@ var _ = Describe("Addresses", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(client.DescribeAddressesCall.CallCount).To(Equal(1))
-				Expect(logger.PromptCall.CallCount).To(Equal(0))
+				Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(0))
 				Expect(items).To(HaveLen(0))
 			})
 		})
@@ -85,20 +86,20 @@ var _ = Describe("Addresses", func() {
 
 			It("does not try releasing them", func() {
 				_, err := addresses.List(filter)
-				Expect(err).To(MatchError("Describing addresses: some error"))
+				Expect(err).To(MatchError("Describing EC2 Addresses: some error"))
 			})
 		})
 
 		Context("when the user responds no to the prompt", func() {
 			BeforeEach(func() {
-				logger.PromptCall.Returns.Proceed = false
+				logger.PromptWithDetailsCall.Returns.Proceed = false
 			})
 
 			It("does not release the address", func() {
 				items, err := addresses.List(filter)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(logger.PromptCall.Receives.Message).To(Equal("Are you sure you want to release address banana?"))
+				Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(1))
 				Expect(items).To(HaveLen(0))
 			})
 		})

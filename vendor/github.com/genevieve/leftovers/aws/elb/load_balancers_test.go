@@ -30,7 +30,7 @@ var _ = Describe("LoadBalancers", func() {
 		var filter string
 
 		BeforeEach(func() {
-			logger.PromptCall.Returns.Proceed = true
+			logger.PromptWithDetailsCall.Returns.Proceed = true
 			client.DescribeLoadBalancersCall.Returns.Output = &awselb.DescribeLoadBalancersOutput{
 				LoadBalancerDescriptions: []*awselb.LoadBalancerDescription{{
 					LoadBalancerName: aws.String("banana"),
@@ -44,11 +44,10 @@ var _ = Describe("LoadBalancers", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(client.DescribeLoadBalancersCall.CallCount).To(Equal(1))
-
-			Expect(logger.PromptCall.Receives.Message).To(Equal("Are you sure you want to delete load balancer banana?"))
+			Expect(logger.PromptWithDetailsCall.Receives.Type).To(Equal("load balancer"))
+			Expect(logger.PromptWithDetailsCall.Receives.Name).To(Equal("banana"))
 
 			Expect(items).To(HaveLen(1))
-			// Expect(items).To(HaveKeyWithValue("banana", ""))
 		})
 
 		Context("when the client fails to list load balancers", func() {
@@ -68,21 +67,21 @@ var _ = Describe("LoadBalancers", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(client.DescribeLoadBalancersCall.CallCount).To(Equal(1))
-				Expect(logger.PromptCall.CallCount).To(Equal(0))
+				Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(0))
 				Expect(items).To(HaveLen(0))
 			})
 		})
 
 		Context("when the user responds no to the prompt", func() {
 			BeforeEach(func() {
-				logger.PromptCall.Returns.Proceed = false
+				logger.PromptWithDetailsCall.Returns.Proceed = false
 			})
 
 			It("does not return it in the list", func() {
 				items, err := loadBalancers.List(filter)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(logger.PromptCall.Receives.Message).To(Equal("Are you sure you want to delete load balancer banana?"))
+				Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(1))
 				Expect(items).To(HaveLen(0))
 			})
 		})

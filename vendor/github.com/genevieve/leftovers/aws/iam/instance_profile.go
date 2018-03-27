@@ -13,6 +13,7 @@ type InstanceProfile struct {
 	identifier string
 	roles      []*awsiam.Role
 	logger     logger
+	rtype      string
 }
 
 func NewInstanceProfile(client instanceProfilesClient, name *string, roles []*awsiam.Role, logger logger) InstanceProfile {
@@ -33,6 +34,7 @@ func NewInstanceProfile(client instanceProfilesClient, name *string, roles []*aw
 		identifier: identifier,
 		roles:      roles,
 		logger:     logger,
+		rtype:      "IAM Instance Profile",
 	}
 }
 
@@ -45,9 +47,9 @@ func (i InstanceProfile) Delete() error {
 			RoleName:            r.RoleName,
 		})
 		if err == nil {
-			i.logger.Printf("SUCCESS removing role %s from instance profile %s\n", role, i.identifier)
+			i.logger.Printf("SUCCESS removing role %s from %s %s\n", role, i.rtype, i.identifier)
 		} else {
-			return fmt.Errorf("ERROR removing role %s from instance profile %s: %s\n", role, i.identifier, err)
+			return fmt.Errorf("ERROR removing role %s from %s %s: %s\n", role, i.rtype, i.identifier, err)
 		}
 	}
 
@@ -56,7 +58,7 @@ func (i InstanceProfile) Delete() error {
 	})
 
 	if err != nil {
-		return fmt.Errorf("FAILED deleting instance profile %s: %s", i.identifier, err)
+		return fmt.Errorf("FAILED deleting %s %s: %s", i.rtype, i.identifier, err)
 	}
 
 	return nil
@@ -67,5 +69,5 @@ func (i InstanceProfile) Name() string {
 }
 
 func (i InstanceProfile) Type() string {
-	return "instance profile"
+	return i.rtype
 }

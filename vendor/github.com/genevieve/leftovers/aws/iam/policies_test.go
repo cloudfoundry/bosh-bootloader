@@ -15,6 +15,7 @@ var _ = Describe("Policies", func() {
 	var (
 		client *fakes.PoliciesClient
 		logger *fakes.Logger
+		filter string
 
 		policies iam.Policies
 	)
@@ -22,35 +23,33 @@ var _ = Describe("Policies", func() {
 	BeforeEach(func() {
 		client = &fakes.PoliciesClient{}
 		logger = &fakes.Logger{}
+		filter = "banana"
 
 		policies = iam.NewPolicies(client, logger)
 	})
 
 	Describe("List", func() {
-		var filter string
-
 		BeforeEach(func() {
-			logger.PromptCall.Returns.Proceed = true
+			logger.PromptWithDetailsCall.Returns.Proceed = true
 			client.ListPoliciesCall.Returns.Output = &awsiam.ListPoliciesOutput{
 				Policies: []*awsiam.Policy{{
 					Arn:        aws.String("the-policy-arn"),
 					PolicyName: aws.String("banana-policy"),
 				}},
 			}
-			filter = "banana"
 		})
 
-		It("deletes iam policies and associated policies", func() {
+		It("returns a list of policies to delete", func() {
 			items, err := policies.List(filter)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(client.ListPoliciesCall.CallCount).To(Equal(1))
 
-			Expect(logger.PromptCall.CallCount).To(Equal(1))
-			Expect(logger.PromptCall.Receives.Message).To(Equal("Are you sure you want to delete policy banana-policy?"))
+			Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(1))
+			Expect(logger.PromptWithDetailsCall.Receives.Type).To(Equal("IAM Policy"))
+			Expect(logger.PromptWithDetailsCall.Receives.Name).To(Equal("banana-policy"))
 
 			Expect(items).To(HaveLen(1))
-			// Expect(items).To(HaveKeyWithValue("banana-policy", "the-policy-arn"))
 		})
 
 		Context("when the client fails to list policies", func() {
@@ -62,7 +61,7 @@ var _ = Describe("Policies", func() {
 				_, err := policies.List(filter)
 				Expect(err).To(MatchError("Listing policies: some error"))
 
-				Expect(logger.PromptCall.CallCount).To(Equal(0))
+				Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(0))
 			})
 		})
 
@@ -71,21 +70,24 @@ var _ = Describe("Policies", func() {
 				items, err := policies.List("kiwi")
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(logger.PromptCall.CallCount).To(Equal(0))
+				Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(0))
+
 				Expect(items).To(HaveLen(0))
 			})
 		})
 
 		Context("when the user responds no to the prompt", func() {
 			BeforeEach(func() {
-				logger.PromptCall.Returns.Proceed = false
+				logger.PromptWithDetailsCall.Returns.Proceed = false
 			})
 
 			It("does not return it in the list", func() {
 				items, err := policies.List(filter)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(logger.PromptCall.Receives.Message).To(Equal("Are you sure you want to delete policy banana-policy?"))
+				Expect(logger.PromptWithDetailsCall.Receives.Type).To(Equal("IAM Policy"))
+				Expect(logger.PromptWithDetailsCall.Receives.Name).To(Equal("banana-policy"))
+
 				Expect(items).To(HaveLen(0))
 			})
 		})

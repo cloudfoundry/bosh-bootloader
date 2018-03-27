@@ -58,8 +58,8 @@
 [[projects]]
   name = "github.com/genevieve/leftovers"
   packages = ["aws","aws/common","aws/ec2","aws/elb","aws/elbv2","aws/iam","aws/rds","aws/s3","azure","gcp","gcp/common","gcp/compute","gcp/dns","vsphere"]
-  revision = "e63516c37b4c183e03b9730810505708e7b44075"
-  version = "v0.20.0"
+  revision = "786516cc0d18214ddcc07a204fc8f18902485901"
+  version = "v0.21.0"
 
 [[projects]]
   name = "github.com/go-ini/ini"

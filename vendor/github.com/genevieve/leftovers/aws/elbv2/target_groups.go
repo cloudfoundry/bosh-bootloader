@@ -25,7 +25,30 @@ func NewTargetGroups(client targetGroupsClient, logger logger) TargetGroups {
 	}
 }
 
+func (t TargetGroups) ListAll(filter string) ([]common.Deletable, error) {
+	return t.get(filter)
+}
+
 func (t TargetGroups) List(filter string) ([]common.Deletable, error) {
+	resources, err := t.get(filter)
+	if err != nil {
+		return nil, err
+	}
+
+	var delete []common.Deletable
+	for _, r := range resources {
+		proceed := t.logger.PromptWithDetails(r.Type(), r.Name())
+		if !proceed {
+			continue
+		}
+
+		delete = append(delete, r)
+	}
+
+	return delete, nil
+}
+
+func (t TargetGroups) get(filter string) ([]common.Deletable, error) {
 	targetGroups, err := t.client.DescribeTargetGroups(&awselbv2.DescribeTargetGroupsInput{})
 	if err != nil {
 		return nil, fmt.Errorf("Describing target groups: %s", err)
@@ -35,12 +58,7 @@ func (t TargetGroups) List(filter string) ([]common.Deletable, error) {
 	for _, g := range targetGroups.TargetGroups {
 		resource := NewTargetGroup(t.client, g.TargetGroupName, g.TargetGroupArn)
 
-		if !strings.Contains(resource.identifier, filter) {
-			continue
-		}
-
-		proceed := t.logger.Prompt(fmt.Sprintf("Are you sure you want to delete target group %s?", resource.identifier))
-		if !proceed {
+		if !strings.Contains(resource.Name(), filter) {
 			continue
 		}
 

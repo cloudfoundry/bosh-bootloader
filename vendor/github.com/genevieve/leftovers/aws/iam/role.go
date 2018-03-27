@@ -11,6 +11,7 @@ type Role struct {
 	policies   rolePolicies
 	name       *string
 	identifier string
+	rtype      string
 }
 
 func NewRole(client rolesClient, policies rolePolicies, name *string) Role {
@@ -19,13 +20,14 @@ func NewRole(client rolesClient, policies rolePolicies, name *string) Role {
 		policies:   policies,
 		name:       name,
 		identifier: *name,
+		rtype:      "IAM Role",
 	}
 }
 
 func (r Role) Delete() error {
 	err := r.policies.Delete(*r.name)
 	if err != nil {
-		return fmt.Errorf("FAILED deleting policies for %s: %s", r.identifier, err)
+		return fmt.Errorf("FAILED deleting policies for %s %s: %s", r.rtype, r.identifier, err)
 	}
 
 	_, err = r.client.DeleteRole(&awsiam.DeleteRoleInput{
@@ -33,7 +35,7 @@ func (r Role) Delete() error {
 	})
 
 	if err != nil {
-		return fmt.Errorf("FAILED deleting role %s: %s", r.identifier, err)
+		return fmt.Errorf("FAILED deleting %s %s: %s", r.rtype, r.identifier, err)
 	}
 
 	return nil
@@ -44,5 +46,5 @@ func (r Role) Name() string {
 }
 
 func (r Role) Type() string {
-	return "role"
+	return r.rtype
 }

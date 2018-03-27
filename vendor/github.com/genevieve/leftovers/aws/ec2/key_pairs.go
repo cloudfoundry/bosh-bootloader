@@ -25,7 +25,30 @@ func NewKeyPairs(client keyPairsClient, logger logger) KeyPairs {
 	}
 }
 
+func (k KeyPairs) ListAll(filter string) ([]common.Deletable, error) {
+	return k.get(filter)
+}
+
 func (k KeyPairs) List(filter string) ([]common.Deletable, error) {
+	resources, err := k.get(filter)
+	if err != nil {
+		return nil, err
+	}
+
+	var delete []common.Deletable
+	for _, r := range resources {
+		proceed := k.logger.PromptWithDetails(r.Type(), r.Name())
+		if !proceed {
+			continue
+		}
+
+		delete = append(delete, r)
+	}
+
+	return delete, nil
+}
+
+func (k KeyPairs) get(filter string) ([]common.Deletable, error) {
 	keyPairs, err := k.client.DescribeKeyPairs(&awsec2.DescribeKeyPairsInput{})
 	if err != nil {
 		return nil, fmt.Errorf("Describing key pairs: %s", err)
@@ -35,12 +58,7 @@ func (k KeyPairs) List(filter string) ([]common.Deletable, error) {
 	for _, key := range keyPairs.KeyPairs {
 		resource := NewKeyPair(k.client, key.KeyName)
 
-		if !strings.Contains(resource.identifier, filter) {
-			continue
-		}
-
-		proceed := k.logger.Prompt(fmt.Sprintf("Are you sure you want to delete key pair %s?", resource.identifier))
-		if !proceed {
+		if !strings.Contains(resource.Name(), filter) {
 			continue
 		}
 

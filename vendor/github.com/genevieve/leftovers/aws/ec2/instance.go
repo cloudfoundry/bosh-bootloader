@@ -11,6 +11,7 @@ type Instance struct {
 	client     instancesClient
 	id         *string
 	identifier string
+	rtype      string
 }
 
 func NewInstance(client instancesClient, id, keyName *string, tags []*awsec2.Tag) Instance {
@@ -33,6 +34,7 @@ func NewInstance(client instancesClient, id, keyName *string, tags []*awsec2.Tag
 		client:     client,
 		id:         id,
 		identifier: identifier,
+		rtype:      "EC2 Instance",
 	}
 }
 
@@ -42,7 +44,7 @@ func (i Instance) Delete() error {
 	})
 
 	if err != nil {
-		return fmt.Errorf("FAILED terminating instance %s: %s", i.identifier, err)
+		return fmt.Errorf("FAILED deleting %s %s: %s", i.rtype, i.identifier, err)
 	}
 
 	return nil
@@ -53,5 +55,5 @@ func (i Instance) Name() string {
 }
 
 func (i Instance) Type() string {
-	return "instance"
+	return i.rtype
 }

@@ -25,10 +25,33 @@ func NewInstances(client instancesClient, logger logger) Instances {
 	}
 }
 
+func (a Instances) ListAll(filter string) ([]common.Deletable, error) {
+	return a.get(filter)
+}
+
 func (a Instances) List(filter string) ([]common.Deletable, error) {
+	resources, err := a.get(filter)
+	if err != nil {
+		return nil, err
+	}
+
+	var delete []common.Deletable
+	for _, r := range resources {
+		proceed := a.logger.PromptWithDetails(r.Type(), r.Name())
+		if !proceed {
+			continue
+		}
+
+		delete = append(delete, r)
+	}
+
+	return delete, nil
+}
+
+func (a Instances) get(filter string) ([]common.Deletable, error) {
 	instances, err := a.client.DescribeInstances(&awsec2.DescribeInstancesInput{})
 	if err != nil {
-		return nil, fmt.Errorf("Describing instances: %s", err)
+		return nil, fmt.Errorf("Describing EC2 Instances: %s", err)
 	}
 
 	var resources []common.Deletable
@@ -41,11 +64,6 @@ func (a Instances) List(filter string) ([]common.Deletable, error) {
 			}
 
 			if !strings.Contains(resource.identifier, filter) {
-				continue
-			}
-
-			proceed := a.logger.Prompt(fmt.Sprintf("Are you sure you want to terminate instance %s?", resource.identifier))
-			if !proceed {
 				continue
 			}
 

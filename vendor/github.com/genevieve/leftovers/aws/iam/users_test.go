@@ -17,6 +17,7 @@ var _ = Describe("Users", func() {
 		logger   *fakes.Logger
 		policies *fakes.UserPolicies
 		keys     *fakes.AccessKeys
+		filter   string
 
 		users iam.Users
 	)
@@ -26,21 +27,19 @@ var _ = Describe("Users", func() {
 		logger = &fakes.Logger{}
 		policies = &fakes.UserPolicies{}
 		keys = &fakes.AccessKeys{}
+		filter = "banana"
 
 		users = iam.NewUsers(client, logger, policies, keys)
 	})
 
 	Describe("List", func() {
-		var filter string
-
 		BeforeEach(func() {
-			logger.PromptCall.Returns.Proceed = true
+			logger.PromptWithDetailsCall.Returns.Proceed = true
 			client.ListUsersCall.Returns.Output = &awsiam.ListUsersOutput{
 				Users: []*awsiam.User{{
 					UserName: aws.String("banana-user"),
 				}},
 			}
-			filter = "banana"
 		})
 
 		It("returns a list of iam users to delete", func() {
@@ -49,11 +48,11 @@ var _ = Describe("Users", func() {
 
 			Expect(client.ListUsersCall.CallCount).To(Equal(1))
 
-			Expect(logger.PromptCall.CallCount).To(Equal(1))
-			Expect(logger.PromptCall.Receives.Message).To(Equal("Are you sure you want to delete user banana-user?"))
+			Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(1))
+			Expect(logger.PromptWithDetailsCall.Receives.Type).To(Equal("IAM User"))
+			Expect(logger.PromptWithDetailsCall.Receives.Name).To(Equal("banana-user"))
 
 			Expect(items).To(HaveLen(1))
-			// Expect(items).To(HaveKeyWithValue("banana-user", ""))
 		})
 
 		Context("when the client fails to list users", func() {
@@ -72,21 +71,21 @@ var _ = Describe("Users", func() {
 				items, err := users.List("kiwi")
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(logger.PromptCall.CallCount).To(Equal(0))
+				Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(0))
 				Expect(items).To(HaveLen(0))
 			})
 		})
 
 		Context("when the user responds no to the prompt", func() {
 			BeforeEach(func() {
-				logger.PromptCall.Returns.Proceed = false
+				logger.PromptWithDetailsCall.Returns.Proceed = false
 			})
 
 			It("does not return it in the list", func() {
 				items, err := users.List(filter)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(logger.PromptCall.Receives.Message).To(Equal("Are you sure you want to delete user banana-user?"))
+				Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(1))
 				Expect(items).To(HaveLen(0))
 			})
 		})

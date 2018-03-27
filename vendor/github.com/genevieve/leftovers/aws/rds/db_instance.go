@@ -11,6 +11,7 @@ type DBInstance struct {
 	client     dbInstancesClient
 	name       *string
 	identifier string
+	rtype      string
 }
 
 func NewDBInstance(client dbInstancesClient, name *string) DBInstance {
@@ -18,6 +19,7 @@ func NewDBInstance(client dbInstancesClient, name *string) DBInstance {
 		client:     client,
 		name:       name,
 		identifier: *name,
+		rtype:      "RDS DB Instance",
 	}
 }
 
@@ -28,7 +30,7 @@ func (d DBInstance) Delete() error {
 	})
 
 	if err != nil {
-		return fmt.Errorf("FAILED deleting db instance %s: %s", d.identifier, err)
+		return fmt.Errorf("FAILED deleting %s %s: %s", d.rtype, d.identifier, err)
 	}
 
 	return nil
@@ -39,5 +41,5 @@ func (d DBInstance) Name() string {
 }
 
 func (d DBInstance) Type() string {
-	return "db instance"
+	return d.rtype
 }

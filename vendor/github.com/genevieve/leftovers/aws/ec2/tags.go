@@ -25,7 +25,30 @@ func NewTags(client tagsClient, logger logger) Tags {
 	}
 }
 
+func (a Tags) ListAll(filter string) ([]common.Deletable, error) {
+	return a.get(filter)
+}
+
 func (a Tags) List(filter string) ([]common.Deletable, error) {
+	resources, err := a.get(filter)
+	if err != nil {
+		return nil, err
+	}
+
+	var delete []common.Deletable
+	for _, r := range resources {
+		proceed := a.logger.PromptWithDetails(r.Type(), r.Name())
+		if !proceed {
+			continue
+		}
+
+		delete = append(delete, r)
+	}
+
+	return delete, nil
+}
+
+func (a Tags) get(filter string) ([]common.Deletable, error) {
 	output, err := a.client.DescribeTags(&awsec2.DescribeTagsInput{})
 	if err != nil {
 		return nil, fmt.Errorf("Describing tags: %s", err)
@@ -36,12 +59,6 @@ func (a Tags) List(filter string) ([]common.Deletable, error) {
 		resource := NewTag(a.client, t.Key, t.Value, t.ResourceId)
 
 		if !strings.Contains(resource.identifier, filter) {
-			continue
-		}
-
-		//TODO: Prompt with key:value
-		proceed := a.logger.Prompt(fmt.Sprintf("Are you sure you want to delete tag %s?", resource.identifier))
-		if !proceed {
 			continue
 		}
 

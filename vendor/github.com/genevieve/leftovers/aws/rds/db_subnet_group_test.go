@@ -41,7 +41,7 @@ var _ = Describe("DBSubnetGroup", func() {
 
 			It("returns the error", func() {
 				err := dbSubnetGroup.Delete()
-				Expect(err).To(MatchError("FAILED deleting db subnet group the-name: banana"))
+				Expect(err).To(MatchError("FAILED deleting RDS DB Subnet Group the-name: banana"))
 			})
 		})
 	})
@@ -54,7 +54,7 @@ var _ = Describe("DBSubnetGroup", func() {
 
 	Describe("Type", func() {
 		It("returns \"db subnet group\"", func() {
-			Expect(dbSubnetGroup.Type()).To(Equal("db subnet group"))
+			Expect(dbSubnetGroup.Type()).To(Equal("RDS DB Subnet Group"))
 		})
 	})
 })
