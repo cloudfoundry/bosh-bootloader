@@ -33,7 +33,7 @@ func (b StateBootstrap) GetState(dir string) (State, error) {
 		return state, err
 	}
 
-	file, err := os.Open(filepath.Join(dir, StateFileName))
+	file, err := os.Open(filepath.Join(dir, STATE_FILE))
 	if err != nil {
 		if os.IsNotExist(err) {
 			return state, nil

@@ -18,9 +18,7 @@ var (
 
 const (
 	STATE_SCHEMA = 14
-
-	OS_READ_WRITE_MODE = os.FileMode(0644)
-	StateFileName      = "bbl-state.json"
+	STATE_FILE   = "bbl-state.json"
 )
 
 type Store struct {
@@ -81,7 +79,7 @@ func (s Store) Set(state State) error {
 		return err
 	}
 
-	stateFile := filepath.Join(s.dir, StateFileName)
+	stateFile := filepath.Join(s.dir, STATE_FILE)
 	err = s.fs.WriteFile(stateFile, jsonData, os.FileMode(0644))
 	if err != nil {
 		return err

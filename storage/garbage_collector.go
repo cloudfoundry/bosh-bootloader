@@ -30,7 +30,7 @@ func NewGarbageCollector(fs fs) GarbageCollector {
 }
 
 func (g GarbageCollector) Remove(dir string) error {
-	bblStateJson := filepath.Join(dir, StateFileName)
+	bblStateJson := filepath.Join(dir, STATE_FILE)
 	err := g.fs.Remove(bblStateJson)
 	if err != nil && !os.IsNotExist(err) {
 		return fmt.Errorf("Removing %s: %s", bblStateJson, err)
