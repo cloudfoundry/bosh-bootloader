@@ -38,9 +38,26 @@ type Config struct {
 	VSphereVCenterVMs       string
 	VSphereVCenterTemplates string
 
+	OpenStackInternalCidr         string
+	OpenStackExternalIP           string
+	OpenStackAuthURL              string
+	OpenStackAZ                   string
+	OpenStackDefaultKeyName       string
+	OpenStackDefaultSecurityGroup string
+	OpenStackNetworkID            string
+	OpenStackPassword             string
+	OpenStackUsername             string
+	OpenStackProject              string
+	OpenStackDomain               string
+	OpenStackRegion               string
+	OpenStackPrivateKey           string
+
 	StateFileDir string
 }
 
+// Loads all of the credentials from environment variables
+// to be used in the acceptance test. Validates the presence
+// of required credentials before starting up tests.
 func LoadConfig() (Config, error) {
 	config := loadConfigFromEnvVars()
 
@@ -52,24 +69,17 @@ func LoadConfig() (Config, error) {
 	switch config.IAAS {
 	case "aws":
 		err = validateAWSCreds(config)
-		if err != nil {
-			return Config{}, fmt.Errorf("Error Found: %s\nProvide a full set of credentials for a single IAAS.", err)
-		}
 	case "azure":
 		err = validateAzureCreds(config)
-		if err != nil {
-			return Config{}, fmt.Errorf("Error Found: %s\nProvide a full set of credentials for a single IAAS.", err)
-		}
 	case "gcp":
 		err = validateGCPCreds(config)
-		if err != nil {
-			return Config{}, fmt.Errorf("Error Found: %s\nProvide a full set of credentials for a single IAAS.", err)
-		}
 	case "vsphere":
 		err = validateVSphereCreds(config)
-		if err != nil {
-			return Config{}, fmt.Errorf("Error Found: %s\nProvide a full set of credentials for a single IAAS.", err)
-		}
+	case "openstack":
+		err = validateOpenStackCreds(config)
+	}
+	if err != nil {
+		return Config{}, fmt.Errorf("Error Found: %s\nProvide a full set of credentials for a single IAAS.", err)
 	}
 
 	if config.StateFileDir == "" {
@@ -79,7 +89,8 @@ func LoadConfig() (Config, error) {
 		}
 		config.StateFileDir = dir
 	}
-	fmt.Printf("using state-dir: %s\n", config.StateFileDir)
+
+	fmt.Println("Using state-dir: %s", config.StateFileDir)
 
 	return config, nil
 }
@@ -178,6 +189,11 @@ func validateVSphereCreds(config Config) error {
 	return nil
 }
 
+func validateOpenStackCreds(config Config) error {
+	//TODO: validate openstack creds
+	return nil
+}
+
 func loadConfigFromEnvVars() Config {
 	return Config{
 		IAAS: os.Getenv("BBL_IAAS"),
@@ -207,6 +223,20 @@ func loadConfigFromEnvVars() Config {
 		VSphereVCenterDisks:     os.Getenv("BBL_VSPHERE_VCENTER_DISKS"),
 		VSphereVCenterVMs:       os.Getenv("BBL_VSPHERE_VCENTER_VMS"),
 		VSphereVCenterTemplates: os.Getenv("BBL_VSPHERE_VCENTER_TEMPLATES"),
+
+		OpenStackInternalCidr:         os.Getenv("BBL_OPENSTACK_INTERNAL_CIDR"),
+		OpenStackExternalIP:           os.Getenv("BBL_OPENSTACK_EXTERNAL_IP"),
+		OpenStackAuthURL:              os.Getenv("BBL_OPENSTACK_AUTH_URL"),
+		OpenStackAZ:                   os.Getenv("BBL_OPENSTACK_AZ"),
+		OpenStackDefaultKeyName:       os.Getenv("BBL_OPENSTACK_DEFAULT_KEY_NAME"),
+		OpenStackDefaultSecurityGroup: os.Getenv("BBL_OPENSTACK_DEFAULT_SECURITY_GROUP"),
+		OpenStackNetworkID:            os.Getenv("BBL_OPENSTACK_NETWORK_ID"),
+		OpenStackPassword:             os.Getenv("BBL_OPENSTACK_PASSWORD"),
+		OpenStackUsername:             os.Getenv("BBL_OPENSTACK_USERNAME"),
+		OpenStackProject:              os.Getenv("BBL_OPENSTACK_PROJECT"),
+		OpenStackDomain:               os.Getenv("BBL_OPENSTACK_DOMAIN"),
+		OpenStackRegion:               os.Getenv("BBL_OPENSTACK_REGION"),
+		OpenStackPrivateKey:           os.Getenv("BBL_OPENSTACK_PRIVATE_KEY"),
 
 		StateFileDir: os.Getenv("BBL_STATE_DIR"),
 	}
