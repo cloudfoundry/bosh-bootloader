@@ -31,7 +31,7 @@ type state struct {
 
 func NewState(stateDirectory string) State {
 	return State{
-		stateFilePath: filepath.Join(stateDirectory, storage.StateFileName),
+		stateFilePath: filepath.Join(stateDirectory, storage.STATE_FILE),
 	}
 }
 
