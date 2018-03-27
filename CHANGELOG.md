@@ -93,3 +93,25 @@ To migrate and restore load balancing teams must:
 
 **BUG FIXES:**
 
+
+## v3.0.0 (March 15, 2017)
+
+**BACKWARD INCOMPATIBILITIES / NOTES:**
+* This is a breaking change which was necessary to roll out new directors built
+using bosh-deployment. If you attempt to use an existing state directory created
+with bbl v2 then bbl will refuse to proceed. For ephemeral environments this
+shouldn’t pose a problem, just make sure you have finished teardown before upgrading.
+For long-lived environments you may want to stand up a new environment before
+tearing down the old with bbl v2.4.1.
+* We’ve added a requirement that the bosh 2.0+ CLI be installed on your path and
+be named “bosh”. bosh-init is no longer required.
+
+**FEATURES / IMPROVEMENTS:**
+* For trivial preference changes, such as the number of workers or ARP cache
+flush, you can supply an ops file with bbl up -o ops-file.yml.
+* For more intense changes such as boshlite-on-gcp or credhub you may find it
+easier to run bbl up --no-director and then deploy your director with
+bosh-deployment. You can read more about this workflow in our docs.
+
+**BUG FIXES:**
+
