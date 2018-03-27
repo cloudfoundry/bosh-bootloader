@@ -307,7 +307,7 @@ func (e Executor) IsPaved() (bool, error) {
 		return false, fmt.Errorf("Run terraform show: %s", err)
 	}
 
-	if string(buffer.Bytes()) == "No state." {
+	if strings.TrimSpace(string(buffer.Bytes())) == "No state." {
 		return false, nil
 	}
 
