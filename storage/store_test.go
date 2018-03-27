@@ -17,9 +17,10 @@ import (
 
 var _ = Describe("Store", func() {
 	var (
-		fileIO  *fakes.FileIO
-		store   storage.Store
-		tempDir string
+		fileIO           *fakes.FileIO
+		garbageCollector *fakes.GarbageCollector
+		store            storage.Store
+		tempDir          string
 	)
 
 	BeforeEach(func() {
@@ -27,8 +28,9 @@ var _ = Describe("Store", func() {
 		tempDir, err = ioutil.TempDir("", "")
 
 		fileIO = &fakes.FileIO{}
+		garbageCollector = &fakes.GarbageCollector{}
 
-		store = storage.NewStore(tempDir, fileIO)
+		store = storage.NewStore(tempDir, fileIO, garbageCollector)
 		Expect(err).NotTo(HaveOccurred())
 	})
 
@@ -186,166 +188,21 @@ var _ = Describe("Store", func() {
 		})
 
 		Context("when the state is empty", func() {
-			It("removes the bbl-state.json file", func() {
+			It("calls the garbage collector", func() {
 				err := store.Set(storage.State{})
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(fileIO.RemoveCall.Receives[0].Name).To(Equal(filepath.Join(tempDir, "bbl-state.json")))
+				Expect(garbageCollector.RemoveCall.CallCount).To(Equal(1))
+				Expect(garbageCollector.RemoveCall.Receives.Directory).To(Equal(tempDir))
 			})
 
-			It("removes bosh *-env scripts", func() {
-				createDirector := filepath.Join(tempDir, "create-director.sh")
-				createJumpbox := filepath.Join(tempDir, "create-jumpbox.sh")
-				deleteDirector := filepath.Join(tempDir, "delete-director.sh")
-				deleteJumpbox := filepath.Join(tempDir, "delete-jumpbox.sh")
-
-				err := store.Set(storage.State{})
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(fileIO.RemoveCall.Receives).To(ContainElement(fakes.RemoveReceive{Name: createDirector}))
-				Expect(fileIO.RemoveCall.Receives).To(ContainElement(fakes.RemoveReceive{Name: deleteDirector}))
-				Expect(fileIO.RemoveCall.Receives).To(ContainElement(fakes.RemoveReceive{Name: deleteJumpbox}))
-				Expect(fileIO.RemoveCall.Receives).To(ContainElement(fakes.RemoveReceive{Name: createJumpbox}))
-			})
-
-			DescribeTable("removing bbl-created directories",
-				func(directory string, expectToBeDeleted bool) {
-					err := store.Set(storage.State{})
-					Expect(err).NotTo(HaveOccurred())
-
-					if expectToBeDeleted {
-						Expect(fileIO.RemoveAllCall.Receives).To(ContainElement(fakes.RemoveAllReceive{
-							Path: filepath.Join(tempDir, directory),
-						}))
-					} else {
-						Expect(fileIO.RemoveAllCall.Receives).NotTo(ContainElement(fakes.RemoveAllReceive{
-							Path: filepath.Join(tempDir, directory),
-						}))
-					}
-				},
-				Entry(".terraform", ".terraform", true),
-				Entry("bosh-deployment", "bosh-deployment", true),
-				Entry("jumpbox-deployment", "jumpbox-deployment", true),
-				Entry("bbl-ops-files", "bbl-ops-files", true),
-				Entry("non-bbl directory", "foo", false),
-			)
-
-			Describe("cloud-config", func() {
-				var (
-					cloudConfigBase string
-					cloudConfigOps  string
-				)
+			Context("when the garbage collector fails to clean up", func() {
 				BeforeEach(func() {
-					cloudConfigBase = filepath.Join(tempDir, "cloud-config", "cloud-config.yml")
-					cloudConfigOps = filepath.Join(tempDir, "cloud-config", "ops.yml")
+					garbageCollector.RemoveCall.Returns.Error = errors.New("banana")
 				})
-
-				It("removes the ops file, base file, and directory", func() {
+				It("returns the error", func() {
 					err := store.Set(storage.State{})
-					Expect(err).NotTo(HaveOccurred())
-
-					Expect(fileIO.RemoveCall.Receives).To(ContainElement(fakes.RemoveReceive{Name: cloudConfigBase}))
-					Expect(fileIO.RemoveCall.Receives).To(ContainElement(fakes.RemoveReceive{Name: cloudConfigOps}))
-					Expect(fileIO.RemoveCall.Receives).To(ContainElement(fakes.RemoveReceive{
-						Name: filepath.Join(tempDir, "cloud-config"),
-					}))
-				})
-			})
-
-			Describe("vars", func() {
-				Context("when the vars directory contains only bbl files", func() {
-					BeforeEach(func() {
-						fileIO.ReadDirCall.Returns.FileInfos = []os.FileInfo{
-							fakes.FileInfo{FileName: "bbl.tfvars"},
-							fakes.FileInfo{FileName: "bosh-state.json"},
-							fakes.FileInfo{FileName: "cloud-config-vars.yml"},
-							fakes.FileInfo{FileName: "director-vars-file.yml"},
-							fakes.FileInfo{FileName: "director-vars-store.yml"},
-							fakes.FileInfo{FileName: "jumpbox-state.json"},
-							fakes.FileInfo{FileName: "jumpbox-vars-file.yml"},
-							fakes.FileInfo{FileName: "jumpbox-vars-store.yml"},
-							fakes.FileInfo{FileName: "terraform.tfstate"},
-							fakes.FileInfo{FileName: "terraform.tfstate.backup"},
-						}
-					})
-
-					It("removes the directory", func() {
-						err := store.Set(storage.State{})
-						Expect(err).NotTo(HaveOccurred())
-
-						Expect(fileIO.RemoveCall.Receives).To(ContainElement(fakes.RemoveReceive{
-							Name: filepath.Join(tempDir, "vars", "bbl.tfvars"),
-						}))
-						Expect(fileIO.RemoveCall.Receives).To(ContainElement(fakes.RemoveReceive{
-							Name: filepath.Join(tempDir, "vars"),
-						}))
-					})
-				})
-
-				Context("when the vars directory contains user managed files", func() {
-					BeforeEach(func() {
-						fileIO.ReadDirCall.Returns.FileInfos = []os.FileInfo{
-							fakes.FileInfo{FileName: "user-managed-file"},
-							fakes.FileInfo{FileName: "terraform.tfstate.backup"},
-						}
-					})
-
-					It("spares user managed files", func() {
-						err := store.Set(storage.State{})
-						Expect(err).NotTo(HaveOccurred())
-
-						Expect(fileIO.RemoveCall.Receives).NotTo(ContainElement(fakes.RemoveReceive{
-							Name: filepath.Join(tempDir, "vars", "user-managed-file"),
-						}))
-					})
-				})
-			})
-
-			Describe("terraform", func() {
-				It("removes the bbl template and directory", func() {
-					bblTerraformTemplate := filepath.Join(tempDir, "terraform", "bbl-template.tf")
-
-					err := store.Set(storage.State{})
-					Expect(err).NotTo(HaveOccurred())
-
-					Expect(fileIO.RemoveCall.Receives).To(ContainElement(fakes.RemoveReceive{Name: bblTerraformTemplate}))
-					Expect(fileIO.RemoveCall.Receives).To(ContainElement(fakes.RemoveReceive{
-						Name: filepath.Join(tempDir, "terraform"),
-					}))
-				})
-			})
-
-			Context("when the bbl-state.json file does not exist", func() {
-				It("does nothing", func() {
-					err := store.Set(storage.State{})
-					Expect(err).NotTo(HaveOccurred())
-
-					Expect(len(fileIO.WriteFileCall.Receives)).To(Equal(0))
-				})
-			})
-
-			Context("failure cases", func() {
-				Context("when the bbl-state.json file cannot be removed", func() {
-					BeforeEach(func() {
-						fileIO.RemoveCall.Returns = []fakes.RemoveReturn{{Error: errors.New("permission denied")}}
-					})
-
-					It("returns an error", func() {
-						err := store.Set(storage.State{})
-						Expect(err).To(MatchError(ContainSubstring("permission denied")))
-					})
-				})
-
-				Context("when uuid new V4 fails", func() {
-					It("returns an error", func() {
-						storage.SetUUIDNewV4(func() (*uuid.UUID, error) {
-							return nil, errors.New("some error")
-						})
-						err := store.Set(storage.State{
-							IAAS: "some-iaas",
-						})
-						Expect(err).To(MatchError("Create state ID: some error"))
-					})
+					Expect(err).To(MatchError("Garbage collector clean up: banana"))
 				})
 			})
 		})
@@ -366,13 +223,25 @@ var _ = Describe("Store", func() {
 				})
 			})
 
+			Context("when uuid new V4 fails", func() {
+				It("returns an error", func() {
+					storage.SetUUIDNewV4(func() (*uuid.UUID, error) {
+						return nil, errors.New("some error")
+					})
+					err := store.Set(storage.State{
+						IAAS: "some-iaas",
+					})
+					Expect(err).To(MatchError("Create state ID: some error"))
+				})
+			})
+
 			Context("when the directory does not exist", func() {
 				BeforeEach(func() {
 					fileIO.StatCall.Returns.Error = errors.New("no such file or directory")
 				})
 
 				It("returns an error", func() {
-					store = storage.NewStore("non-valid-dir", fileIO)
+					store = storage.NewStore("non-valid-dir", fileIO, garbageCollector)
 					err := store.Set(storage.State{})
 					Expect(err).To(MatchError(ContainSubstring("no such file or directory")))
 				})

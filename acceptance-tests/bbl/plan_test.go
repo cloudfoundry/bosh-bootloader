@@ -86,5 +86,17 @@ var _ = Describe("plan", func() {
 				Expect(string(contents)).NotTo(ContainSubstring("modified after plan"))
 			}
 		})
+
+		By("running bbl down", func() {
+			session := bbl.Down()
+			Eventually(session, 5*time.Minute).Should(gexec.Exit(0))
+		})
+
+		By("verifying that artifacts were deleted", func() {
+			for _, f := range expectedArtifacts {
+				_, err := os.Stat(f)
+				Expect(err).To(HaveOccurred())
+			}
+		})
 	})
 })

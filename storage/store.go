@@ -14,18 +14,6 @@ import (
 var (
 	marshalIndent = json.MarshalIndent
 	uuidNewV4     = uuid.NewV4
-	bblManaged    = map[string]struct{}{
-		"bbl.tfvars":               struct{}{},
-		"bosh-state.json":          struct{}{},
-		"cloud-config-vars.yml":    struct{}{},
-		"director-vars-file.yml":   struct{}{},
-		"director-vars-store.yml":  struct{}{},
-		"jumpbox-state.json":       struct{}{},
-		"jumpbox-vars-file.yml":    struct{}{},
-		"jumpbox-vars-store.yml":   struct{}{},
-		"terraform.tfstate":        struct{}{},
-		"terraform.tfstate.backup": struct{}{},
-	}
 )
 
 const (
@@ -36,12 +24,13 @@ const (
 )
 
 type Store struct {
-	dir         string
-	fs          stateStoreFs
-	stateSchema int
+	dir              string
+	fs               fs
+	garbageCollector garbageCollector
+	stateSchema      int
 }
 
-type stateStoreFs interface {
+type fs interface {
 	fileio.FileWriter
 	fileio.Remover
 	fileio.AllRemover
@@ -50,11 +39,16 @@ type stateStoreFs interface {
 	fileio.DirReader
 }
 
-func NewStore(dir string, fs stateStoreFs) Store {
+type garbageCollector interface {
+	Remove(d string) error
+}
+
+func NewStore(dir string, fs fs, garbageCollector garbageCollector) Store {
 	return Store{
-		dir:         dir,
-		fs:          fs,
-		stateSchema: STATE_SCHEMA,
+		dir:              dir,
+		fs:               fs,
+		garbageCollector: garbageCollector,
+		stateSchema:      STATE_SCHEMA,
 	}
 }
 
@@ -64,52 +58,11 @@ func (s Store) Set(state State) error {
 		return fmt.Errorf("Stat state dir: %s", err)
 	}
 
-	stateFile := filepath.Join(s.dir, StateFileName)
 	if reflect.DeepEqual(state, State{}) {
-		err := s.fs.Remove(stateFile)
-		if err != nil && !os.IsNotExist(err) {
-			return err
+		err := s.garbageCollector.Remove(s.dir)
+		if err != nil {
+			return fmt.Errorf("Garbage collector clean up: %s", err)
 		}
-
-		rmdir := func(getDirFunc func() (string, error)) error {
-			d, _ := getDirFunc()
-			return s.fs.RemoveAll(d)
-		}
-		if err := rmdir(s.GetDirectorDeploymentDir); err != nil {
-			return err
-		}
-		if err := rmdir(s.GetJumpboxDeploymentDir); err != nil {
-			return err
-		}
-		if err := rmdir(s.GetBblOpsFilesDir); err != nil {
-			return err
-		}
-
-		tfDir, _ := s.GetTerraformDir()
-		_ = s.fs.Remove(filepath.Join(tfDir, "bbl-template.tf"))
-		_ = s.fs.RemoveAll(filepath.Join(tfDir, ".terraform"))
-		_ = s.fs.Remove(tfDir)
-
-		ccDir, _ := s.GetCloudConfigDir()
-		_ = s.fs.Remove(filepath.Join(ccDir, "cloud-config.yml"))
-		_ = s.fs.Remove(filepath.Join(ccDir, "ops.yml"))
-		_ = s.fs.Remove(ccDir)
-
-		vDir, _ := s.GetVarsDir()
-		vFiles, _ := s.fs.ReadDir(vDir)
-		for _, f := range vFiles {
-			if _, ok := bblManaged[f.Name()]; ok {
-				_ = s.fs.Remove(filepath.Join(vDir, f.Name()))
-			}
-		}
-		_ = s.fs.Remove(filepath.Join(s.dir, "vars"))
-
-		_ = s.fs.RemoveAll(filepath.Join(s.dir, ".terraform"))
-		_ = s.fs.Remove(filepath.Join(s.dir, "create-jumpbox.sh"))
-		_ = s.fs.Remove(filepath.Join(s.dir, "create-director.sh"))
-		_ = s.fs.Remove(filepath.Join(s.dir, "delete-jumpbox.sh"))
-		_ = s.fs.Remove(filepath.Join(s.dir, "delete-director.sh"))
-
 		return nil
 	}
 
@@ -127,6 +80,8 @@ func (s Store) Set(state State) error {
 	if err != nil {
 		return err
 	}
+
+	stateFile := filepath.Join(s.dir, StateFileName)
 	err = s.fs.WriteFile(stateFile, jsonData, os.FileMode(0644))
 	if err != nil {
 		return err
@@ -145,10 +100,6 @@ func (s Store) GetCloudConfigDir() (string, error) {
 
 func (s Store) GetTerraformDir() (string, error) {
 	return s.getDir("terraform")
-}
-
-func (s Store) GetBblOpsFilesDir() (string, error) {
-	return s.getDir("bbl-ops-files")
 }
 
 func (s Store) GetVarsDir() (string, error) {
