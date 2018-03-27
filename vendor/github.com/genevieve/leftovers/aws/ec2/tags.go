@@ -51,7 +51,7 @@ func (a Tags) List(filter string) ([]common.Deletable, error) {
 func (a Tags) get(filter string) ([]common.Deletable, error) {
 	output, err := a.client.DescribeTags(&awsec2.DescribeTagsInput{})
 	if err != nil {
-		return nil, fmt.Errorf("Describing tags: %s", err)
+		return nil, fmt.Errorf("Describing EC2 Tags: %s", err)
 	}
 
 	var resources []common.Deletable

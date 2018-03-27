@@ -46,7 +46,7 @@ var _ = Describe("SecurityGroups", func() {
 
 			Expect(client.DescribeSecurityGroupsCall.CallCount).To(Equal(1))
 			Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(1))
-			Expect(logger.PromptWithDetailsCall.Receives.Type).To(Equal("security group"))
+			Expect(logger.PromptWithDetailsCall.Receives.Type).To(Equal("EC2 Security Group"))
 			Expect(logger.PromptWithDetailsCall.Receives.Name).To(Equal("banana-group"))
 
 			Expect(items).To(HaveLen(1))
@@ -59,7 +59,7 @@ var _ = Describe("SecurityGroups", func() {
 
 			It("returns the error", func() {
 				_, err := securityGroups.List(filter)
-				Expect(err).To(MatchError("Describing security groups: some error"))
+				Expect(err).To(MatchError("Describing EC2 Security Groups: some error"))
 			})
 		})
 
@@ -140,7 +140,7 @@ var _ = Describe("SecurityGroups", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(logger.PrintfCall.CallCount).To(Equal(1))
-					Expect(logger.PrintfCall.Receives.Message).To(Equal("ERROR revoking security group ingress for %s: %s\n"))
+					Expect(logger.PrintfCall.Receives.Message).To(Equal("ERROR revoking ingress for %s: %s\n"))
 				})
 			})
 		})
@@ -178,7 +178,7 @@ var _ = Describe("SecurityGroups", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(logger.PrintfCall.CallCount).To(Equal(1))
-					Expect(logger.PrintfCall.Receives.Message).To(Equal("ERROR revoking security group egress for %s: %s\n"))
+					Expect(logger.PrintfCall.Receives.Message).To(Equal("ERROR revoking egress for %s: %s\n"))
 				})
 			})
 		})

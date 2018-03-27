@@ -51,7 +51,7 @@ func (k KeyPairs) List(filter string) ([]common.Deletable, error) {
 func (k KeyPairs) get(filter string) ([]common.Deletable, error) {
 	keyPairs, err := k.client.DescribeKeyPairs(&awsec2.DescribeKeyPairsInput{})
 	if err != nil {
-		return nil, fmt.Errorf("Describing key pairs: %s", err)
+		return nil, fmt.Errorf("Describing EC2 Key Pairs: %s", err)
 	}
 
 	var resources []common.Deletable

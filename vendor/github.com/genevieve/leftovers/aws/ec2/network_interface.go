@@ -11,6 +11,7 @@ type NetworkInterface struct {
 	client     networkInterfacesClient
 	id         *string
 	identifier string
+	rtype      string
 }
 
 func NewNetworkInterface(client networkInterfacesClient, id *string, tags []*awsec2.Tag) NetworkInterface {
@@ -29,6 +30,7 @@ func NewNetworkInterface(client networkInterfacesClient, id *string, tags []*aws
 		client:     client,
 		id:         id,
 		identifier: identifier,
+		rtype:      "EC2 Network Interface",
 	}
 }
 
@@ -38,7 +40,7 @@ func (n NetworkInterface) Delete() error {
 	})
 
 	if err != nil {
-		return fmt.Errorf("FAILED deleting network interface %s: %s", n.identifier, err)
+		return fmt.Errorf("FAILED deleting %s %s: %s", n.rtype, n.identifier, err)
 	}
 
 	return nil
@@ -49,5 +51,5 @@ func (n NetworkInterface) Name() string {
 }
 
 func (n NetworkInterface) Type() string {
-	return "network interface"
+	return n.rtype
 }

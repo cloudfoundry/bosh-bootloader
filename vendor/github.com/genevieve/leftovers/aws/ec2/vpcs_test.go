@@ -53,7 +53,7 @@ var _ = Describe("Vpcs", func() {
 
 			Expect(client.DescribeVpcsCall.CallCount).To(Equal(1))
 			Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(1))
-			Expect(logger.PromptWithDetailsCall.Receives.Type).To(Equal("vpc"))
+			Expect(logger.PromptWithDetailsCall.Receives.Type).To(Equal("EC2 VPC"))
 			Expect(logger.PromptWithDetailsCall.Receives.Name).To(Equal("the-vpc-id (Name:banana)"))
 
 			Expect(items).To(HaveLen(1))
@@ -111,7 +111,7 @@ var _ = Describe("Vpcs", func() {
 
 			It("returns the error", func() {
 				_, err := vpcs.List(filter)
-				Expect(err).To(MatchError("Describing vpcs: some error"))
+				Expect(err).To(MatchError("Describing EC2 VPCs: some error"))
 			})
 		})
 

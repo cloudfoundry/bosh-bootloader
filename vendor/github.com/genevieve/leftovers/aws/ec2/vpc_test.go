@@ -58,7 +58,7 @@ var _ = Describe("Vpc", func() {
 
 			It("returns the error", func() {
 				err := vpc.Delete()
-				Expect(err).To(MatchError("FAILED deleting routes for the-id: banana"))
+				Expect(err).To(MatchError("FAILED deleting routes for EC2 VPC the-id: banana"))
 			})
 		})
 
@@ -69,7 +69,7 @@ var _ = Describe("Vpc", func() {
 
 			It("returns the error", func() {
 				err := vpc.Delete()
-				Expect(err).To(MatchError("FAILED deleting subnets for the-id: banana"))
+				Expect(err).To(MatchError("FAILED deleting subnets for EC2 VPC the-id: banana"))
 			})
 		})
 
@@ -80,7 +80,7 @@ var _ = Describe("Vpc", func() {
 
 			It("returns the error", func() {
 				err := vpc.Delete()
-				Expect(err).To(MatchError("FAILED deleting internet gateways for the-id: banana"))
+				Expect(err).To(MatchError("FAILED deleting internet gateways for EC2 VPC the-id: banana"))
 			})
 		})
 
@@ -91,7 +91,7 @@ var _ = Describe("Vpc", func() {
 
 			It("returns the error", func() {
 				err := vpc.Delete()
-				Expect(err).To(MatchError("FAILED deleting vpc the-id: banana"))
+				Expect(err).To(MatchError("FAILED deleting EC2 VPC the-id: banana"))
 			})
 		})
 	})
@@ -104,7 +104,7 @@ var _ = Describe("Vpc", func() {
 
 	Describe("Type", func() {
 		It("returns \"vpc\"", func() {
-			Expect(vpc.Type()).To(Equal("vpc"))
+			Expect(vpc.Type()).To(Equal("EC2 VPC"))
 		})
 	})
 })

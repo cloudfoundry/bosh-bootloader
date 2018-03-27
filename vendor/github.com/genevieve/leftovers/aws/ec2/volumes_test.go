@@ -46,7 +46,7 @@ var _ = Describe("Volumes", func() {
 
 			Expect(client.DescribeVolumesCall.CallCount).To(Equal(1))
 			Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(1))
-			Expect(logger.PromptWithDetailsCall.Receives.Type).To(Equal("volume"))
+			Expect(logger.PromptWithDetailsCall.Receives.Type).To(Equal("EC2 Volume"))
 			Expect(logger.PromptWithDetailsCall.Receives.Name).To(Equal("banana"))
 
 			Expect(items).To(HaveLen(1))
@@ -63,7 +63,7 @@ var _ = Describe("Volumes", func() {
 
 			It("returns the error", func() {
 				_, err := volumes.List(filter)
-				Expect(err).To(MatchError("Describing volumes: some error"))
+				Expect(err).To(MatchError("Describing EC2 Volumes: some error"))
 			})
 		})
 

@@ -61,7 +61,7 @@ func (v Vpcs) List(filter string) ([]common.Deletable, error) {
 func (v Vpcs) get(filter string) ([]common.Deletable, error) {
 	output, err := v.client.DescribeVpcs(&awsec2.DescribeVpcsInput{})
 	if err != nil {
-		return nil, fmt.Errorf("Describing vpcs: %s", err)
+		return nil, fmt.Errorf("Describing EC2 VPCs: %s", err)
 	}
 
 	var resources []common.Deletable

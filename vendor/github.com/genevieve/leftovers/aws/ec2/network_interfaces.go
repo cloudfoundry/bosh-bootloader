@@ -51,7 +51,7 @@ func (e NetworkInterfaces) List(filter string) ([]common.Deletable, error) {
 func (e NetworkInterfaces) get(filter string) ([]common.Deletable, error) {
 	networkInterfaces, err := e.client.DescribeNetworkInterfaces(&awsec2.DescribeNetworkInterfacesInput{})
 	if err != nil {
-		return nil, fmt.Errorf("Describing network interfaces: %s", err)
+		return nil, fmt.Errorf("Describing EC2 Network Interfaces: %s", err)
 	}
 
 	var resources []common.Deletable

@@ -41,7 +41,7 @@ var _ = Describe("KeyPair", func() {
 
 			It("returns the error", func() {
 				err := keyPair.Delete()
-				Expect(err).To(MatchError("FAILED deleting key pair the-name: banana"))
+				Expect(err).To(MatchError("FAILED deleting EC2 Key Pair the-name: banana"))
 			})
 		})
 	})
@@ -54,7 +54,7 @@ var _ = Describe("KeyPair", func() {
 
 	Describe("Type", func() {
 		It("returns \"key pair\"", func() {
-			Expect(keyPair.Type()).To(Equal("key pair"))
+			Expect(keyPair.Type()).To(Equal("EC2 Key Pair"))
 		})
 	})
 })

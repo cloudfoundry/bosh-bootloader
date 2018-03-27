@@ -48,7 +48,7 @@ var _ = Describe("Subnets", func() {
 			Expect(client.DeleteSubnetCall.Receives.Input.SubnetId).To(Equal(aws.String("the-subnet-id")))
 
 			Expect(logger.PrintfCall.Messages).To(Equal([]string{
-				"SUCCESS deleting subnet the-subnet-id\n",
+				"SUCCESS deleting EC2 Subnet the-subnet-id\n",
 			}))
 		})
 
@@ -59,7 +59,7 @@ var _ = Describe("Subnets", func() {
 
 			It("returns the error and does not try deleting them", func() {
 				err := subnets.Delete("banana")
-				Expect(err).To(MatchError("Describing subnets: some error"))
+				Expect(err).To(MatchError("Describing EC2 Subnets: some error"))
 
 				Expect(client.DeleteSubnetCall.CallCount).To(Equal(0))
 			})
@@ -75,7 +75,7 @@ var _ = Describe("Subnets", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(logger.PrintfCall.Messages).To(Equal([]string{
-					"ERROR deleting subnet the-subnet-id: some error\n",
+					"ERROR deleting EC2 Subnet the-subnet-id: some error\n",
 				}))
 			})
 		})

@@ -74,7 +74,6 @@ func NewLeftovers(logger logger, accessKeyId, secretAccessKey, region string) (L
 			iam.NewRoles(iamClient, logger, rolePolicies),
 			iam.NewUsers(iamClient, logger, userPolicies, accessKeys),
 			iam.NewPolicies(iamClient, logger),
-			iam.NewServerCertificates(iamClient, logger),
 
 			ec2.NewAddresses(ec2Client, logger),
 			ec2.NewKeyPairs(ec2Client, logger),
@@ -93,6 +92,8 @@ func NewLeftovers(logger logger, accessKeyId, secretAccessKey, region string) (L
 
 			rds.NewDBInstances(rdsClient, logger),
 			rds.NewDBSubnetGroups(rdsClient, logger),
+
+			iam.NewServerCertificates(iamClient, logger),
 		},
 	}, nil
 }

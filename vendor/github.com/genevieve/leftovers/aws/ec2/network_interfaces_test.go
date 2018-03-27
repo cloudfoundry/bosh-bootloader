@@ -45,7 +45,7 @@ var _ = Describe("NetworkInterfaces", func() {
 
 			Expect(client.DescribeNetworkInterfacesCall.CallCount).To(Equal(1))
 			Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(1))
-			Expect(logger.PromptWithDetailsCall.Receives.Type).To(Equal("network interface"))
+			Expect(logger.PromptWithDetailsCall.Receives.Type).To(Equal("EC2 Network Interface"))
 			Expect(logger.PromptWithDetailsCall.Receives.Name).To(Equal("banana"))
 
 			Expect(items).To(HaveLen(1))
@@ -58,7 +58,7 @@ var _ = Describe("NetworkInterfaces", func() {
 
 			It("returns the error", func() {
 				_, err := networkInterfaces.List(filter)
-				Expect(err).To(MatchError("Describing network interfaces: some error"))
+				Expect(err).To(MatchError("Describing EC2 Network Interfaces: some error"))
 			})
 		})
 

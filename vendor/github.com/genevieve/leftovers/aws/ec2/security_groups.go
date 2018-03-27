@@ -53,7 +53,7 @@ func (e SecurityGroups) List(filter string) ([]common.Deletable, error) {
 func (s SecurityGroups) get(filter string) ([]common.Deletable, error) {
 	output, err := s.client.DescribeSecurityGroups(&awsec2.DescribeSecurityGroupsInput{})
 	if err != nil {
-		return nil, fmt.Errorf("Describing security groups: %s", err)
+		return nil, fmt.Errorf("Describing EC2 Security Groups: %s", err)
 	}
 
 	var resources []common.Deletable
@@ -74,7 +74,7 @@ func (s SecurityGroups) get(filter string) ([]common.Deletable, error) {
 				IpPermissions: sg.IpPermissions,
 			})
 			if err != nil {
-				s.logger.Printf("ERROR revoking security group ingress for %s: %s\n", resource.Name(), err)
+				s.logger.Printf("ERROR revoking ingress for %s: %s\n", resource.Name(), err)
 			}
 		}
 
@@ -84,7 +84,7 @@ func (s SecurityGroups) get(filter string) ([]common.Deletable, error) {
 				IpPermissions: sg.IpPermissionsEgress,
 			})
 			if err != nil {
-				s.logger.Printf("ERROR revoking security group egress for %s: %s\n", resource.Name(), err)
+				s.logger.Printf("ERROR revoking egress for %s: %s\n", resource.Name(), err)
 			}
 		}
 

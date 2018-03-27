@@ -42,7 +42,7 @@ var _ = Describe("NetworkInterface", func() {
 
 			It("returns the error", func() {
 				err := networkInterface.Delete()
-				Expect(err).To(MatchError("FAILED deleting network interface the-id: banana"))
+				Expect(err).To(MatchError("FAILED deleting EC2 Network Interface the-id: banana"))
 			})
 		})
 	})
@@ -54,8 +54,8 @@ var _ = Describe("NetworkInterface", func() {
 	})
 
 	Describe("Type", func() {
-		It("returns \"network interface\"", func() {
-			Expect(networkInterface.Type()).To(Equal("network interface"))
+		It("returns the type", func() {
+			Expect(networkInterface.Type()).To(Equal("EC2 Network Interface"))
 		})
 	})
 })

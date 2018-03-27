@@ -10,6 +10,7 @@ type Volume struct {
 	client     volumesClient
 	id         *string
 	identifier string
+	rtype      string
 }
 
 func NewVolume(client volumesClient, id *string) Volume {
@@ -17,6 +18,7 @@ func NewVolume(client volumesClient, id *string) Volume {
 		client:     client,
 		id:         id,
 		identifier: *id,
+		rtype:      "EC2 Volume",
 	}
 }
 
@@ -26,7 +28,7 @@ func (v Volume) Delete() error {
 	})
 
 	if err != nil {
-		return fmt.Errorf("FAILED deleting volume %s: %s", v.identifier, err)
+		return fmt.Errorf("FAILED deleting %s %s: %s", v.rtype, v.identifier, err)
 	}
 
 	return nil
@@ -37,5 +39,5 @@ func (v Volume) Name() string {
 }
 
 func (v Volume) Type() string {
-	return "volume"
+	return v.rtype
 }

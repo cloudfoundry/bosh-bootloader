@@ -12,6 +12,7 @@ type Tag struct {
 	value      *string
 	resourceId *string
 	identifier string
+	rtype      string
 }
 
 func NewTag(client tagsClient, key, value, resourceId *string) Tag {
@@ -21,6 +22,7 @@ func NewTag(client tagsClient, key, value, resourceId *string) Tag {
 		value:      value,
 		resourceId: resourceId,
 		identifier: *value,
+		rtype:      "EC2 Tag",
 	}
 }
 
@@ -31,7 +33,7 @@ func (t Tag) Delete() error {
 	})
 
 	if err != nil {
-		return fmt.Errorf("FAILED deleting tag %s: %s", t.identifier, err)
+		return fmt.Errorf("FAILED deleting %s %s: %s", t.rtype, t.identifier, err)
 	}
 
 	return nil
@@ -42,5 +44,5 @@ func (t Tag) Name() string {
 }
 
 func (t Tag) Type() string {
-	return "tag"
+	return t.rtype
 }

@@ -45,7 +45,7 @@ var _ = Describe("KeyPairs", func() {
 
 			Expect(client.DescribeKeyPairsCall.CallCount).To(Equal(1))
 			Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(1))
-			Expect(logger.PromptWithDetailsCall.Receives.Type).To(Equal("key pair"))
+			Expect(logger.PromptWithDetailsCall.Receives.Type).To(Equal("EC2 Key Pair"))
 			Expect(logger.PromptWithDetailsCall.Receives.Name).To(Equal("banana"))
 
 			Expect(items).To(HaveLen(1))
@@ -58,7 +58,7 @@ var _ = Describe("KeyPairs", func() {
 
 			It("returns the error", func() {
 				_, err := keys.List(filter)
-				Expect(err).To(MatchError("Describing key pairs: some error"))
+				Expect(err).To(MatchError("Describing EC2 Key Pairs: some error"))
 			})
 		})
 

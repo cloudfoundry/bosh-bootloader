@@ -10,6 +10,7 @@ type KeyPair struct {
 	client     keyPairsClient
 	name       *string
 	identifier string
+	rtype      string
 }
 
 func NewKeyPair(client keyPairsClient, name *string) KeyPair {
@@ -17,6 +18,7 @@ func NewKeyPair(client keyPairsClient, name *string) KeyPair {
 		client:     client,
 		name:       name,
 		identifier: *name,
+		rtype:      "EC2 Key Pair",
 	}
 }
 
@@ -26,7 +28,7 @@ func (k KeyPair) Delete() error {
 	})
 
 	if err != nil {
-		return fmt.Errorf("FAILED deleting key pair %s: %s", k.identifier, err)
+		return fmt.Errorf("FAILED deleting %s %s: %s", k.rtype, k.identifier, err)
 	}
 
 	return nil
@@ -37,5 +39,5 @@ func (k KeyPair) Name() string {
 }
 
 func (k KeyPair) Type() string {
-	return "key pair"
+	return k.rtype
 }

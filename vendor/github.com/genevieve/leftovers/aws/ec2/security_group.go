@@ -11,6 +11,7 @@ type SecurityGroup struct {
 	client     securityGroupsClient
 	id         *string
 	identifier string
+	rtype      string
 }
 
 func NewSecurityGroup(client securityGroupsClient, id, groupName *string, tags []*awsec2.Tag) SecurityGroup {
@@ -29,6 +30,7 @@ func NewSecurityGroup(client securityGroupsClient, id, groupName *string, tags [
 		client:     client,
 		id:         id,
 		identifier: identifier,
+		rtype:      "EC2 Security Group",
 	}
 }
 
@@ -38,7 +40,7 @@ func (s SecurityGroup) Delete() error {
 	})
 
 	if err != nil {
-		return fmt.Errorf("FAILED deleting security group %s: %s", s.identifier, err)
+		return fmt.Errorf("FAILED deleting %s %s: %s", s.rtype, s.identifier, err)
 	}
 
 	return nil
@@ -49,5 +51,5 @@ func (s SecurityGroup) Name() string {
 }
 
 func (s SecurityGroup) Type() string {
-	return "security group"
+	return "EC2 Security Group"
 }

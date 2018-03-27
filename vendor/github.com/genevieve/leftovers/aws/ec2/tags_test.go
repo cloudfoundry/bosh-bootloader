@@ -47,7 +47,7 @@ var _ = Describe("Tags", func() {
 
 			Expect(client.DescribeTagsCall.CallCount).To(Equal(1))
 			Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(1))
-			Expect(logger.PromptWithDetailsCall.Receives.Type).To(Equal("tag"))
+			Expect(logger.PromptWithDetailsCall.Receives.Type).To(Equal("EC2 Tag"))
 			Expect(logger.PromptWithDetailsCall.Receives.Name).To(Equal("banana-tag"))
 
 			Expect(items).To(HaveLen(1))
@@ -60,7 +60,7 @@ var _ = Describe("Tags", func() {
 
 			It("returns the error", func() {
 				_, err := tags.List(filter)
-				Expect(err).To(MatchError("Describing tags: some error"))
+				Expect(err).To(MatchError("Describing EC2 Tags: some error"))
 			})
 		})
 
