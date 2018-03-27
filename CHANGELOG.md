@@ -107,6 +107,7 @@ tearing down the old with bbl v2.4.1.
 be named “bosh”. bosh-init is no longer required.
 
 **FEATURES / IMPROVEMENTS:**
+* GCP support is added.
 * For trivial preference changes, such as the number of workers or ARP cache
 flush, you can supply an ops file with bbl up -o ops-file.yml.
 * For more intense changes such as boshlite-on-gcp or credhub you may find it
@@ -115,3 +116,8 @@ bosh-deployment. You can read more about this workflow in our docs.
 
 **BUG FIXES:**
 
+
+## v2.0.0 (November 1, 2016)
+
+**FEATURES / IMPROVEMENTS:**
+* bbl lbs commands fast-fails when bbl-state.json does not exist
