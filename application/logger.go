@@ -74,3 +74,7 @@ func (l *Logger) Prompt(message string) bool {
 	}
 	return false
 }
+
+func (l *Logger) PromptWithDetails(resourceType, resourceName string) bool {
+	return l.Prompt(fmt.Sprintf("Are you sure you want to delete %s: %s?", resourceType, resourceName))
+}
