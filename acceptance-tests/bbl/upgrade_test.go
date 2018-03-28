@@ -116,7 +116,7 @@ var _ = Describe("Upgrade", func() {
 			Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
 
 			session = newBBL.Up()
-			Eventually(session, 20*time.Minute).Should(gexec.Exit(0))
+			Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 		})
 
 		By("exporting BOSH_ALL_PROXY to talk to the director", func() {
