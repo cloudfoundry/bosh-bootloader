@@ -116,6 +116,7 @@ var _ = Describe("Upgrade", func() {
 			Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
 
 			session = newBBL.Up()
+			Expect(session.Out).To(ContainSubstring("Started validating"))
 			Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
 		})
 
