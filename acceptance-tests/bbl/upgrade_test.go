@@ -13,6 +13,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
 )
 
@@ -116,8 +117,8 @@ var _ = Describe("Upgrade", func() {
 			Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
 
 			session = newBBL.Up()
-			Expect(session.Out).To(ContainSubstring("Started validating"))
 			Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
+			Eventually(session.Out).Should(gbytes.Say("Started validating"))
 		})
 
 		By("exporting BOSH_ALL_PROXY to talk to the director", func() {
