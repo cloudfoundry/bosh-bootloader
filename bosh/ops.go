@@ -14,11 +14,20 @@ const AWSBoshDirectorEphemeralIPOps = `
 
 const AWSEncryptDiskOps = `---
 - type: replace
-  path: /disk_pools/name=disks/cloud_properties?
-  value:
-    type: gp2
-    encrypted: true
-    kms_key_arn: ((kms_key_arn))
+  path: /cloud_provider/properties/aws/kms_key_arn?
+  value: ((kms_key_arn))
+
+- type: replace
+  path: /cloud_provider/properties/aws/encrypted?
+  value: true
+
+- type: replace
+  path: /instance_groups/name=bosh/properties/aws/kms_key_arn?
+  value: ((kms_key_arn))
+
+- type: replace
+  path: /instance_groups/name=bosh/properties/aws/encrypted?
+  value: true
 `
 
 const VSphereJumpboxNetworkOps = `---
