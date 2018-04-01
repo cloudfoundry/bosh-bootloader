@@ -28,22 +28,18 @@ func NewGlobalAddresses(client globalAddressesClient, logger logger) GlobalAddre
 func (a GlobalAddresses) List(filter string) ([]common.Deletable, error) {
 	addresses, err := a.client.ListGlobalAddresses()
 	if err != nil {
-		return nil, fmt.Errorf("Listing global addresses: %s", err)
+		return nil, fmt.Errorf("List Global Addresses: %s", err)
 	}
 
 	var resources []common.Deletable
 	for _, address := range addresses.Items {
 		resource := NewGlobalAddress(a.client, address.Name)
 
-		if len(address.Users) > 0 {
-			continue
-		}
-
 		if !strings.Contains(address.Name, filter) {
 			continue
 		}
 
-		proceed := a.logger.Prompt(fmt.Sprintf("Are you sure you want to delete global address %s?", address.Name))
+		proceed := a.logger.PromptWithDetails(resource.Type(), resource.Name())
 		if !proceed {
 			continue
 		}

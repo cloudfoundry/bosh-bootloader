@@ -25,10 +25,33 @@ func NewGroups(client groupsClient, logger logger) Groups {
 	}
 }
 
+func (g Groups) ListOnly(filter string) ([]Deletable, error) {
+	return g.get(filter)
+}
+
 func (g Groups) List(filter string) ([]Deletable, error) {
+	resources, err := g.get(filter)
+	if err != nil {
+		return nil, err
+	}
+
+	var delete []Deletable
+	for _, r := range resources {
+		proceed := g.logger.Prompt(fmt.Sprintf("Are you sure you want to delete %s %s?", r.Type(), r.Name()))
+		if !proceed {
+			continue
+		}
+
+		delete = append(delete, r)
+	}
+
+	return delete, nil
+}
+
+func (g Groups) get(filter string) ([]Deletable, error) {
 	groups, err := g.client.List("", nil)
 	if err != nil {
-		return nil, fmt.Errorf("Listing resource groups: %s", err)
+		return nil, fmt.Errorf("Listing Resource Groups: %s", err)
 	}
 
 	var resources []Deletable
@@ -36,11 +59,6 @@ func (g Groups) List(filter string) ([]Deletable, error) {
 		resource := NewGroup(g.client, group.Name)
 
 		if !strings.Contains(resource.identifier, filter) {
-			continue
-		}
-
-		proceed := g.logger.Prompt(fmt.Sprintf("Are you sure you want to delete resource group %s?", resource.identifier))
-		if !proceed {
 			continue
 		}
 

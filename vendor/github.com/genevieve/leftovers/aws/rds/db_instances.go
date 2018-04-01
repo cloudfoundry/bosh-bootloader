@@ -25,7 +25,7 @@ func NewDBInstances(client dbInstancesClient, logger logger) DBInstances {
 	}
 }
 
-func (d DBInstances) ListAll(filter string) ([]common.Deletable, error) {
+func (d DBInstances) ListOnly(filter string) ([]common.Deletable, error) {
 	return d.get(filter)
 }
 

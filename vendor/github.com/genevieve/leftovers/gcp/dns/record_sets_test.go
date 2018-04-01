@@ -93,7 +93,7 @@ var _ = Describe("RecordSets", func() {
 
 			It("returns the error", func() {
 				err := recordSets.Delete("the-zone")
-				Expect(err).To(MatchError("Listing record sets: some error"))
+				Expect(err).To(MatchError("Listing DNS Record Sets: some error"))
 			})
 		})
 
@@ -104,7 +104,7 @@ var _ = Describe("RecordSets", func() {
 
 			It("returns the error", func() {
 				err := recordSets.Delete("the-zone")
-				Expect(err).To(MatchError("Deleting record sets: some error"))
+				Expect(err).To(MatchError("Delete record sets: some error"))
 			})
 		})
 	})

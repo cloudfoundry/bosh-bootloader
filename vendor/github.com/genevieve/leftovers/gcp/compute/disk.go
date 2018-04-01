@@ -18,9 +18,8 @@ func NewDisk(client disksClient, name, zone string) Disk {
 
 func (d Disk) Delete() error {
 	err := d.client.DeleteDisk(d.zone, d.name)
-
 	if err != nil {
-		return fmt.Errorf("ERROR deleting disk %s: %s", d.name, err)
+		return fmt.Errorf("Delete: %s", err)
 	}
 
 	return nil
@@ -31,5 +30,5 @@ func (d Disk) Name() string {
 }
 
 func (d Disk) Type() string {
-	return "disk"
+	return "Disk"
 }

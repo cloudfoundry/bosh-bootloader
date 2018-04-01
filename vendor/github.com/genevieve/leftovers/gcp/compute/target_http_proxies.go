@@ -28,18 +28,18 @@ func NewTargetHttpProxies(client targetHttpProxiesClient, logger logger) TargetH
 func (t TargetHttpProxies) List(filter string) ([]common.Deletable, error) {
 	targetHttpProxies, err := t.client.ListTargetHttpProxies()
 	if err != nil {
-		return nil, fmt.Errorf("Listing target http proxies: %s", err)
+		return nil, fmt.Errorf("List Target Http Proxies: %s", err)
 	}
 
 	var resources []common.Deletable
 	for _, targetHttpProxy := range targetHttpProxies.Items {
 		resource := NewTargetHttpProxy(t.client, targetHttpProxy.Name)
 
-		if !strings.Contains(resource.name, filter) {
+		if !strings.Contains(resource.Name(), filter) {
 			continue
 		}
 
-		proceed := t.logger.Prompt(fmt.Sprintf("Are you sure you want to delete target http proxy %s?", resource.name))
+		proceed := t.logger.PromptWithDetails(resource.Type(), resource.Name())
 		if !proceed {
 			continue
 		}

@@ -69,7 +69,7 @@ var _ = Describe("InstanceProfiles", func() {
 
 			It("returns the error and does not try deleting them", func() {
 				_, err := instanceProfiles.List(filter)
-				Expect(err).To(MatchError("Listing instance profiles: listing error"))
+				Expect(err).To(MatchError("List IAM Instance Profiles: listing error"))
 			})
 		})
 

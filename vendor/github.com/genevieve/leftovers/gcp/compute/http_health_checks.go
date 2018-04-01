@@ -28,7 +28,7 @@ func NewHttpHealthChecks(client httpHealthChecksClient, logger logger) HttpHealt
 func (h HttpHealthChecks) List(filter string) ([]common.Deletable, error) {
 	checks, err := h.client.ListHttpHealthChecks()
 	if err != nil {
-		return nil, fmt.Errorf("Listing http health checks: %s", err)
+		return nil, fmt.Errorf("List Http Health Checks: %s", err)
 	}
 
 	var resources []common.Deletable
@@ -39,7 +39,7 @@ func (h HttpHealthChecks) List(filter string) ([]common.Deletable, error) {
 			continue
 		}
 
-		proceed := h.logger.Prompt(fmt.Sprintf("Are you sure you want to delete http health check %s?", check.Name))
+		proceed := h.logger.PromptWithDetails(resource.Type(), resource.Name())
 		if !proceed {
 			continue
 		}

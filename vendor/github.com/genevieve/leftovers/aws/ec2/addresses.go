@@ -24,7 +24,7 @@ func NewAddresses(client addressesClient, logger logger) Addresses {
 	}
 }
 
-func (d Addresses) ListAll(filter string) ([]common.Deletable, error) {
+func (d Addresses) ListOnly(filter string) ([]common.Deletable, error) {
 	return d.get(filter)
 }
 

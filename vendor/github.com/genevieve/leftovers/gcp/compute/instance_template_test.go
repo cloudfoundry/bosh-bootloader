@@ -41,7 +41,7 @@ var _ = Describe("InstanceTemplate", func() {
 
 			It("returns the error", func() {
 				err := instanceTemplate.Delete()
-				Expect(err).To(MatchError("ERROR deleting instance template banana: the-error"))
+				Expect(err).To(MatchError("Delete: the-error"))
 			})
 		})
 	})
@@ -53,8 +53,8 @@ var _ = Describe("InstanceTemplate", func() {
 	})
 
 	Describe("Type", func() {
-		It("returns \"instance template\"", func() {
-			Expect(instanceTemplate.Type()).To(Equal("instance template"))
+		It("returns the type", func() {
+			Expect(instanceTemplate.Type()).To(Equal("Instance Template"))
 		})
 	})
 })

@@ -18,7 +18,7 @@ func (i InstanceTemplate) Delete() error {
 	err := i.client.DeleteInstanceTemplate(i.name)
 
 	if err != nil {
-		return fmt.Errorf("ERROR deleting instance template %s: %s", i.name, err)
+		return fmt.Errorf("Delete: %s", err)
 	}
 
 	return nil
@@ -29,5 +29,5 @@ func (i InstanceTemplate) Name() string {
 }
 
 func (i InstanceTemplate) Type() string {
-	return "instance template"
+	return "Instance Template"
 }

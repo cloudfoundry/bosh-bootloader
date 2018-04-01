@@ -25,7 +25,7 @@ func NewServerCertificates(client serverCertificatesClient, logger logger) Serve
 	}
 }
 
-func (s ServerCertificates) ListAll(filter string) ([]common.Deletable, error) {
+func (s ServerCertificates) ListOnly(filter string) ([]common.Deletable, error) {
 	return s.getServerCertificates(filter)
 }
 
@@ -51,7 +51,7 @@ func (s ServerCertificates) List(filter string) ([]common.Deletable, error) {
 func (s ServerCertificates) getServerCertificates(filter string) ([]common.Deletable, error) {
 	certificates, err := s.client.ListServerCertificates(&awsiam.ListServerCertificatesInput{})
 	if err != nil {
-		return nil, fmt.Errorf("Listing server certificates: %s", err)
+		return nil, fmt.Errorf("List IAM Server Certificates: %s", err)
 	}
 
 	var resources []common.Deletable

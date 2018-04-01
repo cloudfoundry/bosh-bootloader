@@ -44,7 +44,7 @@ var _ = Describe("ForwardingRule", func() {
 
 			It("returns the error", func() {
 				err := forwardingRule.Delete()
-				Expect(err).To(MatchError("ERROR deleting forwarding rule banana: the-error"))
+				Expect(err).To(MatchError("Delete: the-error"))
 			})
 		})
 	})
@@ -57,7 +57,7 @@ var _ = Describe("ForwardingRule", func() {
 
 	Describe("Type", func() {
 		It("returns \"forwarding rule\"", func() {
-			Expect(forwardingRule.Type()).To(Equal("forwarding rule"))
+			Expect(forwardingRule.Type()).To(Equal("Forwarding Rule"))
 		})
 	})
 })

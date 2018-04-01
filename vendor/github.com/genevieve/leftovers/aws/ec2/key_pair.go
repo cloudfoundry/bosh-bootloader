@@ -23,12 +23,9 @@ func NewKeyPair(client keyPairsClient, name *string) KeyPair {
 }
 
 func (k KeyPair) Delete() error {
-	_, err := k.client.DeleteKeyPair(&awsec2.DeleteKeyPairInput{
-		KeyName: k.name,
-	})
-
+	_, err := k.client.DeleteKeyPair(&awsec2.DeleteKeyPairInput{KeyName: k.name})
 	if err != nil {
-		return fmt.Errorf("FAILED deleting %s %s: %s", k.rtype, k.identifier, err)
+		return fmt.Errorf("Delete: %s", err)
 	}
 
 	return nil

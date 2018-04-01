@@ -32,7 +32,7 @@ func (i Instances) List(filter string) ([]common.Deletable, error) {
 	for _, zone := range i.zones {
 		l, err := i.client.ListInstances(zone)
 		if err != nil {
-			return nil, fmt.Errorf("Listing instances for zone %s: %s", zone, err)
+			return nil, fmt.Errorf("List Instances for zone %s: %s", zone, err)
 		}
 
 		instances = append(instances, l.Items...)
@@ -40,15 +40,13 @@ func (i Instances) List(filter string) ([]common.Deletable, error) {
 
 	var resources []common.Deletable
 	for _, instance := range instances {
-		resource := NewInstance(i.client, instance.Name, i.zones[instance.Zone])
+		resource := NewInstance(i.client, instance.Name, i.zones[instance.Zone], instance.Tags)
 
-		n := i.clearerName(instance)
-
-		if !strings.Contains(n, filter) {
+		if !strings.Contains(resource.Name(), filter) {
 			continue
 		}
 
-		proceed := i.logger.Prompt(fmt.Sprintf("Are you sure you want to delete instance %s?", n))
+		proceed := i.logger.PromptWithDetails(resource.Type(), resource.Name())
 		if !proceed {
 			continue
 		}
@@ -57,19 +55,4 @@ func (i Instances) List(filter string) ([]common.Deletable, error) {
 	}
 
 	return resources, nil
-}
-
-func (s Instances) clearerName(i *gcpcompute.Instance) string {
-	extra := []string{}
-	if i.Tags != nil && len(i.Tags.Items) > 0 {
-		for _, tag := range i.Tags.Items {
-			extra = append(extra, tag)
-		}
-	}
-
-	if len(extra) > 0 {
-		return fmt.Sprintf("%s (%s)", i.Name, strings.Join(extra, ", "))
-	}
-
-	return i.Name
 }

@@ -41,7 +41,7 @@ var _ = Describe("GlobalAddress", func() {
 
 			It("returns the error", func() {
 				err := globalAddress.Delete()
-				Expect(err).To(MatchError("ERROR deleting global address banana: the-error"))
+				Expect(err).To(MatchError("Delete: the-error"))
 			})
 		})
 	})
@@ -53,8 +53,8 @@ var _ = Describe("GlobalAddress", func() {
 	})
 
 	Describe("Type", func() {
-		It("returns \"global address\"", func() {
-			Expect(globalAddress.Type()).To(Equal("global address"))
+		It("returns the type", func() {
+			Expect(globalAddress.Type()).To(Equal("Global Address"))
 		})
 	})
 })

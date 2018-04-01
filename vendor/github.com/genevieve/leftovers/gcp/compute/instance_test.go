@@ -5,6 +5,7 @@ import (
 
 	"github.com/genevieve/leftovers/gcp/compute"
 	"github.com/genevieve/leftovers/gcp/compute/fakes"
+	gcpcompute "google.golang.org/api/compute/v1"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -15,6 +16,7 @@ var _ = Describe("Instance", func() {
 		client *fakes.InstancesClient
 		name   string
 		zone   string
+		tags   *gcpcompute.Tags
 
 		instance compute.Instance
 	)
@@ -23,8 +25,9 @@ var _ = Describe("Instance", func() {
 		client = &fakes.InstancesClient{}
 		name = "banana"
 		zone = "zone"
+		tags = &gcpcompute.Tags{Items: []string{"tag-1"}}
 
-		instance = compute.NewInstance(client, name, zone)
+		instance = compute.NewInstance(client, name, zone, tags)
 	})
 
 	Describe("Delete", func() {
@@ -44,20 +47,20 @@ var _ = Describe("Instance", func() {
 
 			It("returns the error", func() {
 				err := instance.Delete()
-				Expect(err).To(MatchError("ERROR deleting instance banana: the-error"))
+				Expect(err).To(MatchError("Delete: the-error"))
 			})
 		})
 	})
 
 	Describe("Name", func() {
 		It("returns the name", func() {
-			Expect(instance.Name()).To(Equal(name))
+			Expect(instance.Name()).To(Equal("banana (tag-1)"))
 		})
 	})
 
 	Describe("Type", func() {
-		It("returns \"instance\"", func() {
-			Expect(instance.Type()).To(Equal("instance"))
+		It("returns the type", func() {
+			Expect(instance.Type()).To(Equal("Instance"))
 		})
 	})
 })

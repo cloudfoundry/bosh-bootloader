@@ -23,8 +23,9 @@ var _ = Describe("Address", func() {
 		client = &fakes.AddressesClient{}
 		name = "banana"
 		region = "us-banana"
+		users := 0
 
-		address = compute.NewAddress(client, name, region)
+		address = compute.NewAddress(client, name, region, users)
 	})
 
 	Describe("Delete", func() {
@@ -44,7 +45,7 @@ var _ = Describe("Address", func() {
 
 			It("returns the error", func() {
 				err := address.Delete()
-				Expect(err).To(MatchError("ERROR deleting address banana: the-error"))
+				Expect(err).To(MatchError("Delete: the-error"))
 			})
 		})
 	})
@@ -53,11 +54,21 @@ var _ = Describe("Address", func() {
 		It("returns the name", func() {
 			Expect(address.Name()).To(Equal(name))
 		})
+
+		Context("when the address is in use", func() {
+			BeforeEach(func() {
+				users := 1
+				address = compute.NewAddress(client, name, region, users)
+			})
+			It("adds the number of users to the name", func() {
+				Expect(address.Name()).To(Equal("banana (Users:1)"))
+			})
+		})
 	})
 
 	Describe("Type", func() {
-		It("returns \"address\"", func() {
-			Expect(address.Type()).To(Equal("address"))
+		It("returns the type", func() {
+			Expect(address.Type()).To(Equal("Address"))
 		})
 	})
 })

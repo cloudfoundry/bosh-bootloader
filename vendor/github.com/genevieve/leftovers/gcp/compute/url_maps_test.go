@@ -29,7 +29,7 @@ var _ = Describe("UrlMaps", func() {
 		var filter string
 
 		BeforeEach(func() {
-			logger.PromptCall.Returns.Proceed = true
+			logger.PromptWithDetailsCall.Returns.Proceed = true
 			client.ListUrlMapsCall.Returns.Output = &gcpcompute.UrlMapList{
 				Items: []*gcpcompute.UrlMap{{
 					Name: "banana-url-map",
@@ -44,7 +44,9 @@ var _ = Describe("UrlMaps", func() {
 
 			Expect(client.ListUrlMapsCall.CallCount).To(Equal(1))
 
-			Expect(logger.PromptCall.Receives.Message).To(Equal("Are you sure you want to delete url map banana-url-map?"))
+			Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(1))
+			Expect(logger.PromptWithDetailsCall.Receives.Type).To(Equal("Url Map"))
+			Expect(logger.PromptWithDetailsCall.Receives.Name).To(Equal("banana-url-map"))
 
 			Expect(list).To(HaveLen(1))
 		})
@@ -56,7 +58,7 @@ var _ = Describe("UrlMaps", func() {
 
 			It("returns the error", func() {
 				_, err := urlMaps.List(filter)
-				Expect(err).To(MatchError("Listing url maps: some error"))
+				Expect(err).To(MatchError("List Url Maps: some error"))
 			})
 		})
 
@@ -65,14 +67,14 @@ var _ = Describe("UrlMaps", func() {
 				list, err := urlMaps.List("grape")
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(logger.PromptCall.CallCount).To(Equal(0))
+				Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(0))
 				Expect(list).To(HaveLen(0))
 			})
 		})
 
 		Context("when the user says no to the prompt", func() {
 			BeforeEach(func() {
-				logger.PromptCall.Returns.Proceed = false
+				logger.PromptWithDetailsCall.Returns.Proceed = false
 			})
 
 			It("does not add it to the list", func() {

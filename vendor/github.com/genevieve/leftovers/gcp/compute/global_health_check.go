@@ -18,7 +18,7 @@ func (g GlobalHealthCheck) Delete() error {
 	err := g.client.DeleteGlobalHealthCheck(g.name)
 
 	if err != nil {
-		return fmt.Errorf("ERROR deleting global health check %s: %s", g.name, err)
+		return fmt.Errorf("Delete: %s", err)
 	}
 
 	return nil
@@ -29,5 +29,5 @@ func (g GlobalHealthCheck) Name() string {
 }
 
 func (g GlobalHealthCheck) Type() string {
-	return "global health check"
+	return "Global Health Check"
 }

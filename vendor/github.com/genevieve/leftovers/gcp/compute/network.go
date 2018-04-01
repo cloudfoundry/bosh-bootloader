@@ -18,7 +18,7 @@ func (n Network) Delete() error {
 	err := n.client.DeleteNetwork(n.name)
 
 	if err != nil {
-		return fmt.Errorf("ERROR deleting network %s: %s", n.name, err)
+		return fmt.Errorf("Delete: %s", err)
 	}
 
 	return nil
@@ -29,5 +29,5 @@ func (n Network) Name() string {
 }
 
 func (n Network) Type() string {
-	return "network"
+	return "Network"
 }

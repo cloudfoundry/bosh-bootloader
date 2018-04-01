@@ -30,7 +30,7 @@ func NewBuckets(client bucketsClient, logger logger, manager bucketManager) Buck
 	}
 }
 
-func (b Buckets) ListAll(filter string) ([]common.Deletable, error) {
+func (b Buckets) ListOnly(filter string) ([]common.Deletable, error) {
 	return b.get(filter)
 }
 

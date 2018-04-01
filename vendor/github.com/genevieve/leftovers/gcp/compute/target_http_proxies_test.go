@@ -29,7 +29,7 @@ var _ = Describe("TargetHttpProxies", func() {
 		var filter string
 
 		BeforeEach(func() {
-			logger.PromptCall.Returns.Proceed = true
+			logger.PromptWithDetailsCall.Returns.Proceed = true
 			client.ListTargetHttpProxiesCall.Returns.Output = &gcpcompute.TargetHttpProxyList{
 				Items: []*gcpcompute.TargetHttpProxy{{
 					Name: "banana-target-http-proxy",
@@ -44,7 +44,9 @@ var _ = Describe("TargetHttpProxies", func() {
 
 			Expect(client.ListTargetHttpProxiesCall.CallCount).To(Equal(1))
 
-			Expect(logger.PromptCall.Receives.Message).To(Equal("Are you sure you want to delete target http proxy banana-target-http-proxy?"))
+			Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(1))
+			Expect(logger.PromptWithDetailsCall.Receives.Type).To(Equal("Target Http Proxy"))
+			Expect(logger.PromptWithDetailsCall.Receives.Name).To(Equal("banana-target-http-proxy"))
 
 			Expect(list).To(HaveLen(1))
 		})
@@ -56,7 +58,7 @@ var _ = Describe("TargetHttpProxies", func() {
 
 			It("returns the error", func() {
 				_, err := targetHttpProxies.List(filter)
-				Expect(err).To(MatchError("Listing target http proxies: some error"))
+				Expect(err).To(MatchError("List Target Http Proxies: some error"))
 			})
 		})
 
@@ -65,14 +67,14 @@ var _ = Describe("TargetHttpProxies", func() {
 				list, err := targetHttpProxies.List("grape")
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(logger.PromptCall.CallCount).To(Equal(0))
+				Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(0))
 				Expect(list).To(HaveLen(0))
 			})
 		})
 
 		Context("when the user says no to the prompt", func() {
 			BeforeEach(func() {
-				logger.PromptCall.Returns.Proceed = false
+				logger.PromptWithDetailsCall.Returns.Proceed = false
 			})
 
 			It("does not add it to the list", func() {

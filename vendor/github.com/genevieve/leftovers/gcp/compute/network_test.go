@@ -41,7 +41,7 @@ var _ = Describe("Network", func() {
 
 			It("returns the error", func() {
 				err := network.Delete()
-				Expect(err).To(MatchError("ERROR deleting network banana: the-error"))
+				Expect(err).To(MatchError("Delete: the-error"))
 			})
 		})
 	})
@@ -53,8 +53,8 @@ var _ = Describe("Network", func() {
 	})
 
 	Describe("Type", func() {
-		It("returns \"network\"", func() {
-			Expect(network.Type()).To(Equal("network"))
+		It("returns the type", func() {
+			Expect(network.Type()).To(Equal("Network"))
 		})
 	})
 })

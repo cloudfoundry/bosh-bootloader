@@ -32,7 +32,7 @@ var _ = Describe("Disks", func() {
 
 		BeforeEach(func() {
 			filter = "banana"
-			logger.PromptCall.Returns.Proceed = true
+			logger.PromptWithDetailsCall.Returns.Proceed = true
 			client.ListDisksCall.Returns.Output = &gcpcompute.DiskList{
 				Items: []*gcpcompute.Disk{{
 					Name: "banana-disk",
@@ -48,7 +48,9 @@ var _ = Describe("Disks", func() {
 			Expect(client.ListDisksCall.CallCount).To(Equal(1))
 			Expect(client.ListDisksCall.Receives.Zone).To(Equal("zone-1"))
 
-			Expect(logger.PromptCall.Receives.Message).To(Equal("Are you sure you want to delete disk banana-disk?"))
+			Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(1))
+			Expect(logger.PromptWithDetailsCall.Receives.Type).To(Equal("Disk"))
+			Expect(logger.PromptWithDetailsCall.Receives.Name).To(Equal("banana-disk"))
 
 			Expect(list).To(HaveLen(1))
 		})
@@ -60,7 +62,7 @@ var _ = Describe("Disks", func() {
 
 			It("returns the error", func() {
 				_, err := disks.List(filter)
-				Expect(err).To(MatchError("Listing disks for zone zone-1: some error"))
+				Expect(err).To(MatchError("List Disks for zone zone-1: some error"))
 			})
 		})
 
@@ -70,7 +72,7 @@ var _ = Describe("Disks", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(client.ListDisksCall.CallCount).To(Equal(1))
-				Expect(logger.PromptCall.CallCount).To(Equal(0))
+				Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(0))
 
 				Expect(list).To(HaveLen(0))
 			})
@@ -92,14 +94,14 @@ var _ = Describe("Disks", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(client.ListDisksCall.CallCount).To(Equal(1))
-				Expect(logger.PromptCall.CallCount).To(Equal(0))
+				Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(0))
 				Expect(list).To(HaveLen(0))
 			})
 		})
 
 		Context("when the user says no to the prompt", func() {
 			BeforeEach(func() {
-				logger.PromptCall.Returns.Proceed = false
+				logger.PromptWithDetailsCall.Returns.Proceed = false
 			})
 
 			It("does not add it to the list", func() {

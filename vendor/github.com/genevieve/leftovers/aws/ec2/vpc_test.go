@@ -14,12 +14,13 @@ import (
 
 var _ = Describe("Vpc", func() {
 	var (
-		vpc      ec2.Vpc
-		client   *fakes.VpcClient
-		routes   *fakes.RouteTables
-		subnets  *fakes.Subnets
-		gateways *fakes.InternetGateways
-		id       *string
+		vpc          ec2.Vpc
+		client       *fakes.VpcClient
+		routes       *fakes.RouteTables
+		subnets      *fakes.Subnets
+		gateways     *fakes.InternetGateways
+		resourceTags *fakes.ResourceTags
+		id           *string
 	)
 
 	BeforeEach(func() {
@@ -27,10 +28,11 @@ var _ = Describe("Vpc", func() {
 		routes = &fakes.RouteTables{}
 		subnets = &fakes.Subnets{}
 		gateways = &fakes.InternetGateways{}
+		resourceTags = &fakes.ResourceTags{}
 		id = aws.String("the-id")
 		tags := []*awsec2.Tag{}
 
-		vpc = ec2.NewVpc(client, routes, subnets, gateways, id, tags)
+		vpc = ec2.NewVpc(client, routes, subnets, gateways, resourceTags, id, tags)
 	})
 
 	Describe("Delete", func() {
@@ -49,6 +51,10 @@ var _ = Describe("Vpc", func() {
 
 			Expect(client.DeleteVpcCall.CallCount).To(Equal(1))
 			Expect(client.DeleteVpcCall.Receives.Input.VpcId).To(Equal(id))
+
+			Expect(resourceTags.DeleteCall.CallCount).To(Equal(1))
+			Expect(resourceTags.DeleteCall.Receives.ResourceType).To(Equal("vpc"))
+			Expect(resourceTags.DeleteCall.Receives.ResourceId).To(Equal("the-id"))
 		})
 
 		Context("when deleting routes fails", func() {
@@ -58,7 +64,7 @@ var _ = Describe("Vpc", func() {
 
 			It("returns the error", func() {
 				err := vpc.Delete()
-				Expect(err).To(MatchError("FAILED deleting routes for EC2 VPC the-id: banana"))
+				Expect(err).To(MatchError("Delete routes: banana"))
 			})
 		})
 
@@ -69,7 +75,7 @@ var _ = Describe("Vpc", func() {
 
 			It("returns the error", func() {
 				err := vpc.Delete()
-				Expect(err).To(MatchError("FAILED deleting subnets for EC2 VPC the-id: banana"))
+				Expect(err).To(MatchError("Delete subnets: banana"))
 			})
 		})
 
@@ -80,7 +86,18 @@ var _ = Describe("Vpc", func() {
 
 			It("returns the error", func() {
 				err := vpc.Delete()
-				Expect(err).To(MatchError("FAILED deleting internet gateways for EC2 VPC the-id: banana"))
+				Expect(err).To(MatchError("Delete internet gateways: banana"))
+			})
+		})
+
+		Context("when deleting resource tags fails", func() {
+			BeforeEach(func() {
+				resourceTags.DeleteCall.Returns.Error = errors.New("banana")
+			})
+
+			It("returns the error", func() {
+				err := vpc.Delete()
+				Expect(err).To(MatchError("Delete resource tags: banana"))
 			})
 		})
 
@@ -91,7 +108,7 @@ var _ = Describe("Vpc", func() {
 
 			It("returns the error", func() {
 				err := vpc.Delete()
-				Expect(err).To(MatchError("FAILED deleting EC2 VPC the-id: banana"))
+				Expect(err).To(MatchError("Delete: banana"))
 			})
 		})
 	})
@@ -103,7 +120,7 @@ var _ = Describe("Vpc", func() {
 	})
 
 	Describe("Type", func() {
-		It("returns \"vpc\"", func() {
+		It("returns the type", func() {
 			Expect(vpc.Type()).To(Equal("EC2 VPC"))
 		})
 	})

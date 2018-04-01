@@ -28,7 +28,7 @@ func NewBackendServices(client backendServicesClient, logger logger) BackendServ
 func (b BackendServices) List(filter string) ([]common.Deletable, error) {
 	backendServices, err := b.client.ListBackendServices()
 	if err != nil {
-		return nil, fmt.Errorf("Listing backend services: %s", err)
+		return nil, fmt.Errorf("List Backend Services: %s", err)
 	}
 
 	var resources []common.Deletable
@@ -39,7 +39,7 @@ func (b BackendServices) List(filter string) ([]common.Deletable, error) {
 			continue
 		}
 
-		proceed := b.logger.Prompt(fmt.Sprintf("Are you sure you want to delete backend service %s?", backend.Name))
+		proceed := b.logger.PromptWithDetails(resource.Type(), resource.Name())
 		if !proceed {
 			continue
 		}

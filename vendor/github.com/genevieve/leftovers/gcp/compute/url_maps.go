@@ -28,7 +28,7 @@ func NewUrlMaps(client urlMapsClient, logger logger) UrlMaps {
 func (u UrlMaps) List(filter string) ([]common.Deletable, error) {
 	urlMaps, err := u.client.ListUrlMaps()
 	if err != nil {
-		return nil, fmt.Errorf("Listing url maps: %s", err)
+		return nil, fmt.Errorf("List Url Maps: %s", err)
 	}
 
 	var resources []common.Deletable
@@ -36,11 +36,11 @@ func (u UrlMaps) List(filter string) ([]common.Deletable, error) {
 	for _, urlMap := range urlMaps.Items {
 		resource := NewUrlMap(u.client, urlMap.Name)
 
-		if !strings.Contains(resource.name, filter) {
+		if !strings.Contains(resource.Name(), filter) {
 			continue
 		}
 
-		proceed := u.logger.Prompt(fmt.Sprintf("Are you sure you want to delete url map %s?", resource.name))
+		proceed := u.logger.PromptWithDetails(resource.Type(), resource.Name())
 		if !proceed {
 			continue
 		}

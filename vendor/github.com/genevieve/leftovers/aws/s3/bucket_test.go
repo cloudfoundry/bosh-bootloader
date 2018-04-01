@@ -41,7 +41,7 @@ var _ = Describe("Bucket", func() {
 
 			It("returns the error", func() {
 				err := bucket.Delete()
-				Expect(err).To(MatchError("FAILED deleting S3 Bucket the-name: banana"))
+				Expect(err).To(MatchError("Delete: banana"))
 			})
 		})
 	})
@@ -53,7 +53,7 @@ var _ = Describe("Bucket", func() {
 	})
 
 	Describe("Type", func() {
-		It("returns \"bucket\"", func() {
+		It("returns the type", func() {
 			Expect(bucket.Type()).To(Equal("S3 Bucket"))
 		})
 	})

@@ -20,7 +20,7 @@ func (t TargetPool) Delete() error {
 	err := t.client.DeleteTargetPool(t.region, t.name)
 
 	if err != nil {
-		return fmt.Errorf("ERROR deleting target pool %s: %s", t.name, err)
+		return fmt.Errorf("Delete: %s", err)
 	}
 
 	return nil
@@ -31,5 +31,5 @@ func (t TargetPool) Name() string {
 }
 
 func (t TargetPool) Type() string {
-	return "target pool"
+	return "Target Pool"
 }

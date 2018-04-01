@@ -28,7 +28,7 @@ func NewInstanceTemplates(client instanceTemplatesClient, logger logger) Instanc
 func (i InstanceTemplates) List(filter string) ([]common.Deletable, error) {
 	templates, err := i.client.ListInstanceTemplates()
 	if err != nil {
-		return nil, fmt.Errorf("Listing instance templates: %s", err)
+		return nil, fmt.Errorf("List Instance Templates: %s", err)
 	}
 
 	var resources []common.Deletable
@@ -39,7 +39,7 @@ func (i InstanceTemplates) List(filter string) ([]common.Deletable, error) {
 			continue
 		}
 
-		proceed := i.logger.Prompt(fmt.Sprintf("Are you sure you want to delete %s %s?", resource.Type(), resource.Name()))
+		proceed := i.logger.PromptWithDetails(resource.Type(), resource.Name())
 		if !proceed {
 			continue
 		}

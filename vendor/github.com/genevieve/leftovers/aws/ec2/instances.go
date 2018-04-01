@@ -14,18 +14,20 @@ type instancesClient interface {
 }
 
 type Instances struct {
-	client instancesClient
-	logger logger
+	client       instancesClient
+	logger       logger
+	resourceTags resourceTags
 }
 
-func NewInstances(client instancesClient, logger logger) Instances {
+func NewInstances(client instancesClient, logger logger, resourceTags resourceTags) Instances {
 	return Instances{
-		client: client,
-		logger: logger,
+		client:       client,
+		logger:       logger,
+		resourceTags: resourceTags,
 	}
 }
 
-func (a Instances) ListAll(filter string) ([]common.Deletable, error) {
+func (a Instances) ListOnly(filter string) ([]common.Deletable, error) {
 	return a.get(filter)
 }
 
@@ -57,7 +59,7 @@ func (a Instances) get(filter string) ([]common.Deletable, error) {
 	var resources []common.Deletable
 	for _, r := range instances.Reservations {
 		for _, i := range r.Instances {
-			resource := NewInstance(a.client, i.InstanceId, i.KeyName, i.Tags)
+			resource := NewInstance(a.client, a.resourceTags, i.InstanceId, i.KeyName, i.Tags)
 
 			if a.alreadyShutdown(*i.State.Name) {
 				continue

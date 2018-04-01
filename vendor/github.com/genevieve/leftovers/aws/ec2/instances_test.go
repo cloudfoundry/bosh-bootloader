@@ -13,8 +13,9 @@ import (
 
 var _ = Describe("Instances", func() {
 	var (
-		client *fakes.InstancesClient
-		logger *fakes.Logger
+		client       *fakes.InstancesClient
+		logger       *fakes.Logger
+		resourceTags *fakes.ResourceTags
 
 		instances ec2.Instances
 	)
@@ -23,8 +24,9 @@ var _ = Describe("Instances", func() {
 		client = &fakes.InstancesClient{}
 		logger = &fakes.Logger{}
 		logger.PromptWithDetailsCall.Returns.Proceed = true
+		resourceTags = &fakes.ResourceTags{}
 
-		instances = ec2.NewInstances(client, logger)
+		instances = ec2.NewInstances(client, logger, resourceTags)
 	})
 
 	Describe("List", func() {

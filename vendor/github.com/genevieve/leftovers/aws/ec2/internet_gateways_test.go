@@ -54,8 +54,8 @@ var _ = Describe("InternetGateways", func() {
 			Expect(client.DeleteInternetGatewayCall.Receives.Input.InternetGatewayId).To(Equal(aws.String("the-gateway-id")))
 
 			Expect(logger.PrintfCall.Messages).To(Equal([]string{
-				"SUCCESS detaching EC2 Internet Gateway the-gateway-id\n",
-				"SUCCESS deleting EC2 Internet Gateway the-gateway-id\n",
+				"[EC2 VPC: the-vpc-id] Detached internet gateway the-gateway-id",
+				"[EC2 VPC: the-vpc-id] Deleted internet gateway the-gateway-id",
 			}))
 		})
 
@@ -66,7 +66,7 @@ var _ = Describe("InternetGateways", func() {
 
 			It("returns the error and does not try deleting them", func() {
 				err := gateways.Delete("banana")
-				Expect(err).To(MatchError("Describing EC2 Internet Gateways: some error"))
+				Expect(err).To(MatchError("Describe EC2 Internet Gateways: some error"))
 
 				Expect(client.DetachInternetGatewayCall.CallCount).To(Equal(0))
 				Expect(client.DeleteInternetGatewayCall.CallCount).To(Equal(0))
@@ -84,8 +84,8 @@ var _ = Describe("InternetGateways", func() {
 
 				Expect(client.DeleteInternetGatewayCall.CallCount).To(Equal(1))
 				Expect(logger.PrintfCall.Messages).To(Equal([]string{
-					"ERROR detaching EC2 Internet Gateway the-gateway-id: some error\n",
-					"SUCCESS deleting EC2 Internet Gateway the-gateway-id\n",
+					"[EC2 VPC: banana] Detach internet gateway the-gateway-id: some error",
+					"[EC2 VPC: banana] Deleted internet gateway the-gateway-id",
 				}))
 			})
 		})
@@ -95,13 +95,12 @@ var _ = Describe("InternetGateways", func() {
 				client.DeleteInternetGatewayCall.Returns.Error = errors.New("some error")
 			})
 
-			It("logs the error", func() {
+			It("returns the error", func() {
 				err := gateways.Delete("banana")
-				Expect(err).NotTo(HaveOccurred())
+				Expect(err).To(MatchError("Delete the-gateway-id: some error"))
 
 				Expect(logger.PrintfCall.Messages).To(Equal([]string{
-					"SUCCESS detaching EC2 Internet Gateway the-gateway-id\n",
-					"ERROR deleting EC2 Internet Gateway the-gateway-id: some error\n",
+					"[EC2 VPC: banana] Detached internet gateway the-gateway-id",
 				}))
 			})
 		})

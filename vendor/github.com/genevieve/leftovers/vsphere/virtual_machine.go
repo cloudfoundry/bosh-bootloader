@@ -58,5 +58,5 @@ func (v VirtualMachine) Name() string {
 }
 
 func (v VirtualMachine) Type() string {
-	return "virtual machine"
+	return "Virtual Machine"
 }

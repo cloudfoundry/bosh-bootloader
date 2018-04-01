@@ -14,28 +14,26 @@ type vpcsClient interface {
 }
 
 type Vpcs struct {
-	client   vpcsClient
-	logger   logger
-	routes   routeTables
-	subnets  subnets
-	gateways internetGateways
+	client       vpcsClient
+	logger       logger
+	routes       routeTables
+	subnets      subnets
+	gateways     internetGateways
+	resourceTags resourceTags
 }
 
-func NewVpcs(client vpcsClient,
-	logger logger,
-	routes routeTables,
-	subnets subnets,
-	gateways internetGateways) Vpcs {
+func NewVpcs(client vpcsClient, logger logger, routes routeTables, subnets subnets, gateways internetGateways, resourceTags resourceTags) Vpcs {
 	return Vpcs{
-		client:   client,
-		logger:   logger,
-		routes:   routes,
-		subnets:  subnets,
-		gateways: gateways,
+		client:       client,
+		logger:       logger,
+		routes:       routes,
+		subnets:      subnets,
+		gateways:     gateways,
+		resourceTags: resourceTags,
 	}
 }
 
-func (v Vpcs) ListAll(filter string) ([]common.Deletable, error) {
+func (v Vpcs) ListOnly(filter string) ([]common.Deletable, error) {
 	return v.get(filter)
 }
 
@@ -61,18 +59,18 @@ func (v Vpcs) List(filter string) ([]common.Deletable, error) {
 func (v Vpcs) get(filter string) ([]common.Deletable, error) {
 	output, err := v.client.DescribeVpcs(&awsec2.DescribeVpcsInput{})
 	if err != nil {
-		return nil, fmt.Errorf("Describing EC2 VPCs: %s", err)
+		return nil, fmt.Errorf("Describe EC2 VPCs: %s", err)
 	}
 
 	var resources []common.Deletable
 	for _, vpc := range output.Vpcs {
-		resource := NewVpc(v.client, v.routes, v.subnets, v.gateways, vpc.VpcId, vpc.Tags)
+		resource := NewVpc(v.client, v.routes, v.subnets, v.gateways, v.resourceTags, vpc.VpcId, vpc.Tags)
 
 		if *vpc.IsDefault {
 			continue
 		}
 
-		if !strings.Contains(resource.identifier, filter) {
+		if !strings.Contains(resource.Name(), filter) {
 			continue
 		}
 

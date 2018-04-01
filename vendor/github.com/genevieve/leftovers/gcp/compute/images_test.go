@@ -29,7 +29,7 @@ var _ = Describe("Images", func() {
 		var filter string
 
 		BeforeEach(func() {
-			logger.PromptCall.Returns.Proceed = true
+			logger.PromptWithDetailsCall.Returns.Proceed = true
 			client.ListImagesCall.Returns.Output = &gcpcompute.ImageList{
 				Items: []*gcpcompute.Image{{
 					Name: "banana-image",
@@ -44,7 +44,9 @@ var _ = Describe("Images", func() {
 
 			Expect(client.ListImagesCall.CallCount).To(Equal(1))
 
-			Expect(logger.PromptCall.Receives.Message).To(Equal("Are you sure you want to delete image banana-image?"))
+			Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(1))
+			Expect(logger.PromptWithDetailsCall.Receives.Type).To(Equal("Image"))
+			Expect(logger.PromptWithDetailsCall.Receives.Name).To(Equal("banana-image"))
 
 			Expect(list).To(HaveLen(1))
 		})
@@ -56,7 +58,7 @@ var _ = Describe("Images", func() {
 
 			It("returns the error", func() {
 				_, err := images.List(filter)
-				Expect(err).To(MatchError("Listing images: some error"))
+				Expect(err).To(MatchError("List Images: some error"))
 			})
 		})
 
@@ -66,7 +68,7 @@ var _ = Describe("Images", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(client.ListImagesCall.CallCount).To(Equal(1))
-				Expect(logger.PromptCall.CallCount).To(Equal(0))
+				Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(0))
 
 				Expect(list).To(HaveLen(0))
 			})
@@ -74,7 +76,7 @@ var _ = Describe("Images", func() {
 
 		Context("when the user says no to the prompt", func() {
 			BeforeEach(func() {
-				logger.PromptCall.Returns.Proceed = false
+				logger.PromptWithDetailsCall.Returns.Proceed = false
 			})
 
 			It("does not add it to the list", func() {

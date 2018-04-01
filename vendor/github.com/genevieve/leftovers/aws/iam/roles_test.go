@@ -59,7 +59,7 @@ var _ = Describe("Roles", func() {
 
 			It("returns the error", func() {
 				_, err := roles.List(filter)
-				Expect(err).To(MatchError("Listing roles: some error"))
+				Expect(err).To(MatchError("List IAM Roles: some error"))
 			})
 		})
 

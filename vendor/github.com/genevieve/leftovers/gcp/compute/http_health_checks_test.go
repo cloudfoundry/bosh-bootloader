@@ -29,7 +29,7 @@ var _ = Describe("HttpHealthChecks", func() {
 		var filter string
 
 		BeforeEach(func() {
-			logger.PromptCall.Returns.Proceed = true
+			logger.PromptWithDetailsCall.Returns.Proceed = true
 			client.ListHttpHealthChecksCall.Returns.Output = &gcpcompute.HttpHealthCheckList{
 				Items: []*gcpcompute.HttpHealthCheck{{
 					Name: "banana-check",
@@ -44,7 +44,9 @@ var _ = Describe("HttpHealthChecks", func() {
 
 			Expect(client.ListHttpHealthChecksCall.CallCount).To(Equal(1))
 
-			Expect(logger.PromptCall.Receives.Message).To(Equal("Are you sure you want to delete http health check banana-check?"))
+			Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(1))
+			Expect(logger.PromptWithDetailsCall.Receives.Type).To(Equal("Http Health Check"))
+			Expect(logger.PromptWithDetailsCall.Receives.Name).To(Equal("banana-check"))
 
 			Expect(list).To(HaveLen(1))
 		})
@@ -56,7 +58,7 @@ var _ = Describe("HttpHealthChecks", func() {
 
 			It("returns the error", func() {
 				_, err := httpHealthChecks.List(filter)
-				Expect(err).To(MatchError("Listing http health checks: some error"))
+				Expect(err).To(MatchError("List Http Health Checks: some error"))
 			})
 		})
 
@@ -65,21 +67,21 @@ var _ = Describe("HttpHealthChecks", func() {
 				list, err := httpHealthChecks.List("grape")
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(logger.PromptCall.CallCount).To(Equal(0))
+				Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(0))
 				Expect(list).To(HaveLen(0))
 			})
 		})
 
 		Context("when the user says no to the prompt", func() {
 			BeforeEach(func() {
-				logger.PromptCall.Returns.Proceed = false
+				logger.PromptWithDetailsCall.Returns.Proceed = false
 			})
 
 			It("does not add it to the list", func() {
 				list, err := httpHealthChecks.List(filter)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(logger.PromptCall.CallCount).To(Equal(1))
+				Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(1))
 				Expect(list).To(HaveLen(0))
 			})
 		})

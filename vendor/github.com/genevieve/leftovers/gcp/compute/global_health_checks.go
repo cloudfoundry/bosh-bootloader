@@ -28,7 +28,7 @@ func NewGlobalHealthChecks(client globalHealthChecksClient, logger logger) Globa
 func (h GlobalHealthChecks) List(filter string) ([]common.Deletable, error) {
 	checks, err := h.client.ListGlobalHealthChecks()
 	if err != nil {
-		return nil, fmt.Errorf("Listing global health checks: %s", err)
+		return nil, fmt.Errorf("List Global Health Checks: %s", err)
 	}
 
 	var resources []common.Deletable
@@ -39,7 +39,7 @@ func (h GlobalHealthChecks) List(filter string) ([]common.Deletable, error) {
 			continue
 		}
 
-		proceed := h.logger.Prompt(fmt.Sprintf("Are you sure you want to delete global health check %s?", check.Name))
+		proceed := h.logger.PromptWithDetails(resource.Type(), resource.Name())
 		if !proceed {
 			continue
 		}

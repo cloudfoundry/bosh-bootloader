@@ -44,7 +44,7 @@ var _ = Describe("InstanceGroup", func() {
 
 			It("returns the error", func() {
 				err := instanceGroup.Delete()
-				Expect(err).To(MatchError("ERROR deleting instance group banana: the-error"))
+				Expect(err).To(MatchError("Delete: the-error"))
 			})
 		})
 	})
@@ -56,8 +56,8 @@ var _ = Describe("InstanceGroup", func() {
 	})
 
 	Describe("Type", func() {
-		It("returns \"instance group\"", func() {
-			Expect(instanceGroup.Type()).To(Equal("instance group"))
+		It("returns the type", func() {
+			Expect(instanceGroup.Type()).To(Equal("Instance Group"))
 		})
 	})
 })

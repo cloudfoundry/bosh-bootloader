@@ -8,9 +8,11 @@ import (
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/adal"
 	azurelib "github.com/Azure/go-autorest/autorest/azure"
+	"github.com/fatih/color"
 )
 
 type resource interface {
+	ListOnly(filter string) ([]Deletable, error)
 	List(filter string) ([]Deletable, error)
 }
 
@@ -20,22 +22,18 @@ type Leftovers struct {
 }
 
 func (l Leftovers) List(filter string) {
-	var deletables []Deletable
-
-	l.logger.NoConfirm()
-
+	var all []Deletable
 	for _, r := range l.resources {
-		list, err := r.List(filter)
-
+		list, err := r.ListOnly(filter)
 		if err != nil {
-			l.logger.Println(err.Error())
+			l.logger.Println(color.YellowString(err.Error()))
 		}
 
-		deletables = append(deletables, list...)
+		all = append(all, list...)
 	}
 
-	for _, d := range deletables {
-		l.logger.Println(fmt.Sprintf("%s: %s", d.Type(), d.Name()))
+	for _, r := range all {
+		l.logger.Println(fmt.Sprintf("[%s: %s]", r.Type(), r.Name()))
 	}
 }
 
@@ -45,19 +43,20 @@ func (l Leftovers) Delete(filter string) error {
 	for _, r := range l.resources {
 		list, err := r.List(filter)
 		if err != nil {
-			return err
+			l.logger.Println(color.YellowString(err.Error()))
 		}
 
 		deletables = append(deletables, list...)
 	}
 
 	for _, d := range deletables {
-		l.logger.Println(fmt.Sprintf("Deleting %s.", d.Name()))
+		l.logger.Println(fmt.Sprintf("[%s: %s] Deleting...", d.Type(), d.Name()))
 
-		if err := d.Delete(); err != nil {
-			l.logger.Println(err.Error())
+		err := d.Delete()
+		if err != nil {
+			l.logger.Println(fmt.Sprintf("[%s: %s] %s", d.Type(), d.Name(), color.YellowString(err.Error())))
 		} else {
-			l.logger.Printf("SUCCESS deleting %s!\n", d.Name())
+			l.logger.Println(fmt.Sprintf("[%s: %s] %s", d.Type(), d.Name(), color.GreenString("Deleted!")))
 		}
 	}
 

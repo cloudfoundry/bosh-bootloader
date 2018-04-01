@@ -16,16 +16,18 @@ var _ = Describe("Policy", func() {
 	var (
 		policy iam.Policy
 		client *fakes.PoliciesClient
+		logger *fakes.Logger
 		name   *string
 		arn    *string
 	)
 
 	BeforeEach(func() {
 		client = &fakes.PoliciesClient{}
-		name = aws.String("the-name")
+		logger = &fakes.Logger{}
+		name = aws.String("banana")
 		arn = aws.String("the-arn")
 
-		policy = iam.NewPolicy(client, name, arn)
+		policy = iam.NewPolicy(client, logger, name, arn)
 
 		client.ListPolicyVersionsCall.Returns.Output = &awsiam.ListPolicyVersionsOutput{
 			Versions: []*awsiam.PolicyVersion{},
@@ -64,42 +66,46 @@ var _ = Describe("Policy", func() {
 
 			Context("when the client fails to delete policy versions", func() {
 				BeforeEach(func() {
-					client.DeletePolicyVersionCall.Returns.Error = errors.New("banana")
+					client.DeletePolicyVersionCall.Returns.Error = errors.New("some error")
 				})
 
-				It("returns the error", func() {
+				It("logs the error", func() {
 					err := policy.Delete()
-					Expect(err).To(MatchError("FAILED deleting version v1 of IAM Policy the-name: banana"))
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(logger.PrintfCall.Messages).To(Equal([]string{
+						"[IAM Policy: banana] Delete policy version v1: some error",
+					}))
 				})
 			})
 		})
 
 		Context("when the client fails to delete the policy", func() {
 			BeforeEach(func() {
-				client.DeletePolicyCall.Returns.Error = errors.New("banana")
+				client.DeletePolicyCall.Returns.Error = errors.New("some error")
 			})
 
 			It("returns the error", func() {
 				err := policy.Delete()
-				Expect(err).To(MatchError("FAILED deleting IAM Policy the-name: banana"))
+				Expect(err).To(MatchError("Delete: some error"))
 			})
 		})
 
 		Context("when the client fails to list policy versions", func() {
 			BeforeEach(func() {
-				client.ListPolicyVersionsCall.Returns.Error = errors.New("banana")
+				client.ListPolicyVersionsCall.Returns.Error = errors.New("some error")
 			})
 
 			It("returns the error", func() {
 				err := policy.Delete()
-				Expect(err).To(MatchError("FAILED listing versions for IAM Policy the-name: banana"))
+				Expect(err).To(MatchError("List IAM Policy Versions: some error"))
 			})
 		})
 	})
 
 	Describe("Name", func() {
 		It("returns the identifier", func() {
-			Expect(policy.Name()).To(Equal("the-name"))
+			Expect(policy.Name()).To(Equal("banana"))
 		})
 	})
 

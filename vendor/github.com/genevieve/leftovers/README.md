@@ -1,18 +1,43 @@
-# Leftovers
+# Leftovers :turkey:
 
-Go cli/library for cleaning up **orphaned IAAS resources**.
+Go cli & library for cleaning up **orphaned IaaS resources**.
 
-It will **prompt you before deleting** any resource, ie:
+* <a href='#what'>What's it look like?</a>
+* <a href='#why'>Why you might be here.</a>
+* <a href='#how'>Installation</a>
+* <a href='#usage'>Usage</a>
+* [Resources you can delete by IaaS.](RESOURCES.md)
 
+## <a name='what'></a>What's it look like?
+
+It will **prompt you before deleting** any resource by default, ie:
+
+```css
+> leftovers --filter banana
+
+[Firewall: banana-http] Delete? (y/N)
 ```
-$ leftovers --filter reindeer
 
-Are you sure you want to delete firewall bbl-env-reindeer? (y/N)
+It can be configured to **not** prompt, ie:
+
+```css
+> leftovers --filter banana --no-confirm
+
+[Firewall: banana-http] Deleting...
+[Firewall: banana-http] Deleted!
+```
+
+Or maybe you want to **see all of the resources** in your IaaS, ie:
+```css
+> leftovers --filter banana --dry-run
+
+[Firewall: banana-http]
+[Network: banana]
 ```
 
 
 
-## Why you might be here?
+## <a name='why'></a> Why you might be here.
 - You `terraform apply`'d way back when and lost your `terraform.tfstate`
 - You used the console or cli to create some infrastructure and want to clean up
 - Your acceptance tests in CI failed, the container disappeared, and
@@ -20,15 +45,16 @@ infrastructure resources were tragically orphaned
 
 
 
-## Installation
+## <a name='how'></a>Installation
 
+### Option 1
 [Install go.](https://golang.org/doc/install) Then:
 
 ```
-$  go get -u github.com/genevieve/leftovers/cmd/leftovers
+go get -u github.com/genevieve/leftovers/cmd/leftovers
 ```
 
-**OR**
+### Option 2
 
 ```
 brew tap genevieve/tap
@@ -37,16 +63,17 @@ brew install leftovers
 
 
 
-## Usage
+## <a name='how'></a>Usage
 
 ```
 Usage:
   leftovers [OPTIONS]
 
 Application Options:
-  -i, --iaas=                     The IAAS for clean up. (default: aws) [$BBL_IAAS]
+  -i, --iaas=                     The IaaS for clean up. (default: aws) [$BBL_IAAS]
   -n, --no-confirm                Destroy resources without prompting. This is dangerous, make good choices!
   -f, --filter=                   Filtering resources by an environment name.
+  -d, --dry-run                   List all resources without deleting any.
       --aws-access-key-id=        AWS access key id. [$BBL_AWS_ACCESS_KEY_ID]
       --aws-secret-access-key=    AWS secret access key. [$BBL_AWS_SECRET_ACCESS_KEY]
       --aws-region=               AWS region. [$BBL_AWS_REGION]
@@ -64,77 +91,3 @@ Help Options:
   -h, --help                     Show this help message
 ```
 
-
-
-## What's being deleted by IAAS:
-
-### AWS
-
-  ```diff
-  + iam instance profiles (& detaching roles)
-  + iam roles
-  + iam role policies
-  + iam user policies
-  + iam server certificates
-  + ec2 volumes
-  + ec2 tags
-  + ec2 key pairs
-  + ec2 instances
-  + ec2 security groups
-  + ec2 vpcs
-  + ec2 subnets
-  + ec2 route tables
-  + ec2 internet gateways
-  + ec2 network interfaces
-  + elb load balancers
-  + elbv2 load balancers
-  + elbv2 target groups
-  + s3 buckets
-  + rds db instances
-  + rds db subnet groups
-  - iam group policies
-  - ec2 eips
-  ```
-
-### Microsoft Azure
-
-  ```diff
-  + resource groups
-  ```
-
-### GCP
-
-  ```diff
-  + compute addresses
-  + compute global addresses
-  + compute backend services
-  + compute disks
-  + compute firewalls
-  + compute forwarding rules
-  + compute global forwarding rules
-  + compute global health checks
-  + compute http health checks
-  + compute https health checks
-  + compute images
-  + compute subnetworks
-  + compute networks
-  + compute target pools
-  + compute target https proxies
-  + compute target http proxies
-  + compute url maps
-  - compute vm instance templates
-  + compute vm instances
-  + compute vm instance groups
-  + compute vm instance group managers
-  + dns managed zones
-  + dns record sets
-  - compute routes
-  - compute snapshots
-  ```
-
-### vSphere
-
-  ```diff
-  + virtual machines
-  + empty folders
-  ```

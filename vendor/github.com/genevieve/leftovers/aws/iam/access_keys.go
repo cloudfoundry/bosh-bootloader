@@ -31,7 +31,7 @@ func NewAccessKeys(client accessKeysClient, logger logger) AccessKeys {
 func (k AccessKeys) Delete(userName string) error {
 	accessKeys, err := k.client.ListAccessKeys(&awsiam.ListAccessKeysInput{UserName: aws.String(userName)})
 	if err != nil {
-		return fmt.Errorf("Listing access keys: %s", err)
+		return fmt.Errorf("List IAM Access Keys: %s", err)
 	}
 
 	for _, a := range accessKeys.AccessKeyMetadata {
@@ -42,9 +42,9 @@ func (k AccessKeys) Delete(userName string) error {
 			AccessKeyId: a.AccessKeyId,
 		})
 		if err == nil {
-			k.logger.Printf("SUCCESS deleting access key %s\n", n)
+			k.logger.Printf("[IAM User: %s] Deleted access key %s", userName, n)
 		} else {
-			k.logger.Printf("ERROR deleting access key %s: %s\n", n, err)
+			k.logger.Printf("[IAM User: %s] Delete access key %s: %s", userName, n, err)
 		}
 	}
 

@@ -18,9 +18,8 @@ func (g Group) Delete() error {
 	_, errChan := g.client.Delete(g.identifier, nil)
 
 	err := <-errChan
-
 	if err != nil {
-		return fmt.Errorf("FAILED deleting resource group %s: %s", g.identifier, err)
+		return fmt.Errorf("Delete: %s", err)
 	}
 
 	return nil
@@ -31,5 +30,5 @@ func (g Group) Name() string {
 }
 
 func (g Group) Type() string {
-	return "resource group"
+	return "Resource Group"
 }

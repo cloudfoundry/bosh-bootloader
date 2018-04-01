@@ -54,7 +54,7 @@ var _ = Describe("Groups", func() {
 
 			It("returns the error", func() {
 				_, err := groups.List(filter)
-				Expect(err).To(MatchError("Listing resource groups: some error"))
+				Expect(err).To(MatchError("Listing Resource Groups: some error"))
 			})
 		})
 
@@ -67,7 +67,7 @@ var _ = Describe("Groups", func() {
 				items, err := groups.List(filter)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(logger.PromptCall.Receives.Message).To(Equal("Are you sure you want to delete resource group banana-group?"))
+				Expect(logger.PromptCall.Receives.Message).To(Equal("Are you sure you want to delete Resource Group banana-group?"))
 				Expect(items).To(HaveLen(0))
 			})
 		})

@@ -12,9 +12,10 @@ import (
 
 var _ = Describe("Subnetwork", func() {
 	var (
-		client *fakes.SubnetworksClient
-		name   string
-		region string
+		client  *fakes.SubnetworksClient
+		name    string
+		region  string
+		network string
 
 		subnetwork compute.Subnetwork
 	)
@@ -23,8 +24,9 @@ var _ = Describe("Subnetwork", func() {
 		client = &fakes.SubnetworksClient{}
 		name = "banana"
 		region = "region"
+		network = "some-url/network"
 
-		subnetwork = compute.NewSubnetwork(client, name, region)
+		subnetwork = compute.NewSubnetwork(client, name, region, network)
 	})
 
 	Describe("Delete", func() {
@@ -44,20 +46,20 @@ var _ = Describe("Subnetwork", func() {
 
 			It("returns the error", func() {
 				err := subnetwork.Delete()
-				Expect(err).To(MatchError("ERROR deleting subnetwork banana: the-error"))
+				Expect(err).To(MatchError("Delete: the-error"))
 			})
 		})
 	})
 
 	Describe("Name", func() {
 		It("returns the name", func() {
-			Expect(subnetwork.Name()).To(Equal(name))
+			Expect(subnetwork.Name()).To(Equal("banana (Network:network)"))
 		})
 	})
 
 	Describe("Type", func() {
-		It("returns \"subnetwork\"", func() {
-			Expect(subnetwork.Type()).To(Equal("subnetwork"))
+		It("returns the type", func() {
+			Expect(subnetwork.Type()).To(Equal("Subnetwork"))
 		})
 	})
 })

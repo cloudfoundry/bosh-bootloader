@@ -8,19 +8,21 @@ import (
 )
 
 type Vpc struct {
-	client     vpcsClient
-	routes     routeTables
-	subnets    subnets
-	gateways   internetGateways
-	id         *string
-	identifier string
-	rtype      string
+	client       vpcsClient
+	routes       routeTables
+	subnets      subnets
+	gateways     internetGateways
+	resourceTags resourceTags
+	id           *string
+	identifier   string
+	rtype        string
 }
 
 func NewVpc(client vpcsClient,
 	routes routeTables,
 	subnets subnets,
 	gateways internetGateways,
+	resourceTags resourceTags,
 	id *string,
 	tags []*awsec2.Tag) Vpc {
 
@@ -36,38 +38,41 @@ func NewVpc(client vpcsClient,
 	}
 
 	return Vpc{
-		client:     client,
-		routes:     routes,
-		subnets:    subnets,
-		gateways:   gateways,
-		id:         id,
-		identifier: identifier,
-		rtype:      "EC2 VPC",
+		client:       client,
+		routes:       routes,
+		subnets:      subnets,
+		gateways:     gateways,
+		resourceTags: resourceTags,
+		id:           id,
+		identifier:   identifier,
+		rtype:        "EC2 VPC",
 	}
 }
 
 func (v Vpc) Delete() error {
 	err := v.routes.Delete(*v.id)
 	if err != nil {
-		return fmt.Errorf("FAILED deleting routes for %s %s: %s", v.rtype, v.identifier, err)
+		return fmt.Errorf("Delete routes: %s", err)
 	}
 
 	err = v.subnets.Delete(*v.id)
 	if err != nil {
-		return fmt.Errorf("FAILED deleting subnets for %s %s: %s", v.rtype, v.identifier, err)
+		return fmt.Errorf("Delete subnets: %s", err)
 	}
 
 	err = v.gateways.Delete(*v.id)
 	if err != nil {
-		return fmt.Errorf("FAILED deleting internet gateways for %s %s: %s", v.rtype, v.identifier, err)
+		return fmt.Errorf("Delete internet gateways: %s", err)
 	}
 
-	_, err = v.client.DeleteVpc(&awsec2.DeleteVpcInput{
-		VpcId: v.id,
-	})
-
+	_, err = v.client.DeleteVpc(&awsec2.DeleteVpcInput{VpcId: v.id})
 	if err != nil {
-		return fmt.Errorf("FAILED deleting %s %s: %s", v.rtype, v.identifier, err)
+		return fmt.Errorf("Delete: %s", err)
+	}
+
+	err = v.resourceTags.Delete("vpc", *v.id)
+	if err != nil {
+		return fmt.Errorf("Delete resource tags: %s", err)
 	}
 
 	return nil

@@ -41,7 +41,7 @@ var _ = Describe("LoadBalancer", func() {
 
 			It("returns the error", func() {
 				err := loadBalancer.Delete()
-				Expect(err).To(MatchError("FAILED deleting load balancer the-name: banana"))
+				Expect(err).To(MatchError("Delete: banana"))
 			})
 		})
 	})
@@ -53,8 +53,8 @@ var _ = Describe("LoadBalancer", func() {
 	})
 
 	Describe("Type", func() {
-		It("returns \"load balancer\"", func() {
-			Expect(loadBalancer.Type()).To(Equal("load balancer"))
+		It("returns the type", func() {
+			Expect(loadBalancer.Type()).To(Equal("ELB Load Balancer"))
 		})
 	})
 })

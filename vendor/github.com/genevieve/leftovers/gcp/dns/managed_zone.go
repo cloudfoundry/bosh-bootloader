@@ -20,13 +20,13 @@ func (m ManagedZone) Delete() error {
 	err := m.recordSets.Delete(m.name)
 
 	if err != nil {
-		return fmt.Errorf("ERROR deleting record sets for zone %s: %s", m.name, err)
+		return fmt.Errorf("Delete record sets: %s", err)
 	}
 
 	err = m.client.DeleteManagedZone(m.name)
 
 	if err != nil {
-		return fmt.Errorf("ERROR deleting managed zone %s: %s", m.name, err)
+		return fmt.Errorf("Delete: %s", err)
 	}
 
 	return nil
@@ -37,5 +37,5 @@ func (m ManagedZone) Name() string {
 }
 
 func (m ManagedZone) Type() string {
-	return "managed zone"
+	return "DNS Managed Zone"
 }

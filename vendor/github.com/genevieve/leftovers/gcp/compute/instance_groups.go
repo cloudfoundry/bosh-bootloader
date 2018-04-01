@@ -32,7 +32,7 @@ func (i InstanceGroups) List(filter string) ([]common.Deletable, error) {
 	for _, zone := range i.zones {
 		l, err := i.client.ListInstanceGroups(zone)
 		if err != nil {
-			return nil, fmt.Errorf("Listing instance groups for zone %s: %s", zone, err)
+			return nil, fmt.Errorf("List Instance Groups for zone %s: %s", zone, err)
 		}
 
 		groups = append(groups, l.Items...)
@@ -46,7 +46,7 @@ func (i InstanceGroups) List(filter string) ([]common.Deletable, error) {
 			continue
 		}
 
-		proceed := i.logger.Prompt(fmt.Sprintf("Are you sure you want to delete %s %s?", resource.Type(), resource.Name()))
+		proceed := i.logger.PromptWithDetails(resource.Type(), resource.Name())
 		if !proceed {
 			continue
 		}

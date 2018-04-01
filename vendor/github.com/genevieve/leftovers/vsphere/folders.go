@@ -63,6 +63,22 @@ func (v Folders) List(filter string) ([]Deletable, error) {
 			}
 
 			deletable = append(deletable, folder)
+		} else {
+			for _, grandchild := range grandchildren {
+				g, ok := grandchild.(*object.VirtualMachine)
+				if !ok {
+					continue
+				}
+
+				vm := NewVirtualMachine(g)
+
+				proceed := v.logger.Prompt(fmt.Sprintf("Are you sure you want to delete virtual machine %s?", vm.Name()))
+				if !proceed {
+					continue
+				}
+
+				deletable = append(deletable, vm)
+			}
 		}
 	}
 

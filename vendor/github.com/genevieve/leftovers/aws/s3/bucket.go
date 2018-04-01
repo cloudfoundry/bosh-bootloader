@@ -68,7 +68,7 @@ func (b Bucket) Delete() error {
 			return b.Delete()
 		}
 
-		return fmt.Errorf("FAILED deleting %s %s: %s", b.rtype, b.identifier, err)
+		return fmt.Errorf("Delete: %s", err)
 	}
 
 	return nil

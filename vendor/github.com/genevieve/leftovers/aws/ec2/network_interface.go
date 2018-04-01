@@ -40,7 +40,7 @@ func (n NetworkInterface) Delete() error {
 	})
 
 	if err != nil {
-		return fmt.Errorf("FAILED deleting %s %s: %s", n.rtype, n.identifier, err)
+		return fmt.Errorf("Delete: %s", err)
 	}
 
 	return nil

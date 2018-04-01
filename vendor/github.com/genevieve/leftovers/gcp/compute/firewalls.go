@@ -39,7 +39,7 @@ func (f Firewalls) List(filter string) ([]common.Deletable, error) {
 			continue
 		}
 
-		proceed := f.logger.Prompt(fmt.Sprintf("Are you sure you want to delete firewall %s?", firewall.Name))
+		proceed := f.logger.PromptWithDetails(resource.Type(), resource.Name())
 		if !proceed {
 			continue
 		}

@@ -43,7 +43,7 @@ var _ = Describe("TargetGroup", func() {
 
 			It("returns the error", func() {
 				err := targetGroup.Delete()
-				Expect(err).To(MatchError("FAILED deleting target group the-name: banana"))
+				Expect(err).To(MatchError("Delete: banana"))
 			})
 		})
 	})
@@ -55,8 +55,8 @@ var _ = Describe("TargetGroup", func() {
 	})
 
 	Describe("Type", func() {
-		It("returns \"target group\"", func() {
-			Expect(targetGroup.Type()).To(Equal("target group"))
+		It("returns the type", func() {
+			Expect(targetGroup.Type()).To(Equal("ELBV2 Target Group"))
 		})
 	})
 })

@@ -18,9 +18,8 @@ func NewForwardingRule(client forwardingRulesClient, name, region string) Forwar
 
 func (f ForwardingRule) Delete() error {
 	err := f.client.DeleteForwardingRule(f.region, f.name)
-
 	if err != nil {
-		return fmt.Errorf("ERROR deleting forwarding rule %s: %s", f.name, err)
+		return fmt.Errorf("Delete: %s", err)
 	}
 
 	return nil
@@ -31,5 +30,5 @@ func (f ForwardingRule) Name() string {
 }
 
 func (f ForwardingRule) Type() string {
-	return "forwarding rule"
+	return "Forwarding Rule"
 }

@@ -18,7 +18,7 @@ func (g GlobalForwardingRule) Delete() error {
 	err := g.client.DeleteGlobalForwardingRule(g.name)
 
 	if err != nil {
-		return fmt.Errorf("ERROR deleting global forwarding rule %s: %s", g.name, err)
+		return fmt.Errorf("Delete: %s", err)
 	}
 
 	return nil
@@ -29,5 +29,5 @@ func (g GlobalForwardingRule) Name() string {
 }
 
 func (g GlobalForwardingRule) Type() string {
-	return "global forwarding rule"
+	return "Global Forwarding Rule"
 }

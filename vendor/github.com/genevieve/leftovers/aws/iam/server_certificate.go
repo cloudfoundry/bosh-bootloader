@@ -28,7 +28,7 @@ func (s ServerCertificate) Delete() error {
 	})
 
 	if err != nil {
-		return fmt.Errorf("FAILED deleting %s %s: %s", s.rtype, s.identifier, err)
+		return fmt.Errorf("Delete: %s", err)
 	}
 
 	return nil

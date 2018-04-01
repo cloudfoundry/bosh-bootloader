@@ -31,7 +31,7 @@ var _ = Describe("ForwardingRules", func() {
 		var filter string
 
 		BeforeEach(func() {
-			logger.PromptCall.Returns.Proceed = true
+			logger.PromptWithDetailsCall.Returns.Proceed = true
 			client.ListForwardingRulesCall.Returns.Output = &gcpcompute.ForwardingRuleList{
 				Items: []*gcpcompute.ForwardingRule{{
 					Name:   "banana-rule",
@@ -48,7 +48,9 @@ var _ = Describe("ForwardingRules", func() {
 			Expect(client.ListForwardingRulesCall.CallCount).To(Equal(1))
 			Expect(client.ListForwardingRulesCall.Receives.Region).To(Equal("region-1"))
 
-			Expect(logger.PromptCall.Receives.Message).To(Equal("Are you sure you want to delete forwarding rule banana-rule?"))
+			Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(1))
+			Expect(logger.PromptWithDetailsCall.Receives.Type).To(Equal("Forwarding Rule"))
+			Expect(logger.PromptWithDetailsCall.Receives.Name).To(Equal("banana-rule"))
 
 			Expect(list).To(HaveLen(1))
 		})
@@ -60,7 +62,7 @@ var _ = Describe("ForwardingRules", func() {
 
 			It("returns the error", func() {
 				_, err := forwardingRules.List(filter)
-				Expect(err).To(MatchError("Listing forwarding rules for region region-1: some error"))
+				Expect(err).To(MatchError("List Forwarding Rules for region region-1: some error"))
 			})
 		})
 
@@ -69,14 +71,14 @@ var _ = Describe("ForwardingRules", func() {
 				list, err := forwardingRules.List("grape")
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(logger.PromptCall.CallCount).To(Equal(0))
+				Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(0))
 				Expect(list).To(HaveLen(0))
 			})
 		})
 
 		Context("when the user says no to the prompt", func() {
 			BeforeEach(func() {
-				logger.PromptCall.Returns.Proceed = false
+				logger.PromptWithDetailsCall.Returns.Proceed = false
 			})
 
 			It("does not add it to the list", func() {

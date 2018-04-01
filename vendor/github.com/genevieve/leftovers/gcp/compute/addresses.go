@@ -32,7 +32,7 @@ func (a Addresses) List(filter string) ([]common.Deletable, error) {
 	for _, region := range a.regions {
 		l, err := a.client.ListAddresses(region)
 		if err != nil {
-			return nil, fmt.Errorf("Listing addresses for region %s: %s", region, err)
+			return nil, fmt.Errorf("List Addresses for Region %s: %s", region, err)
 		}
 
 		addresses = append(addresses, l.Items...)
@@ -40,13 +40,13 @@ func (a Addresses) List(filter string) ([]common.Deletable, error) {
 
 	var resources []common.Deletable
 	for _, address := range addresses {
-		resource := NewAddress(a.client, address.Name, a.regions[address.Region])
+		resource := NewAddress(a.client, address.Name, a.regions[address.Region], len(address.Users))
 
 		if !strings.Contains(address.Name, filter) {
 			continue
 		}
 
-		proceed := a.logger.Prompt(fmt.Sprintf("Are you sure you want to delete address %s with %d user(s)?", address.Name, len(address.Users)))
+		proceed := a.logger.PromptWithDetails(resource.Type(), resource.Name())
 		if !proceed {
 			continue
 		}

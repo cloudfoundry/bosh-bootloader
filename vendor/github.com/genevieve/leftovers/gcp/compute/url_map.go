@@ -18,7 +18,7 @@ func (u UrlMap) Delete() error {
 	err := u.client.DeleteUrlMap(u.name)
 
 	if err != nil {
-		return fmt.Errorf("ERROR deleting url map %s: %s", u.name, err)
+		return fmt.Errorf("Delete: %s", err)
 	}
 
 	return nil
@@ -29,5 +29,5 @@ func (u UrlMap) Name() string {
 }
 
 func (u UrlMap) Type() string {
-	return "url map"
+	return "Url Map"
 }

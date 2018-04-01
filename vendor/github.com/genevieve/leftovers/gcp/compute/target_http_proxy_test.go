@@ -41,7 +41,7 @@ var _ = Describe("TargetHttpProxy", func() {
 
 			It("returns the error", func() {
 				err := targetHttpProxy.Delete()
-				Expect(err).To(MatchError("ERROR deleting target http proxy banana: the-error"))
+				Expect(err).To(MatchError("Delete: the-error"))
 			})
 		})
 	})
@@ -53,8 +53,8 @@ var _ = Describe("TargetHttpProxy", func() {
 	})
 
 	Describe("Type", func() {
-		It("returns \"target http proxy\"", func() {
-			Expect(targetHttpProxy.Type()).To(Equal("target http proxy"))
+		It("returns the type", func() {
+			Expect(targetHttpProxy.Type()).To(Equal("Target Http Proxy"))
 		})
 	})
 })

@@ -31,7 +31,7 @@ var _ = Describe("Instances", func() {
 		var filter string
 
 		BeforeEach(func() {
-			logger.PromptCall.Returns.Proceed = true
+			logger.PromptWithDetailsCall.Returns.Proceed = true
 			client.ListInstancesCall.Returns.Output = &gcpcompute.InstanceList{
 				Items: []*gcpcompute.Instance{{
 					Name: "banana-instance",
@@ -48,27 +48,11 @@ var _ = Describe("Instances", func() {
 			Expect(client.ListInstancesCall.CallCount).To(Equal(1))
 			Expect(client.ListInstancesCall.Receives.Zone).To(Equal("zone-1"))
 
-			Expect(logger.PromptCall.Receives.Message).To(Equal("Are you sure you want to delete instance banana-instance?"))
+			Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(1))
+			Expect(logger.PromptWithDetailsCall.Receives.Type).To(Equal("Instance"))
+			Expect(logger.PromptWithDetailsCall.Receives.Name).To(Equal("banana-instance"))
 
 			Expect(list).To(HaveLen(1))
-		})
-
-		Context("when the instance has tags", func() {
-			BeforeEach(func() {
-				client.ListInstancesCall.Returns.Output = &gcpcompute.InstanceList{
-					Items: []*gcpcompute.Instance{{
-						Name: "banana-instance",
-						Tags: &gcpcompute.Tags{Items: []string{"banana-director"}},
-					}},
-				}
-			})
-
-			It("uses them in the prompt", func() {
-				_, err := instances.List(filter)
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(logger.PromptCall.Receives.Message).To(Equal("Are you sure you want to delete instance banana-instance (banana-director)?"))
-			})
 		})
 
 		Context("when the client fails to list instances", func() {
@@ -78,7 +62,7 @@ var _ = Describe("Instances", func() {
 
 			It("returns the error", func() {
 				_, err := instances.List(filter)
-				Expect(err).To(MatchError("Listing instances for zone zone-1: some error"))
+				Expect(err).To(MatchError("List Instances for zone zone-1: some error"))
 			})
 		})
 
@@ -87,14 +71,14 @@ var _ = Describe("Instances", func() {
 				list, err := instances.List("grape")
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(logger.PromptCall.CallCount).To(Equal(0))
+				Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(0))
 				Expect(list).To(HaveLen(0))
 			})
 		})
 
 		Context("when the user says no to the prompt", func() {
 			BeforeEach(func() {
-				logger.PromptCall.Returns.Proceed = false
+				logger.PromptWithDetailsCall.Returns.Proceed = false
 			})
 
 			It("does not add it to the list", func() {

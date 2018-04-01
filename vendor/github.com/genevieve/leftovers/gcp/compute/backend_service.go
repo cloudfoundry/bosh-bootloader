@@ -16,9 +16,8 @@ func NewBackendService(client backendServicesClient, name string) BackendService
 
 func (b BackendService) Delete() error {
 	err := b.client.DeleteBackendService(b.name)
-
 	if err != nil {
-		return fmt.Errorf("ERROR deleting backend service %s: %s", b.name, err)
+		return fmt.Errorf("Delete: %s", err)
 	}
 
 	return nil
@@ -29,5 +28,5 @@ func (b BackendService) Name() string {
 }
 
 func (b BackendService) Type() string {
-	return "backend service"
+	return "Backend Service"
 }

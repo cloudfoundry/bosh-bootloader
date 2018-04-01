@@ -41,7 +41,7 @@ var _ = Describe("ServerCertificate", func() {
 
 			It("returns the error", func() {
 				err := serverCertificate.Delete()
-				Expect(err).To(MatchError("FAILED deleting IAM Server Certificate the-name: banana"))
+				Expect(err).To(MatchError("Delete: banana"))
 			})
 		})
 	})

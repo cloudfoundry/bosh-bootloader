@@ -18,7 +18,7 @@ func (i Image) Delete() error {
 	err := i.client.DeleteImage(i.name)
 
 	if err != nil {
-		return fmt.Errorf("ERROR deleting image %s: %s", i.name, err)
+		return fmt.Errorf("Delete: %s", err)
 	}
 
 	return nil
@@ -29,5 +29,5 @@ func (i Image) Name() string {
 }
 
 func (i Image) Type() string {
-	return "image"
+	return "Image"
 }

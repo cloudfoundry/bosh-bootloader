@@ -25,8 +25,9 @@ var _ = Describe("Vpcs", func() {
 		routes := &fakes.RouteTables{}
 		subnets := &fakes.Subnets{}
 		gateways := &fakes.InternetGateways{}
+		resourceTags := &fakes.ResourceTags{}
 
-		vpcs = ec2.NewVpcs(client, logger, routes, subnets, gateways)
+		vpcs = ec2.NewVpcs(client, logger, routes, subnets, gateways, resourceTags)
 	})
 
 	Describe("List", func() {
@@ -111,7 +112,7 @@ var _ = Describe("Vpcs", func() {
 
 			It("returns the error", func() {
 				_, err := vpcs.List(filter)
-				Expect(err).To(MatchError("Describing EC2 VPCs: some error"))
+				Expect(err).To(MatchError("Describe EC2 VPCs: some error"))
 			})
 		})
 

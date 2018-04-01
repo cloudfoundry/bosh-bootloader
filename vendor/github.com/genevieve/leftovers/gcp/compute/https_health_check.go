@@ -18,7 +18,7 @@ func (h HttpsHealthCheck) Delete() error {
 	err := h.client.DeleteHttpsHealthCheck(h.name)
 
 	if err != nil {
-		return fmt.Errorf("ERROR deleting https health check %s: %s", h.name, err)
+		return fmt.Errorf("Delete: %s", err)
 	}
 
 	return nil
@@ -29,5 +29,5 @@ func (h HttpsHealthCheck) Name() string {
 }
 
 func (h HttpsHealthCheck) Type() string {
-	return "https health check"
+	return "Https Health Check"
 }

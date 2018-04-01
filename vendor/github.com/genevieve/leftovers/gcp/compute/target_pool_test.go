@@ -44,7 +44,7 @@ var _ = Describe("TargetPool", func() {
 
 			It("returns the error", func() {
 				err := targetPool.Delete()
-				Expect(err).To(MatchError("ERROR deleting target pool banana: the-error"))
+				Expect(err).To(MatchError("Delete: the-error"))
 			})
 		})
 	})
@@ -56,8 +56,8 @@ var _ = Describe("TargetPool", func() {
 	})
 
 	Describe("Type", func() {
-		It("returns \"target pool\"", func() {
-			Expect(targetPool.Type()).To(Equal("target pool"))
+		It("returns the type", func() {
+			Expect(targetPool.Type()).To(Equal("Target Pool"))
 		})
 	})
 })

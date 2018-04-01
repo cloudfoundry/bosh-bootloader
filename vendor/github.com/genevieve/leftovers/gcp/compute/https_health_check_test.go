@@ -41,7 +41,7 @@ var _ = Describe("HttpsHealthCheck", func() {
 
 			It("returns the error", func() {
 				err := httpsHealthCheck.Delete()
-				Expect(err).To(MatchError("ERROR deleting https health check banana: the-error"))
+				Expect(err).To(MatchError("Delete: the-error"))
 			})
 		})
 	})
@@ -53,8 +53,8 @@ var _ = Describe("HttpsHealthCheck", func() {
 	})
 
 	Describe("Type", func() {
-		It("returns \"https health check\"", func() {
-			Expect(httpsHealthCheck.Type()).To(Equal("https health check"))
+		It("returns the type", func() {
+			Expect(httpsHealthCheck.Type()).To(Equal("Https Health Check"))
 		})
 	})
 })

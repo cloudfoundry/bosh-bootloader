@@ -41,7 +41,7 @@ var _ = Describe("GlobalForwardingRule", func() {
 
 			It("returns the error", func() {
 				err := globalForwardingRule.Delete()
-				Expect(err).To(MatchError("ERROR deleting global forwarding rule banana: the-error"))
+				Expect(err).To(MatchError("Delete: the-error"))
 			})
 		})
 	})
@@ -53,8 +53,8 @@ var _ = Describe("GlobalForwardingRule", func() {
 	})
 
 	Describe("Type", func() {
-		It("returns \"global forwarding rule\"", func() {
-			Expect(globalForwardingRule.Type()).To(Equal("global forwarding rule"))
+		It("returns the type", func() {
+			Expect(globalForwardingRule.Type()).To(Equal("Global Forwarding Rule"))
 		})
 	})
 })

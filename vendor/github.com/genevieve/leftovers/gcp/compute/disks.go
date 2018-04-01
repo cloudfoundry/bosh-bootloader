@@ -32,7 +32,7 @@ func (d Disks) List(filter string) ([]common.Deletable, error) {
 	for _, zone := range d.zones {
 		l, err := d.client.ListDisks(zone)
 		if err != nil {
-			return nil, fmt.Errorf("Listing disks for zone %s: %s", zone, err)
+			return nil, fmt.Errorf("List Disks for zone %s: %s", zone, err)
 		}
 
 		disks = append(disks, l.Items...)
@@ -50,7 +50,7 @@ func (d Disks) List(filter string) ([]common.Deletable, error) {
 			continue
 		}
 
-		proceed := d.logger.Prompt(fmt.Sprintf("Are you sure you want to delete disk %s?", disk.Name))
+		proceed := d.logger.PromptWithDetails(resource.Type(), resource.Name())
 		if !proceed {
 			continue
 		}

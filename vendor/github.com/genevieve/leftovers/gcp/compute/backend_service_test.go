@@ -41,7 +41,7 @@ var _ = Describe("BackendService", func() {
 
 			It("returns the error", func() {
 				err := backendService.Delete()
-				Expect(err).To(MatchError("ERROR deleting backend service banana: the-error"))
+				Expect(err).To(MatchError("Delete: the-error"))
 			})
 		})
 	})
@@ -53,8 +53,8 @@ var _ = Describe("BackendService", func() {
 	})
 
 	Describe("Type", func() {
-		It("returns \"backend service\"", func() {
-			Expect(backendService.Type()).To(Equal("backend service"))
+		It("returns the type", func() {
+			Expect(backendService.Type()).To(Equal("Backend Service"))
 		})
 	})
 })

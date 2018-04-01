@@ -13,8 +13,9 @@ import (
 
 var _ = Describe("Subnets", func() {
 	var (
-		client *fakes.SubnetsClient
-		logger *fakes.Logger
+		client       *fakes.SubnetsClient
+		logger       *fakes.Logger
+		resourceTags *fakes.ResourceTags
 
 		subnets ec2.Subnets
 	)
@@ -22,8 +23,9 @@ var _ = Describe("Subnets", func() {
 	BeforeEach(func() {
 		client = &fakes.SubnetsClient{}
 		logger = &fakes.Logger{}
+		resourceTags = &fakes.ResourceTags{}
 
-		subnets = ec2.NewSubnets(client, logger)
+		subnets = ec2.NewSubnets(client, logger, resourceTags)
 	})
 
 	Describe("Delete", func() {
@@ -36,7 +38,7 @@ var _ = Describe("Subnets", func() {
 			}
 		})
 
-		It("detaches and deletes the subnets", func() {
+		It("deletes the subnets", func() {
 			err := subnets.Delete("the-vpc-id")
 			Expect(err).NotTo(HaveOccurred())
 
@@ -47,8 +49,12 @@ var _ = Describe("Subnets", func() {
 			Expect(client.DeleteSubnetCall.CallCount).To(Equal(1))
 			Expect(client.DeleteSubnetCall.Receives.Input.SubnetId).To(Equal(aws.String("the-subnet-id")))
 
+			Expect(resourceTags.DeleteCall.CallCount).To(Equal(1))
+			Expect(resourceTags.DeleteCall.Receives.ResourceType).To(Equal("subnet"))
+			Expect(resourceTags.DeleteCall.Receives.ResourceId).To(Equal("the-subnet-id"))
+
 			Expect(logger.PrintfCall.Messages).To(Equal([]string{
-				"SUCCESS deleting EC2 Subnet the-subnet-id\n",
+				"[EC2 VPC: the-vpc-id] Deleted subnet the-subnet-id tags",
 			}))
 		})
 
@@ -59,7 +65,7 @@ var _ = Describe("Subnets", func() {
 
 			It("returns the error and does not try deleting them", func() {
 				err := subnets.Delete("banana")
-				Expect(err).To(MatchError("Describing EC2 Subnets: some error"))
+				Expect(err).To(MatchError("Describe EC2 Subnets: some error"))
 
 				Expect(client.DeleteSubnetCall.CallCount).To(Equal(0))
 			})
@@ -70,12 +76,23 @@ var _ = Describe("Subnets", func() {
 				client.DeleteSubnetCall.Returns.Error = errors.New("some error")
 			})
 
+			It("returns the error", func() {
+				err := subnets.Delete("banana")
+				Expect(err).To(MatchError("Delete subnet the-subnet-id: some error"))
+			})
+		})
+
+		Context("when the resource tags fails to delete", func() {
+			BeforeEach(func() {
+				resourceTags.DeleteCall.Returns.Error = errors.New("some error")
+			})
+
 			It("logs the error", func() {
 				err := subnets.Delete("banana")
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(logger.PrintfCall.Messages).To(Equal([]string{
-					"ERROR deleting EC2 Subnet the-subnet-id: some error\n",
+					"[EC2 VPC: banana] Delete subnet the-subnet-id tags: some error",
 				}))
 			})
 		})

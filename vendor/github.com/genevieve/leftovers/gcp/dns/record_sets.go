@@ -24,7 +24,7 @@ func NewRecordSets(client recordSetsClient) RecordSets {
 func (r RecordSets) Delete(managedZone string) error {
 	recordSets, err := r.client.ListRecordSets(managedZone)
 	if err != nil {
-		return fmt.Errorf("Listing record sets: %s", err)
+		return fmt.Errorf("Listing DNS Record Sets: %s", err)
 	}
 
 	deletions := []*gcpdns.ResourceRecordSet{}
@@ -41,7 +41,7 @@ func (r RecordSets) Delete(managedZone string) error {
 			Deletions: deletions,
 		})
 		if err != nil {
-			return fmt.Errorf("Deleting record sets: %s", err)
+			return fmt.Errorf("Delete record sets: %s", err)
 		}
 	}
 	return nil

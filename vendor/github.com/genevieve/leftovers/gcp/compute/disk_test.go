@@ -44,7 +44,7 @@ var _ = Describe("Disk", func() {
 
 			It("returns the error", func() {
 				err := disk.Delete()
-				Expect(err).To(MatchError("ERROR deleting disk banana: the-error"))
+				Expect(err).To(MatchError("Delete: the-error"))
 			})
 		})
 	})
@@ -56,8 +56,8 @@ var _ = Describe("Disk", func() {
 	})
 
 	Describe("Type", func() {
-		It("returns \"disk\"", func() {
-			Expect(disk.Type()).To(Equal("disk"))
+		It("returns the type", func() {
+			Expect(disk.Type()).To(Equal("Disk"))
 		})
 	})
 })

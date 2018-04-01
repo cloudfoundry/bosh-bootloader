@@ -31,7 +31,7 @@ var _ = Describe("TargetPools", func() {
 		var filter string
 
 		BeforeEach(func() {
-			logger.PromptCall.Returns.Proceed = true
+			logger.PromptWithDetailsCall.Returns.Proceed = true
 			client.ListTargetPoolsCall.Returns.Output = &gcpcompute.TargetPoolList{
 				Items: []*gcpcompute.TargetPool{{
 					Name:   "banana-pool",
@@ -48,7 +48,9 @@ var _ = Describe("TargetPools", func() {
 			Expect(client.ListTargetPoolsCall.CallCount).To(Equal(1))
 			Expect(client.ListTargetPoolsCall.Receives.Region).To(Equal("region-1"))
 
-			Expect(logger.PromptCall.Receives.Message).To(Equal("Are you sure you want to delete target pool banana-pool?"))
+			Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(1))
+			Expect(logger.PromptWithDetailsCall.Receives.Type).To(Equal("Target Pool"))
+			Expect(logger.PromptWithDetailsCall.Receives.Name).To(Equal("banana-pool"))
 
 			Expect(list).To(HaveLen(1))
 		})
@@ -60,7 +62,7 @@ var _ = Describe("TargetPools", func() {
 
 			It("returns the error", func() {
 				_, err := targetPools.List(filter)
-				Expect(err).To(MatchError("Listing target pools for region region-1: some error"))
+				Expect(err).To(MatchError("List Target Pools for region region-1: some error"))
 			})
 		})
 
@@ -69,21 +71,21 @@ var _ = Describe("TargetPools", func() {
 				list, err := targetPools.List("grape")
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(logger.PromptCall.CallCount).To(Equal(0))
+				Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(0))
 				Expect(list).To(HaveLen(0))
 			})
 		})
 
 		Context("when the user says no to the prompt", func() {
 			BeforeEach(func() {
-				logger.PromptCall.Returns.Proceed = false
+				logger.PromptWithDetailsCall.Returns.Proceed = false
 			})
 
 			It("does not add it to the list", func() {
 				list, err := targetPools.List(filter)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(logger.PromptCall.CallCount).To(Equal(1))
+				Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(1))
 				Expect(list).To(HaveLen(0))
 			})
 		})

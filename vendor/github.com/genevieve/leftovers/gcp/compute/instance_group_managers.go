@@ -32,7 +32,7 @@ func (i InstanceGroupManagers) List(filter string) ([]common.Deletable, error) {
 	for _, zone := range i.zones {
 		l, err := i.client.ListInstanceGroupManagers(zone)
 		if err != nil {
-			return nil, fmt.Errorf("Listing instance group managers for zone %s: %s", zone, err)
+			return nil, fmt.Errorf("List Instance Group Managers for zone %s: %s", zone, err)
 		}
 
 		managers = append(managers, l.Items...)
@@ -42,11 +42,11 @@ func (i InstanceGroupManagers) List(filter string) ([]common.Deletable, error) {
 	for _, manager := range managers {
 		resource := NewInstanceGroupManager(i.client, manager.Name, i.zones[manager.Zone])
 
-		if !strings.Contains(manager.Name, filter) {
+		if !strings.Contains(resource.Name(), filter) {
 			continue
 		}
 
-		proceed := i.logger.Prompt(fmt.Sprintf("Are you sure you want to delete instance group manager %s?", manager.Name))
+		proceed := i.logger.PromptWithDetails(resource.Type(), resource.Name())
 		if !proceed {
 			continue
 		}

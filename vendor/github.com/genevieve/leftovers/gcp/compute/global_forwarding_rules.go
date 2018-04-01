@@ -28,7 +28,7 @@ func NewGlobalForwardingRules(client globalForwardingRulesClient, logger logger)
 func (g GlobalForwardingRules) List(filter string) ([]common.Deletable, error) {
 	rules, err := g.client.ListGlobalForwardingRules()
 	if err != nil {
-		return nil, fmt.Errorf("Listing global forwarding rules: %s", err)
+		return nil, fmt.Errorf("List Global Forwarding Rules: %s", err)
 	}
 
 	var resources []common.Deletable
@@ -39,7 +39,7 @@ func (g GlobalForwardingRules) List(filter string) ([]common.Deletable, error) {
 			continue
 		}
 
-		proceed := g.logger.Prompt(fmt.Sprintf("Are you sure you want to delete global forwarding rule %s?", rule.Name))
+		proceed := g.logger.PromptWithDetails(resource.Type(), resource.Name())
 		if !proceed {
 			continue
 		}

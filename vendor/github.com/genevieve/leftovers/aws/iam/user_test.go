@@ -51,7 +51,7 @@ var _ = Describe("User", func() {
 
 			It("returns the error", func() {
 				err := user.Delete()
-				Expect(err).To(MatchError("FAILED deleting access keys for IAM User the-name: banana"))
+				Expect(err).To(MatchError("Delete access keys: banana"))
 			})
 		})
 
@@ -62,7 +62,7 @@ var _ = Describe("User", func() {
 
 			It("returns the error", func() {
 				err := user.Delete()
-				Expect(err).To(MatchError("FAILED deleting policies for IAM User the-name: banana"))
+				Expect(err).To(MatchError("Delete policies: banana"))
 			})
 		})
 
@@ -73,7 +73,7 @@ var _ = Describe("User", func() {
 
 			It("returns the error", func() {
 				err := user.Delete()
-				Expect(err).To(MatchError("FAILED deleting IAM User the-name: banana"))
+				Expect(err).To(MatchError("Delete: banana"))
 			})
 		})
 	})
@@ -85,7 +85,7 @@ var _ = Describe("User", func() {
 	})
 
 	Describe("Type", func() {
-		It("returns \"user\"", func() {
+		It("returns the type", func() {
 			Expect(user.Type()).To(Equal("IAM User"))
 		})
 	})

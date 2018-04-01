@@ -41,7 +41,7 @@ var _ = Describe("Image", func() {
 
 			It("returns the error", func() {
 				err := image.Delete()
-				Expect(err).To(MatchError("ERROR deleting image banana: the-error"))
+				Expect(err).To(MatchError("Delete: the-error"))
 			})
 		})
 	})
@@ -53,8 +53,8 @@ var _ = Describe("Image", func() {
 	})
 
 	Describe("Type", func() {
-		It("returns \"image\"", func() {
-			Expect(image.Type()).To(Equal("image"))
+		It("returns the type", func() {
+			Expect(image.Type()).To(Equal("Image"))
 		})
 	})
 })

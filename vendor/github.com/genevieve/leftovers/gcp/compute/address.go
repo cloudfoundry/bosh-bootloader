@@ -3,33 +3,38 @@ package compute
 import "fmt"
 
 type Address struct {
-	client addressesClient
-	name   string
-	region string
+	client      addressesClient
+	name        string
+	clearerName string
+	region      string
 }
 
-func NewAddress(client addressesClient, name, region string) Address {
+func NewAddress(client addressesClient, name, region string, users int) Address {
+	clearerName := name
+	if users > 0 {
+		clearerName = fmt.Sprintf("%s (Users:%d)", name, users)
+	}
 	return Address{
-		client: client,
-		name:   name,
-		region: region,
+		client:      client,
+		name:        name,
+		clearerName: clearerName,
+		region:      region,
 	}
 }
 
 func (a Address) Delete() error {
 	err := a.client.DeleteAddress(a.region, a.name)
-
 	if err != nil {
-		return fmt.Errorf("ERROR deleting address %s: %s", a.name, err)
+		return fmt.Errorf("Delete: %s", err)
 	}
 
 	return nil
 }
 
 func (a Address) Name() string {
-	return a.name
+	return a.clearerName
 }
 
 func (a Address) Type() string {
-	return "address"
+	return "Address"
 }

@@ -29,7 +29,7 @@ var _ = Describe("Networks", func() {
 		var filter string
 
 		BeforeEach(func() {
-			logger.PromptCall.Returns.Proceed = true
+			logger.PromptWithDetailsCall.Returns.Proceed = true
 			client.ListNetworksCall.Returns.Output = &gcpcompute.NetworkList{
 				Items: []*gcpcompute.Network{{
 					Name: "banana-network",
@@ -44,7 +44,9 @@ var _ = Describe("Networks", func() {
 
 			Expect(client.ListNetworksCall.CallCount).To(Equal(1))
 
-			Expect(logger.PromptCall.Receives.Message).To(Equal("Are you sure you want to delete network banana-network?"))
+			Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(1))
+			Expect(logger.PromptWithDetailsCall.Receives.Type).To(Equal("Network"))
+			Expect(logger.PromptWithDetailsCall.Receives.Name).To(Equal("banana-network"))
 
 			Expect(list).To(HaveLen(1))
 		})
@@ -56,7 +58,7 @@ var _ = Describe("Networks", func() {
 
 			It("returns the error", func() {
 				_, err := networks.List(filter)
-				Expect(err).To(MatchError("Listing networks: some error"))
+				Expect(err).To(MatchError("List Networks: some error"))
 			})
 		})
 
@@ -65,7 +67,7 @@ var _ = Describe("Networks", func() {
 				list, err := networks.List("grape")
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(logger.PromptCall.CallCount).To(Equal(0))
+				Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(0))
 				Expect(list).To(HaveLen(0))
 			})
 		})
@@ -83,14 +85,14 @@ var _ = Describe("Networks", func() {
 				list, err := networks.List(filter)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(logger.PromptCall.CallCount).To(Equal(0))
+				Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(0))
 				Expect(list).To(HaveLen(0))
 			})
 		})
 
 		Context("when the user says no to the prompt", func() {
 			BeforeEach(func() {
-				logger.PromptCall.Returns.Proceed = false
+				logger.PromptWithDetailsCall.Returns.Proceed = false
 			})
 
 			It("does not add it to the list", func() {

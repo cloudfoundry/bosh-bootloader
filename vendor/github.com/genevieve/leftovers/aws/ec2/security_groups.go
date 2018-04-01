@@ -16,30 +16,32 @@ type securityGroupsClient interface {
 }
 
 type SecurityGroups struct {
-	client securityGroupsClient
-	logger logger
+	client       securityGroupsClient
+	logger       logger
+	resourceTags resourceTags
 }
 
-func NewSecurityGroups(client securityGroupsClient, logger logger) SecurityGroups {
+func NewSecurityGroups(client securityGroupsClient, logger logger, resourceTags resourceTags) SecurityGroups {
 	return SecurityGroups{
-		client: client,
-		logger: logger,
+		client:       client,
+		logger:       logger,
+		resourceTags: resourceTags,
 	}
 }
 
-func (e SecurityGroups) ListAll(filter string) ([]common.Deletable, error) {
-	return e.get(filter)
+func (s SecurityGroups) ListOnly(filter string) ([]common.Deletable, error) {
+	return s.get(filter)
 }
 
-func (e SecurityGroups) List(filter string) ([]common.Deletable, error) {
-	resources, err := e.get(filter)
+func (s SecurityGroups) List(filter string) ([]common.Deletable, error) {
+	resources, err := s.get(filter)
 	if err != nil {
 		return nil, err
 	}
 
 	var delete []common.Deletable
 	for _, r := range resources {
-		proceed := e.logger.PromptWithDetails(r.Type(), r.Name())
+		proceed := s.logger.PromptWithDetails(r.Type(), r.Name())
 		if !proceed {
 			continue
 		}
@@ -53,42 +55,22 @@ func (e SecurityGroups) List(filter string) ([]common.Deletable, error) {
 func (s SecurityGroups) get(filter string) ([]common.Deletable, error) {
 	output, err := s.client.DescribeSecurityGroups(&awsec2.DescribeSecurityGroupsInput{})
 	if err != nil {
-		return nil, fmt.Errorf("Describing EC2 Security Groups: %s", err)
+		return nil, fmt.Errorf("Describe EC2 Security Groups: %s", err)
 	}
 
 	var resources []common.Deletable
 	for _, sg := range output.SecurityGroups {
-		resource := NewSecurityGroup(s.client, sg.GroupId, sg.GroupName, sg.Tags)
+		r := NewSecurityGroup(s.client, s.logger, s.resourceTags, sg.GroupId, sg.GroupName, sg.Tags, sg.IpPermissions, sg.IpPermissionsEgress)
 
 		if *sg.GroupName == "default" {
 			continue
 		}
 
-		if !strings.Contains(resource.Name(), filter) {
+		if !strings.Contains(r.Name(), filter) {
 			continue
 		}
 
-		if len(sg.IpPermissions) > 0 {
-			_, err := s.client.RevokeSecurityGroupIngress(&awsec2.RevokeSecurityGroupIngressInput{
-				GroupId:       sg.GroupId,
-				IpPermissions: sg.IpPermissions,
-			})
-			if err != nil {
-				s.logger.Printf("ERROR revoking ingress for %s: %s\n", resource.Name(), err)
-			}
-		}
-
-		if len(sg.IpPermissionsEgress) > 0 {
-			_, err := s.client.RevokeSecurityGroupEgress(&awsec2.RevokeSecurityGroupEgressInput{
-				GroupId:       sg.GroupId,
-				IpPermissions: sg.IpPermissionsEgress,
-			})
-			if err != nil {
-				s.logger.Printf("ERROR revoking egress for %s: %s\n", resource.Name(), err)
-			}
-		}
-
-		resources = append(resources, resource)
+		resources = append(resources, r)
 	}
 
 	return resources, nil

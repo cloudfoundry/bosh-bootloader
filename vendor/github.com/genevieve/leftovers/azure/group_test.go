@@ -48,14 +48,14 @@ var _ = Describe("Group", func() {
 
 			It("logs the error", func() {
 				err := group.Delete()
-				Expect(err).To(MatchError("FAILED deleting resource group banana-group: some error"))
+				Expect(err).To(MatchError("Delete: some error"))
 			})
 		})
 	})
 
 	Describe("Type", func() {
-		It("returns \"resource group\"", func() {
-			Expect(group.Type()).To(Equal("resource group"))
+		It("returns the type", func() {
+			Expect(group.Type()).To(Equal("Resource Group"))
 		})
 	})
 })

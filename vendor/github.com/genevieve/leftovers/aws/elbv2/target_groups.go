@@ -25,7 +25,7 @@ func NewTargetGroups(client targetGroupsClient, logger logger) TargetGroups {
 	}
 }
 
-func (t TargetGroups) ListAll(filter string) ([]common.Deletable, error) {
+func (t TargetGroups) ListOnly(filter string) ([]common.Deletable, error) {
 	return t.get(filter)
 }
 
@@ -51,7 +51,7 @@ func (t TargetGroups) List(filter string) ([]common.Deletable, error) {
 func (t TargetGroups) get(filter string) ([]common.Deletable, error) {
 	targetGroups, err := t.client.DescribeTargetGroups(&awselbv2.DescribeTargetGroupsInput{})
 	if err != nil {
-		return nil, fmt.Errorf("Describing target groups: %s", err)
+		return nil, fmt.Errorf("Describe ELBV2 Target Groups: %s", err)
 	}
 
 	var resources []common.Deletable

@@ -26,7 +26,7 @@ func NewInstanceProfiles(client instanceProfilesClient, logger logger) InstanceP
 	}
 }
 
-func (i InstanceProfiles) ListAll(filter string) ([]common.Deletable, error) {
+func (i InstanceProfiles) ListOnly(filter string) ([]common.Deletable, error) {
 	return i.get(filter)
 }
 
@@ -52,7 +52,7 @@ func (i InstanceProfiles) List(filter string) ([]common.Deletable, error) {
 func (i InstanceProfiles) get(filter string) ([]common.Deletable, error) {
 	profiles, err := i.client.ListInstanceProfiles(&awsiam.ListInstanceProfilesInput{})
 	if err != nil {
-		return nil, fmt.Errorf("Listing instance profiles: %s", err)
+		return nil, fmt.Errorf("List IAM Instance Profiles: %s", err)
 	}
 
 	var resources []common.Deletable

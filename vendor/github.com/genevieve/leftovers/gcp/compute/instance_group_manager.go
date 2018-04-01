@@ -20,7 +20,7 @@ func (i InstanceGroupManager) Delete() error {
 	err := i.client.DeleteInstanceGroupManager(i.zone, i.name)
 
 	if err != nil {
-		return fmt.Errorf("ERROR deleting instance group manager %s: %s", i.name, err)
+		return fmt.Errorf("Delete: %s", err)
 	}
 
 	return nil
@@ -31,5 +31,5 @@ func (i InstanceGroupManager) Name() string {
 }
 
 func (i InstanceGroupManager) Type() string {
-	return "instance group manager"
+	return "Instance Group Manager"
 }

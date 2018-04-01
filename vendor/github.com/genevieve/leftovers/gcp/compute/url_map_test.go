@@ -41,7 +41,7 @@ var _ = Describe("UrlMap", func() {
 
 			It("returns the error", func() {
 				err := urlMap.Delete()
-				Expect(err).To(MatchError("ERROR deleting url map banana: the-error"))
+				Expect(err).To(MatchError("Delete: the-error"))
 			})
 		})
 	})
@@ -53,8 +53,8 @@ var _ = Describe("UrlMap", func() {
 	})
 
 	Describe("Type", func() {
-		It("returns \"url map\"", func() {
-			Expect(urlMap.Type()).To(Equal("url map"))
+		It("returns the type", func() {
+			Expect(urlMap.Type()).To(Equal("Url Map"))
 		})
 	})
 })

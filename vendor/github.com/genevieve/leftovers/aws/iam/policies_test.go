@@ -59,7 +59,7 @@ var _ = Describe("Policies", func() {
 
 			It("returns the error and does not try deleting them", func() {
 				_, err := policies.List(filter)
-				Expect(err).To(MatchError("Listing policies: some error"))
+				Expect(err).To(MatchError("List IAM Policies: some error"))
 
 				Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(0))
 			})

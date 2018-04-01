@@ -23,12 +23,9 @@ func NewVolume(client volumesClient, id *string) Volume {
 }
 
 func (v Volume) Delete() error {
-	_, err := v.client.DeleteVolume(&awsec2.DeleteVolumeInput{
-		VolumeId: v.id,
-	})
-
+	_, err := v.client.DeleteVolume(&awsec2.DeleteVolumeInput{VolumeId: v.id})
 	if err != nil {
-		return fmt.Errorf("FAILED deleting %s %s: %s", v.rtype, v.identifier, err)
+		return fmt.Errorf("Delete: %s", err)
 	}
 
 	return nil

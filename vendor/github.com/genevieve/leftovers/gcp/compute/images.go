@@ -28,7 +28,7 @@ func NewImages(client imagesClient, logger logger) Images {
 func (d Images) List(filter string) ([]common.Deletable, error) {
 	images, err := d.client.ListImages()
 	if err != nil {
-		return nil, fmt.Errorf("Listing images: %s", err)
+		return nil, fmt.Errorf("List Images: %s", err)
 	}
 
 	var resources []common.Deletable
@@ -39,7 +39,7 @@ func (d Images) List(filter string) ([]common.Deletable, error) {
 			continue
 		}
 
-		proceed := d.logger.Prompt(fmt.Sprintf("Are you sure you want to delete image %s?", image.Name))
+		proceed := d.logger.PromptWithDetails(resource.Type(), resource.Name())
 		if !proceed {
 			continue
 		}

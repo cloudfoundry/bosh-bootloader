@@ -41,7 +41,7 @@ var _ = Describe("GlobalHealthCheck", func() {
 
 			It("returns the error", func() {
 				err := globalHealthCheck.Delete()
-				Expect(err).To(MatchError("ERROR deleting global health check banana: the-error"))
+				Expect(err).To(MatchError("Delete: the-error"))
 			})
 		})
 	})
@@ -53,8 +53,8 @@ var _ = Describe("GlobalHealthCheck", func() {
 	})
 
 	Describe("Type", func() {
-		It("returns \"global health check\"", func() {
-			Expect(globalHealthCheck.Type()).To(Equal("global health check"))
+		It("returns the type", func() {
+			Expect(globalHealthCheck.Type()).To(Equal("Global Health Check"))
 		})
 	})
 })

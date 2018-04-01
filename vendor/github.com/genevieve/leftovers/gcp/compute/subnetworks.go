@@ -32,7 +32,7 @@ func (n Subnetworks) List(filter string) ([]common.Deletable, error) {
 	for _, region := range n.regions {
 		l, err := n.client.ListSubnetworks(region)
 		if err != nil {
-			return nil, fmt.Errorf("Listing subnetworks for region %s: %s", region, err)
+			return nil, fmt.Errorf("List Subnetworks for region %s: %s", region, err)
 		}
 
 		subnetworks = append(subnetworks, l.Items...)
@@ -40,13 +40,13 @@ func (n Subnetworks) List(filter string) ([]common.Deletable, error) {
 
 	var resources []common.Deletable
 	for _, subnetwork := range subnetworks {
-		resource := NewSubnetwork(n.client, subnetwork.Name, n.regions[subnetwork.Region])
+		resource := NewSubnetwork(n.client, subnetwork.Name, n.regions[subnetwork.Region], subnetwork.Network)
 
 		if !strings.Contains(subnetwork.Name, filter) {
 			continue
 		}
 
-		proceed := n.logger.Prompt(fmt.Sprintf("Are you sure you want to delete subnetwork %s (Network:%s)?", subnetwork.Name, subnetwork.Network))
+		proceed := n.logger.PromptWithDetails(resource.Type(), resource.Name())
 		if !proceed {
 			continue
 		}

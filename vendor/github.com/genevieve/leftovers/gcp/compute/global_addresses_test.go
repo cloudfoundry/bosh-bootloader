@@ -22,7 +22,7 @@ var _ = Describe("GlobalAddresses", func() {
 		client = &fakes.GlobalAddressesClient{}
 		logger = &fakes.Logger{}
 
-		logger.PromptCall.Returns.Proceed = true
+		logger.PromptWithDetailsCall.Returns.Proceed = true
 
 		addresses = compute.NewGlobalAddresses(client, logger)
 	})
@@ -45,7 +45,9 @@ var _ = Describe("GlobalAddresses", func() {
 
 			Expect(client.ListGlobalAddressesCall.CallCount).To(Equal(1))
 
-			Expect(logger.PromptCall.Receives.Message).To(Equal("Are you sure you want to delete global address banana-address?"))
+			Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(1))
+			Expect(logger.PromptWithDetailsCall.Receives.Type).To(Equal("Global Address"))
+			Expect(logger.PromptWithDetailsCall.Receives.Name).To(Equal("banana-address"))
 
 			Expect(list).To(HaveLen(1))
 		})
@@ -57,7 +59,7 @@ var _ = Describe("GlobalAddresses", func() {
 
 			It("returns the error", func() {
 				_, err := addresses.List(filter)
-				Expect(err).To(MatchError("Listing global addresses: some error"))
+				Expect(err).To(MatchError("List Global Addresses: some error"))
 			})
 		})
 
@@ -66,33 +68,14 @@ var _ = Describe("GlobalAddresses", func() {
 				list, err := addresses.List("grape")
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(logger.PromptCall.CallCount).To(Equal(0))
-				Expect(list).To(HaveLen(0))
-			})
-		})
-
-		Context("when the address is in use", func() {
-			BeforeEach(func() {
-				client.ListGlobalAddressesCall.Returns.Output = &gcpcompute.AddressList{
-					Items: []*gcpcompute.Address{{
-						Name:  "banana-address",
-						Users: []string{"a-virtual-machine"},
-					}},
-				}
-			})
-
-			It("does not add it to the list", func() {
-				list, err := addresses.List(filter)
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(logger.PromptCall.CallCount).To(Equal(0))
+				Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(0))
 				Expect(list).To(HaveLen(0))
 			})
 		})
 
 		Context("when the user says no to the prompt", func() {
 			BeforeEach(func() {
-				logger.PromptCall.Returns.Proceed = false
+				logger.PromptWithDetailsCall.Returns.Proceed = false
 			})
 
 			It("does not add it to the list", func() {

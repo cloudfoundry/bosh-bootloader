@@ -30,7 +30,7 @@ func (d DBInstance) Delete() error {
 	})
 
 	if err != nil {
-		return fmt.Errorf("FAILED deleting %s %s: %s", d.rtype, d.identifier, err)
+		return fmt.Errorf("Delete: %s", err)
 	}
 
 	return nil

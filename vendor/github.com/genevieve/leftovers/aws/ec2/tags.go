@@ -25,7 +25,7 @@ func NewTags(client tagsClient, logger logger) Tags {
 	}
 }
 
-func (a Tags) ListAll(filter string) ([]common.Deletable, error) {
+func (a Tags) ListOnly(filter string) ([]common.Deletable, error) {
 	return a.get(filter)
 }
 
@@ -51,14 +51,18 @@ func (a Tags) List(filter string) ([]common.Deletable, error) {
 func (a Tags) get(filter string) ([]common.Deletable, error) {
 	output, err := a.client.DescribeTags(&awsec2.DescribeTagsInput{})
 	if err != nil {
-		return nil, fmt.Errorf("Describing EC2 Tags: %s", err)
+		return nil, fmt.Errorf("Describe EC2 Tags: %s", err)
 	}
 
 	var resources []common.Deletable
 	for _, t := range output.Tags {
+		if *t.ResourceId != "" {
+			continue
+		}
+
 		resource := NewTag(a.client, t.Key, t.Value, t.ResourceId)
 
-		if !strings.Contains(resource.identifier, filter) {
+		if !strings.Contains(resource.Name(), filter) {
 			continue
 		}
 

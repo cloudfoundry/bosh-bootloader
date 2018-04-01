@@ -63,7 +63,7 @@ var _ = Describe("Volumes", func() {
 
 			It("returns the error", func() {
 				_, err := volumes.List(filter)
-				Expect(err).To(MatchError("Describing EC2 Volumes: some error"))
+				Expect(err).To(MatchError("Describe EC2 Volumes: some error"))
 			})
 		})
 

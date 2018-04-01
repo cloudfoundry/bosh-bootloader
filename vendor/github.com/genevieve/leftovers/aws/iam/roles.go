@@ -27,7 +27,7 @@ func NewRoles(client rolesClient, logger logger, policies rolePolicies) Roles {
 	}
 }
 
-func (r Roles) ListAll(filter string) ([]common.Deletable, error) {
+func (r Roles) ListOnly(filter string) ([]common.Deletable, error) {
 	return r.getRoles(filter)
 }
 
@@ -53,7 +53,7 @@ func (o Roles) List(filter string) ([]common.Deletable, error) {
 func (r Roles) getRoles(filter string) ([]common.Deletable, error) {
 	roles, err := r.client.ListRoles(&awsiam.ListRolesInput{})
 	if err != nil {
-		return nil, fmt.Errorf("Listing roles: %s", err)
+		return nil, fmt.Errorf("List IAM Roles: %s", err)
 	}
 
 	var resources []common.Deletable

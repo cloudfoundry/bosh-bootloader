@@ -18,7 +18,7 @@ func (f Firewall) Delete() error {
 	err := f.client.DeleteFirewall(f.name)
 
 	if err != nil {
-		return fmt.Errorf("ERROR deleting firewall %s: %s", f.name, err)
+		return fmt.Errorf("Delete: %s", err)
 	}
 
 	return nil
@@ -29,5 +29,5 @@ func (f Firewall) Name() string {
 }
 
 func (f Firewall) Type() string {
-	return "firewall"
+	return "Firewall"
 }

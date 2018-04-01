@@ -17,16 +17,16 @@ type subnets interface {
 }
 
 type Subnets struct {
-	client subnetsClient
-	logger logger
-	rtype  string
+	client       subnetsClient
+	logger       logger
+	resourceTags resourceTags
 }
 
-func NewSubnets(client subnetsClient, logger logger) Subnets {
+func NewSubnets(client subnetsClient, logger logger, resourceTags resourceTags) Subnets {
 	return Subnets{
-		client: client,
-		logger: logger,
-		rtype:  "EC2 Subnet",
+		client:       client,
+		logger:       logger,
+		resourceTags: resourceTags,
 	}
 }
 
@@ -38,18 +38,22 @@ func (u Subnets) Delete(vpcId string) error {
 		}},
 	})
 	if err != nil {
-		return fmt.Errorf("Describing EC2 Subnets: %s", err)
+		return fmt.Errorf("Describe EC2 Subnets: %s", err)
 	}
 
 	for _, s := range subnets.Subnets {
 		n := *s.SubnetId
 
 		_, err = u.client.DeleteSubnet(&awsec2.DeleteSubnetInput{SubnetId: s.SubnetId})
+		if err != nil {
+			return fmt.Errorf("Delete subnet %s: %s", n, err)
+		}
 
-		if err == nil {
-			u.logger.Printf("SUCCESS deleting %s %s\n", u.rtype, n)
+		err = u.resourceTags.Delete("subnet", n)
+		if err != nil {
+			u.logger.Printf("[EC2 VPC: %s] Delete subnet %s tags: %s", vpcId, n, err)
 		} else {
-			u.logger.Printf("ERROR deleting %s %s: %s\n", u.rtype, n, err)
+			u.logger.Printf("[EC2 VPC: %s] Deleted subnet %s tags", vpcId, n)
 		}
 	}
 

@@ -32,7 +32,7 @@ func (f ForwardingRules) List(filter string) ([]common.Deletable, error) {
 	for _, region := range f.regions {
 		l, err := f.client.ListForwardingRules(region)
 		if err != nil {
-			return nil, fmt.Errorf("Listing forwarding rules for region %s: %s", region, err)
+			return nil, fmt.Errorf("List Forwarding Rules for region %s: %s", region, err)
 		}
 
 		rules = append(rules, l.Items...)
@@ -46,7 +46,7 @@ func (f ForwardingRules) List(filter string) ([]common.Deletable, error) {
 			continue
 		}
 
-		proceed := f.logger.Prompt(fmt.Sprintf("Are you sure you want to delete forwarding rule %s?", rule.Name))
+		proceed := f.logger.PromptWithDetails(resource.Type(), resource.Name())
 		if !proceed {
 			continue
 		}

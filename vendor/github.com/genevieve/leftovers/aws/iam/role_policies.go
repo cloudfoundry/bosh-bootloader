@@ -33,7 +33,7 @@ func NewRolePolicies(client rolePoliciesClient, logger logger) RolePolicies {
 func (o RolePolicies) Delete(roleName string) error {
 	attachedPolicies, err := o.client.ListAttachedRolePolicies(&awsiam.ListAttachedRolePoliciesInput{RoleName: aws.String(roleName)})
 	if err != nil {
-		return fmt.Errorf("Listing attached role policies: %s", err)
+		return fmt.Errorf("List IAM Attached Role Policies: %s", err)
 	}
 
 	for _, p := range attachedPolicies.AttachedPolicies {
@@ -44,9 +44,9 @@ func (o RolePolicies) Delete(roleName string) error {
 			PolicyArn: p.PolicyArn,
 		})
 		if err == nil {
-			o.logger.Printf("SUCCESS detaching role policy %s\n", n)
+			o.logger.Printf("[IAM Role: %s] Detached policy %s", roleName, n)
 		} else {
-			o.logger.Printf("ERROR detaching role policy %s: %s\n", n, err)
+			o.logger.Printf("[IAM Role: %s] Detach policy %s: %s", roleName, n, err)
 		}
 
 		_, err = o.client.DeleteRolePolicy(&awsiam.DeleteRolePolicyInput{
@@ -54,15 +54,15 @@ func (o RolePolicies) Delete(roleName string) error {
 			PolicyName: p.PolicyName,
 		})
 		if err == nil {
-			o.logger.Printf("SUCCESS deleting role policy %s\n", n)
+			o.logger.Printf("[IAM Role: %s] Deleted policy %s", roleName, n)
 		} else {
-			o.logger.Printf("ERROR deleting role policy %s: %s\n", n, err)
+			o.logger.Printf("[IAM Role: %s] Delete policy %s: %s", roleName, n, err)
 		}
 	}
 
 	policies, err := o.client.ListRolePolicies(&awsiam.ListRolePoliciesInput{RoleName: aws.String(roleName)})
 	if err != nil {
-		return fmt.Errorf("Listing role policies: %s", err)
+		return fmt.Errorf("List IAM Role Policies: %s", err)
 	}
 
 	for _, p := range policies.PolicyNames {
@@ -73,9 +73,9 @@ func (o RolePolicies) Delete(roleName string) error {
 			PolicyName: p,
 		})
 		if err == nil {
-			o.logger.Printf("SUCCESS deleting role policy %s\n", n)
+			o.logger.Printf("[IAM Role: %s] Deleted policy %s", roleName, n)
 		} else {
-			o.logger.Printf("ERROR deleting role policy %s: %s\n", n, err)
+			o.logger.Printf("[IAM Role: %s] Delete policy %s: %s", roleName, n, err)
 		}
 	}
 

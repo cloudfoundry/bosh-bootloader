@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/fatih/color"
 	"github.com/vmware/govmomi"
 )
 
@@ -20,22 +21,19 @@ type Leftovers struct {
 }
 
 func (l Leftovers) List(filter string) {
-	var deletables []Deletable
-
-	l.logger.NoConfirm()
+	var all []Deletable
 
 	for _, r := range l.resources {
 		list, err := r.List(filter)
-
 		if err != nil {
-			l.logger.Println(err.Error())
+			l.logger.Println(color.YellowString(err.Error()))
 		}
 
-		deletables = append(deletables, list...)
+		all = append(all, list...)
 	}
 
-	for _, d := range deletables {
-		l.logger.Println(fmt.Sprintf("%s: %s", d.Type(), d.Name()))
+	for _, r := range all {
+		l.logger.Println(fmt.Sprintf("[%s: %s]", r.Type(), r.Name()))
 	}
 }
 
@@ -52,14 +50,13 @@ func (l Leftovers) Delete(filter string) error {
 	}
 
 	for _, d := range deletables {
-		l.logger.Println(fmt.Sprintf("Deleting %s.", d.Name()))
+		l.logger.Println(fmt.Sprintf("[%s: %s] Deleting...", d.Type(), d.Name()))
 
 		err := d.Delete()
-
 		if err != nil {
-			l.logger.Println(err.Error())
+			l.logger.Println(fmt.Sprintf("[%s: %s] %s", d.Type(), d.Name(), color.YellowString(err.Error())))
 		} else {
-			l.logger.Printf("SUCCESS deleting %s!\n", d.Name())
+			l.logger.Println(fmt.Sprintf("[%s: %s] %s", d.Type(), d.Name(), color.GreenString("Deleted!")))
 		}
 	}
 
@@ -103,7 +100,6 @@ func NewLeftovers(logger logger, vCenterIP, vCenterUser, vCenterPassword, vCente
 	return Leftovers{
 		logger: logger,
 		resources: []resource{
-			NewVirtualMachines(client, logger),
 			NewFolders(client, logger),
 		},
 	}, nil

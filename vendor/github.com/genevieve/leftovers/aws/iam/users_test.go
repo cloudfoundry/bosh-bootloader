@@ -62,7 +62,7 @@ var _ = Describe("Users", func() {
 
 			It("returns the error and does not try deleting them", func() {
 				_, err := users.List(filter)
-				Expect(err).To(MatchError("Listing users: some error"))
+				Expect(err).To(MatchError("List IAM Users: some error"))
 			})
 		})
 

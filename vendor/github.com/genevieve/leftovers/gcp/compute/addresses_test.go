@@ -24,7 +24,7 @@ var _ = Describe("Addresses", func() {
 		logger = &fakes.Logger{}
 		regions = map[string]string{"https://region-1": "region-1"}
 
-		logger.PromptCall.Returns.Proceed = true
+		logger.PromptWithDetailsCall.Returns.Proceed = true
 
 		addresses = compute.NewAddresses(client, logger, regions)
 	})
@@ -49,7 +49,9 @@ var _ = Describe("Addresses", func() {
 			Expect(client.ListAddressesCall.CallCount).To(Equal(1))
 			Expect(client.ListAddressesCall.Receives.Region).To(Equal("region-1"))
 
-			Expect(logger.PromptCall.Receives.Message).To(Equal("Are you sure you want to delete address banana-address with 0 user(s)?"))
+			Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(1))
+			Expect(logger.PromptWithDetailsCall.Receives.Type).To(Equal("Address"))
+			Expect(logger.PromptWithDetailsCall.Receives.Name).To(Equal("banana-address"))
 
 			Expect(list).To(HaveLen(1))
 		})
@@ -61,7 +63,7 @@ var _ = Describe("Addresses", func() {
 
 			It("returns the error", func() {
 				_, err := addresses.List(filter)
-				Expect(err).To(MatchError("Listing addresses for region region-1: some error"))
+				Expect(err).To(MatchError("List Addresses for Region region-1: some error"))
 			})
 		})
 
@@ -70,34 +72,14 @@ var _ = Describe("Addresses", func() {
 				list, err := addresses.List("grape")
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(logger.PromptCall.CallCount).To(Equal(0))
+				Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(0))
 				Expect(list).To(HaveLen(0))
-			})
-		})
-
-		Context("when the address is in use", func() {
-			BeforeEach(func() {
-				client.ListAddressesCall.Returns.Output = &gcpcompute.AddressList{
-					Items: []*gcpcompute.Address{{
-						Name:   "banana-address",
-						Region: "https://region-1",
-						Users:  []string{"a-virtual-machine"},
-					}},
-				}
-			})
-
-			It("adds it to the list", func() {
-				list, err := addresses.List(filter)
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(logger.PromptCall.Receives.Message).To(Equal("Are you sure you want to delete address banana-address with 1 user(s)?"))
-				Expect(list).To(HaveLen(1))
 			})
 		})
 
 		Context("when the user says no to the prompt", func() {
 			BeforeEach(func() {
-				logger.PromptCall.Returns.Proceed = false
+				logger.PromptWithDetailsCall.Returns.Proceed = false
 			})
 
 			It("does not add it to the list", func() {

@@ -20,7 +20,7 @@ func (i InstanceGroup) Delete() error {
 	err := i.client.DeleteInstanceGroup(i.zone, i.name)
 
 	if err != nil {
-		return fmt.Errorf("ERROR deleting instance group %s: %s", i.name, err)
+		return fmt.Errorf("Delete: %s", err)
 	}
 
 	return nil
@@ -31,5 +31,5 @@ func (i InstanceGroup) Name() string {
 }
 
 func (i InstanceGroup) Type() string {
-	return "instance group"
+	return "Instance Group"
 }

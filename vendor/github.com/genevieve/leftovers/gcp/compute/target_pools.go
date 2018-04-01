@@ -32,7 +32,7 @@ func (t TargetPools) List(filter string) ([]common.Deletable, error) {
 	for _, region := range t.regions {
 		l, err := t.client.ListTargetPools(region)
 		if err != nil {
-			return nil, fmt.Errorf("Listing target pools for region %s: %s", region, err)
+			return nil, fmt.Errorf("List Target Pools for region %s: %s", region, err)
 		}
 
 		pools = append(pools, l.Items...)
@@ -42,11 +42,11 @@ func (t TargetPools) List(filter string) ([]common.Deletable, error) {
 	for _, pool := range pools {
 		resource := NewTargetPool(t.client, pool.Name, t.regions[pool.Region])
 
-		if !strings.Contains(resource.name, filter) {
+		if !strings.Contains(resource.Name(), filter) {
 			continue
 		}
 
-		proceed := t.logger.Prompt(fmt.Sprintf("Are you sure you want to delete target pool %s?", resource.name))
+		proceed := t.logger.PromptWithDetails(resource.Type(), resource.Name())
 		if !proceed {
 			continue
 		}

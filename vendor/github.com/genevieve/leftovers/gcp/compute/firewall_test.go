@@ -41,7 +41,7 @@ var _ = Describe("Firewall", func() {
 
 			It("returns the error", func() {
 				err := firewall.Delete()
-				Expect(err).To(MatchError("ERROR deleting firewall banana: the-error"))
+				Expect(err).To(MatchError("Delete: the-error"))
 			})
 		})
 	})
@@ -53,8 +53,8 @@ var _ = Describe("Firewall", func() {
 	})
 
 	Describe("Type", func() {
-		It("returns \"firewall\"", func() {
-			Expect(firewall.Type()).To(Equal("firewall"))
+		It("returns the type", func() {
+			Expect(firewall.Type()).To(Equal("Firewall"))
 		})
 	})
 })

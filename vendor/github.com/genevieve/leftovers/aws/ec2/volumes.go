@@ -24,7 +24,7 @@ func NewVolumes(client volumesClient, logger logger) Volumes {
 	}
 }
 
-func (v Volumes) ListAll(filter string) ([]common.Deletable, error) {
+func (v Volumes) ListOnly(filter string) ([]common.Deletable, error) {
 	return v.get(filter)
 }
 
@@ -50,7 +50,7 @@ func (v Volumes) List(filter string) ([]common.Deletable, error) {
 func (v Volumes) get(filter string) ([]common.Deletable, error) {
 	output, err := v.client.DescribeVolumes(&awsec2.DescribeVolumesInput{})
 	if err != nil {
-		return nil, fmt.Errorf("Describing EC2 Volumes: %s", err)
+		return nil, fmt.Errorf("Describe EC2 Volumes: %s", err)
 	}
 
 	var resources []common.Deletable

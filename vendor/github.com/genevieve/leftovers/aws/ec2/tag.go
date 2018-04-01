@@ -33,7 +33,7 @@ func (t Tag) Delete() error {
 	})
 
 	if err != nil {
-		return fmt.Errorf("FAILED deleting %s %s: %s", t.rtype, t.identifier, err)
+		return fmt.Errorf("Delete: %s", err)
 	}
 
 	return nil

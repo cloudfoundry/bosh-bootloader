@@ -18,7 +18,7 @@ func (t TargetHttpProxy) Delete() error {
 	err := t.client.DeleteTargetHttpProxy(t.name)
 
 	if err != nil {
-		return fmt.Errorf("ERROR deleting target http proxy %s: %s", t.name, err)
+		return fmt.Errorf("Delete: %s", err)
 	}
 
 	return nil
@@ -29,5 +29,5 @@ func (t TargetHttpProxy) Name() string {
 }
 
 func (t TargetHttpProxy) Type() string {
-	return "target http proxy"
+	return "Target Http Proxy"
 }

@@ -42,5 +42,5 @@ func (f Folder) Name() string {
 }
 
 func (f Folder) Type() string {
-	return "folder"
+	return "Folder"
 }

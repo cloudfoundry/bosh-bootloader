@@ -46,7 +46,7 @@ var _ = Describe("ManagedZone", func() {
 
 			It("returns the error", func() {
 				err := managedZone.Delete()
-				Expect(err).To(MatchError("ERROR deleting record sets for zone banana: the-error"))
+				Expect(err).To(MatchError("Delete record sets: the-error"))
 			})
 		})
 
@@ -57,7 +57,7 @@ var _ = Describe("ManagedZone", func() {
 
 			It("returns the error", func() {
 				err := managedZone.Delete()
-				Expect(err).To(MatchError("ERROR deleting managed zone banana: the-error"))
+				Expect(err).To(MatchError("Delete: the-error"))
 			})
 		})
 	})
@@ -69,8 +69,8 @@ var _ = Describe("ManagedZone", func() {
 	})
 
 	Describe("Type", func() {
-		It("returns \"managed zone\"", func() {
-			Expect(managedZone.Type()).To(Equal("managed zone"))
+		It("returns the type", func() {
+			Expect(managedZone.Type()).To(Equal("DNS Managed Zone"))
 		})
 	})
 })

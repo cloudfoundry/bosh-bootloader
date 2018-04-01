@@ -44,7 +44,7 @@ var _ = Describe("InstanceGroupManager", func() {
 
 			It("returns the error", func() {
 				err := instanceGroupManager.Delete()
-				Expect(err).To(MatchError("ERROR deleting instance group manager banana: the-error"))
+				Expect(err).To(MatchError("Delete: the-error"))
 			})
 		})
 	})
@@ -56,8 +56,8 @@ var _ = Describe("InstanceGroupManager", func() {
 	})
 
 	Describe("Type", func() {
-		It("returns \"instance group manager\"", func() {
-			Expect(instanceGroupManager.Type()).To(Equal("instance group manager"))
+		It("returns the type", func() {
+			Expect(instanceGroupManager.Type()).To(Equal("Instance Group Manager"))
 		})
 	})
 })

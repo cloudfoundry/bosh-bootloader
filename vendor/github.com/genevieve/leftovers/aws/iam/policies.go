@@ -28,7 +28,7 @@ func NewPolicies(client policiesClient, logger logger) Policies {
 	}
 }
 
-func (p Policies) ListAll(filter string) ([]common.Deletable, error) {
+func (p Policies) ListOnly(filter string) ([]common.Deletable, error) {
 	return p.getPolicies(filter)
 }
 
@@ -54,12 +54,12 @@ func (p Policies) List(filter string) ([]common.Deletable, error) {
 func (p Policies) getPolicies(filter string) ([]common.Deletable, error) {
 	policies, err := p.client.ListPolicies(&awsiam.ListPoliciesInput{Scope: aws.String("Local")})
 	if err != nil {
-		return nil, fmt.Errorf("Listing policies: %s", err)
+		return nil, fmt.Errorf("List IAM Policies: %s", err)
 	}
 
 	var resources []common.Deletable
 	for _, o := range policies.Policies {
-		resource := NewPolicy(p.client, o.PolicyName, o.Arn)
+		resource := NewPolicy(p.client, p.logger, o.PolicyName, o.Arn)
 
 		if !strings.Contains(resource.Name(), filter) {
 			continue

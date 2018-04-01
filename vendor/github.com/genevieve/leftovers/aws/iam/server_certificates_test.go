@@ -57,7 +57,7 @@ var _ = Describe("ServerCertificates", func() {
 
 			It("returns the error", func() {
 				_, err := serverCertificates.List(filter)
-				Expect(err).To(MatchError("Listing server certificates: some error"))
+				Expect(err).To(MatchError("List IAM Server Certificates: some error"))
 			})
 		})
 

@@ -34,7 +34,7 @@ func NewManagedZones(client managedZonesClient, recordSets recordSets, logger lo
 func (m ManagedZones) List(filter string) ([]common.Deletable, error) {
 	managedZones, err := m.client.ListManagedZones()
 	if err != nil {
-		return nil, fmt.Errorf("Listing managed zones: %s", err)
+		return nil, fmt.Errorf("Listing DNS Managed Zones: %s", err)
 	}
 
 	var resources []common.Deletable
@@ -45,7 +45,7 @@ func (m ManagedZones) List(filter string) ([]common.Deletable, error) {
 			continue
 		}
 
-		proceed := m.logger.Prompt(fmt.Sprintf("Are you sure you want to delete managed zone %s?", resource.name))
+		proceed := m.logger.PromptWithDetails(resource.Type(), resource.Name())
 		if !proceed {
 			continue
 		}

@@ -10,6 +10,7 @@ type LoadBalancer struct {
 	client     loadBalancersClient
 	name       *string
 	identifier string
+	rtype      string
 }
 
 func NewLoadBalancer(client loadBalancersClient, name *string) LoadBalancer {
@@ -17,6 +18,7 @@ func NewLoadBalancer(client loadBalancersClient, name *string) LoadBalancer {
 		client:     client,
 		name:       name,
 		identifier: *name,
+		rtype:      "ELB Load Balancer",
 	}
 }
 
@@ -26,7 +28,7 @@ func (l LoadBalancer) Delete() error {
 	})
 
 	if err != nil {
-		return fmt.Errorf("FAILED deleting load balancer %s: %s", l.identifier, err)
+		return fmt.Errorf("Delete: %s", err)
 	}
 
 	return nil
@@ -37,5 +39,5 @@ func (l LoadBalancer) Name() string {
 }
 
 func (l LoadBalancer) Type() string {
-	return "load balancer"
+	return l.rtype
 }

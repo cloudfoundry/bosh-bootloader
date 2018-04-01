@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"sync"
 
+	"github.com/fatih/color"
 	"github.com/genevieve/leftovers/gcp/common"
 	"github.com/genevieve/leftovers/gcp/compute"
 	"github.com/genevieve/leftovers/gcp/dns"
@@ -26,22 +27,21 @@ type Leftovers struct {
 }
 
 func (l Leftovers) List(filter string) {
-	deletables := []common.Deletable{}
-
 	l.logger.NoConfirm()
+
+	var deletables []common.Deletable
 
 	for _, r := range l.resources {
 		list, err := r.List(filter)
-
 		if err != nil {
-			l.logger.Println(err.Error())
+			l.logger.Println(color.YellowString(err.Error()))
 		}
 
 		deletables = append(deletables, list...)
 	}
 
 	for _, d := range deletables {
-		l.logger.Println(fmt.Sprintf("%s: %s", d.Type(), d.Name()))
+		l.logger.Println(fmt.Sprintf("[%s: %s]", d.Type(), d.Name()))
 	}
 }
 
@@ -50,9 +50,8 @@ func (l Leftovers) Delete(filter string) error {
 
 	for _, r := range l.resources {
 		list, err := r.List(filter)
-
 		if err != nil {
-			l.logger.Println(err.Error())
+			l.logger.Println(color.YellowString(err.Error()))
 		}
 
 		deletables = append(deletables, list)
@@ -67,12 +66,12 @@ func (l Leftovers) Delete(filter string) error {
 			go func(d common.Deletable) {
 				defer wg.Done()
 
-				l.logger.Println(fmt.Sprintf("Deleting %s: %s.", d.Type(), d.Name()))
+				l.logger.Println(fmt.Sprintf("[%s: %s] Deleting...", d.Type(), d.Name()))
 
 				if err := d.Delete(); err != nil {
-					l.logger.Println(err.Error())
+					l.logger.Println(fmt.Sprintf("[%s: %s] %s", d.Type(), d.Name(), color.YellowString(err.Error())))
 				} else {
-					l.logger.Println(fmt.Sprintf("SUCCESS deleting %s: %s!", d.Type(), d.Name()))
+					l.logger.Println(fmt.Sprintf("[%s: %s] %s", d.Type(), d.Name(), color.GreenString("Deleted!")))
 				}
 			}(d)
 		}

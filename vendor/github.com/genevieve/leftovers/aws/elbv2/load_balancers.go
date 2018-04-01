@@ -25,7 +25,7 @@ func NewLoadBalancers(client loadBalancersClient, logger logger) LoadBalancers {
 	}
 }
 
-func (l LoadBalancers) ListAll(filter string) ([]common.Deletable, error) {
+func (l LoadBalancers) ListOnly(filter string) ([]common.Deletable, error) {
 	return l.get(filter)
 }
 
@@ -51,7 +51,7 @@ func (l LoadBalancers) List(filter string) ([]common.Deletable, error) {
 func (l LoadBalancers) get(filter string) ([]common.Deletable, error) {
 	loadBalancers, err := l.client.DescribeLoadBalancers(&awselbv2.DescribeLoadBalancersInput{})
 	if err != nil {
-		return nil, fmt.Errorf("Describing load balancers: %s", err)
+		return nil, fmt.Errorf("Describe ELBV2 Load Balancers: %s", err)
 	}
 
 	var resources []common.Deletable

@@ -25,7 +25,7 @@ func NewDBSubnetGroups(client dbSubnetGroupsClient, logger logger) DBSubnetGroup
 	}
 }
 
-func (d DBSubnetGroups) ListAll(filter string) ([]common.Deletable, error) {
+func (d DBSubnetGroups) ListOnly(filter string) ([]common.Deletable, error) {
 	return d.get(filter)
 }
 

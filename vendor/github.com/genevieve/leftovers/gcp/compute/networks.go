@@ -28,18 +28,18 @@ func NewNetworks(client networksClient, logger logger) Networks {
 func (n Networks) List(filter string) ([]common.Deletable, error) {
 	networks, err := n.client.ListNetworks()
 	if err != nil {
-		return nil, fmt.Errorf("Listing networks: %s", err)
+		return nil, fmt.Errorf("List Networks: %s", err)
 	}
 
 	var resources []common.Deletable
 	for _, network := range networks.Items {
 		resource := NewNetwork(n.client, network.Name)
 
-		if !strings.Contains(network.Name, filter) {
+		if !strings.Contains(resource.Name(), filter) {
 			continue
 		}
 
-		proceed := n.logger.Prompt(fmt.Sprintf("Are you sure you want to delete network %s?", network.Name))
+		proceed := n.logger.PromptWithDetails(resource.Type(), resource.Name())
 		if !proceed {
 			continue
 		}
