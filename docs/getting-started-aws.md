@@ -1,18 +1,20 @@
-### Getting started aws
+### Getting started: AWS
 
 This guide is a walkthrough for deploying a BOSH director with `bbl`
 on AWS. Upon completion, you will have the following:
 
-1. A BOSH director instance in the availability zone of your choice.
-1. A set of randomly generated BOSH director credentials.
+1. A BOSH director
+1. A jumpbox
+1. A set of randomly generated BOSH director credentials
 1. A generated keypair allowing you to SSH into the BOSH director and
-any instances BOSH deploys.
+any instances BOSH deploys
 1. A copy of the manifest the BOSH director was deployed with
 1. A basic cloud config
 
 ### Creating an IAM user
 
 In order for `bbl` to interact with AWS, an `IAM` user must be created.
+
 This user will be issuing API requests to create the infrastructure such
 as EC2 instances, load balancers, subnets, etc.
 
@@ -56,7 +58,7 @@ access key" to the terminal. These values are important and should
 be kept secret. In the next section `bbl` will use these commands to
 create infrastructure on AWS.
 
-### Creating infrastructure and BOSH director
+### bbl up
 
 `bbl` will create infrastructure and deploy a BOSH director with the
 following command:
@@ -69,11 +71,14 @@ bbl up \
 	--iaas aws
 ```
 
-The process takes around 5-8 minutes. When the process is finished
-a file named `bbl-state.json` will be created in the current working
-directory. This file is very important as it contains credentials
-and other metadata related to your BOSH director and infrastructure.
-It is highly recommended that you backup this file into version control
+The process takes around 5-8 minutes.
+
+When the process is finished, multiple files will have been created
+in the bbl state directory specified or your current working directory.
+
+The `bbl-state.json` contains metadata related to your BOSH director and infrastructure.
+
+It is highly recommended that you backup this directory into version control
 or another safe location. For more info about the `bbl-state.json` see
 the "State management" section.
 
@@ -165,4 +170,4 @@ $ bosh cloud-config
 ...
 ```
 
-Now you're ready to deploy software with BOSH!
+Now you're ready to deploy software with BOSH.

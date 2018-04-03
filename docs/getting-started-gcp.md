@@ -1,6 +1,6 @@
-# Getting started gcp
+# Getting Started: GCP
 
-## Creating a service account
+## Create a Service Account
 
 In order for `bbl` to interact with GCP, a service account must be created.
 
