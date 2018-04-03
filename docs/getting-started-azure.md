@@ -2,7 +2,17 @@
 
 ## Create a Service Principal Account
 
-## bbl up
+You can use the cli utility [az-automation](https://github.com/genevieve/az-automation)
+for creating a service principal account given you
+have authenticated with the `az` cli.
+
+The output will include your subscription id,
+your tenant id, the client id, and the client secret.
+
+These credentials will be passed to `bbl` so that
+it can interact with Azure.
+
+## Infrastructure, Jumpbox, Director
 
 1. Export environment variables.
     ```
@@ -18,11 +28,12 @@
     bbl up
     ```
 
-## bbl up --lb-type cf --lb-cert cert.pfx --lb-key pfx-password
+## + Cloud Foundry Load Balancers
 
-1. Follow the steps above.
+To get all of the above plus load balancers for Cloud Foundry:
 
-1. To create cf load balancers for azure you must provide a certificate in the `.pfx` format:
+1. To create cf load balancers for azure you must provide a certificate
+in the `.pfx` format:
     ```
     openssl genrsa -out DOMAIN_NAME.key 2048
     openssl req -new -x509 -days 365 -key DOMAIN_NAME.key -out DOMAIN_NAME.crt
