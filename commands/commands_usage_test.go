@@ -90,7 +90,6 @@ var _ = Describe("Commands Usage", func() {
 				Expect(usageText).To(Equal(fmt.Sprintf(`Tears down BOSH director infrastructure
 
   [--no-confirm]       Do not ask for confirmation (optional)
-  [--skip-if-missing]  Gracefully exit if there is no state file (optional)
 
   Credentials for your IaaS are required:%s`, commands.Credentials)))
 			})

@@ -51,7 +51,7 @@ var _ = Describe("Destroy", func() {
 		Context("when the BOSH version is less than 2.0.48 and there is a director", func() {
 			It("returns a helpful error message", func() {
 				boshManager.VersionCall.Returns.Version = "1.9.0"
-				err := destroy.CheckFastFails([]string{"--skip-if-missing"}, storage.State{IAAS: "aws"})
+				err := destroy.CheckFastFails([]string{}, storage.State{IAAS: "aws"})
 				Expect(err).To(MatchError("/bin/bosh1: bosh-cli version must be at least v2.0.48"))
 			})
 		})

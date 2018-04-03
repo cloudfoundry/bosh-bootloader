@@ -68,8 +68,7 @@ const (
 
 	DestroyCommandUsage = `Tears down BOSH director infrastructure
 
-  [--no-confirm]       Do not ask for confirmation (optional)
-  [--skip-if-missing]  Gracefully exit if there is no state file (optional)`
+  [--no-confirm]       Do not ask for confirmation (optional)`
 
 	CleanupLeftoversCommandUsage = `Cleans up orphaned IAAS resources
 
