@@ -1,15 +1,22 @@
-# Getting started vsphere
+# Getting Started: vSphere
 
-## Required credentials
+## Jumbpox, Director
 
-```
---vsphere-vcenter-user             vSphere vCenter User             env: $BBL_VSPHERE_VCENTER_USER
---vsphere-vcenter-password         vSphere vCenter Password         env: $BBL_VSPHERE_VCENTER_PASSWORD
---vsphere-vcenter-ip               vSphere vCenter IP               env: $BBL_VSPHERE_VCENTER_IP
---vsphere-vcenter-dc               vSphere vCenter Datacenter       env: $BBL_VSPHERE_VCENTER_DC
---vsphere-vcenter-cluster          vSphere vCenter Cluster          env: $BBL_VSPHERE_VCENTER_CLUSTER
---vsphere-vcenter-rp               vSphere vCenter Resource Pool    env: $BBL_VSPHERE_VCENTER_RP
---vsphere-network                  vSphere Network                  env: $BBL_VSPHERE_NETWORK
---vsphere-vcenter-ds               vSphere vCenter Datastore        env: $BBL_VSPHERE_VCENTER_DS
---vsphere-subnet                   vSphere Subnet                   env: $BBL_VSPHERE_SUBNET
-```
+1. Export environment variables.
+    ```
+    export BBL_IAAS=vsphere
+    export BBL_VSPHERE_VCENTER_USER
+    export BBL_VSPHERE_VCENTER_PASSWORD
+    export BBL_VSPHERE_VCENTER_IP
+    export BBL_VSPHERE_VCENTER_DC
+    export BBL_VSPHERE_VCENTER_CLUSTER
+    export BBL_VSPHERE_VCENTER_RP
+    export BBL_VSPHERE_NETWORK
+    export BBL_VSPHERE_VCENTER_DS
+    export BBL_VSPHERE_SUBNET
+    ```
+
+1. Create jumpbox and bosh director.
+    ```
+    bbl up
+    ```
