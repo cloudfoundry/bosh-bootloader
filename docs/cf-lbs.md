@@ -71,6 +71,16 @@
 ## Microsoft Azure
 There is an application gateway.
 
+1. **cf-app-gateway**
+    * In the cloud-config, this lb is referenced with the vm extension `cf-router-network-properties`.
+    * In cf-deployment, this vm extension will be associated with the `router` vm.
+    * Configuration:
+        - Public IP
+        - Application Gateway
+        - Network Security Rules
+        - Network Security Group
+
+
 ## vSphere
 N/A.
 
