@@ -1,7 +1,7 @@
 # Concourse
 
 This document will walk through deploying a concourse clustered
-install to AWS, GCP and Azure using `bbl` and `bosh`.
+install to GCP using `bbl` and `bosh`.
 
 ## Prerequisites
 
@@ -9,7 +9,7 @@ install to AWS, GCP and Azure using `bbl` and `bosh`.
 - [bosh v2](https://bosh.io/docs/cli-v2.html)
 - [concourse/concourse-bosh-deployment](https://github.com/concourse/concourse-bosh-deployment)
 
-## Steps (for GCP)
+## Steps
 
 1. Create an environment and upload a stemcell.
 

@@ -1,19 +1,25 @@
-# Getting started openstack
+# Getting Started: OpenStack
 
-## Required credentials
+## Jumpbox, Director
 
-```
---openstack-internal-cidr          OpenStack Internal CIDR          env: $BBL_OPENSTACK_INTERNAL_CIDR
---openstack-external-ip            OpenStack External IP            env: $BBL_OPENSTACK_EXTERNAL_IP
---openstack-auth-url               OpenStack Auth URL               env: $BBL_OPENSTACK_AUTH_URL
---openstack-az                     OpenStack Availability Zone      env: $BBL_OPENSTACK_AZ
---openstack-default-key-name       OpenStack Default Key Name       env: $BBL_OPENSTACK_DEFAULT_KEY_NAME
---openstack-default-security-group OpenStack Default Security Group env: $BBL_OPENSTACK_DEFAULT_SECURITY_GROUP
---openstack-network-id             OpenStack Network ID             env: $BBL_OPENSTACK_NETWORK_ID
---openstack-password               OpenStack Password               env: $BBL_OPENSTACK_PASSWORD
---openstack-username               OpenStack Username               env: $BBL_OPENSTACK_USERNAME
---openstack-project                OpenStack Project                env: $BBL_OPENSTACK_PROJECT
---openstack-domain                 OpenStack Domain                 env: $BBL_OPENSTACK_DOMAIN
---openstack-region                 OpenStack Region                 env: $BBL_OPENSTACK_REGION
---openstack-private-key            OpenStack Private Key            env: $BBL_OPENSTACK_PRIVATE_KEY`
-```
+1. Export environment variables.
+    ```
+    export BBL_IAAS=openstack
+    export BBL_OPENSTACK_INTERNAL_CIDR=
+    export BBL_OPENSTACK_EXTERNAL_IP=
+    export BBL_OPENSTACK_AUTH_URL=
+    export BBL_OPENSTACK_AZ=
+    export BBL_OPENSTACK_DEFAULT_KEY_NAME=
+    export BBL_OPENSTACK_DEFAULT_SECURITY_GROUP=
+    export BBL_OPENSTACK_NETWORK_ID=
+    export BBL_OPENSTACK_PASSWORD=
+    export BBL_OPENSTACK_USERNAME=
+    export BBL_OPENSTACK_PROJECT=
+    export BBL_OPENSTACK_DOMAIN=
+    export BBL_OPENSTACK_REGION=
+    export BBL_OPENSTACK_PRIVATE_KEY=
+    ```
+1. Create jumpbox and bosh director.
+    ```
+    bbl up
+    ```

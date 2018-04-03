@@ -72,7 +72,9 @@ Numerous settings can be reconfigured repeatedly by editing `$BBL_STATE_DIR/vars
     ```
     That's it. Your director is now at `192.168.0.6`.
 
+
 ## <a name='boshlite'></a>Deploying BOSH lite on GCP
+
 1. Plan the environment:
     ```
     git clone https://github.com/cloudfoundry/bosh-bootloader.git
