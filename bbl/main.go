@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"crypto/rand"
 	"encoding/json"
+	"io"
+	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -91,8 +93,21 @@ func main() {
 
 	// Terraform
 	terraformOutputBuffer := bytes.NewBuffer([]byte{})
-	terraformCmd := terraform.NewCmd(os.Stderr, terraformOutputBuffer, filepath.Join(appConfig.Global.StateDir, "terraform", ".terraform"))
-	terraformExecutor := terraform.NewExecutor(terraformCmd, stateStore, afs, appConfig.Global.Debug)
+	dotTerraformDir := filepath.Join(appConfig.Global.StateDir, "terraform", ".terraform")
+	bufferingCmd := terraform.NewCmd(terraformOutputBuffer, terraformOutputBuffer, dotTerraformDir)
+	var (
+		terraformCmd terraform.Cmd
+		out          io.Writer
+	)
+	if appConfig.Global.Debug {
+		errBuffer := io.MultiWriter(os.Stderr, terraformOutputBuffer)
+		terraformCmd = terraform.NewCmd(errBuffer, terraformOutputBuffer, dotTerraformDir)
+		out = os.Stdout
+	} else {
+		terraformCmd = bufferingCmd
+		out = ioutil.Discard
+	}
+	terraformExecutor := terraform.NewExecutor(terraformCmd, bufferingCmd, stateStore, afs, appConfig.Global.Debug, out)
 
 	// BOSH
 	hostKey := proxy.NewHostKey()

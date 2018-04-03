@@ -1,7 +1,6 @@
 package fakes
 
 import (
-	"errors"
 	"io"
 )
 
@@ -18,30 +17,23 @@ type TerraformCmd struct {
 			WorkingDirectory string
 			Args             []string
 			Env              []string
-			Debug            bool
 		}
 	}
 }
 
-func (t *TerraformCmd) RunWithEnv(stdout io.Writer, workingDirectory string, args []string, env []string, debug bool) error {
+func (t *TerraformCmd) RunWithEnv(stdout io.Writer, workingDirectory string, args []string, env []string) error {
 	t.RunCall.CallCount++
 	t.RunCall.Receives.Stdout = stdout
 	t.RunCall.Receives.WorkingDirectory = workingDirectory
 	t.RunCall.Receives.Args = args
 	t.RunCall.Receives.Env = env
-	t.RunCall.Receives.Debug = debug
 
 	switch args[0] {
 	case "version":
 		if t.RunCall.Stub != nil {
 			t.RunCall.Stub(stdout)
 		}
-	case "init":
-		t.RunCall.Initialized = true
 	default:
-		if !t.RunCall.Initialized {
-			return errors.New("must initialize terraform v0.10.* before running any other commands")
-		}
 		if t.RunCall.Stub != nil {
 			t.RunCall.Stub(stdout)
 		}
@@ -54,6 +46,6 @@ func (t *TerraformCmd) RunWithEnv(stdout io.Writer, workingDirectory string, arg
 	return nil
 }
 
-func (t *TerraformCmd) Run(stdout io.Writer, workingDirectory string, args []string, debug bool) error {
-	return t.RunWithEnv(stdout, workingDirectory, args, []string{}, debug)
+func (t *TerraformCmd) Run(stdout io.Writer, workingDirectory string, args []string) error {
+	return t.RunWithEnv(stdout, workingDirectory, args, []string{})
 }

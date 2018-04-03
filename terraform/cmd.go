@@ -7,37 +7,32 @@ import (
 )
 
 type Cmd struct {
-	stderr       io.Writer
+	errorBuffer  io.Writer
 	outputBuffer io.Writer
 	tfDataDir    string
 }
 
-func NewCmd(stderr, outputBuffer io.Writer, tfDataDir string) Cmd {
+func NewCmd(errorBuffer, outputBuffer io.Writer, tfDataDir string) Cmd {
 	return Cmd{
-		stderr:       stderr,
+		errorBuffer:  errorBuffer,
 		outputBuffer: outputBuffer,
 		tfDataDir:    tfDataDir,
 	}
 }
 
-func (c Cmd) Run(stdout io.Writer, workingDirectory string, args []string, debug bool) error {
-	return c.RunWithEnv(stdout, workingDirectory, args, []string{}, debug)
+func (c Cmd) Run(stdout io.Writer, workingDirectory string, args []string) error {
+	return c.RunWithEnv(stdout, workingDirectory, args, []string{})
 }
 
-func (c Cmd) RunWithEnv(stdout io.Writer, workingDirectory string, args []string, extraEnvVars []string, debug bool) error {
+func (c Cmd) RunWithEnv(stdout io.Writer, workingDirectory string, args []string, extraEnvVars []string) error {
 	command := exec.Command("terraform", args...)
 	command.Dir = workingDirectory
 
 	command.Env = os.Environ()
 	command.Env = append(command.Env, extraEnvVars...)
 
-	if debug {
-		command.Stdout = io.MultiWriter(stdout, c.outputBuffer)
-		command.Stderr = io.MultiWriter(c.stderr, c.outputBuffer)
-	} else {
-		command.Stdout = c.outputBuffer
-		command.Stderr = c.outputBuffer
-	}
+	command.Stdout = io.MultiWriter(stdout, c.outputBuffer)
+	command.Stderr = c.errorBuffer
 
 	return command.Run()
 }
