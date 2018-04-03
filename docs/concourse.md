@@ -22,7 +22,7 @@ install to AWS, GCP and Azure using `bbl` and `bosh`.
 
   bosh upload-stemcell https://bosh.io/d/stemcells/bosh-google-kvm-ubuntu-trusty-go_agent
 
-  cd $GOPATH/src/github.com/concourse/concourse-deployment/cluster
+  cd $GOPATH/src/github.com/concourse/concourse-bosh-deployment/cluster
   ```
 
 1. Deploy concourse.
