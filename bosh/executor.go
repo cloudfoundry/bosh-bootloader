@@ -35,7 +35,7 @@ type DirInput struct {
 }
 
 type command interface {
-	GetBOSHPath() (string, error)
+	GetBOSHPath() string
 	Run(stdout io.Writer, workingDirectory string, args []string) error
 }
 
@@ -151,14 +151,11 @@ func (e Executor) PlanJumpbox(input DirInput, deploymentDir, iaas string) error 
 		)
 	}
 
-	boshPath, err := e.command.GetBOSHPath()
-	if err != nil {
-		return fmt.Errorf("Jumpbox get BOSH path: %s", err) //not tested
-	}
+	boshPath := e.command.GetBOSHPath()
 
 	createEnvCmd := []byte(formatScript(boshPath, input.StateDir, "create-env", boshArgs))
 	createJumpboxScript := filepath.Join(input.StateDir, "create-jumpbox.sh")
-	err = e.fs.WriteFile(createJumpboxScript, createEnvCmd, 0750)
+	err := e.fs.WriteFile(createJumpboxScript, createEnvCmd, 0750)
 	if err != nil {
 		return err
 	}
@@ -246,10 +243,7 @@ func (e Executor) PlanDirector(input DirInput, deploymentDir, iaas string) error
 
 	boshState := filepath.Join(input.VarsDir, "bosh-state.json")
 
-	boshPath, err := e.command.GetBOSHPath()
-	if err != nil {
-		return fmt.Errorf("Director get BOSH path: %s", err) //not tested
-	}
+	boshPath := e.command.GetBOSHPath()
 
 	boshArgs := append([]string{
 		filepath.Join(deploymentDir, "bosh.yml"),
@@ -288,7 +282,7 @@ func (e Executor) PlanDirector(input DirInput, deploymentDir, iaas string) error
 	}
 
 	createEnvCmd := []byte(formatScript(boshPath, input.StateDir, "create-env", boshArgs))
-	err = e.fs.WriteFile(filepath.Join(input.StateDir, "create-director.sh"), createEnvCmd, 0750)
+	err := e.fs.WriteFile(filepath.Join(input.StateDir, "create-director.sh"), createEnvCmd, 0750)
 	if err != nil {
 		return err
 	}
@@ -432,7 +426,7 @@ func (e Executor) deploymentExists(varsDir, deployment string) (bool, error) {
 	return true, nil
 }
 
-func (e Executor) Path() (string, error) {
+func (e Executor) Path() string {
 	return e.command.GetBOSHPath()
 }
 

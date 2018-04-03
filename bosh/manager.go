@@ -45,7 +45,7 @@ type executor interface {
 	CreateEnv(DirInput, storage.State) (string, error)
 	DeleteEnv(DirInput, storage.State) error
 	WriteDeploymentVars(DirInput, string) error
-	Path() (string, error)
+	Path() string
 	Version() (string, error)
 }
 
@@ -75,7 +75,7 @@ func NewManager(executor executor, logger logger, stateStore stateStore, sshKeyG
 	}
 }
 
-func (m *Manager) Path() (string, error) {
+func (m *Manager) Path() string {
 	return m.executor.Path()
 }
 
