@@ -8,7 +8,7 @@ on an IaaS. `bbl` currently supports AWS, GCP and Azure. Openstack and vSphere s
 
 ## Guides
 
-- [AWS - Getting Started](docs/getting-started-aws.md)
+- [Getting Started: AWS](docs/getting-started-aws.md)
 - [Deploying Concourse](docs/concourse.md)
 - [Advanced BOSH Configuration](docs/advanced-configuration.md)
 
@@ -34,7 +34,7 @@ $ brew install bbl
 
 ## Usage
 
-### Generic getting started guide
+### Generic Getting Started Guide
 
 1. Create the necessary IaaS user/account for bbl.
 
@@ -45,14 +45,16 @@ $ brew install bbl
 1. `bosh ssh`, `bosh deploy` or `bosh env` should all just work with no further information needed from bbl.
 
 
-For detailed, IaaS specific instructions see your preferred IaaS's getting started guide:
-- [Azure - Getting Started](docs/getting-started-azure.md)
-- [GCP - Getting Started](docs/getting-started-gcp.md#creating-a-service-account)
-- [AWS - Getting Started](docs/getting-started-aws.md#creating-an-iam-user)
+### IaaS-Specific Getting Started Guides
+- [Getting Started: Azure](docs/getting-started-azure.md)
+- [Getting Started: GCP](docs/getting-started-gcp.md)
+- [Getting Started: AWS](docs/getting-started-aws.md)
+- [Getting Started: vSphere](docs/getting-started-vsphere.md)
+- [Getting Started: OpenStack](docs/getting-started-openstack.md)
 
-### Generic steps for Cloud Foundry deployment
+### Generic Steps for Cloud Foundry Deployment
 
-1. Create an environment and target the BOSH director as described above
+1. Create an environment and target the BOSH director as described above.
 
 1. `bbl plan --lb-type cf --lb-cert cert --lb-key key && bbl up` with a certificate and key as flags or environment variables.
 (Continue to provide the IaaS credentials as flags or environment variables.)

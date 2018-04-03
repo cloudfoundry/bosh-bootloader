@@ -73,56 +73,15 @@ bbl up \
 
 The process takes around 5-8 minutes.
 
-When the process is finished, multiple files will have been created
-in the bbl state directory specified or your current working directory.
-
-The `bbl-state.json` contains metadata related to your BOSH director and infrastructure.
-
-It is highly recommended that you backup this directory into version control
-or another safe location. For more info about the `bbl-state.json` see
-the "State management" section.
-
-### State management
-
-The `bbl-state.json` is an important file that contains confidential
-information about your infrastructure.
-
-The state file allows you to easily upgrade to the newest BOSH director
-and stemcell versions when new versions of bbl are released. It will
-allow you to issue a `bbl destroy` to destroy the many resources that
-`bbl` creates in AWS which is much easier and less error prone
-than manually finding the resources in the AWS console or CLI.
-
-Backing up this file into a safe place is highly recommended. The file
-should never be modified by hand.
-
-`bbl-state.json` contains the following:
-
-- Environment ID (unique ID for tag on all resources bbl deploys)
-- BOSH director username and password
-- BOSH director IP
-- BOSH director SSL CA, certificate, private key
-
-The best way to extract this info is by issuing commands like
-
-```
-$ bbl director-username
-some-username
-$ bbl director-ca-cert
---- BEGIN CERTIFICATE ---
-...
---- END CERTIFICATE ---
-```
-
-and so on...
-
-In order to run these commands, the current directory must contain the
-`bbl-state.json`.
+The bbl state directory contains all of the files that were used to
+create your bosh director. This should be checked in to version control,
+so that you have all the information necessary to later destroy or
+update this environment at a later date.
 
 ### Connecting to the BOSH director
 
-To setup your BOSH CLI with the new director you'll need the following
-command to get the credentials:
+To setup your BOSH CLI with the director you'll need the following
+command to set the credentials:
 
 ```
 eval "$(bbl print-env)"
@@ -135,10 +94,13 @@ Separate commands are available for the `bbl print-env` fields:
 ```
 $ bbl director-address
 https://10.0.0.6:25555
+
 $ bbl director-username
 user-d3783rk
+
 $ bbl director-password
 p-23dah71skl
+
 $ bbl director-ca-cert
 -----BEGIN CERTIFICATE-----
 MIIDtzCCAp+gAwIBAgIJAIPgaUgWRCE8MA0GCSqGSIb3DQEBBQUAMEUxCzAJBgNV
