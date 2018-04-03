@@ -1,82 +1,71 @@
 # Cloud Foundry Load Balancers
 
 ## AWS
-There are 3 elastic load balancers.
+`bbl` creates 3 load balancers on AWS.
 
 1. **cf-ssh-lb**
-    - deployment
-      - destination vm `scheduler` with vm_extension `diego-ssh-proxy-network-properties`
 
-    - forwarding
-      - `tcp:2222` -> `tcp:2222`
+    * In the cloud-config, this lb is referenced with the vm extension `diego-ssh-proxy-network-properties`.
+    * In cf-deployment, this vm extension will be associated with the `scheduler` vm.
+    * It forwards `TCP:2222` to `TCP:2222`.
 
 1. **cf-tcp-lb**
-    - deployment
-      - destination vm `tcp-router` with vm_extension `cf-tcp-router-network-properties`
 
-    - forwarding
-      - `tcp:1024-1123` -> `tcp:1024-1123`
+    * In the cloud-config, this lb is referenced with the vm extension `cf-tcp-router-network-properties`.
+    * In cf-deployment, this vm extension will be associated with the `tcp-router` vm.
+    * It forwards `TCP:1024-1123` to `TCP:1024-1123`.
 
 1. **cf-router-lb**
-    - deployment
-      - destination vm `router` with vm_extension `cf-router-network-properties`
 
-    - forwarding
-      - `http:80`   -> `http:80`
-      - `https:443` -> `http:80`
-      - `tls:4443`  -> `tcp:80`
+    * In the cloud-config, this lb is referenced with the vm extension `cf-router-network-properties`.
+    * In cf-deployment, this vm extension will be associated with the `router` vm.
+    * It forwards:
+        - `HTTP:80`   to `HTTP:80`
+        - `HTTPS:443` to `HTTP:80`
+        - `TLS:4443`  to `TCP:80`
 
 
 
 ## GCP
-There are 5 load balancers.
+`bbl` creates 4 load balancers on GCP.
 
 1. **cf-router-lb**
-    - deployment
-      - destination vm `router` with vm_extension `cf-router-network-properties`
 
-    - components
-      - a backend service with an instance group per availability zone
-      - instance group per availability zone allowing `https:443`
-      - a firewall rule allowing `tcp:80` & `tcp:443` to the backend service
-      - a health check for `tcp:8080` & `tcp:80`
+    * In the cloud-config, this lb is referenced with the vm extension `cf-router-network-properties`.
+    * In cf-deployment, this vm extension will be associated with the `router` vm.
+    * Configuration:
+        - Compute address
+        - Backend service with an instance group per availability zone
+        - Instance group per availability zone allowing `https:443`
+        - Firewall rule allowing `tcp:80` & `tcp:443` to the backend service
+        - Health check for `tcp:8080` & `tcp:80`
 
 1. **cf-ws-lb**
-    - deployment
-      - destination vm `router` with vm_extension `cf-router-network-properties`
-
-    - components
-      - a target pool
-      - a forwarding rule allowing `tcp:443` to the target pool
-      - a forwarding rule allowing `tcp:80` to the target pool
-      - no firewall rule?
-
-1. **cf-credhub-lb**
-    - deployment
-      - destination vm `some` with vm_extension `credhub-network-properties`
-
-    - components
-      - a target pool
-      - a firewall rule allowing `tcp:8844` to the target pool
-      - a forwarding rule for `tcp:8844` to the target pool
+    * In the cloud-config, this lb is referenced with the vm extension `cf-router-network-properties`.
+    * In cf-deployment, this vm extension will be associated with the `router` vm.
+    * Configuration:
+        - Compute address
+        - Target pool
+        - Forwarding rule allowing `tcp:443` to the target pool
+        - Forwarding rule allowing `tcp:80` to the target pool
 
 1. **cf-tcp-router-lb**
-    - deployment
-      - destination vm `tcp-router` with vm_extension `cf-tcp-router-network-properties`
-
-    - components
-      - a target pool
-      - a firewall rule allowing `tcp:1024-32768` to the target pool
-      - a forwarding rule for `tcp:1024-32768` to the target pool
+    * In the cloud-config, this lb is referenced with the vm extension `cf-tcp-router-network-properties`.
+    * In cf-deployment, this vm extension will be associated with the `tcp-router` vm.
+    * Configuration:
+        - Compute address
+        - Target pool
+        - Firewall rule allowing `tcp:1024-32768` to the target pool
+        - Forwarding rule for `tcp:1024-32768` to the target pool
 
 1. **cf-ssh-proxy-lb**
-    - deployment
-      - destination vm `scheduler` with vm_extension `diego-ssh-proxy-network-properties`
-
-    - components
-      - a target pool
-      - a firewall rule allowing `tcp:2222` to the target pool
-      - a forwarding rule for `tcp:2222` to the target pool
+    * In the cloud-config, this lb is referenced with the vm extension `diego-ssh-proxy-network-properties`.
+    * In cf-deployment, this vm extension will be associated with the `scheduler` vm.
+    * Configuration:
+        - Compute address
+        - Target pool
+        - Firewall rule allowing `tcp:2222` to the target pool
+        - Forwarding rule for `tcp:2222` to the target pool
 
 
 ## Microsoft Azure
