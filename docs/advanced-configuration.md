@@ -48,7 +48,6 @@ bosh create-env \
   --vars-file  ${BBL_STATE_DIR}/vars/director-vars-file.yml \
 +  -o ${BBL_STATE_DIR}/../../bbl-envs/shared/increase-workers-threads-and-flush-arp.yml
   -o  ${BBL_STATE_DIR}/bosh-deployment/cpi.yml \
-  -o  ${BBL_STATE_DIR}/bosh-deployment/cpi.yml \
   -o  ${BBL_STATE_DIR}/bosh-deployment/jumpbox-user.yml \
   -o  ${BBL_STATE_DIR}/bosh-deployment/uaa.yml \
   -o  ${BBL_STATE_DIR}/../shared/bosh-deployment/credhub.yml
@@ -60,9 +59,11 @@ Numerous settings can be reconfigured repeatedly by editing `$BBL_STATE_DIR/vars
 1. Plan the environment:
     ```
     mkdir some-env && cd some-env
-    echo BBL_AWS_ACCESS_KEY_ID=MYKEY
-    echo BBL_AWS_SECRET_ACCESS_KEY=MYSECRET
-    bbl plan --iaas aws --aws-region us-west-1
+    export BBL_IAAS=aws
+    export BBL_AWS_REGION=us-west-1
+    export BBL_AWS_ACCESS_KEY_ID=12345678
+    export BBL_AWS_SECRET_ACCESS_KEY=12345678
+    bbl plan
     echo -e "\nvpc_cidr=\"192.168.0.0/20\"" >> vars/terraform.tfvars
     ```
 1. Create the environment:
@@ -76,8 +77,10 @@ Numerous settings can be reconfigured repeatedly by editing `$BBL_STATE_DIR/vars
     ```
     git clone https://github.com/cloudfoundry/bosh-bootloader.git
     mkdir some-env && cd some-env
-    BBL_GCP_SERVICE_ACCOUNT_KEY=<MYSERVICEACCOUNTKEY>
-    bbl plan --name some-env --iaas gcp --gcp-region us-west-1
+    export BBL_IAAS=gcp
+    export BBL_GCP_REGION=us-west1
+    export BBL_GCP_SERVICE_ACCOUNT_KEY=my-key
+    bbl plan --name some-env
     cp -r ../bosh-bootloader/plan-patches/bosh-lite-gcp/* .
     ```
 1. Create the environment:
