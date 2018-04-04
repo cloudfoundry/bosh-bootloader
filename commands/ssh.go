@@ -31,12 +31,7 @@ type tempDirWriter interface {
 	fileio.TempDirer
 }
 
-func NewSSH(
-	sshCmd sshCmd,
-	sshKeyGetter sshKeyGetter,
-	tempDirWriter tempDirWriter,
-	randomPort randomPort,
-) SSH {
+func NewSSH(sshCmd sshCmd, sshKeyGetter sshKeyGetter, tempDirWriter tempDirWriter, randomPort randomPort) SSH {
 	return SSH{
 		cmd:           sshCmd,
 		keyGetter:     sshKeyGetter,
@@ -47,8 +42,9 @@ func NewSSH(
 
 func (s SSH) CheckFastFails(subcommandFlags []string, state storage.State) error {
 	if len(state.Jumpbox.URL) == 0 {
-		return errors.New("Invalid")
+		return errors.New("Invalid bbl state for bbl ssh.")
 	}
+
 	return nil
 }
 
@@ -65,9 +61,8 @@ func (s SSH) Execute(args []string, state storage.State) error {
 		return err
 	}
 
-	jumpboxPrivateKey, err := s.keyGetter.Get("jumpbox")
-	if err != nil {
-		return fmt.Errorf("Get jumpbox private key: %s", err)
+	if !jumpbox && !director {
+		return fmt.Errorf("This command requires the --jumpbox or --director flag.")
 	}
 
 	tempDir, err := s.tempDirWriter.TempDir("", "")
@@ -75,8 +70,14 @@ func (s SSH) Execute(args []string, state storage.State) error {
 		return fmt.Errorf("Create temp directory: %s", err)
 	}
 
-	jumpboxPrivateKeyPath := filepath.Join(tempDir, "jumpbox-private-key")
-	err = s.tempDirWriter.WriteFile(jumpboxPrivateKeyPath, []byte(jumpboxPrivateKey), 0600)
+	jumpboxKey, err := s.keyGetter.Get("jumpbox")
+	if err != nil {
+		return fmt.Errorf("Get jumpbox private key: %s", err)
+	}
+
+	jumpboxKeyPath := filepath.Join(tempDir, "jumpbox-private-key")
+
+	err = s.tempDirWriter.WriteFile(jumpboxKeyPath, []byte(jumpboxKey), 0600)
 	if err != nil {
 		return fmt.Errorf("Write private key file: %s", err)
 	}
@@ -84,45 +85,32 @@ func (s SSH) Execute(args []string, state storage.State) error {
 	jumpboxURL := strings.Split(state.Jumpbox.URL, ":")[0]
 
 	if jumpbox {
-		return s.cmd.Run([]string{
-			"-o", "StrictHostKeyChecking=no",
-			"-o", "ServerAliveInterval=300",
-			fmt.Sprintf("jumpbox@%s", jumpboxURL),
-			"-i", jumpboxPrivateKeyPath,
-		})
-	} else if director {
-		directorPrivateKey, err := s.keyGetter.Get("director")
-		if err != nil {
-			return fmt.Errorf("Get director private key: %s", err)
-		}
-
-		directorPrivateKeyPath := filepath.Join(tempDir, "director-private-key")
-		err = s.tempDirWriter.WriteFile(directorPrivateKeyPath, []byte(directorPrivateKey), 0600)
-		if err != nil {
-			return fmt.Errorf("Write private key file: %s", err)
-		}
-
-		port, err := s.randomPort.GetPort()
-		if err != nil {
-			return fmt.Errorf("Open proxy port: %s", err)
-		}
-
-		err = s.cmd.Run([]string{
-			"-4", "-D", port,
-			"-fNC", fmt.Sprintf("jumpbox@%s", jumpboxURL),
-			"-i", jumpboxPrivateKeyPath,
-		})
-		if err != nil {
-			return fmt.Errorf("Open tunnel to jumpbox: %s", err)
-		}
-
-		directorURL := strings.Split(strings.TrimPrefix(state.BOSH.DirectorAddress, "https://"), ":")[0]
-
-		return s.cmd.Run([]string{
-			"-o", fmt.Sprintf("ProxyCommand=nc -x localhost:%s %s", port, "%h %p"),
-			"-i", directorPrivateKeyPath,
-			fmt.Sprintf("jumpbox@%s", directorURL),
-		})
+		return s.cmd.Run([]string{"-o StrictHostKeyChecking=no -o ServerAliveInterval=300", fmt.Sprintf("jumpbox@%s", jumpboxURL), "-i", jumpboxKeyPath})
 	}
-	return errors.New("ssh expects --jumpbox or --director")
+
+	directorPrivateKey, err := s.keyGetter.Get("director")
+	if err != nil {
+		return fmt.Errorf("Get director private key: %s", err)
+	}
+
+	directorKeyPath := filepath.Join(tempDir, "director-private-key")
+
+	err = s.tempDirWriter.WriteFile(directorKeyPath, []byte(directorPrivateKey), 0600)
+	if err != nil {
+		return fmt.Errorf("Write private key file: %s", err)
+	}
+
+	port, err := s.randomPort.GetPort()
+	if err != nil {
+		return fmt.Errorf("Open proxy port: %s", err)
+	}
+
+	err = s.cmd.Run([]string{"-4 -D", port, "-fNC", fmt.Sprintf("jumpbox@%s", jumpboxURL), "-i", jumpboxKeyPath})
+	if err != nil {
+		return fmt.Errorf("Open tunnel to jumpbox: %s", err)
+	}
+
+	ip := strings.Split(strings.TrimPrefix(state.BOSH.DirectorAddress, "https://"), ":")[0]
+
+	return s.cmd.Run([]string{fmt.Sprintf("-o ProxyCommand=nc -x localhost:%s %s", port, "%h %p"), "-i", directorKeyPath, fmt.Sprintf("jumpbox@%s", ip)})
 }
