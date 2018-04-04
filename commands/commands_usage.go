@@ -88,6 +88,12 @@ const (
 
 	DirectorSSHKeyCommandUsage = "Prints SSH private key for the director."
 
+	SSHCommandUsage = `Opens an SSH connection to the director or the jumpbox.
+
+  --jumpbox                Open a connection to the jumpbox
+  --director               Open a connection to the director
+`
+
 	RotateCommandUsage = "Rotates SSH key for the jumpbox user."
 
 	JumpboxAddressCommandUsage = "Prints BOSH jumpbox address"
@@ -141,7 +147,7 @@ func (s SSHKey) Usage() string {
 }
 
 func (s SSH) Usage() string {
-	return ""
+	return SSHCommandUsage
 }
 
 func (s StateQuery) Usage() string {

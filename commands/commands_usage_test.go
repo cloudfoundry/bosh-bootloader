@@ -120,6 +120,20 @@ var _ = Describe("Commands Usage", func() {
 		})
 	})
 
+	Describe("SSH", func() {
+		Describe("Usage", func() {
+			It("returns string describing usage", func() {
+				command := commands.SSH{}
+				usageText := command.Usage()
+				Expect(usageText).To(Equal(`Opens an SSH connection to the director or the jumpbox.
+
+  --jumpbox                Open a connection to the jumpbox
+  --director               Open a connection to the director
+`))
+			})
+		})
+	})
+
 	Describe("Usage", func() {
 		Describe("Usage", func() {
 			It("returns string describing usage", func() {
