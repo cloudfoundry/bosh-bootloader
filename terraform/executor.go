@@ -254,7 +254,7 @@ func (e Executor) Outputs() (map[string]interface{}, error) {
 		return map[string]interface{}{}, err
 	}
 
-	err = e.cmd.Run(e.out, terraformDir, []string{"init", varsDir})
+	err = e.cmd.Run(os.Stderr, terraformDir, []string{"init", varsDir})
 	if err != nil {
 		return map[string]interface{}{}, fmt.Errorf("Run terraform init in terraform dir: %s", err)
 	}
