@@ -20,6 +20,10 @@ eval "$(bbl print-env)"
 credhub find -n 'cf_admin_password'
 ```
 
+The credhub-cli will parse `CREDHUB_PROXY` and determines from the `ssh+socks5://` scheme
+that it should proxy throuhg a jumpbox via a tunnel of its own making.
+
+
 
 ## Using http_proxy
 
