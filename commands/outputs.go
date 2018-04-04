@@ -2,6 +2,7 @@ package commands
 
 import (
 	"github.com/cloudfoundry/bosh-bootloader/storage"
+	yaml "gopkg.in/yaml.v2"
 )
 
 type Outputs struct {
@@ -27,8 +28,10 @@ func (o Outputs) Execute(subcommandFlags []string, state storage.State) error {
 	if err != nil {
 		return err
 	}
-	for k, v := range outputs.Map {
-		o.logger.Printf("%s: %+v\n", k, v)
+	marshalled, err := yaml.Marshal(outputs.Map)
+	if err != nil {
+		return err
 	}
+	o.logger.Printf(string(marshalled))
 	return nil
 }

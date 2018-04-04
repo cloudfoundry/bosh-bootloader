@@ -46,17 +46,15 @@ var _ = Describe("Outputs", func() {
 		It("prints the terraform outputs", func() {
 			terraformOutputs := terraform.Outputs{
 				Map: map[string]interface{}{
-					"firewall": "cidr",
+					"firewall": `cidr
+make sure we quote multiline strings`,
 					"external": "address",
 				},
 			}
 			terraformManager.GetOutputsCall.Returns.Outputs = terraformOutputs
 			err := outputsCommand.Execute([]string{}, storage.State{})
 			Expect(err).NotTo(HaveOccurred())
-			Expect(logger.PrintfCall.Messages).To(ConsistOf([]string{
-				"firewall: cidr\n",
-				"external: address\n",
-			}))
+			Expect(logger.PrintfCall.Receives.Message).To(ContainSubstring("external: address\nfirewall: |-\n  cidr\n  make sure we quote multiline strings"))
 		})
 
 		Context("failure cases", func() {
