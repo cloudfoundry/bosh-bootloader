@@ -32,7 +32,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-0.17.2, mkdocs-material-2.6.2">
+      <meta name="generator" content="mkdocs-0.17.3, mkdocs-material-2.7.1">
     
     
       
@@ -40,7 +40,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/application.9b572555.css">
+      <link rel="stylesheet" href="../assets/stylesheets/application.78aab2dc.css">
       
         <link rel="stylesheet" href="../assets/stylesheets/application-palette.6079476c.css">
       
@@ -49,6 +49,7 @@
       <script src="../assets/javascripts/modernizr.1aa3b519.js"></script>
     
     
+      <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
       
         <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700|Roboto+Mono">
         <style>body,input{font-family:"Roboto","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono","Courier New",Courier,monospace}</style>
@@ -69,8 +70,8 @@
         
       </defs>
     </svg>
-    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="drawer">
-    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="search">
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="search" autocomplete="off">
     <label class="md-overlay" data-md-component="overlay" for="drawer"></label>
     
       <a href="#advanced-configuration" tabindex="1" class="md-skip">
@@ -156,7 +157,7 @@
   <label class="md-nav__title md-nav__title--site" for="drawer">
     <span class="md-nav__button md-logo">
       
-        <img src="../theme/bosh.svg" width="24" height="24">
+        <img src="../theme/bosh.svg" width="48" height="48">
       
     </span>
     BBL
@@ -216,8 +217,8 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#about-ops-files" title="About ops-files" class="md-nav__link">
-    About ops-files
+  <a href="#about-bosh-ops-files" title="About BOSH ops-files" class="md-nav__link">
+    About BOSH ops-files
   </a>
   
 </li>
@@ -419,8 +420,8 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#about-ops-files" title="About ops-files" class="md-nav__link">
-    About ops-files
+  <a href="#about-bosh-ops-files" title="About BOSH ops-files" class="md-nav__link">
+    About BOSH ops-files
   </a>
   
 </li>
@@ -459,24 +460,19 @@
                 <h1 id="advanced-configuration">Advanced configuration</h1>
 <h2 id="table-of-contents">Table of Contents</h2>
 <ul>
-<li><a href='#opsfile'>Using an ops-file with bbl</a></li>
+<li><a href='#opsfile'>Using a BOSH ops-file with bbl</a></li>
 <li><a href='#terraform'>Customizing IaaS Paving with Terraform</a></li>
 <li><a href='#boshlite'>Deploying BOSH lite on GCP</a></li>
 <li><a href='#isoseg'>Deploying an isolation segment</a></li>
-<li><a href='#director'>Deploy director with bosh create-env</a></li>
-<li><a href='#concourse'>Deploy concourse with bosh create-env</a></li>
 </ul>
-<h2 id="using-an-ops-file-with-bbl"><a name='opsfile'></a>Using an ops-file with bbl</h2>
-<h3 id="about-ops-files">About ops-files</h3>
+<h2 id="using-a-bosh-ops-file-with-bbl"><a name='opsfile'></a>Using a BOSH ops-file with bbl</h2>
+<h3 id="about-bosh-ops-files">About BOSH ops-files</h3>
 <p>Certain features of BOSH, particularly experimental features or tuning parameters, must be enabled by modifying your
-Director's deployment manifest. <code>bosh-deployment</code> contains many such ops files for common features and options.</p>
+Director's deployment manifest. <a href="https://github.com/cloudfoundry/bosh-deployment"><code>bosh-deployment</code></a> contains many such <a href="https://bosh.io/docs/terminology.html#operations-file">ops files</a> for common features and options.</p>
 <h3 id="using-the-pre-made-operations-files">Using the pre-made operations files</h3>
-<p>You can provide any number of ops files or variables to <code>bosh create-env</code> by editing .This file will not be overridden by bbl unless <code>bbl plan</code> is
-called. If you modify this file, be sure to check your modifications in to git before running <code>bbl plan</code> again so that
-you may resolve conflicts if they arise.</p>
-<p>In this example, I use a local version of BOSH director that I have built based off of a branch:</p>
-<pre><code class="diff">#!/bin/sh
-bosh create-env \
+<p>You can provide any number of ops files or variables to <code>bosh create-env</code> by creating <code>create-director-override.sh</code>. This file will not be overridden by bbl. You can use <code>create-director.sh</code> as a template, and you can even edit that file instead, but if you do, your changes will be overridden the next time you run <code>bbl plan</code>.</p>
+<p>In this example, I use a local version of BOSH director that I have built based off of a branch by referencing an ops file that is included as part of <code>bosh-deployment</code>:</p>
+<pre><code class="diff">bosh create-env \
   ${BBL_STATE_DIR}/bosh-deployment/bosh.yml \
   --state  ${BBL_STATE_DIR}/vars/bosh-state.json \
   --vars-store  ${BBL_STATE_DIR}/vars/director-vars-store.yml \
@@ -490,7 +486,7 @@ bosh create-env \
 </code></pre>
 
 <h3 id="authoring-an-ops-file">Authoring an ops-file</h3>
-<p>The operations files provided by <code>bosh-deployment</code> may not meet your needs. In this case you will have to write your own
+<p>The <a href="http://bosh.io/docs/cli-ops-files.html">operations files</a> provided by <code>bosh-deployment</code> may not meet your needs. In this case you will have to write your own
 custom ops-file. Store it somewhere outside of the bosh-deployment directory. New versions of bbl will keep the
 bosh-deployment directory in sync with the latest configuration and releases, so modifications may be lost when
 <code>bbl plan</code> is run in the future. Consider storing it in the top level of your state directory if it is environmentally
@@ -558,6 +554,8 @@ TF_VAR_isolation_segments=&quot;1&quot; bbl up
               
               
                 
+
+
               
             </article>
           </div>
@@ -621,9 +619,9 @@ TF_VAR_isolation_segments=&quot;1&quot; bbl up
       
     </div>
     
-      <script src="../assets/javascripts/application.abd7b172.js"></script>
+      <script src="../assets/javascripts/application.8eb9be28.js"></script>
       
-      <script>app.initialize({version:"0.17.2",url:{base:".."}})</script>
+      <script>app.initialize({version:"0.17.3",url:{base:".."}})</script>
       
     
     
