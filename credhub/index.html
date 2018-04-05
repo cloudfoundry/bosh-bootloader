@@ -195,8 +195,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../cf-load-balancers/" title="CF Load Balancers" class="md-nav__link">
-      CF Load Balancers
+    <a href="../cf-lbs/" title="Cloud Foundry Load Balancers" class="md-nav__link">
+      Cloud Foundry Load Balancers
     </a>
   </li>
 
@@ -207,8 +207,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../cleaning-up/" title="Cleaning up" class="md-nav__link">
-      Cleaning up
+    <a href="../cleaning-up/" title="Cleaning Up" class="md-nav__link">
+      Cleaning Up
     </a>
   </li>
 
@@ -258,23 +258,23 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#using-http_proxy" title="Using http_proxy" class="md-nav__link">
-    Using http_proxy
+  <a href="#using-credhub_proxy" title="Using CREDHUB_PROXY" class="md-nav__link">
+    Using CREDHUB_PROXY
   </a>
   
     <nav class="md-nav">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#requirements" title="requirements" class="md-nav__link">
-    requirements
+  <a href="#requirements" title="Requirements" class="md-nav__link">
+    Requirements
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#steps" title="steps" class="md-nav__link">
-    steps
+  <a href="#steps" title="Steps" class="md-nav__link">
+    Steps
   </a>
   
 </li>
@@ -285,23 +285,23 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#using-credhub_proxy" title="Using CREDHUB_PROXY" class="md-nav__link">
-    Using CREDHUB_PROXY
+  <a href="#using-http_proxy" title="Using http_proxy" class="md-nav__link">
+    Using http_proxy
   </a>
   
     <nav class="md-nav">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#requirements_1" title="requirements" class="md-nav__link">
-    requirements
+  <a href="#requirements_1" title="Requirements" class="md-nav__link">
+    Requirements
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#steps_1" title="steps" class="md-nav__link">
-    steps
+  <a href="#steps_1" title="Steps" class="md-nav__link">
+    Steps
   </a>
   
 </li>
@@ -439,23 +439,23 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#using-http_proxy" title="Using http_proxy" class="md-nav__link">
-    Using http_proxy
+  <a href="#using-credhub_proxy" title="Using CREDHUB_PROXY" class="md-nav__link">
+    Using CREDHUB_PROXY
   </a>
   
     <nav class="md-nav">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#requirements" title="requirements" class="md-nav__link">
-    requirements
+  <a href="#requirements" title="Requirements" class="md-nav__link">
+    Requirements
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#steps" title="steps" class="md-nav__link">
-    steps
+  <a href="#steps" title="Steps" class="md-nav__link">
+    Steps
   </a>
   
 </li>
@@ -466,23 +466,23 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#using-credhub_proxy" title="Using CREDHUB_PROXY" class="md-nav__link">
-    Using CREDHUB_PROXY
+  <a href="#using-http_proxy" title="Using http_proxy" class="md-nav__link">
+    Using http_proxy
   </a>
   
     <nav class="md-nav">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#requirements_1" title="requirements" class="md-nav__link">
-    requirements
+  <a href="#requirements_1" title="Requirements" class="md-nav__link">
+    Requirements
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#steps_1" title="steps" class="md-nav__link">
-    steps
+  <a href="#steps_1" title="Steps" class="md-nav__link">
+    Steps
   </a>
   
 </li>
@@ -510,14 +510,32 @@
                 
                 
                 <h1 id="accessing-the-bosh-director-credhub">Accessing the BOSH director credhub</h1>
+<h2 id="using-credhub_proxy">Using CREDHUB_PROXY</h2>
+<h3 id="requirements">Requirements</h3>
+<ul>
+<li><code>bbl v6.2</code></li>
+<li><code>credhub-cli v1.6.0</code></li>
+<li>a bbl environment</li>
+</ul>
+<h3 id="steps">Steps</h3>
+<p><code>bbl print-env</code> prints out environment variables (<code>CREDHUB_CLIENT</code>, <code>CREDHUB_SECRET</code>, <code>CREDHUB_PROXY</code>,
+<code>CREDHUB_SERVER</code>, <code>CREDHUB_CA_CERT</code>, and others)
+that need to be exported to target the director credhub using the credhub-cli.</p>
+<pre><code>eval &quot;$(bbl print-env)&quot;
+
+credhub find -n 'cf_admin_password'
+</code></pre>
+
+<p>The credhub-cli will parse <code>CREDHUB_PROXY</code> and determines from the <code>ssh+socks5://</code> scheme
+that it should proxy throuhg a jumpbox via a tunnel of its own making.</p>
 <h2 id="using-http_proxy">Using http_proxy</h2>
-<h3 id="requirements">requirements</h3>
+<h3 id="requirements_1">Requirements</h3>
 <ul>
 <li><code>bbl pre-v6.2</code></li>
 <li><code>credhub-cli &lt; v1.6.0</code></li>
 <li>a bbl environment</li>
 </ul>
-<h3 id="steps">steps</h3>
+<h3 id="steps_1">Steps</h3>
 <ol>
 <li>
 <p>Set your CredHub client/secret</p>
@@ -538,18 +556,6 @@ ssh -4 -D 5000 -fNC jumpbox@`bbl jumpbox-address` -i /tmp/jumpbox.key</code></p>
     <code>http_proxy=socks5://localhost:5000 credhub find -n 'cf_admin_password'</code></p>
 </li>
 </ol>
-<h2 id="using-credhub_proxy">Using CREDHUB_PROXY</h2>
-<h3 id="requirements_1">requirements</h3>
-<ul>
-<li><code>bbl v6.2</code></li>
-<li><code>credhub-cli v1.6.0</code></li>
-<li>a bbl environment</li>
-</ul>
-<h3 id="steps_1">steps</h3>
-<pre><code>eval &quot;$(bbl print-env)&quot;
-
-credhub find -n 'cf_admin_password'
-</code></pre>
                 
                   
                 

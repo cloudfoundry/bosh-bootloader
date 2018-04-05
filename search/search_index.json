@@ -1,308 +1,378 @@
 {
     "docs": [
         {
-            "location": "/",
-            "text": "BOSH Bootloader\n\n\nUsage:\n  bbl [GLOBAL OPTIONS] COMMAND [OPTIONS]\n\nGlobal Options:\n  --help      [-h]       Prints usage. Use \nbbl [command] --help\n for more information about a command\n  --state-dir            Directory containing the bbl state\n  --debug                Prints debugging output\n  --version   [-v]       Prints version\n\nBasic Commands: A good place to start\n  up                      Deploys BOSH director on an IAAS. Updates existing director\n  print-env               All environment variables needed for targeting BOSH. Use with: eval \n$(bbl print-env)\n\n  create-lbs              Creates recommended load balancer(s) for CF, Concourse\n\nMaintenance Lifecycle Commands:\n  destroy                 Tears down BOSH director infrastructure. Cleans up state directory\n  update-lbs              Updates load balancer(s)\n  delete-lbs              Deletes attached load balancer(s)\n  rotate                  Rotates SSH key for the jumpbox user\n  plan                    Populates a state directory with the latest config without applying it\n\nEnvironmental Detail Commands: Useful for automation and gaining access\n  bosh-deployment-vars    Prints required variables for BOSH deployment\n  jumpbox-deployment-vars Prints required variables for jumpbox deployment\n  cloud-config            Prints suggested cloud configuration for BOSH environment\n  jumpbox-address         Prints BOSH jumpbox address\n  director-address        Prints BOSH director address\n  director-username       Prints BOSH director username\n  director-password       Prints BOSH director password\n  director-ca-cert        Prints BOSH director CA certificate\n  env-id                  Prints environment ID\n  ssh-key                 Prints jumpbox SSH private key\n  director-ssh-key        Prints director SSH private key\n  lbs                     Prints load balancer(s) and DNS records\n\nTroubleshooting Commands:\n  help                    Prints usage\n  version                 Prints version\n  latest-error            Prints the output from the latest call to terraform",
+            "location": "/", 
+            "text": "BOSH Bootloader\n\n\nAlso known as \nbbl\n \n(pronounced: \"bubble\")\n, bosh-bootloader is a command line\nutility for standing up a \nCloudFoundry\n or \nConcourse\n installation\non an IaaS. \nbbl\n currently supports AWS, GCP and Azure. Openstack and vSphere support are planned.\n\n\n\n\nCI\n\n\nTracker\n\n\n\n\nWhat \nbbl\n does\n\n\n\n\nGenerate Terraform template\n\n\nThe first step that \nbbl up\n does is to generate a Terraform template based on your IAAS, IAAS region, and chosen load balancer type (or lack thereof).\n\n\nThe resulting Terraform template is emitted to the \nterraform/bbl-template.tf\n file within your state directory.\n\n\nApply Terraform template\n\n\nAfter generating the Terraform template, \nbbl up\n will run Terraform to apply that template, using also a variables file located at\n\nvars/bbl.tfvars\n within the state directory.\n\n\nMap Terraform outputs to BOSH create-env vars\n\n\nHaving applied the Terraform template, we now have a number of Terraform outputs, such as subnet CIDRs, reserved IP addresses, and load balancer configuration.\n\nbbl\n will transform those outputs into the inputs required by \njumpbox-deployment\n and \nbosh-deployment\n and write them to the files \nvars/jumpbox-vars-file.yml\n\nand \nvars/director-vars-file.yml\n.\n\n\nBOSH create-env (jumpbox, director)\n\n\nNext, \nbbl\n shells out to the BOSH CLI to run \nbosh create-env\n twice. The first time, \nbbl\n uses \njumpbox-deployment\n and creates the jumpbox vm; the second time,\n\nbbl\n uses \nbosh-deployment\n and creates the director VM. The exact commands that \nbbl\n will run are emitted to the \ncreate-jumpbox.sh\n and \ncreate-director.sh\n\nfiles within the state directory.\n\n\nGenerate cloud-config template\n\n\nAfter the director VM comes up, \nbbl\n generates a base cloud-config, based on the IAAS, IAAS region, and chosen load balancer type.\n\n\nMap Terraform outputs to BOSH cloud-config vars\n\n\nHaving generated a base cloud-config template, \nbbl\n maps Terraform outputs to cloud-config variables. These variables include network and subnetwork names,\nsecurity groups or tags, and CIDR ranges, as well as load balancer target pool names.\n\n\nUpdate cloud-config (director)\n\n\nFinally, \nbbl\n will update the director's cloud config, by shelling out to \nbosh update-cloud-config\n.", 
             "title": "BOSH Bootloader"
-        },
+        }, 
         {
-            "location": "/#bosh-bootloader",
-            "text": "Usage:\n  bbl [GLOBAL OPTIONS] COMMAND [OPTIONS]\n\nGlobal Options:\n  --help      [-h]       Prints usage. Use  bbl [command] --help  for more information about a command\n  --state-dir            Directory containing the bbl state\n  --debug                Prints debugging output\n  --version   [-v]       Prints version\n\nBasic Commands: A good place to start\n  up                      Deploys BOSH director on an IAAS. Updates existing director\n  print-env               All environment variables needed for targeting BOSH. Use with: eval  $(bbl print-env) \n  create-lbs              Creates recommended load balancer(s) for CF, Concourse\n\nMaintenance Lifecycle Commands:\n  destroy                 Tears down BOSH director infrastructure. Cleans up state directory\n  update-lbs              Updates load balancer(s)\n  delete-lbs              Deletes attached load balancer(s)\n  rotate                  Rotates SSH key for the jumpbox user\n  plan                    Populates a state directory with the latest config without applying it\n\nEnvironmental Detail Commands: Useful for automation and gaining access\n  bosh-deployment-vars    Prints required variables for BOSH deployment\n  jumpbox-deployment-vars Prints required variables for jumpbox deployment\n  cloud-config            Prints suggested cloud configuration for BOSH environment\n  jumpbox-address         Prints BOSH jumpbox address\n  director-address        Prints BOSH director address\n  director-username       Prints BOSH director username\n  director-password       Prints BOSH director password\n  director-ca-cert        Prints BOSH director CA certificate\n  env-id                  Prints environment ID\n  ssh-key                 Prints jumpbox SSH private key\n  director-ssh-key        Prints director SSH private key\n  lbs                     Prints load balancer(s) and DNS records\n\nTroubleshooting Commands:\n  help                    Prints usage\n  version                 Prints version\n  latest-error            Prints the output from the latest call to terraform",
+            "location": "/#bosh-bootloader", 
+            "text": "Also known as  bbl   (pronounced: \"bubble\") , bosh-bootloader is a command line\nutility for standing up a  CloudFoundry  or  Concourse  installation\non an IaaS.  bbl  currently supports AWS, GCP and Azure. Openstack and vSphere support are planned.   CI  Tracker", 
             "title": "BOSH Bootloader"
-        },
+        }, 
         {
-            "location": "/advanced-configuration/",
-            "text": "Advanced configuration\n\n\nTable of Contents\n\n\n\n\nUsing a BOSH ops-file with bbl\n\n\nCustomizing IaaS Paving with Terraform\n\n\nDeploying BOSH lite on GCP\n\n\nDeploying an isolation segment\n\n\n\n\nUsing a BOSH ops-file with bbl\n\n\nAbout BOSH ops-files\n\n\nCertain features of BOSH, particularly experimental features or tuning parameters, must be enabled by modifying your\nDirector's deployment manifest. \nbosh-deployment\n contains many such \nops files\n for common features and options.\n\n\nUsing the pre-made operations files\n\n\nYou can provide any number of ops files or variables to \nbosh create-env\n by creating \ncreate-director-override.sh\n. This file will not be overridden by bbl. You can use \ncreate-director.sh\n as a template, and you can even edit that file instead, but if you do, your changes will be overridden the next time you run \nbbl plan\n.\n\n\nIn this example, I use a local version of BOSH director that I have built based off of a branch by referencing an ops file that is included as part of \nbosh-deployment\n:\n\n\nbosh create-env \\\n  ${BBL_STATE_DIR}/bosh-deployment/bosh.yml \\\n  --state  ${BBL_STATE_DIR}/vars/bosh-state.json \\\n  --vars-store  ${BBL_STATE_DIR}/vars/director-vars-store.yml \\\n  --vars-file  ${BBL_STATE_DIR}/vars/director-vars-file.yml \\\n+  -o ${BBL_STATE_DIR}/bosh-deployment/local-bosh-release.yml\n+  -v local_bosh_release=${BBL_STATE_DIR}/../../build/bosh-dev.tgz\n  -o  ${BBL_STATE_DIR}/bosh-deployment/cpi.yml \\\n  -o  ${BBL_STATE_DIR}/bosh-deployment/jumpbox-user.yml \\\n  -o  ${BBL_STATE_DIR}/bosh-deployment/uaa.yml \\\n  -o  ${BBL_STATE_DIR}/../shared/bosh-deployment/credhub.yml \n\n\n\n\nAuthoring an ops-file\n\n\nThe \noperations files\n provided by \nbosh-deployment\n may not meet your needs. In this case you will have to write your own\ncustom ops-file. Store it somewhere outside of the bosh-deployment directory. New versions of bbl will keep the\nbosh-deployment directory in sync with the latest configuration and releases, so modifications may be lost when\n\nbbl plan\n is run in the future. Consider storing it in the top level of your state directory if it is environmentally\nspecific, or above the state directory if it is true for all environments.\n\n\nHere is an example of adding an ops file that configures a few settings on all of my BOSH directors:  \n\n\n#!/bin/sh\nbosh create-env \\\n  ${BBL_STATE_DIR}/bosh-deployment/bosh.yml \\\n  --state  ${BBL_STATE_DIR}/vars/bosh-state.json \\\n  --vars-store  ${BBL_STATE_DIR}/vars/director-vars-store.yml \\\n  --vars-file  ${BBL_STATE_DIR}/vars/director-vars-file.yml \\\n+  -o ${BBL_STATE_DIR}/../../bbl-envs/shared/increase-workers-threads-and-flush-arp.yml\n  -o  ${BBL_STATE_DIR}/bosh-deployment/cpi.yml \\\n  -o  ${BBL_STATE_DIR}/bosh-deployment/cpi.yml \\\n  -o  ${BBL_STATE_DIR}/bosh-deployment/jumpbox-user.yml \\\n  -o  ${BBL_STATE_DIR}/bosh-deployment/uaa.yml \\\n  -o  ${BBL_STATE_DIR}/../shared/bosh-deployment/credhub.yml\n\n\n\n\nCustomizing IaaS Paving with Terraform\n\n\nNumerous settings can be reconfigured repeatedly by editing \n$BBL_STATE_DIR/vars/terraform.tfvars\n or adding a terraform override into  \n$BBL_STATE_DIR/terraform/my-cool-template-override.tf\n. Some settings, like VPCs, are not able to be changed after initial creation so it may be better to \nbbl plan\n first before running \nbbl up\n for the first time.\n\n\nExample: adjusting the cidr on AWS\n\n\n\n\nPlan the environment:\n    \nmkdir some-env \n cd some-env\n    echo BBL_AWS_ACCESS_KEY_ID=MYKEY\n    echo BBL_AWS_SECRET_ACCESS_KEY=MYSECRET\n    bbl plan --iaas aws --aws-region us-west-1\n    echo -e \"\\nvpc_cidr=\\\"192.168.0.0/20\\\"\" \n vars/terraform.tfvars\n\n\nCreate the environment:\n    \nbbl up\n\n    That's it. Your director is now at \n192.168.0.6\n.\n\n\n\n\nDeploying BOSH lite on GCP\n\n\n\n\nPlan the environment:\n    \ngit clone https://github.com/cloudfoundry/bosh-bootloader.git\n    mkdir some-env \n cd some-env\n    BBL_GCP_SERVICE_ACCOUNT_KEY=\nMYSERVICEACCOUNTKEY\n\n    bbl plan --name some-env --iaas gcp --gcp-region us-west-1\n    cp -r ../bosh-bootloader/plan-patches/bosh-lite-gcp/* .\n\n\nCreate the environment:\n    \nbbl up\n\n\nDetermine your external IP:\n    \nbosh int vars/director-vars-file.yml --path /external_ip\n\n\nAdd it to your DNS:\n    \nbosh-lite.infrastructure.cf-app.com.    A   300 ${bosh_lite_external_ip}\n    *.bosh-lite.infrastructure.cf-app.com.  CNAME   300 bosh-lite.infrastructure.cf-app.com.\n\n\nDeploy cf-deployment:\n    \n$ bosh upload-stemcell https://bosh.io/d/stemcells/bosh-warden-boshlite-ubuntu-trusty-go_agent?v=3468.5\n    $ bosh deploy -d cf -v 'system_domain=cf.evanfarrar.com' -o operations/bosh-lite.yml cf-deployment.yml -o operations/use-compiled-releases.yml\n\n\n\n\nDeploying an isolation segment\n\n\nYou can use this process on AWS to create an isolation segment with \n\n\nmkdir some-env \n cd some-env\nbbl plan --name some-env --lb-type cf --lb-cert /path/to/lb.crt --lb-key /path/to/lb.key\ncp /path/to/patch-dir/cloud-config/iso-segs-ops.yml cloudconfig/\nTF_VAR_isolation_segments=\n1\n bbl up\n\n\n\n\nTo se the TF_VAR it is also possible to add \nisolation_segments=\"1\"\n to \nterraform.tfvars\n before running up.",
+            "location": "/#what-bbl-does", 
+            "text": "", 
+            "title": "What bbl does"
+        }, 
+        {
+            "location": "/#generate-terraform-template", 
+            "text": "The first step that  bbl up  does is to generate a Terraform template based on your IAAS, IAAS region, and chosen load balancer type (or lack thereof).  The resulting Terraform template is emitted to the  terraform/bbl-template.tf  file within your state directory.", 
+            "title": "Generate Terraform template"
+        }, 
+        {
+            "location": "/#apply-terraform-template", 
+            "text": "After generating the Terraform template,  bbl up  will run Terraform to apply that template, using also a variables file located at vars/bbl.tfvars  within the state directory.", 
+            "title": "Apply Terraform template"
+        }, 
+        {
+            "location": "/#map-terraform-outputs-to-bosh-create-env-vars", 
+            "text": "Having applied the Terraform template, we now have a number of Terraform outputs, such as subnet CIDRs, reserved IP addresses, and load balancer configuration. bbl  will transform those outputs into the inputs required by  jumpbox-deployment  and  bosh-deployment  and write them to the files  vars/jumpbox-vars-file.yml \nand  vars/director-vars-file.yml .", 
+            "title": "Map Terraform outputs to BOSH create-env vars"
+        }, 
+        {
+            "location": "/#bosh-create-env-jumpbox-director", 
+            "text": "Next,  bbl  shells out to the BOSH CLI to run  bosh create-env  twice. The first time,  bbl  uses  jumpbox-deployment  and creates the jumpbox vm; the second time, bbl  uses  bosh-deployment  and creates the director VM. The exact commands that  bbl  will run are emitted to the  create-jumpbox.sh  and  create-director.sh \nfiles within the state directory.", 
+            "title": "BOSH create-env (jumpbox, director)"
+        }, 
+        {
+            "location": "/#generate-cloud-config-template", 
+            "text": "After the director VM comes up,  bbl  generates a base cloud-config, based on the IAAS, IAAS region, and chosen load balancer type.", 
+            "title": "Generate cloud-config template"
+        }, 
+        {
+            "location": "/#map-terraform-outputs-to-bosh-cloud-config-vars", 
+            "text": "Having generated a base cloud-config template,  bbl  maps Terraform outputs to cloud-config variables. These variables include network and subnetwork names,\nsecurity groups or tags, and CIDR ranges, as well as load balancer target pool names.", 
+            "title": "Map Terraform outputs to BOSH cloud-config vars"
+        }, 
+        {
+            "location": "/#update-cloud-config-director", 
+            "text": "Finally,  bbl  will update the director's cloud config, by shelling out to  bosh update-cloud-config .", 
+            "title": "Update cloud-config (director)"
+        }, 
+        {
+            "location": "/advanced-configuration/", 
+            "text": "Advanced configuration\n\n\nTable of Contents\n\n\n\n\nUsing a BOSH ops-file with bbl\n\n\nCustomizing IaaS Paving with Terraform\n\n\nDeploying BOSH lite on GCP\n\n\nDeploying an isolation segment\n\n\n\n\nUsing a BOSH ops-file with bbl\n\n\nAbout BOSH ops-files\n\n\nCertain features of BOSH, particularly experimental features or tuning parameters, must be enabled by modifying your\nDirector's deployment manifest. \nbosh-deployment\n contains many such \nops files\n for common features and options.\n\n\nUsing the pre-made operations files\n\n\nYou can provide any number of ops files or variables to \nbosh create-env\n by creating \ncreate-director-override.sh\n. This file will not be overridden by bbl. You can use \ncreate-director.sh\n as a template, and you can even edit that file instead, but if you do, your changes will be overridden the next time you run \nbbl plan\n.\n\n\nIn this example, I use a local version of BOSH director that I have built based off of a branch by referencing an ops file that is included as part of \nbosh-deployment\n:\n\n\nbosh create-env \\\n  ${BBL_STATE_DIR}/bosh-deployment/bosh.yml \\\n  --state  ${BBL_STATE_DIR}/vars/bosh-state.json \\\n  --vars-store  ${BBL_STATE_DIR}/vars/director-vars-store.yml \\\n  --vars-file  ${BBL_STATE_DIR}/vars/director-vars-file.yml \\\n+  -o ${BBL_STATE_DIR}/bosh-deployment/local-bosh-release.yml\n+  -v local_bosh_release=${BBL_STATE_DIR}/../../build/bosh-dev.tgz\n  -o  ${BBL_STATE_DIR}/bosh-deployment/cpi.yml \\\n  -o  ${BBL_STATE_DIR}/bosh-deployment/jumpbox-user.yml \\\n  -o  ${BBL_STATE_DIR}/bosh-deployment/uaa.yml \\\n  -o  ${BBL_STATE_DIR}/../shared/bosh-deployment/credhub.yml \n\n\n\n\nAuthoring an ops-file\n\n\nThe \noperations files\n provided by \nbosh-deployment\n may not meet your needs. In this case you will have to write your own\ncustom ops-file. Store it somewhere outside of the bosh-deployment directory. New versions of bbl will keep the\nbosh-deployment directory in sync with the latest configuration and releases, so modifications may be lost when\n\nbbl plan\n is run in the future. Consider storing it in the top level of your state directory if it is environmentally\nspecific, or above the state directory if it is true for all environments.\n\n\nHere is an example of adding an ops file that configures a few settings on all of my BOSH directors:  \n\n\n#!/bin/sh\nbosh create-env \\\n  ${BBL_STATE_DIR}/bosh-deployment/bosh.yml \\\n  --state  ${BBL_STATE_DIR}/vars/bosh-state.json \\\n  --vars-store  ${BBL_STATE_DIR}/vars/director-vars-store.yml \\\n  --vars-file  ${BBL_STATE_DIR}/vars/director-vars-file.yml \\\n+  -o ${BBL_STATE_DIR}/../../bbl-envs/shared/increase-workers-threads-and-flush-arp.yml\n  -o  ${BBL_STATE_DIR}/bosh-deployment/cpi.yml \\\n  -o  ${BBL_STATE_DIR}/bosh-deployment/jumpbox-user.yml \\\n  -o  ${BBL_STATE_DIR}/bosh-deployment/uaa.yml \\\n  -o  ${BBL_STATE_DIR}/../shared/bosh-deployment/credhub.yml\n\n\n\n\nCustomizing IaaS Paving with Terraform\n\n\nNumerous settings can be reconfigured repeatedly by editing \n$BBL_STATE_DIR/vars/terraform.tfvars\n or adding a terraform override into  \n$BBL_STATE_DIR/terraform/my-cool-template-override.tf\n. Some settings, like VPCs, are not able to be changed after initial creation so it may be better to \nbbl plan\n first before running \nbbl up\n for the first time.\n\n\nExample: adjusting the cidr on AWS\n\n\n\n\nPlan the environment:\n    \nmkdir some-env \n cd some-env\n    export BBL_IAAS=aws\n    export BBL_AWS_REGION=us-west-1\n    export BBL_AWS_ACCESS_KEY_ID=12345678\n    export BBL_AWS_SECRET_ACCESS_KEY=12345678\n    bbl plan\n    echo -e \"\\nvpc_cidr=\\\"192.168.0.0/20\\\"\" \n vars/terraform.tfvars\n\n\nCreate the environment:\n    \nbbl up\n\n    That's it. Your director is now at \n192.168.0.6\n.\n\n\n\n\nDeploying BOSH lite on GCP\n\n\n\n\nPlan the environment:\n    \ngit clone https://github.com/cloudfoundry/bosh-bootloader.git\n    mkdir some-env \n cd some-env\n    export BBL_IAAS=gcp\n    export BBL_GCP_REGION=us-west1\n    export BBL_GCP_SERVICE_ACCOUNT_KEY=my-key\n    bbl plan --name some-env\n    cp -r ../bosh-bootloader/plan-patches/bosh-lite-gcp/* .\n\n\nCreate the environment:\n    \nbbl up\n\n\nDetermine your external IP:\n    \nbosh int vars/director-vars-file.yml --path /external_ip\n\n\nAdd it to your DNS:\n    \nbosh-lite.infrastructure.cf-app.com.    A   300 ${bosh_lite_external_ip}\n    *.bosh-lite.infrastructure.cf-app.com.  CNAME   300 bosh-lite.infrastructure.cf-app.com.\n\n\nDeploy cf-deployment:\n    \n$ bosh upload-stemcell https://bosh.io/d/stemcells/bosh-warden-boshlite-ubuntu-trusty-go_agent?v=3468.5\n    $ bosh deploy -d cf -v 'system_domain=cf.evanfarrar.com' -o operations/bosh-lite.yml cf-deployment.yml -o operations/use-compiled-releases.yml\n\n\n\n\nDeploying an isolation segment\n\n\nYou can use this process on AWS to create an isolation segment with \n\n\nmkdir some-env \n cd some-env\nbbl plan --name some-env --lb-type cf --lb-cert /path/to/lb.crt --lb-key /path/to/lb.key\ncp /path/to/patch-dir/cloud-config/iso-segs-ops.yml cloudconfig/\nTF_VAR_isolation_segments=\n1\n bbl up\n\n\n\n\nTo set the TF_VAR it is also possible to add \nisolation_segments=\"1\"\n to \nterraform.tfvars\n before running up.", 
             "title": "Advanced configuration"
-        },
+        }, 
         {
-            "location": "/advanced-configuration/#advanced-configuration",
-            "text": "",
+            "location": "/advanced-configuration/#advanced-configuration", 
+            "text": "", 
             "title": "Advanced configuration"
-        },
+        }, 
         {
-            "location": "/advanced-configuration/#table-of-contents",
-            "text": "Using a BOSH ops-file with bbl  Customizing IaaS Paving with Terraform  Deploying BOSH lite on GCP  Deploying an isolation segment",
+            "location": "/advanced-configuration/#table-of-contents", 
+            "text": "Using a BOSH ops-file with bbl  Customizing IaaS Paving with Terraform  Deploying BOSH lite on GCP  Deploying an isolation segment", 
             "title": "Table of Contents"
-        },
+        }, 
         {
-            "location": "/advanced-configuration/#about-bosh-ops-files",
-            "text": "Certain features of BOSH, particularly experimental features or tuning parameters, must be enabled by modifying your\nDirector's deployment manifest.  bosh-deployment  contains many such  ops files  for common features and options.",
+            "location": "/advanced-configuration/#about-bosh-ops-files", 
+            "text": "Certain features of BOSH, particularly experimental features or tuning parameters, must be enabled by modifying your\nDirector's deployment manifest.  bosh-deployment  contains many such  ops files  for common features and options.", 
             "title": "About BOSH ops-files"
-        },
+        }, 
         {
-            "location": "/advanced-configuration/#using-the-pre-made-operations-files",
-            "text": "You can provide any number of ops files or variables to  bosh create-env  by creating  create-director-override.sh . This file will not be overridden by bbl. You can use  create-director.sh  as a template, and you can even edit that file instead, but if you do, your changes will be overridden the next time you run  bbl plan .  In this example, I use a local version of BOSH director that I have built based off of a branch by referencing an ops file that is included as part of  bosh-deployment :  bosh create-env \\\n  ${BBL_STATE_DIR}/bosh-deployment/bosh.yml \\\n  --state  ${BBL_STATE_DIR}/vars/bosh-state.json \\\n  --vars-store  ${BBL_STATE_DIR}/vars/director-vars-store.yml \\\n  --vars-file  ${BBL_STATE_DIR}/vars/director-vars-file.yml \\\n+  -o ${BBL_STATE_DIR}/bosh-deployment/local-bosh-release.yml\n+  -v local_bosh_release=${BBL_STATE_DIR}/../../build/bosh-dev.tgz\n  -o  ${BBL_STATE_DIR}/bosh-deployment/cpi.yml \\\n  -o  ${BBL_STATE_DIR}/bosh-deployment/jumpbox-user.yml \\\n  -o  ${BBL_STATE_DIR}/bosh-deployment/uaa.yml \\\n  -o  ${BBL_STATE_DIR}/../shared/bosh-deployment/credhub.yml",
+            "location": "/advanced-configuration/#using-the-pre-made-operations-files", 
+            "text": "You can provide any number of ops files or variables to  bosh create-env  by creating  create-director-override.sh . This file will not be overridden by bbl. You can use  create-director.sh  as a template, and you can even edit that file instead, but if you do, your changes will be overridden the next time you run  bbl plan .  In this example, I use a local version of BOSH director that I have built based off of a branch by referencing an ops file that is included as part of  bosh-deployment :  bosh create-env \\\n  ${BBL_STATE_DIR}/bosh-deployment/bosh.yml \\\n  --state  ${BBL_STATE_DIR}/vars/bosh-state.json \\\n  --vars-store  ${BBL_STATE_DIR}/vars/director-vars-store.yml \\\n  --vars-file  ${BBL_STATE_DIR}/vars/director-vars-file.yml \\\n+  -o ${BBL_STATE_DIR}/bosh-deployment/local-bosh-release.yml\n+  -v local_bosh_release=${BBL_STATE_DIR}/../../build/bosh-dev.tgz\n  -o  ${BBL_STATE_DIR}/bosh-deployment/cpi.yml \\\n  -o  ${BBL_STATE_DIR}/bosh-deployment/jumpbox-user.yml \\\n  -o  ${BBL_STATE_DIR}/bosh-deployment/uaa.yml \\\n  -o  ${BBL_STATE_DIR}/../shared/bosh-deployment/credhub.yml", 
             "title": "Using the pre-made operations files"
-        },
+        }, 
         {
-            "location": "/advanced-configuration/#authoring-an-ops-file",
-            "text": "The  operations files  provided by  bosh-deployment  may not meet your needs. In this case you will have to write your own\ncustom ops-file. Store it somewhere outside of the bosh-deployment directory. New versions of bbl will keep the\nbosh-deployment directory in sync with the latest configuration and releases, so modifications may be lost when bbl plan  is run in the future. Consider storing it in the top level of your state directory if it is environmentally\nspecific, or above the state directory if it is true for all environments.  Here is an example of adding an ops file that configures a few settings on all of my BOSH directors:    #!/bin/sh\nbosh create-env \\\n  ${BBL_STATE_DIR}/bosh-deployment/bosh.yml \\\n  --state  ${BBL_STATE_DIR}/vars/bosh-state.json \\\n  --vars-store  ${BBL_STATE_DIR}/vars/director-vars-store.yml \\\n  --vars-file  ${BBL_STATE_DIR}/vars/director-vars-file.yml \\\n+  -o ${BBL_STATE_DIR}/../../bbl-envs/shared/increase-workers-threads-and-flush-arp.yml\n  -o  ${BBL_STATE_DIR}/bosh-deployment/cpi.yml \\\n  -o  ${BBL_STATE_DIR}/bosh-deployment/cpi.yml \\\n  -o  ${BBL_STATE_DIR}/bosh-deployment/jumpbox-user.yml \\\n  -o  ${BBL_STATE_DIR}/bosh-deployment/uaa.yml \\\n  -o  ${BBL_STATE_DIR}/../shared/bosh-deployment/credhub.yml",
+            "location": "/advanced-configuration/#authoring-an-ops-file", 
+            "text": "The  operations files  provided by  bosh-deployment  may not meet your needs. In this case you will have to write your own\ncustom ops-file. Store it somewhere outside of the bosh-deployment directory. New versions of bbl will keep the\nbosh-deployment directory in sync with the latest configuration and releases, so modifications may be lost when bbl plan  is run in the future. Consider storing it in the top level of your state directory if it is environmentally\nspecific, or above the state directory if it is true for all environments.  Here is an example of adding an ops file that configures a few settings on all of my BOSH directors:    #!/bin/sh\nbosh create-env \\\n  ${BBL_STATE_DIR}/bosh-deployment/bosh.yml \\\n  --state  ${BBL_STATE_DIR}/vars/bosh-state.json \\\n  --vars-store  ${BBL_STATE_DIR}/vars/director-vars-store.yml \\\n  --vars-file  ${BBL_STATE_DIR}/vars/director-vars-file.yml \\\n+  -o ${BBL_STATE_DIR}/../../bbl-envs/shared/increase-workers-threads-and-flush-arp.yml\n  -o  ${BBL_STATE_DIR}/bosh-deployment/cpi.yml \\\n  -o  ${BBL_STATE_DIR}/bosh-deployment/jumpbox-user.yml \\\n  -o  ${BBL_STATE_DIR}/bosh-deployment/uaa.yml \\\n  -o  ${BBL_STATE_DIR}/../shared/bosh-deployment/credhub.yml", 
             "title": "Authoring an ops-file"
-        },
+        }, 
         {
-            "location": "/advanced-configuration/#example-adjusting-the-cidr-on-aws",
-            "text": "Plan the environment:\n     mkdir some-env   cd some-env\n    echo BBL_AWS_ACCESS_KEY_ID=MYKEY\n    echo BBL_AWS_SECRET_ACCESS_KEY=MYSECRET\n    bbl plan --iaas aws --aws-region us-west-1\n    echo -e \"\\nvpc_cidr=\\\"192.168.0.0/20\\\"\"   vars/terraform.tfvars  Create the environment:\n     bbl up \n    That's it. Your director is now at  192.168.0.6 .",
+            "location": "/advanced-configuration/#example-adjusting-the-cidr-on-aws", 
+            "text": "Plan the environment:\n     mkdir some-env   cd some-env\n    export BBL_IAAS=aws\n    export BBL_AWS_REGION=us-west-1\n    export BBL_AWS_ACCESS_KEY_ID=12345678\n    export BBL_AWS_SECRET_ACCESS_KEY=12345678\n    bbl plan\n    echo -e \"\\nvpc_cidr=\\\"192.168.0.0/20\\\"\"   vars/terraform.tfvars  Create the environment:\n     bbl up \n    That's it. Your director is now at  192.168.0.6 .", 
             "title": "Example: adjusting the cidr on AWS"
-        },
+        }, 
         {
-            "location": "/cf-load-balancers/",
-            "text": "CF Load Balancers\n\n\nbbl up --lb-type cf\n\n\n--iaas aws\n\n\nThere are 3 elastic load balancers.\n\n\n\n\n\n\ncf-ssh-lb\n\n\n\n\ndeployment\n\n\n\n\ndestination vm \nscheduler\n with vm_extension \ndiego-ssh-proxy-network-properties\n\n\n\n\n\n\nforwarding\n\n\n\n\ntcp:2222\n -\n \ntcp:2222\n\n\n\n\n\n\n\n\ncf-tcp-lb\n\n\n\n\ndeployment\n\n\n\n\ndestination vm \ntcp-router\n with vm_extension \ncf-tcp-router-network-properties\n\n\n\n\n\n\nforwarding\n\n\n\n\ntcp:1024-1123\n -\n \ntcp:1024-1123\n\n\n\n\n\n\n\n\ncf-router-lb\n\n\n\n\ndeployment\n\n\n\n\ndestination vm \nrouter\n with vm_extension \ncf-router-network-properties\n\n\n\n\n\n\nforwarding\n\n\n\n\nhttp:80\n   -\n \nhttp:80\n\n\nhttps:443\n -\n \nhttp:80\n\n\ntls:4443\n  -\n \ntcp:80\n\n\n\n\n\n\n\n\n--iaas gcp\n\n\nThere are 5 load balancers.\n\n\n\n\n\n\ncf-router-lb\n\n\n\n\ndeployment\n\n\n\n\ndestination vm \nrouter\n with vm_extension \ncf-router-network-properties\n\n\n\n\n\n\ncomponents\n\n\n\n\na backend service with an instance group per availability zone\n\n\ninstance group per availability zone allowing \nhttps:443\n\n\na firewall rule allowing \ntcp:80\n \n \ntcp:443\n to the backend service\n\n\na health check for \ntcp:8080\n \n \ntcp:80\n\n\n\n\n\n\n\n\ncf-ws-lb\n\n\n\n\ndeployment\n\n\n\n\ndestination vm \nrouter\n with vm_extension \ncf-router-network-properties\n\n\n\n\n\n\ncomponents\n\n\n\n\na target pool\n\n\na forwarding rule allowing \ntcp:443\n to the target pool\n\n\na forwarding rule allowing \ntcp:80\n to the target pool\n\n\nno firewall rule?\n\n\n\n\n\n\n\n\ncf-credhub-lb\n\n\n\n\ndeployment\n\n\n\n\ndestination vm \nsome\n with vm_extension \ncredhub-network-properties\n\n\n\n\n\n\ncomponents\n\n\n\n\na target pool\n\n\na firewall rule allowing \ntcp:8844\n to the target pool\n\n\na forwarding rule for \ntcp:8844\n to the target pool\n\n\n\n\n\n\n\n\ncf-tcp-router-lb\n\n\n\n\ndeployment\n\n\n\n\ndestination vm \ntcp-router\n with vm_extension \ncf-tcp-router-network-properties\n\n\n\n\n\n\ncomponents\n\n\n\n\na target pool\n\n\na firewall rule allowing \ntcp:1024-32768\n to the target pool\n\n\na forwarding rule for \ntcp:1024-32768\n to the target pool\n\n\n\n\n\n\n\n\ncf-ssh-proxy-lb\n\n\n\n\ndeployment\n\n\n\n\ndestination vm \nscheduler\n with vm_extension \ndiego-ssh-proxy-network-properties\n\n\n\n\n\n\ncomponents\n\n\n\n\na target pool\n\n\na firewall rule allowing \ntcp:2222\n to the target pool\n\n\na forwarding rule for \ntcp:2222\n to the target pool\n\n\n\n\n\n\n\n\n--iaas azure\n\n\nThere is 1 application gateway.",
-            "title": "CF Load Balancers"
-        },
+            "location": "/cf-lbs/", 
+            "text": "Cloud Foundry Load Balancers\n\n\nAWS\n\n\nbbl\n creates 3 load balancers on AWS.\n\n\n\n\n\n\ncf-ssh-lb\n\n\n\n\nIn the cloud-config, this lb is referenced with the vm extension \ndiego-ssh-proxy-network-properties\n.\n\n\nIn cf-deployment, this vm extension will be associated with the \nscheduler\n vm.\n\n\nIt forwards \nTCP:2222\n to \nTCP:2222\n.\n\n\n\n\n\n\n\n\ncf-tcp-lb\n\n\n\n\nIn the cloud-config, this lb is referenced with the vm extension \ncf-tcp-router-network-properties\n.\n\n\nIn cf-deployment, this vm extension will be associated with the \ntcp-router\n vm.\n\n\nIt forwards \nTCP:1024-1123\n to \nTCP:1024-1123\n.\n\n\n\n\n\n\n\n\ncf-router-lb\n\n\n\n\nIn the cloud-config, this lb is referenced with the vm extension \ncf-router-network-properties\n.\n\n\nIn cf-deployment, this vm extension will be associated with the \nrouter\n vm.\n\n\nIt forwards:\n\n\nHTTP:80\n   to \nHTTP:80\n\n\nHTTPS:443\n to \nHTTP:80\n\n\nTLS:4443\n  to \nTCP:80\n\n\n\n\n\n\n\n\n\n\n\n\nGCP\n\n\nbbl\n creates 4 load balancers on GCP.\n\n\n\n\n\n\ncf-router-lb\n\n\n\n\nIn the cloud-config, this lb is referenced with the vm extension \ncf-router-network-properties\n.\n\n\nIn cf-deployment, this vm extension will be associated with the \nrouter\n vm.\n\n\nConfiguration:\n\n\nCompute address\n\n\nBackend service with an instance group per availability zone\n\n\nInstance group per availability zone allowing \nhttps:443\n\n\nFirewall rule allowing \ntcp:80\n \n \ntcp:443\n to the backend service\n\n\nHealth check for \ntcp:8080\n \n \ntcp:80\n\n\n\n\n\n\n\n\n\n\n\n\ncf-ws-lb\n\n\n\n\nIn the cloud-config, this lb is referenced with the vm extension \ncf-router-network-properties\n.\n\n\nIn cf-deployment, this vm extension will be associated with the \nrouter\n vm.\n\n\nConfiguration:\n\n\nCompute address\n\n\nTarget pool\n\n\nForwarding rule allowing \ntcp:443\n to the target pool\n\n\nForwarding rule allowing \ntcp:80\n to the target pool\n\n\n\n\n\n\n\n\n\n\n\n\ncf-tcp-router-lb\n\n\n\n\nIn the cloud-config, this lb is referenced with the vm extension \ncf-tcp-router-network-properties\n.\n\n\nIn cf-deployment, this vm extension will be associated with the \ntcp-router\n vm.\n\n\nConfiguration:\n\n\nCompute address\n\n\nTarget pool\n\n\nFirewall rule allowing \ntcp:1024-32768\n to the target pool\n\n\nForwarding rule for \ntcp:1024-32768\n to the target pool\n\n\n\n\n\n\n\n\n\n\n\n\ncf-ssh-proxy-lb\n\n\n\n\nIn the cloud-config, this lb is referenced with the vm extension \ndiego-ssh-proxy-network-properties\n.\n\n\nIn cf-deployment, this vm extension will be associated with the \nscheduler\n vm.\n\n\nConfiguration:\n\n\nCompute address\n\n\nTarget pool\n\n\nFirewall rule allowing \ntcp:2222\n to the target pool\n\n\nForwarding rule for \ntcp:2222\n to the target pool\n\n\n\n\n\n\n\n\n\n\n\n\nMicrosoft Azure\n\n\nThere is an application gateway.\n\n\n\n\ncf-app-gateway\n\n\nIn the cloud-config, this lb is referenced with the vm extension \ncf-router-network-properties\n.\n\n\nIn cf-deployment, this vm extension will be associated with the \nrouter\n vm.\n\n\nConfiguration:\n\n\nPublic IP\n\n\nApplication Gateway\n\n\nNetwork Security Rules\n\n\nNetwork Security Group\n\n\n\n\n\n\n\n\n\n\n\n\nvSphere\n\n\nN/A.\n\n\nOpenStack\n\n\nN/A.", 
+            "title": "Cloud Foundry Load Balancers"
+        }, 
         {
-            "location": "/cf-load-balancers/#cf-load-balancers",
-            "text": "",
-            "title": "CF Load Balancers"
-        },
+            "location": "/cf-lbs/#cloud-foundry-load-balancers", 
+            "text": "", 
+            "title": "Cloud Foundry Load Balancers"
+        }, 
         {
-            "location": "/cf-load-balancers/#bbl-up-lb-type-cf",
-            "text": "",
-            "title": "bbl up --lb-type cf"
-        },
+            "location": "/cf-lbs/#aws", 
+            "text": "bbl  creates 3 load balancers on AWS.    cf-ssh-lb   In the cloud-config, this lb is referenced with the vm extension  diego-ssh-proxy-network-properties .  In cf-deployment, this vm extension will be associated with the  scheduler  vm.  It forwards  TCP:2222  to  TCP:2222 .     cf-tcp-lb   In the cloud-config, this lb is referenced with the vm extension  cf-tcp-router-network-properties .  In cf-deployment, this vm extension will be associated with the  tcp-router  vm.  It forwards  TCP:1024-1123  to  TCP:1024-1123 .     cf-router-lb   In the cloud-config, this lb is referenced with the vm extension  cf-router-network-properties .  In cf-deployment, this vm extension will be associated with the  router  vm.  It forwards:  HTTP:80    to  HTTP:80  HTTPS:443  to  HTTP:80  TLS:4443   to  TCP:80", 
+            "title": "AWS"
+        }, 
         {
-            "location": "/cf-load-balancers/#-iaas-aws",
-            "text": "There are 3 elastic load balancers.    cf-ssh-lb   deployment   destination vm  scheduler  with vm_extension  diego-ssh-proxy-network-properties    forwarding   tcp:2222  -   tcp:2222     cf-tcp-lb   deployment   destination vm  tcp-router  with vm_extension  cf-tcp-router-network-properties    forwarding   tcp:1024-1123  -   tcp:1024-1123     cf-router-lb   deployment   destination vm  router  with vm_extension  cf-router-network-properties    forwarding   http:80    -   http:80  https:443  -   http:80  tls:4443   -   tcp:80",
-            "title": "--iaas aws"
-        },
+            "location": "/cf-lbs/#gcp", 
+            "text": "bbl  creates 4 load balancers on GCP.    cf-router-lb   In the cloud-config, this lb is referenced with the vm extension  cf-router-network-properties .  In cf-deployment, this vm extension will be associated with the  router  vm.  Configuration:  Compute address  Backend service with an instance group per availability zone  Instance group per availability zone allowing  https:443  Firewall rule allowing  tcp:80     tcp:443  to the backend service  Health check for  tcp:8080     tcp:80       cf-ws-lb   In the cloud-config, this lb is referenced with the vm extension  cf-router-network-properties .  In cf-deployment, this vm extension will be associated with the  router  vm.  Configuration:  Compute address  Target pool  Forwarding rule allowing  tcp:443  to the target pool  Forwarding rule allowing  tcp:80  to the target pool       cf-tcp-router-lb   In the cloud-config, this lb is referenced with the vm extension  cf-tcp-router-network-properties .  In cf-deployment, this vm extension will be associated with the  tcp-router  vm.  Configuration:  Compute address  Target pool  Firewall rule allowing  tcp:1024-32768  to the target pool  Forwarding rule for  tcp:1024-32768  to the target pool       cf-ssh-proxy-lb   In the cloud-config, this lb is referenced with the vm extension  diego-ssh-proxy-network-properties .  In cf-deployment, this vm extension will be associated with the  scheduler  vm.  Configuration:  Compute address  Target pool  Firewall rule allowing  tcp:2222  to the target pool  Forwarding rule for  tcp:2222  to the target pool", 
+            "title": "GCP"
+        }, 
         {
-            "location": "/cf-load-balancers/#-iaas-gcp",
-            "text": "There are 5 load balancers.    cf-router-lb   deployment   destination vm  router  with vm_extension  cf-router-network-properties    components   a backend service with an instance group per availability zone  instance group per availability zone allowing  https:443  a firewall rule allowing  tcp:80     tcp:443  to the backend service  a health check for  tcp:8080     tcp:80     cf-ws-lb   deployment   destination vm  router  with vm_extension  cf-router-network-properties    components   a target pool  a forwarding rule allowing  tcp:443  to the target pool  a forwarding rule allowing  tcp:80  to the target pool  no firewall rule?     cf-credhub-lb   deployment   destination vm  some  with vm_extension  credhub-network-properties    components   a target pool  a firewall rule allowing  tcp:8844  to the target pool  a forwarding rule for  tcp:8844  to the target pool     cf-tcp-router-lb   deployment   destination vm  tcp-router  with vm_extension  cf-tcp-router-network-properties    components   a target pool  a firewall rule allowing  tcp:1024-32768  to the target pool  a forwarding rule for  tcp:1024-32768  to the target pool     cf-ssh-proxy-lb   deployment   destination vm  scheduler  with vm_extension  diego-ssh-proxy-network-properties    components   a target pool  a firewall rule allowing  tcp:2222  to the target pool  a forwarding rule for  tcp:2222  to the target pool",
-            "title": "--iaas gcp"
-        },
+            "location": "/cf-lbs/#microsoft-azure", 
+            "text": "There is an application gateway.   cf-app-gateway  In the cloud-config, this lb is referenced with the vm extension  cf-router-network-properties .  In cf-deployment, this vm extension will be associated with the  router  vm.  Configuration:  Public IP  Application Gateway  Network Security Rules  Network Security Group", 
+            "title": "Microsoft Azure"
+        }, 
         {
-            "location": "/cf-load-balancers/#-iaas-azure",
-            "text": "There is 1 application gateway.",
-            "title": "--iaas azure"
-        },
+            "location": "/cf-lbs/#vsphere", 
+            "text": "N/A.", 
+            "title": "vSphere"
+        }, 
         {
-            "location": "/cleaning-up/",
-            "text": "= Cleaning up\n\n\nIn addition to creating resources for deploying BOSH, bbl has two subcommands for assisting you in cleaning up an environment after you are done with it: \nbbl down\n and \nbbl cleanup-leftovers\n\n\n== bbl down\nIf you have the state file for a working environment, then bbl will destroy everything it has created. As a safety precaution, BBL will not delete the environment if there are running VMs deployed by the BOSH director\n\n\n\n\n\n\n\n== bbl cleanup-leftovers\nSometimes, \nbbl down\n isn't enough to do the job. Perhaps you are in one of these situations:\n\n bbl down failed during deletion and lost enough information to \n\n The statefile is on a computer that you no longer have access to\n\n You created some resources outside outside of BBL but are sure you want to nuke them\n\n You are running BBL's integration tests and they failed, leaving a half-created environment\n\n\nTo assist with these situations, we have incorporated the CLI utility \nleftovers\n as a subcommand in bbl. You can think of \nbbl cleanup-leftovers\n as kind of like \nbbl down --force\n, however, \ncleanup-leftovers\n doesn't care if you have a state file at all, it will delete resources according to a filter. The filter is very important! If \n--filter\n is omitted, BBL will begin to delete \nALL\n of your IaaS account's resources.\n\n\nFor example, if you had a bbl environment with a name autogenerated by bbl you could supply part of the name to delete it:\n\n\nexport BBL_AWS_SECRET_ACCESS_KEY=foo\nexport BBL_AWS_ACCESS_KEY_ID=bar\nbbl cleanup-leftovers --filter malawi --iaas aws\n\n\n\n\nThis will begin to delete each resource with a name or tag matching \"malawi\", confirming each one before deletion. Use caution with your filters, because you may have more than one environment with the same \"Lake Name\". To delete all resources with that name without needing to confirming each one individually use \n--no-confim\n:\n\n\nbbl cleanup-leftovers --filter malawi --iaas aws --no-confirm\n\n\n\n\nbbl cleanup-leftovers\n will do the best it can to delete in an order such that all resources can be deleted without dependency errors. However, running cleanup-leftovers repeatedly may be enough to resolve dependency errors.",
-            "title": "Cleaning up"
-        },
+            "location": "/cf-lbs/#openstack", 
+            "text": "N/A.", 
+            "title": "OpenStack"
+        }, 
         {
-            "location": "/concourse/",
-            "text": "Concourse\n\n\nThis document will walk through deploying a concourse clustered\ninstall to AWS, GCP and Azure using \nbbl\n and \nbosh\n.\n\n\nPrerequisites\n\n\n\n\nbbl\n\n\nbosh v2\n\n\nconcourse/concourse-deployment\n\n\n\n\nSteps (for GCP)\n\n\n\n\nCreate an environment and upload a stemcell.\n\n\n\n\n```bash\n  bbl up --lb-type concourse\n\n\nexport external_url=\"https://$(bbl lbs |awk -F':' '{print $2}' |sed 's/ //')\"\n\n\neval \"$(bbl print-env)\"\n\n\nbosh upload-stemcell https://bosh.io/d/stemcells/bosh-google-kvm-ubuntu-trusty-go_agent\n\n\ncd $GOPATH/src/github.com/concourse/concourse-deployment/cluster\n  ```\n\n\n\n\nCreate an ops-file in your current directory called \ntls-vars.yml\n:\n\n\n\n\n```yml\n  - type: replace\n    path: /variables/-\n    value:\n      name: atc_ca\n      type: certificate\n      options:\n        is_ca: true\n        common_name: atcCA\n\n\n\n\n\n\ntype: replace\n    path: /variables/-\n    value:\n      name: atc_tls\n      type: certificate\n      options:\n        ca: atc_ca\n  ```\n\n\n\n\n\n\nDeploy concourse.\n\n\n\n\n\n\nbash\n  bosh deploy -d concourse concourse.yml \\\n    -l ../versions.yml \\\n    --vars-store cluster-creds.yml \\\n    -o operations/no-auth.yml \\\n    -o operations/privileged-http.yml \\\n    -o operations/privileged-https.yml \\\n    -o operations/tls.yml \\\n    -o tls-vars.yml \\\n    -o operations/web-network-extension.yml \\\n    --var network_name=default \\\n    --var external_url=$external_url \\\n    --var web_vm_type=default \\\n    --var db_vm_type=default \\\n    --var db_persistent_disk_type=10GB \\\n    --var worker_vm_type=default \\\n    --var deployment_name=concourse \\\n    --var web_network_name=private \\\n    --var web_network_vm_extension=lb\n\n\nVerify\n\n\nPoint your browser to \n$external_url\n.",
+            "location": "/cleaning-up/", 
+            "text": "Cleaning Up\n\n\nIn addition to creating resources for deploying BOSH, bbl has two subcommands\nfor assisting you in cleaning up an environment after you are done with it:\n\nbbl down\n and \nbbl cleanup-leftovers\n.\n\n\nbbl down\n\n\nIf you have the state file for a working environment, then bbl will destroy\neverything it has created.\n\n\nAs a safety precaution, bbl will not delete the\nenvironment if there are running VMs deployed by the BOSH director.\n\n\nbbl down\n\n\n\n\nbbl cleanup-leftovers\n\n\nSometimes, \nbbl down\n isn't enough to do the job.\nPerhaps you are in one of these situations:\n\n\n\n\nbbl down\n failed during deletion and lost information.\n\n\nThe \nbbl-state-dir\n is on a computer that you no longer have access to.\n\n\nYou created resources outside of bbl that you want to nuke.\n\n\nYou are running bbl's acceptance tests and they failed, orphaning IaaS resources.\n\n\n\n\nTo assist with these situations, we have incorporated the\ncli utility \nleftovers\n as a\nsubcommand in bbl.\n\n\nYou can think of \nbbl cleanup-leftovers\n as kind of like\n\nbbl down --force\n, but without the need for a \nbbl-state-dir\n.\n\n\nThe filter is very important!\n\n\nIf \n--filter\n is omitted, bbl will begin to delete \nALL\n of your IaaS account's resources.\n\n\nFor example, if you had a bbl environment with a name autogenerated by bbl\nyou could supply part of the name to delete it:\n\n\nexport BBL_IAAS=aws\nexport BBL_AWS_SECRET_ACCESS_KEY=foo\nexport BBL_AWS_ACCESS_KEY_ID=bar\n\nbbl cleanup-leftovers --filter malawi\n\n\n\n\nThis will begin to delete each resource with a name or tag matching \"malawi\",\nconfirming each one before deletion.\n\n\nUse caution with your filters, because you may have more than one environment\nwith the same \"Lake Name\". To delete all resources with that name without\nneeding to confirming each one individually use \n--no-confim\n:\n\n\nbbl cleanup-leftovers --filter malawi --no-confirm\n\n\n\n\nbbl cleanup-leftovers\n will do the best it can to delete in an order\nsuch that all resources can be deleted without dependency errors.\n\n\nHowever, \nrunning cleanup-leftovers repeatedly\n may be enough to resolve dependency errors.", 
+            "title": "Cleaning Up"
+        }, 
+        {
+            "location": "/cleaning-up/#cleaning-up", 
+            "text": "In addition to creating resources for deploying BOSH, bbl has two subcommands\nfor assisting you in cleaning up an environment after you are done with it: bbl down  and  bbl cleanup-leftovers .", 
+            "title": "Cleaning Up"
+        }, 
+        {
+            "location": "/cleaning-up/#bbl-down", 
+            "text": "If you have the state file for a working environment, then bbl will destroy\neverything it has created.  As a safety precaution, bbl will not delete the\nenvironment if there are running VMs deployed by the BOSH director.  bbl down", 
+            "title": "bbl down"
+        }, 
+        {
+            "location": "/cleaning-up/#bbl-cleanup-leftovers", 
+            "text": "Sometimes,  bbl down  isn't enough to do the job.\nPerhaps you are in one of these situations:   bbl down  failed during deletion and lost information.  The  bbl-state-dir  is on a computer that you no longer have access to.  You created resources outside of bbl that you want to nuke.  You are running bbl's acceptance tests and they failed, orphaning IaaS resources.   To assist with these situations, we have incorporated the\ncli utility  leftovers  as a\nsubcommand in bbl.  You can think of  bbl cleanup-leftovers  as kind of like bbl down --force , but without the need for a  bbl-state-dir .  The filter is very important!  If  --filter  is omitted, bbl will begin to delete  ALL  of your IaaS account's resources.  For example, if you had a bbl environment with a name autogenerated by bbl\nyou could supply part of the name to delete it:  export BBL_IAAS=aws\nexport BBL_AWS_SECRET_ACCESS_KEY=foo\nexport BBL_AWS_ACCESS_KEY_ID=bar\n\nbbl cleanup-leftovers --filter malawi  This will begin to delete each resource with a name or tag matching \"malawi\",\nconfirming each one before deletion.  Use caution with your filters, because you may have more than one environment\nwith the same \"Lake Name\". To delete all resources with that name without\nneeding to confirming each one individually use  --no-confim :  bbl cleanup-leftovers --filter malawi --no-confirm  bbl cleanup-leftovers  will do the best it can to delete in an order\nsuch that all resources can be deleted without dependency errors.  However,  running cleanup-leftovers repeatedly  may be enough to resolve dependency errors.", 
+            "title": "bbl cleanup-leftovers"
+        }, 
+        {
+            "location": "/concourse/", 
+            "text": "Concourse\n\n\nThis document will walk through deploying a concourse clustered\ninstall to GCP using \nbbl\n and \nbosh\n.\n\n\nPrerequisites\n\n\n\n\nbbl\n\n\nbosh v2\n\n\nconcourse/concourse-bosh-deployment\n\n\n\n\nSteps\n\n\n\n\nCreate an environment and upload a stemcell.\n\n\n\n\n```bash\n  bbl up --lb-type concourse\n\n\nexport external_url=\"https://$(bbl lbs |awk -F':' '{print $2}' |sed 's/ //')\"\n\n\neval \"$(bbl print-env)\"\n\n\nbosh upload-stemcell https://bosh.io/d/stemcells/bosh-google-kvm-ubuntu-trusty-go_agent\n\n\ncd $GOPATH/src/github.com/concourse/concourse-bosh-deployment/cluster\n  ```\n\n\n\n\nDeploy concourse.\n\n\n\n\nbash\n  bosh deploy -d concourse concourse.yml \\\n    -l ../versions.yml \\\n    --vars-store cluster-creds.yml \\\n    -o operations/no-auth.yml \\\n    -o operations/privileged-http.yml \\\n    -o operations/privileged-https.yml \\\n    -o operations/tls.yml \\\n    -o operations/tls-vars.yml \\\n    -o operations/web-network-extension.yml \\\n    --var network_name=default \\\n    --var external_url=$external_url \\\n    --var web_vm_type=default \\\n    --var db_vm_type=default \\\n    --var db_persistent_disk_type=10GB \\\n    --var worker_vm_type=default \\\n    --var deployment_name=concourse \\\n    --var web_network_name=private \\\n    --var web_network_vm_extension=lb\n\n\nVerify\n\n\nPoint your browser to \n$external_url\n.", 
             "title": "Concourse"
-        },
+        }, 
         {
-            "location": "/concourse/#concourse",
-            "text": "This document will walk through deploying a concourse clustered\ninstall to AWS, GCP and Azure using  bbl  and  bosh .",
+            "location": "/concourse/#concourse", 
+            "text": "This document will walk through deploying a concourse clustered\ninstall to GCP using  bbl  and  bosh .", 
             "title": "Concourse"
-        },
+        }, 
         {
-            "location": "/concourse/#prerequisites",
-            "text": "bbl  bosh v2  concourse/concourse-deployment",
+            "location": "/concourse/#prerequisites", 
+            "text": "bbl  bosh v2  concourse/concourse-bosh-deployment", 
             "title": "Prerequisites"
-        },
+        }, 
         {
-            "location": "/concourse/#steps-for-gcp",
-            "text": "Create an environment and upload a stemcell.   ```bash\n  bbl up --lb-type concourse  export external_url=\"https://$(bbl lbs |awk -F':' '{print $2}' |sed 's/ //')\"  eval \"$(bbl print-env)\"  bosh upload-stemcell https://bosh.io/d/stemcells/bosh-google-kvm-ubuntu-trusty-go_agent  cd $GOPATH/src/github.com/concourse/concourse-deployment/cluster\n  ```   Create an ops-file in your current directory called  tls-vars.yml :   ```yml\n  - type: replace\n    path: /variables/-\n    value:\n      name: atc_ca\n      type: certificate\n      options:\n        is_ca: true\n        common_name: atcCA    type: replace\n    path: /variables/-\n    value:\n      name: atc_tls\n      type: certificate\n      options:\n        ca: atc_ca\n  ```    Deploy concourse.    bash\n  bosh deploy -d concourse concourse.yml \\\n    -l ../versions.yml \\\n    --vars-store cluster-creds.yml \\\n    -o operations/no-auth.yml \\\n    -o operations/privileged-http.yml \\\n    -o operations/privileged-https.yml \\\n    -o operations/tls.yml \\\n    -o tls-vars.yml \\\n    -o operations/web-network-extension.yml \\\n    --var network_name=default \\\n    --var external_url=$external_url \\\n    --var web_vm_type=default \\\n    --var db_vm_type=default \\\n    --var db_persistent_disk_type=10GB \\\n    --var worker_vm_type=default \\\n    --var deployment_name=concourse \\\n    --var web_network_name=private \\\n    --var web_network_vm_extension=lb",
-            "title": "Steps (for GCP)"
-        },
+            "location": "/concourse/#steps", 
+            "text": "Create an environment and upload a stemcell.   ```bash\n  bbl up --lb-type concourse  export external_url=\"https://$(bbl lbs |awk -F':' '{print $2}' |sed 's/ //')\"  eval \"$(bbl print-env)\"  bosh upload-stemcell https://bosh.io/d/stemcells/bosh-google-kvm-ubuntu-trusty-go_agent  cd $GOPATH/src/github.com/concourse/concourse-bosh-deployment/cluster\n  ```   Deploy concourse.   bash\n  bosh deploy -d concourse concourse.yml \\\n    -l ../versions.yml \\\n    --vars-store cluster-creds.yml \\\n    -o operations/no-auth.yml \\\n    -o operations/privileged-http.yml \\\n    -o operations/privileged-https.yml \\\n    -o operations/tls.yml \\\n    -o operations/tls-vars.yml \\\n    -o operations/web-network-extension.yml \\\n    --var network_name=default \\\n    --var external_url=$external_url \\\n    --var web_vm_type=default \\\n    --var db_vm_type=default \\\n    --var db_persistent_disk_type=10GB \\\n    --var worker_vm_type=default \\\n    --var deployment_name=concourse \\\n    --var web_network_name=private \\\n    --var web_network_vm_extension=lb", 
+            "title": "Steps"
+        }, 
         {
-            "location": "/concourse/#verify",
-            "text": "Point your browser to  $external_url .",
+            "location": "/concourse/#verify", 
+            "text": "Point your browser to  $external_url .", 
             "title": "Verify"
-        },
+        }, 
         {
-            "location": "/credhub/",
-            "text": "Accessing the BOSH director credhub\n\n\nUsing http_proxy\n\n\nrequirements\n\n\n\n\nbbl pre-v6.2\n\n\ncredhub-cli \n v1.6.0\n\n\na bbl environment\n\n\n\n\nsteps\n\n\n\n\n\n\nSet your CredHub client/secret\n\n\neval \"$(bbl print-env)\"\n\n\n\n\n\n\nMake an SSH tunnel to the jumpbox\n\n\nbbl ssh-key \n /tmp/jumpbox.key\nchmod 0700 /tmp/jumpbox.key\nssh -4 -D 5000 -fNC jumpbox@`bbl jumpbox-address` -i /tmp/jumpbox.key\n\n\n\n\n\n\nLogin\n    \nhttp_proxy=socks5://localhost:5000 credhub login\n\n\n\n\n\n\nGet credentials\n    \nhttp_proxy=socks5://localhost:5000 credhub find -n 'cf_admin_password'\n\n\n\n\n\n\nUsing CREDHUB_PROXY\n\n\nrequirements\n\n\n\n\nbbl v6.2\n\n\ncredhub-cli v1.6.0\n\n\na bbl environment\n\n\n\n\nsteps\n\n\neval \n$(bbl print-env)\n\n\ncredhub find -n 'cf_admin_password'",
+            "location": "/credhub/", 
+            "text": "Accessing the BOSH director credhub\n\n\nUsing CREDHUB_PROXY\n\n\nRequirements\n\n\n\n\nbbl v6.2\n\n\ncredhub-cli v1.6.0\n\n\na bbl environment\n\n\n\n\nSteps\n\n\nbbl print-env\n prints out environment variables (\nCREDHUB_CLIENT\n, \nCREDHUB_SECRET\n, \nCREDHUB_PROXY\n,\n\nCREDHUB_SERVER\n, \nCREDHUB_CA_CERT\n, and others)\nthat need to be exported to target the director credhub using the credhub-cli.\n\n\neval \n$(bbl print-env)\n\n\ncredhub find -n 'cf_admin_password'\n\n\n\n\nThe credhub-cli will parse \nCREDHUB_PROXY\n and determines from the \nssh+socks5://\n scheme\nthat it should proxy throuhg a jumpbox via a tunnel of its own making.\n\n\nUsing http_proxy\n\n\nRequirements\n\n\n\n\nbbl pre-v6.2\n\n\ncredhub-cli \n v1.6.0\n\n\na bbl environment\n\n\n\n\nSteps\n\n\n\n\n\n\nSet your CredHub client/secret\n\n\neval \"$(bbl print-env)\"\n\n\n\n\n\n\nMake an SSH tunnel to the jumpbox\n\n\nbbl ssh-key \n /tmp/jumpbox.key\nchmod 0700 /tmp/jumpbox.key\nssh -4 -D 5000 -fNC jumpbox@`bbl jumpbox-address` -i /tmp/jumpbox.key\n\n\n\n\n\n\nLogin\n    \nhttp_proxy=socks5://localhost:5000 credhub login\n\n\n\n\n\n\nGet credentials\n    \nhttp_proxy=socks5://localhost:5000 credhub find -n 'cf_admin_password'", 
             "title": "Accessing the BOSH director credhub"
-        },
+        }, 
         {
-            "location": "/credhub/#accessing-the-bosh-director-credhub",
-            "text": "",
+            "location": "/credhub/#accessing-the-bosh-director-credhub", 
+            "text": "", 
             "title": "Accessing the BOSH director credhub"
-        },
+        }, 
         {
-            "location": "/credhub/#using-http_proxy",
-            "text": "",
-            "title": "Using http_proxy"
-        },
-        {
-            "location": "/credhub/#requirements",
-            "text": "bbl pre-v6.2  credhub-cli   v1.6.0  a bbl environment",
-            "title": "requirements"
-        },
-        {
-            "location": "/credhub/#steps",
-            "text": "Set your CredHub client/secret  eval \"$(bbl print-env)\"    Make an SSH tunnel to the jumpbox  bbl ssh-key   /tmp/jumpbox.key\nchmod 0700 /tmp/jumpbox.key\nssh -4 -D 5000 -fNC jumpbox@`bbl jumpbox-address` -i /tmp/jumpbox.key    Login\n     http_proxy=socks5://localhost:5000 credhub login    Get credentials\n     http_proxy=socks5://localhost:5000 credhub find -n 'cf_admin_password'",
-            "title": "steps"
-        },
-        {
-            "location": "/credhub/#using-credhub_proxy",
-            "text": "",
+            "location": "/credhub/#using-credhub_proxy", 
+            "text": "", 
             "title": "Using CREDHUB_PROXY"
-        },
+        }, 
         {
-            "location": "/credhub/#requirements_1",
-            "text": "bbl v6.2  credhub-cli v1.6.0  a bbl environment",
-            "title": "requirements"
-        },
+            "location": "/credhub/#requirements", 
+            "text": "bbl v6.2  credhub-cli v1.6.0  a bbl environment", 
+            "title": "Requirements"
+        }, 
         {
-            "location": "/credhub/#steps_1",
-            "text": "eval  $(bbl print-env) \n\ncredhub find -n 'cf_admin_password'",
-            "title": "steps"
-        },
+            "location": "/credhub/#steps", 
+            "text": "bbl print-env  prints out environment variables ( CREDHUB_CLIENT ,  CREDHUB_SECRET ,  CREDHUB_PROXY , CREDHUB_SERVER ,  CREDHUB_CA_CERT , and others)\nthat need to be exported to target the director credhub using the credhub-cli.  eval  $(bbl print-env) \n\ncredhub find -n 'cf_admin_password'  The credhub-cli will parse  CREDHUB_PROXY  and determines from the  ssh+socks5://  scheme\nthat it should proxy throuhg a jumpbox via a tunnel of its own making.", 
+            "title": "Steps"
+        }, 
         {
-            "location": "/getting-started-aws/",
-            "text": "Getting started aws\n\n\nThis guide is a walkthrough for deploying a BOSH director with \nbbl\n\non AWS. Upon completion, you will have the following:\n\n\n\n\nA BOSH director instance in the availability zone of your choice.\n\n\nA set of randomly generated BOSH director credentials.\n\n\nA generated keypair allowing you to SSH into the BOSH director and\nany instances BOSH deploys.\n\n\nA copy of the manifest the BOSH director was deployed with\n\n\nA basic cloud config\n\n\n\n\nCreating an IAM user\n\n\nIn order for \nbbl\n to interact with AWS, an \nIAM\n user must be created.\nThis user will be issuing API requests to create the infrastructure such\nas EC2 instances, load balancers, subnets, etc.\n\n\nThe user must have the following \npolicy\n:\n\n\n{\n    \nVersion\n: \n2012-10-17\n,\n    \nStatement\n: [\n        {\n            \nSid\n: \nVisualEditor0\n,\n            \nEffect\n: \nAllow\n,\n            \nAction\n: [\n                \nlogs:*\n,\n                \nelasticloadbalancing:*\n,\n                \ncloudformation:*\n,\n                \niam:*\n,\n                \nkms:*\n,\n                \nroute53:*\n,\n                \nec2:*\n\n            ],\n            \nResource\n: \n*\n\n        }\n    ]\n}\n\n\n\n\nTo create a user and associated policy with the AWS CLI run the \nfollowing commands (policy text must be in your clipboard):\n\n\n$ aws iam create-user --user-name \nbbl-user\n\n$ aws iam put-user-policy --user-name \nbbl-user\n \\\n    --policy-name \nbbl-policy\n \\\n    --policy-document \n$(pbpaste)\n\n$ aws iam create-access-key --user-name \nbbl-user\n\n\n\n\n\nThe \ncreate-access-key\n command will write an \"access key id\" and \"secret \naccess key\" to the terminal. These values are important and should\nbe kept secret. In the next section \nbbl\n will use these commands to\ncreate infrastructure on AWS.\n\n\nCreating infrastructure and BOSH director\n\n\nbbl\n will create infrastructure and deploy a BOSH director with the\nfollowing command:\n\n\nbbl up \\\n    --aws-access-key-id \nINSERT ACCESS KEY ID\n \\\n    --aws-secret-access-key \nINSERT SECRET ACCESS KEY\n \\\n    --aws-region us-west-1 \\\n    --iaas aws\n\n\n\n\nThe process takes around 5-8 minutes. When the process is finished\na file named \nbbl-state.json\n will be created in the current working\ndirectory. This file is very important as it contains credentials\nand other metadata related to your BOSH director and infrastructure.\nIt is highly recommended that you backup this file into version control\nor another safe location. For more info about the \nbbl-state.json\n see\nthe \"State management\" section.\n\n\nState management\n\n\nThe \nbbl-state.json\n is an important file that contains confidential\ninformation about your infrastructure.\n\n\nThe state file allows you to easily upgrade to the newest BOSH director\nand stemcell versions when new versions of bbl are released. It will\nallow you to issue a \nbbl destroy\n to destroy the many resources that\n\nbbl\n creates in AWS which is much easier and less error prone\nthan manually finding the resources in the AWS console or CLI.\n\n\nBacking up this file into a safe place is highly recommended. The file\nshould never be modified by hand.\n\n\nbbl-state.json\n contains the following:\n\n\n\n\nEnvironment ID (unique ID for tag on all resources bbl deploys)\n\n\nBOSH director username and password\n\n\nBOSH director IP\n\n\nBOSH director SSL CA, certificate, private key\n\n\n\n\nThe best way to extract this info is by issuing commands like\n\n\n$ bbl director-username\nsome-username\n$ bbl director-ca-cert\n--- BEGIN CERTIFICATE ---\n...\n--- END CERTIFICATE ---\n\n\n\n\nand so on...\n\n\nIn order to run these commands, the current directory must contain the\n\nbbl-state.json\n.\n\n\nConnecting to the BOSH director\n\n\nTo setup your BOSH CLI with the new director you'll need the following\ncommand to get the credentials:\n\n\neval \n$(bbl print-env)\n\n\n\n\n\nAlternatives to \nbbl print-env\n\n\nSeparate commands are available for the \nbbl print-env\n fields:\n\n\n$ bbl director-address\nhttps://10.0.0.6:25555\n$ bbl director-username\nuser-d3783rk\n$ bbl director-password\np-23dah71skl\n$ bbl director-ca-cert\n-----BEGIN CERTIFICATE-----\nMIIDtzCCAp+gAwIBAgIJAIPgaUgWRCE8MA0GCSqGSIb3DQEBBQUAMEUxCzAJBgNV\n...\n-----END CERTIFICATE-----\n\n\n\n\nYou might save the CA certificate to a file:\n\n\n$ bbl director-ca-cert \n bosh.crt\n$ export BOSH_CA_CERT=bosh.crt\n\n\n\n\nTo login:\n\n\n$ export BOSH_ENVIRONMENT=$(bbl director-address)\n$ bosh alias-env \nINSERT TARGET NAME\n\n$ bosh log-in\nUsername: user-d3783rk\nPassword: p-23dah71sk1\n\n\n\n\nDisplay cloud config to test setup and show configuration mapping:\n\n\n$ bosh cloud-config\n...\n\n\n\n\nNow you're ready to deploy software with BOSH!",
+            "location": "/credhub/#using-http_proxy", 
+            "text": "", 
+            "title": "Using http_proxy"
+        }, 
+        {
+            "location": "/credhub/#requirements_1", 
+            "text": "bbl pre-v6.2  credhub-cli   v1.6.0  a bbl environment", 
+            "title": "Requirements"
+        }, 
+        {
+            "location": "/credhub/#steps_1", 
+            "text": "Set your CredHub client/secret  eval \"$(bbl print-env)\"    Make an SSH tunnel to the jumpbox  bbl ssh-key   /tmp/jumpbox.key\nchmod 0700 /tmp/jumpbox.key\nssh -4 -D 5000 -fNC jumpbox@`bbl jumpbox-address` -i /tmp/jumpbox.key    Login\n     http_proxy=socks5://localhost:5000 credhub login    Get credentials\n     http_proxy=socks5://localhost:5000 credhub find -n 'cf_admin_password'", 
+            "title": "Steps"
+        }, 
+        {
+            "location": "/getting-started-aws/", 
+            "text": "Getting started: AWS\n\n\nThis guide is a walkthrough for deploying a BOSH director with \nbbl\n\non AWS. Upon completion, you will have the following:\n\n\n\n\nA BOSH director\n\n\nA jumpbox\n\n\nA set of randomly generated BOSH director credentials\n\n\nA generated keypair allowing you to SSH into the BOSH director and\nany instances BOSH deploys\n\n\nA copy of the manifest the BOSH director was deployed with\n\n\nA basic cloud config\n\n\n\n\nCreating an IAM user\n\n\nIn order for \nbbl\n to interact with AWS, an \nIAM\n user must be created.\n\n\nThis user will be issuing API requests to create the infrastructure such\nas EC2 instances, load balancers, subnets, etc.\n\n\nThe user must have the following \npolicy\n:\n\n\n{\n    \nVersion\n: \n2012-10-17\n,\n    \nStatement\n: [\n        {\n            \nSid\n: \nVisualEditor0\n,\n            \nEffect\n: \nAllow\n,\n            \nAction\n: [\n                \nlogs:*\n,\n                \nelasticloadbalancing:*\n,\n                \ncloudformation:*\n,\n                \niam:*\n,\n                \nkms:*\n,\n                \nroute53:*\n,\n                \nec2:*\n\n            ],\n            \nResource\n: \n*\n\n        }\n    ]\n}\n\n\n\n\nTo create a user and associated policy with the AWS CLI run the \nfollowing commands (policy text must be in your clipboard):\n\n\n$ aws iam create-user --user-name \nbbl-user\n\n$ aws iam put-user-policy --user-name \nbbl-user\n \\\n    --policy-name \nbbl-policy\n \\\n    --policy-document \n$(pbpaste)\n\n$ aws iam create-access-key --user-name \nbbl-user\n\n\n\n\n\nThe \ncreate-access-key\n command will write an \"access key id\" and \"secret \naccess key\" to the terminal. These values are important and should\nbe kept secret. In the next section \nbbl\n will use these commands to\ncreate infrastructure on AWS.\n\n\nbbl up\n\n\nbbl\n will create infrastructure and deploy a BOSH director with the\nfollowing command:\n\n\nbbl up \\\n    --aws-access-key-id \nINSERT ACCESS KEY ID\n \\\n    --aws-secret-access-key \nINSERT SECRET ACCESS KEY\n \\\n    --aws-region us-west-1 \\\n    --iaas aws\n\n\n\n\nThe process takes around 5-8 minutes.\n\n\nThe bbl state directory contains all of the files that were used to\ncreate your bosh director. This should be checked in to version control,\nso that you have all the information necessary to later destroy or\nupdate this environment at a later date.\n\n\nConnecting to the BOSH director\n\n\nTo setup your BOSH CLI with the director you'll need the following\ncommand to set the credentials:\n\n\neval \n$(bbl print-env)\n\n\n\n\n\nAlternatives to \nbbl print-env\n\n\nSeparate commands are available for the \nbbl print-env\n fields:\n\n\n$ bbl director-address\nhttps://10.0.0.6:25555\n\n$ bbl director-username\nuser-d3783rk\n\n$ bbl director-password\np-23dah71skl\n\n$ bbl director-ca-cert\n-----BEGIN CERTIFICATE-----\nMIIDtzCCAp+gAwIBAgIJAIPgaUgWRCE8MA0GCSqGSIb3DQEBBQUAMEUxCzAJBgNV\n...\n-----END CERTIFICATE-----\n\n\n\n\nYou might save the CA certificate to a file:\n\n\n$ bbl director-ca-cert \n bosh.crt\n$ export BOSH_CA_CERT=bosh.crt\n\n\n\n\nTo login:\n\n\n$ export BOSH_ENVIRONMENT=$(bbl director-address)\n$ bosh alias-env \nINSERT TARGET NAME\n\n$ bosh log-in\nUsername: user-d3783rk\nPassword: p-23dah71sk1\n\n\n\n\nDisplay cloud config to test setup and show configuration mapping:\n\n\n$ bosh cloud-config\n...\n\n\n\n\nNow you're ready to deploy software with BOSH.", 
             "title": "Getting started aws"
-        },
+        }, 
         {
-            "location": "/getting-started-aws/#getting-started-aws",
-            "text": "This guide is a walkthrough for deploying a BOSH director with  bbl \non AWS. Upon completion, you will have the following:   A BOSH director instance in the availability zone of your choice.  A set of randomly generated BOSH director credentials.  A generated keypair allowing you to SSH into the BOSH director and\nany instances BOSH deploys.  A copy of the manifest the BOSH director was deployed with  A basic cloud config",
-            "title": "Getting started aws"
-        },
+            "location": "/getting-started-aws/#getting-started-aws", 
+            "text": "This guide is a walkthrough for deploying a BOSH director with  bbl \non AWS. Upon completion, you will have the following:   A BOSH director  A jumpbox  A set of randomly generated BOSH director credentials  A generated keypair allowing you to SSH into the BOSH director and\nany instances BOSH deploys  A copy of the manifest the BOSH director was deployed with  A basic cloud config", 
+            "title": "Getting started: AWS"
+        }, 
         {
-            "location": "/getting-started-aws/#creating-an-iam-user",
-            "text": "In order for  bbl  to interact with AWS, an  IAM  user must be created.\nThis user will be issuing API requests to create the infrastructure such\nas EC2 instances, load balancers, subnets, etc.  The user must have the following  policy :  {\n     Version :  2012-10-17 ,\n     Statement : [\n        {\n             Sid :  VisualEditor0 ,\n             Effect :  Allow ,\n             Action : [\n                 logs:* ,\n                 elasticloadbalancing:* ,\n                 cloudformation:* ,\n                 iam:* ,\n                 kms:* ,\n                 route53:* ,\n                 ec2:* \n            ],\n             Resource :  * \n        }\n    ]\n}  To create a user and associated policy with the AWS CLI run the \nfollowing commands (policy text must be in your clipboard):  $ aws iam create-user --user-name  bbl-user \n$ aws iam put-user-policy --user-name  bbl-user  \\\n    --policy-name  bbl-policy  \\\n    --policy-document  $(pbpaste) \n$ aws iam create-access-key --user-name  bbl-user   The  create-access-key  command will write an \"access key id\" and \"secret \naccess key\" to the terminal. These values are important and should\nbe kept secret. In the next section  bbl  will use these commands to\ncreate infrastructure on AWS.",
+            "location": "/getting-started-aws/#creating-an-iam-user", 
+            "text": "In order for  bbl  to interact with AWS, an  IAM  user must be created.  This user will be issuing API requests to create the infrastructure such\nas EC2 instances, load balancers, subnets, etc.  The user must have the following  policy :  {\n     Version :  2012-10-17 ,\n     Statement : [\n        {\n             Sid :  VisualEditor0 ,\n             Effect :  Allow ,\n             Action : [\n                 logs:* ,\n                 elasticloadbalancing:* ,\n                 cloudformation:* ,\n                 iam:* ,\n                 kms:* ,\n                 route53:* ,\n                 ec2:* \n            ],\n             Resource :  * \n        }\n    ]\n}  To create a user and associated policy with the AWS CLI run the \nfollowing commands (policy text must be in your clipboard):  $ aws iam create-user --user-name  bbl-user \n$ aws iam put-user-policy --user-name  bbl-user  \\\n    --policy-name  bbl-policy  \\\n    --policy-document  $(pbpaste) \n$ aws iam create-access-key --user-name  bbl-user   The  create-access-key  command will write an \"access key id\" and \"secret \naccess key\" to the terminal. These values are important and should\nbe kept secret. In the next section  bbl  will use these commands to\ncreate infrastructure on AWS.", 
             "title": "Creating an IAM user"
-        },
+        }, 
         {
-            "location": "/getting-started-aws/#creating-infrastructure-and-bosh-director",
-            "text": "bbl  will create infrastructure and deploy a BOSH director with the\nfollowing command:  bbl up \\\n    --aws-access-key-id  INSERT ACCESS KEY ID  \\\n    --aws-secret-access-key  INSERT SECRET ACCESS KEY  \\\n    --aws-region us-west-1 \\\n    --iaas aws  The process takes around 5-8 minutes. When the process is finished\na file named  bbl-state.json  will be created in the current working\ndirectory. This file is very important as it contains credentials\nand other metadata related to your BOSH director and infrastructure.\nIt is highly recommended that you backup this file into version control\nor another safe location. For more info about the  bbl-state.json  see\nthe \"State management\" section.",
-            "title": "Creating infrastructure and BOSH director"
-        },
+            "location": "/getting-started-aws/#bbl-up", 
+            "text": "bbl  will create infrastructure and deploy a BOSH director with the\nfollowing command:  bbl up \\\n    --aws-access-key-id  INSERT ACCESS KEY ID  \\\n    --aws-secret-access-key  INSERT SECRET ACCESS KEY  \\\n    --aws-region us-west-1 \\\n    --iaas aws  The process takes around 5-8 minutes.  The bbl state directory contains all of the files that were used to\ncreate your bosh director. This should be checked in to version control,\nso that you have all the information necessary to later destroy or\nupdate this environment at a later date.", 
+            "title": "bbl up"
+        }, 
         {
-            "location": "/getting-started-aws/#state-management",
-            "text": "The  bbl-state.json  is an important file that contains confidential\ninformation about your infrastructure.  The state file allows you to easily upgrade to the newest BOSH director\nand stemcell versions when new versions of bbl are released. It will\nallow you to issue a  bbl destroy  to destroy the many resources that bbl  creates in AWS which is much easier and less error prone\nthan manually finding the resources in the AWS console or CLI.  Backing up this file into a safe place is highly recommended. The file\nshould never be modified by hand.  bbl-state.json  contains the following:   Environment ID (unique ID for tag on all resources bbl deploys)  BOSH director username and password  BOSH director IP  BOSH director SSL CA, certificate, private key   The best way to extract this info is by issuing commands like  $ bbl director-username\nsome-username\n$ bbl director-ca-cert\n--- BEGIN CERTIFICATE ---\n...\n--- END CERTIFICATE ---  and so on...  In order to run these commands, the current directory must contain the bbl-state.json .",
-            "title": "State management"
-        },
-        {
-            "location": "/getting-started-aws/#connecting-to-the-bosh-director",
-            "text": "To setup your BOSH CLI with the new director you'll need the following\ncommand to get the credentials:  eval  $(bbl print-env)",
+            "location": "/getting-started-aws/#connecting-to-the-bosh-director", 
+            "text": "To setup your BOSH CLI with the director you'll need the following\ncommand to set the credentials:  eval  $(bbl print-env)", 
             "title": "Connecting to the BOSH director"
-        },
+        }, 
         {
-            "location": "/getting-started-aws/#alternatives-to-bbl-print-env",
-            "text": "Separate commands are available for the  bbl print-env  fields:  $ bbl director-address\nhttps://10.0.0.6:25555\n$ bbl director-username\nuser-d3783rk\n$ bbl director-password\np-23dah71skl\n$ bbl director-ca-cert\n-----BEGIN CERTIFICATE-----\nMIIDtzCCAp+gAwIBAgIJAIPgaUgWRCE8MA0GCSqGSIb3DQEBBQUAMEUxCzAJBgNV\n...\n-----END CERTIFICATE-----  You might save the CA certificate to a file:  $ bbl director-ca-cert   bosh.crt\n$ export BOSH_CA_CERT=bosh.crt  To login:  $ export BOSH_ENVIRONMENT=$(bbl director-address)\n$ bosh alias-env  INSERT TARGET NAME \n$ bosh log-in\nUsername: user-d3783rk\nPassword: p-23dah71sk1  Display cloud config to test setup and show configuration mapping:  $ bosh cloud-config\n...  Now you're ready to deploy software with BOSH!",
+            "location": "/getting-started-aws/#alternatives-to-bbl-print-env", 
+            "text": "Separate commands are available for the  bbl print-env  fields:  $ bbl director-address\nhttps://10.0.0.6:25555\n\n$ bbl director-username\nuser-d3783rk\n\n$ bbl director-password\np-23dah71skl\n\n$ bbl director-ca-cert\n-----BEGIN CERTIFICATE-----\nMIIDtzCCAp+gAwIBAgIJAIPgaUgWRCE8MA0GCSqGSIb3DQEBBQUAMEUxCzAJBgNV\n...\n-----END CERTIFICATE-----  You might save the CA certificate to a file:  $ bbl director-ca-cert   bosh.crt\n$ export BOSH_CA_CERT=bosh.crt  To login:  $ export BOSH_ENVIRONMENT=$(bbl director-address)\n$ bosh alias-env  INSERT TARGET NAME \n$ bosh log-in\nUsername: user-d3783rk\nPassword: p-23dah71sk1  Display cloud config to test setup and show configuration mapping:  $ bosh cloud-config\n...  Now you're ready to deploy software with BOSH.", 
             "title": "Alternatives to bbl print-env"
-        },
+        }, 
         {
-            "location": "/getting-started-azure/",
-            "text": "Getting started azure\n\n\nAzure Application Gateway\n\n\n\n\n\n\nTo create azure load balancers, prepare your certificates in the \n.pfx\n format:\n    ```\n    openssl genrsa -out DOMAIN_NAME.key 2048\n    openssl req -new -x509 -days 365 -key DOMAIN_NAME.key -out DOMAIN_NAME.crt\n    openssl pkcs12 -export -out PFX_FILE -inkey DOMAIN_NAME.key -in DOMAIN_NAME.crt\n\n\nYou will be asked to input the password for the \".pfx\" certificate\n\n\n1. Save the password to a file\n\necho SuperSecretPassword \n PFX_FILE_PASSWORD\n\n1. To `bbl  plan` or `bbl up` you will provide that pfx file and password:\n\nbbl up --lb-type cf --lb-cert PFX_FILE --lb-key PFX_FILE_PASSWORD\n```",
-            "title": "Getting started azure"
-        },
+            "location": "/getting-started-azure/", 
+            "text": "Getting Started: Microsoft Azure\n\n\nCreate a Service Principal Account\n\n\nYou can use the cli utility \naz-automation\n\nfor creating a service principal account given you\nhave authenticated with the \naz\n cli.\n\n\nThe output will include your subscription id,\nyour tenant id, the client id, and the client secret.\n\n\nThese credentials will be passed to \nbbl\n so that\nit can interact with Azure.\n\n\nInfrastructure, Jumpbox, Director\n\n\n\n\nExport environment variables.\n    \nexport BBL_IAAS=azure\n    export BBL_AZURE_CLIENT_ID=\n    export BBL_AZURE_CLIENT_SECRET=\n    export BBL_AZURE_REGION=\n    export BBL_AZURE_SUBSCRIPTION_ID=\n    export BBL_AZURE_TENANT_ID=\n\n\nCreate infrastructure, jumpbox, and bosh director.\n    \nbbl up\n\n\n\n\n+ Cloud Foundry Load Balancers\n\n\nTo get all of the above plus load balancers for Cloud Foundry:\n\n\n\n\n\n\nTo create cf load balancers for azure you must provide a certificate\nin the \n.pfx\n format:\n    \nopenssl genrsa -out DOMAIN_NAME.key 2048\n    openssl req -new -x509 -days 365 -key DOMAIN_NAME.key -out DOMAIN_NAME.crt\n    openssl pkcs12 -export -out PFX_FILE -inkey DOMAIN_NAME.key -in DOMAIN_NAME.crt\n\n\n\n\n\n\nSave the password you entered when prompted by \nopenssl\n to a file.\n    \necho SuperSecretPassword \n PFX_FILE_PASSWORD\n\n\n\n\nTo \nbbl  plan\n or \nbbl up\n you can provide the pfx file and password:\n    \nbbl plan --lb-type cf --lb-cert PFX_FILE --lb-key PFX_FILE_PASSWORD\n    bbl up", 
+            "title": "Getting Started: Microsoft Azure"
+        }, 
         {
-            "location": "/getting-started-azure/#getting-started-azure",
-            "text": "",
-            "title": "Getting started azure"
-        },
+            "location": "/getting-started-azure/#getting-started-microsoft-azure", 
+            "text": "", 
+            "title": "Getting Started: Microsoft Azure"
+        }, 
         {
-            "location": "/getting-started-azure/#azure-application-gateway",
-            "text": "To create azure load balancers, prepare your certificates in the  .pfx  format:\n    ```\n    openssl genrsa -out DOMAIN_NAME.key 2048\n    openssl req -new -x509 -days 365 -key DOMAIN_NAME.key -out DOMAIN_NAME.crt\n    openssl pkcs12 -export -out PFX_FILE -inkey DOMAIN_NAME.key -in DOMAIN_NAME.crt",
-            "title": "Azure Application Gateway"
-        },
+            "location": "/getting-started-azure/#create-a-service-principal-account", 
+            "text": "You can use the cli utility  az-automation \nfor creating a service principal account given you\nhave authenticated with the  az  cli.  The output will include your subscription id,\nyour tenant id, the client id, and the client secret.  These credentials will be passed to  bbl  so that\nit can interact with Azure.", 
+            "title": "Create a Service Principal Account"
+        }, 
         {
-            "location": "/getting-started-azure/#you-will-be-asked-to-input-the-password-for-the-pfx-certificate",
-            "text": "1. Save the password to a file \necho SuperSecretPassword   PFX_FILE_PASSWORD 1. To `bbl  plan` or `bbl up` you will provide that pfx file and password: \nbbl up --lb-type cf --lb-cert PFX_FILE --lb-key PFX_FILE_PASSWORD\n```",
-            "title": "You will be asked to input the password for the \".pfx\" certificate"
-        },
+            "location": "/getting-started-azure/#infrastructure-jumpbox-director", 
+            "text": "Export environment variables.\n     export BBL_IAAS=azure\n    export BBL_AZURE_CLIENT_ID=\n    export BBL_AZURE_CLIENT_SECRET=\n    export BBL_AZURE_REGION=\n    export BBL_AZURE_SUBSCRIPTION_ID=\n    export BBL_AZURE_TENANT_ID=  Create infrastructure, jumpbox, and bosh director.\n     bbl up", 
+            "title": "Infrastructure, Jumpbox, Director"
+        }, 
         {
-            "location": "/getting-started-gcp/",
-            "text": "Getting started gcp\n\n\nCreating a service account\n\n\nIn order for \nbbl\n to interact with GCP, a service account must be created.\n\n\ngcloud iam service-accounts create \nservice account name\n\n\ngcloud iam service-accounts keys create --iam-account='\nservice account name\n@\nproject id\n.iam.gserviceaccount.com' \nservice account name\n.key.json\n\ngcloud projects add-iam-policy-binding \nproject id\n --member='serviceAccount:\nservice account name\n@\nproject id\n.iam.gserviceaccount.com' --role='roles/editor'",
-            "title": "Getting started gcp"
-        },
+            "location": "/getting-started-azure/#cloud-foundry-load-balancers", 
+            "text": "To get all of the above plus load balancers for Cloud Foundry:    To create cf load balancers for azure you must provide a certificate\nin the  .pfx  format:\n     openssl genrsa -out DOMAIN_NAME.key 2048\n    openssl req -new -x509 -days 365 -key DOMAIN_NAME.key -out DOMAIN_NAME.crt\n    openssl pkcs12 -export -out PFX_FILE -inkey DOMAIN_NAME.key -in DOMAIN_NAME.crt    Save the password you entered when prompted by  openssl  to a file.\n     echo SuperSecretPassword   PFX_FILE_PASSWORD   To  bbl  plan  or  bbl up  you can provide the pfx file and password:\n     bbl plan --lb-type cf --lb-cert PFX_FILE --lb-key PFX_FILE_PASSWORD\n    bbl up", 
+            "title": "+ Cloud Foundry Load Balancers"
+        }, 
         {
-            "location": "/getting-started-gcp/#getting-started-gcp",
-            "text": "",
-            "title": "Getting started gcp"
-        },
+            "location": "/getting-started-gcp/", 
+            "text": "Getting Started: GCP\n\n\nCreate a Service Account\n\n\nIn order for \nbbl\n to interact with GCP, a service account must be created.\n\n\ngcloud iam service-accounts create \nservice account name\n\n\ngcloud iam service-accounts keys create --iam-account='\nservice account name\n@\nproject id\n.iam.gserviceaccount.com' \nservice account name\n.key.json\n\ngcloud projects add-iam-policy-binding \nproject id\n --member='serviceAccount:\nservice account name\n@\nproject id\n.iam.gserviceaccount.com' --role='roles/editor'\n\n\n\n\nInfrastructure, Jumpbox, Director\n\n\n\n\nExport environment variables.\n    \nexport BBL_IAAS=gcp\n    export BBL_GCP_REGION=\n    export BBL_GCP_SERVICE_ACCOUNT_KEY=\n\n\nCreate infrastructure, jumpbox, and bosh director.\n    \nbbl up\n\n\n\n\n+ Cloud Foundry Load Balancers\n\n\nTo get all of the above plus load balancers for Cloud Foundry:\n\n\n```\n\n\n\n\n\nTo \nbbl  plan\n or \nbbl up\n you can provide a cert, key, and (optionally) a domain:\n    \nbbl plan --lb-type cf --lb-cert $CERT --lb-key $KEY --lb-comdin $DOMAIN\n    bbl up", 
+            "title": "Getting Started: GCP"
+        }, 
         {
-            "location": "/getting-started-gcp/#creating-a-service-account",
-            "text": "In order for  bbl  to interact with GCP, a service account must be created.  gcloud iam service-accounts create  service account name \n\ngcloud iam service-accounts keys create --iam-account=' service account name @ project id .iam.gserviceaccount.com'  service account name .key.json\n\ngcloud projects add-iam-policy-binding  project id  --member='serviceAccount: service account name @ project id .iam.gserviceaccount.com' --role='roles/editor'",
-            "title": "Creating a service account"
-        },
+            "location": "/getting-started-gcp/#getting-started-gcp", 
+            "text": "", 
+            "title": "Getting Started: GCP"
+        }, 
         {
-            "location": "/getting-started-openstack/",
-            "text": "Getting started openstack\n\n\nRequired credentials\n\n\n--openstack-internal-cidr          OpenStack Internal CIDR          env: $BBL_OPENSTACK_INTERNAL_CIDR\n--openstack-external-ip            OpenStack External IP            env: $BBL_OPENSTACK_EXTERNAL_IP\n--openstack-auth-url               OpenStack Auth URL               env: $BBL_OPENSTACK_AUTH_URL\n--openstack-az                     OpenStack Availability Zone      env: $BBL_OPENSTACK_AZ\n--openstack-default-key-name       OpenStack Default Key Name       env: $BBL_OPENSTACK_DEFAULT_KEY_NAME\n--openstack-default-security-group OpenStack Default Security Group env: $BBL_OPENSTACK_DEFAULT_SECURITY_GROUP\n--openstack-network-id             OpenStack Network ID             env: $BBL_OPENSTACK_NETWORK_ID\n--openstack-password               OpenStack Password               env: $BBL_OPENSTACK_PASSWORD\n--openstack-username               OpenStack Username               env: $BBL_OPENSTACK_USERNAME\n--openstack-project                OpenStack Project                env: $BBL_OPENSTACK_PROJECT\n--openstack-domain                 OpenStack Domain                 env: $BBL_OPENSTACK_DOMAIN\n--openstack-region                 OpenStack Region                 env: $BBL_OPENSTACK_REGION\n--openstack-private-key            OpenStack Private Key            env: $BBL_OPENSTACK_PRIVATE_KEY`",
-            "title": "Getting started openstack"
-        },
+            "location": "/getting-started-gcp/#create-a-service-account", 
+            "text": "In order for  bbl  to interact with GCP, a service account must be created.  gcloud iam service-accounts create  service account name \n\ngcloud iam service-accounts keys create --iam-account=' service account name @ project id .iam.gserviceaccount.com'  service account name .key.json\n\ngcloud projects add-iam-policy-binding  project id  --member='serviceAccount: service account name @ project id .iam.gserviceaccount.com' --role='roles/editor'", 
+            "title": "Create a Service Account"
+        }, 
         {
-            "location": "/getting-started-openstack/#getting-started-openstack",
-            "text": "",
-            "title": "Getting started openstack"
-        },
+            "location": "/getting-started-gcp/#infrastructure-jumpbox-director", 
+            "text": "Export environment variables.\n     export BBL_IAAS=gcp\n    export BBL_GCP_REGION=\n    export BBL_GCP_SERVICE_ACCOUNT_KEY=  Create infrastructure, jumpbox, and bosh director.\n     bbl up", 
+            "title": "Infrastructure, Jumpbox, Director"
+        }, 
         {
-            "location": "/getting-started-openstack/#required-credentials",
-            "text": "--openstack-internal-cidr          OpenStack Internal CIDR          env: $BBL_OPENSTACK_INTERNAL_CIDR\n--openstack-external-ip            OpenStack External IP            env: $BBL_OPENSTACK_EXTERNAL_IP\n--openstack-auth-url               OpenStack Auth URL               env: $BBL_OPENSTACK_AUTH_URL\n--openstack-az                     OpenStack Availability Zone      env: $BBL_OPENSTACK_AZ\n--openstack-default-key-name       OpenStack Default Key Name       env: $BBL_OPENSTACK_DEFAULT_KEY_NAME\n--openstack-default-security-group OpenStack Default Security Group env: $BBL_OPENSTACK_DEFAULT_SECURITY_GROUP\n--openstack-network-id             OpenStack Network ID             env: $BBL_OPENSTACK_NETWORK_ID\n--openstack-password               OpenStack Password               env: $BBL_OPENSTACK_PASSWORD\n--openstack-username               OpenStack Username               env: $BBL_OPENSTACK_USERNAME\n--openstack-project                OpenStack Project                env: $BBL_OPENSTACK_PROJECT\n--openstack-domain                 OpenStack Domain                 env: $BBL_OPENSTACK_DOMAIN\n--openstack-region                 OpenStack Region                 env: $BBL_OPENSTACK_REGION\n--openstack-private-key            OpenStack Private Key            env: $BBL_OPENSTACK_PRIVATE_KEY`",
-            "title": "Required credentials"
-        },
+            "location": "/getting-started-gcp/#cloud-foundry-load-balancers", 
+            "text": "To get all of the above plus load balancers for Cloud Foundry:  ```   To  bbl  plan  or  bbl up  you can provide a cert, key, and (optionally) a domain:\n     bbl plan --lb-type cf --lb-cert $CERT --lb-key $KEY --lb-comdin $DOMAIN\n    bbl up", 
+            "title": "+ Cloud Foundry Load Balancers"
+        }, 
         {
-            "location": "/getting-started-vsphere/",
-            "text": "Getting started vsphere\n\n\nRequired credentials\n\n\n--vsphere-vcenter-user             vSphere vCenter User             env: $BBL_VSPHERE_VCENTER_USER\n--vsphere-vcenter-password         vSphere vCenter Password         env: $BBL_VSPHERE_VCENTER_PASSWORD\n--vsphere-vcenter-ip               vSphere vCenter IP               env: $BBL_VSPHERE_VCENTER_IP\n--vsphere-vcenter-dc               vSphere vCenter Datacenter       env: $BBL_VSPHERE_VCENTER_DC\n--vsphere-vcenter-cluster          vSphere vCenter Cluster          env: $BBL_VSPHERE_VCENTER_CLUSTER\n--vsphere-vcenter-rp               vSphere vCenter Resource Pool    env: $BBL_VSPHERE_VCENTER_RP\n--vsphere-network                  vSphere Network                  env: $BBL_VSPHERE_NETWORK\n--vsphere-vcenter-ds               vSphere vCenter Datastore        env: $BBL_VSPHERE_VCENTER_DS\n--vsphere-subnet                   vSphere Subnet                   env: $BBL_VSPHERE_SUBNET",
-            "title": "Getting started vsphere"
-        },
+            "location": "/getting-started-openstack/", 
+            "text": "Getting Started: OpenStack\n\n\nJumpbox, Director\n\n\n\n\nExport environment variables.\n    \nexport BBL_IAAS=openstack\n    export BBL_OPENSTACK_INTERNAL_CIDR=\n    export BBL_OPENSTACK_EXTERNAL_IP=\n    export BBL_OPENSTACK_AUTH_URL=\n    export BBL_OPENSTACK_AZ=\n    export BBL_OPENSTACK_DEFAULT_KEY_NAME=\n    export BBL_OPENSTACK_DEFAULT_SECURITY_GROUP=\n    export BBL_OPENSTACK_NETWORK_ID=\n    export BBL_OPENSTACK_PASSWORD=\n    export BBL_OPENSTACK_USERNAME=\n    export BBL_OPENSTACK_PROJECT=\n    export BBL_OPENSTACK_DOMAIN=\n    export BBL_OPENSTACK_REGION=\n    export BBL_OPENSTACK_PRIVATE_KEY=\n\n\nCreate jumpbox and bosh director.\n    \nbbl up", 
+            "title": "Getting Started: OpenStack"
+        }, 
         {
-            "location": "/getting-started-vsphere/#getting-started-vsphere",
-            "text": "",
-            "title": "Getting started vsphere"
-        },
+            "location": "/getting-started-openstack/#getting-started-openstack", 
+            "text": "", 
+            "title": "Getting Started: OpenStack"
+        }, 
         {
-            "location": "/getting-started-vsphere/#required-credentials",
-            "text": "--vsphere-vcenter-user             vSphere vCenter User             env: $BBL_VSPHERE_VCENTER_USER\n--vsphere-vcenter-password         vSphere vCenter Password         env: $BBL_VSPHERE_VCENTER_PASSWORD\n--vsphere-vcenter-ip               vSphere vCenter IP               env: $BBL_VSPHERE_VCENTER_IP\n--vsphere-vcenter-dc               vSphere vCenter Datacenter       env: $BBL_VSPHERE_VCENTER_DC\n--vsphere-vcenter-cluster          vSphere vCenter Cluster          env: $BBL_VSPHERE_VCENTER_CLUSTER\n--vsphere-vcenter-rp               vSphere vCenter Resource Pool    env: $BBL_VSPHERE_VCENTER_RP\n--vsphere-network                  vSphere Network                  env: $BBL_VSPHERE_NETWORK\n--vsphere-vcenter-ds               vSphere vCenter Datastore        env: $BBL_VSPHERE_VCENTER_DS\n--vsphere-subnet                   vSphere Subnet                   env: $BBL_VSPHERE_SUBNET",
-            "title": "Required credentials"
-        },
+            "location": "/getting-started-openstack/#jumpbox-director", 
+            "text": "Export environment variables.\n     export BBL_IAAS=openstack\n    export BBL_OPENSTACK_INTERNAL_CIDR=\n    export BBL_OPENSTACK_EXTERNAL_IP=\n    export BBL_OPENSTACK_AUTH_URL=\n    export BBL_OPENSTACK_AZ=\n    export BBL_OPENSTACK_DEFAULT_KEY_NAME=\n    export BBL_OPENSTACK_DEFAULT_SECURITY_GROUP=\n    export BBL_OPENSTACK_NETWORK_ID=\n    export BBL_OPENSTACK_PASSWORD=\n    export BBL_OPENSTACK_USERNAME=\n    export BBL_OPENSTACK_PROJECT=\n    export BBL_OPENSTACK_DOMAIN=\n    export BBL_OPENSTACK_REGION=\n    export BBL_OPENSTACK_PRIVATE_KEY=  Create jumpbox and bosh director.\n     bbl up", 
+            "title": "Jumpbox, Director"
+        }, 
         {
-            "location": "/howto-ssh/",
-            "text": "Howto ssh\n\n\nTo the jumpbox\n\n\n\n\n\n\nUse print-env to see the ssh command:\n\n\nbbl print-env\n\n\n\n\n\n\nRemove the \n-f -N\n and \n-D PORT\n, then run it:\n\n\nssh -o StrictHostKeyChecking=no -o ServerAliveInterval=300 \\\n    jumpbox@34.214.217.33 -i $JUMPBOX_PRIVATE_KEY\n\n\n\n\n\n\nTo the BOSH director\n\n\n\n\n\n\nSet up a SOCKS5 proxy by running:\n\n\neval \"$(bbl print-env)\"\n\n\n\n\n\n\nInterpolate out the jumpbox user's ssh key for reaching the director:\n\n\nbbl director-ssh-key \n /tmp/director-jumpbox-user.key\nchmod 600 /tmp/director-jumpbox-user.key\n\n\n\n\n\n\nSSH via the proxy:\n\n\nssh -o ProxyCommand='nc -x localhost:`echo $BOSH_ALL_PROXY| cut -f3 -d':'` %h %p' \\\n    -i /tmp/director-jumpbox-user.key jumpbox@10.0.0.6\n\n\n\n\n\n\nTo job VMs\n\n\nThe command \nprint-env\n will print out everything necessary to ssh to a job VM (including a SOCKS5 proxy to the director's private network via ).\n\n\neval \n$(bbl print-env)\n\nbosh ssh web/0\n\n\n\n\nTroubleshooting\n\n\n\n\nIt is not necessary to set BOSH_GW_HOST and other old-style \nbosh ssh\n variables. Unset them.\n\n\nThe ubuntu stemcell allows a maximum of three login attempts, so ensure you do not have a lot of keys in your SSH keyring. \nssh-add -D\n can clear them all.",
-            "title": "Howto ssh"
-        },
+            "location": "/getting-started-vsphere/", 
+            "text": "Getting Started: vSphere\n\n\nJumbpox, Director\n\n\n\n\n\n\nExport environment variables.\n    \nexport BBL_IAAS=vsphere\n    export BBL_VSPHERE_VCENTER_USER\n    export BBL_VSPHERE_VCENTER_PASSWORD\n    export BBL_VSPHERE_VCENTER_IP\n    export BBL_VSPHERE_VCENTER_DC\n    export BBL_VSPHERE_VCENTER_CLUSTER\n    export BBL_VSPHERE_VCENTER_RP\n    export BBL_VSPHERE_NETWORK\n    export BBL_VSPHERE_VCENTER_DS\n    export BBL_VSPHERE_SUBNET\n\n\n\n\n\n\nCreate jumpbox and bosh director.\n    \nbbl up", 
+            "title": "Getting Started: vSphere"
+        }, 
         {
-            "location": "/howto-ssh/#howto-ssh",
-            "text": "",
-            "title": "Howto ssh"
-        },
+            "location": "/getting-started-vsphere/#getting-started-vsphere", 
+            "text": "", 
+            "title": "Getting Started: vSphere"
+        }, 
         {
-            "location": "/howto-ssh/#to-the-jumpbox",
-            "text": "Use print-env to see the ssh command:  bbl print-env    Remove the  -f -N  and  -D PORT , then run it:  ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=300 \\\n    jumpbox@34.214.217.33 -i $JUMPBOX_PRIVATE_KEY",
-            "title": "To the jumpbox"
-        },
+            "location": "/getting-started-vsphere/#jumbpox-director", 
+            "text": "Export environment variables.\n     export BBL_IAAS=vsphere\n    export BBL_VSPHERE_VCENTER_USER\n    export BBL_VSPHERE_VCENTER_PASSWORD\n    export BBL_VSPHERE_VCENTER_IP\n    export BBL_VSPHERE_VCENTER_DC\n    export BBL_VSPHERE_VCENTER_CLUSTER\n    export BBL_VSPHERE_VCENTER_RP\n    export BBL_VSPHERE_NETWORK\n    export BBL_VSPHERE_VCENTER_DS\n    export BBL_VSPHERE_SUBNET    Create jumpbox and bosh director.\n     bbl up", 
+            "title": "Jumbpox, Director"
+        }, 
         {
-            "location": "/howto-ssh/#to-the-bosh-director",
-            "text": "Set up a SOCKS5 proxy by running:  eval \"$(bbl print-env)\"    Interpolate out the jumpbox user's ssh key for reaching the director:  bbl director-ssh-key   /tmp/director-jumpbox-user.key\nchmod 600 /tmp/director-jumpbox-user.key    SSH via the proxy:  ssh -o ProxyCommand='nc -x localhost:`echo $BOSH_ALL_PROXY| cut -f3 -d':'` %h %p' \\\n    -i /tmp/director-jumpbox-user.key jumpbox@10.0.0.6",
-            "title": "To the BOSH director"
-        },
+            "location": "/howto-ssh/", 
+            "text": "How To SSH\n\n\nTo the Jumpbox\n\n\nThis command shells out to \nssh\n to initiate an interactive ssh session to the jumpbox vm.\n\n\nbbl ssh --jumpbox\n\n\n\n\nTo the BOSH Director\n\n\nThis command will shell out to \nssh\n twice. On the first invocation, it will open a tunnel forwarding a random port to the jumpbox.\n\n\nOn the second invocation, it initiates an interactive ssh session through that port to ssh to the director.\n\n\nbbl ssh --director\n\n\n\n\nTo BOSH-Deployed VMs\n\n\nbbl print-env\n prints out environment variables (\nBOSH_ALL_PROXY\n, \nBOSH_CLIENT\n, \nBOSH_CLIENT_SECRET\n, and others)\nthat need to be exported to \nbosh ssh\n to a job vm using the bosh-cli.\n\n\nEvaluating the command output sets those variables in your environment.\n\n\neval \n$(bbl print-env)\n\nbosh ssh web/0\n\n\n\n\nWhen you run \nbosh ssh web/0\n, the following happens:\n\n\n\n\n\n\nThe bosh-cli parses \nBOSH_ALL_PROXY\n and determines from the \nssh+socks5://\n scheme that it should proxy through a jumpbox via a tunnel of its own making.\n\n\n\n\n\n\nThe bosh-cli uses some go libraries to start a socks5 proxy on another goroutine. This socks5 proxy is backed by an ssh tunnel from your local machine to the jumpbox.\n\n\n\n\n\n\nThe bosh-cli uses your system's openssh \nssh\n \"ProxyCommand\" option and bsd \nnc -x\n to open an additional tunnel to \nweb/0\n through that socks5 proxy.\n\n\n\n\n\n\nWhen \nssh\n exits after you ctrl-D or your ttyless command exits, the bosh-cli exits and the socks5 proxy stops with it.\n\n\n\n\n\n\nFor http requests to the bosh director, the bosh-cli reads \nBOSH_ALL_PROXY=ssh+socks5://\n\nand uses golang's \nssh.Client.Dial\n in the cli's http.Client to send each http request\nto the director through an ssh tunnel between your local machine and the jumpbox.\n\n\nTroubleshooting\n\n\n\n\n\n\nIt is not necessary to set BOSH_GW_HOST and other old-style \nbosh ssh\n variables. Unset them.\n\n\n\n\n\n\nThe ubuntu stemcell allows a maximum of three login attempts, so ensure you do not have a lot of keys in your SSH keyring. \nssh-add -D\n can clear them all.", 
+            "title": "How To SSH"
+        }, 
         {
-            "location": "/howto-ssh/#to-job-vms",
-            "text": "The command  print-env  will print out everything necessary to ssh to a job VM (including a SOCKS5 proxy to the director's private network via ).  eval  $(bbl print-env) \nbosh ssh web/0",
-            "title": "To job VMs"
-        },
+            "location": "/howto-ssh/#how-to-ssh", 
+            "text": "", 
+            "title": "How To SSH"
+        }, 
         {
-            "location": "/howto-ssh/#troubleshooting",
-            "text": "It is not necessary to set BOSH_GW_HOST and other old-style  bosh ssh  variables. Unset them.  The ubuntu stemcell allows a maximum of three login attempts, so ensure you do not have a lot of keys in your SSH keyring.  ssh-add -D  can clear them all.",
+            "location": "/howto-ssh/#to-the-jumpbox", 
+            "text": "This command shells out to  ssh  to initiate an interactive ssh session to the jumpbox vm.  bbl ssh --jumpbox", 
+            "title": "To the Jumpbox"
+        }, 
+        {
+            "location": "/howto-ssh/#to-the-bosh-director", 
+            "text": "This command will shell out to  ssh  twice. On the first invocation, it will open a tunnel forwarding a random port to the jumpbox.  On the second invocation, it initiates an interactive ssh session through that port to ssh to the director.  bbl ssh --director", 
+            "title": "To the BOSH Director"
+        }, 
+        {
+            "location": "/howto-ssh/#to-bosh-deployed-vms", 
+            "text": "bbl print-env  prints out environment variables ( BOSH_ALL_PROXY ,  BOSH_CLIENT ,  BOSH_CLIENT_SECRET , and others)\nthat need to be exported to  bosh ssh  to a job vm using the bosh-cli.  Evaluating the command output sets those variables in your environment.  eval  $(bbl print-env) \nbosh ssh web/0  When you run  bosh ssh web/0 , the following happens:    The bosh-cli parses  BOSH_ALL_PROXY  and determines from the  ssh+socks5://  scheme that it should proxy through a jumpbox via a tunnel of its own making.    The bosh-cli uses some go libraries to start a socks5 proxy on another goroutine. This socks5 proxy is backed by an ssh tunnel from your local machine to the jumpbox.    The bosh-cli uses your system's openssh  ssh  \"ProxyCommand\" option and bsd  nc -x  to open an additional tunnel to  web/0  through that socks5 proxy.    When  ssh  exits after you ctrl-D or your ttyless command exits, the bosh-cli exits and the socks5 proxy stops with it.    For http requests to the bosh director, the bosh-cli reads  BOSH_ALL_PROXY=ssh+socks5:// \nand uses golang's  ssh.Client.Dial  in the cli's http.Client to send each http request\nto the director through an ssh tunnel between your local machine and the jumpbox.", 
+            "title": "To BOSH-Deployed VMs"
+        }, 
+        {
+            "location": "/howto-ssh/#troubleshooting", 
+            "text": "It is not necessary to set BOSH_GW_HOST and other old-style  bosh ssh  variables. Unset them.    The ubuntu stemcell allows a maximum of three login attempts, so ensure you do not have a lot of keys in your SSH keyring.  ssh-add -D  can clear them all.", 
             "title": "Troubleshooting"
-        },
+        }, 
         {
-            "location": "/known-issues/",
-            "text": "Known issues\n\n\nMigrating from bbl v4.x to v5.x on AWS\n\n\nAn issue was discovered in \nv5.6.0\n where the NAT security\ngroup rules were getting deleted, which prevents VMs deployed\nby BOSH from being able to access the internet.\n\n\nThe issue is fixed in \nv5.10.0\n and above, but the fix introduces\na breaking change when migrating from \nv4.x\n where manual intervention\nis required in order for \nbbl up\n to succeed.\n\n\nIf you are upgrading an existing bbl environment on AWS from \nv4.x\n to \nv5.x\n\nyou may see an error during \nbbl up\n that looks like the following:\n\n\nError: Error applying plan:\n\n3 error(s) occurred:\n\n* aws_security_group_rule.nat_udp_rule: 1 error(s) occurred:\n\n* aws_security_group_rule.nat_udp_rule: [WARN] A duplicate Security Group rule was found on (sg-f424bc88). This may be\na side effect of a now-fixed Terraform issue causing two security groups with\nidentical attributes but different source_security_group_ids to overwrite each\nother in the state. See https://github.com/hashicorp/terraform/pull/2376 for more\ninformation and instructions for recovery. Error message: the specified rule \npeer: sg-1b20b867, UDP, from port: 0, to port: 65535, ALLOW\n already exists\n...\n\n\n\n\nThe fix is to manually delete the security group rules for the NAT box.\n\n\n\n\nLog into the AWS console\n\n\nGo to the Networking and Security \n Security Groups page\n\n\nSelect the NAT security group (\n${env-id}-nat-security-group\n)\n\n\nClick Inbound, then Edit, then remove all 3 security group rules\n\n\nClick Outboud, then Edit, then remove the 1 security group rule\n\n\n\n\nAfter doing the above, \nbbl up\n should work again.\n\n\nIf you have previously run \nbbl up\n with version \nv5.0.x\n-\nv5.8.x\n, and\nyou currently do not have any NAT security groups rules, run \nbbl plan\n\nwith \nv5.10.x+\n to generate the terraform template with the fix, and then\nrun \nbbl up\n to apply the plan.",
+            "location": "/known-issues/", 
+            "text": "Known issues\n\n\nMigrating from bbl v4.x to v5.x on AWS\n\n\nAn issue was discovered in \nv5.6.0\n where the NAT security\ngroup rules were getting deleted, which prevents VMs deployed\nby BOSH from being able to access the internet.\n\n\nThe issue is fixed in \nv5.10.0\n and above, but the fix introduces\na breaking change when migrating from \nv4.x\n where manual intervention\nis required in order for \nbbl up\n to succeed.\n\n\nIf you are upgrading an existing bbl environment on AWS from \nv4.x\n to \nv5.x\n\nyou may see an error during \nbbl up\n that looks like the following:\n\n\nError: Error applying plan:\n\n3 error(s) occurred:\n\n* aws_security_group_rule.nat_udp_rule: 1 error(s) occurred:\n\n* aws_security_group_rule.nat_udp_rule: [WARN] A duplicate Security Group rule was found on (sg-f424bc88). This may be\na side effect of a now-fixed Terraform issue causing two security groups with\nidentical attributes but different source_security_group_ids to overwrite each\nother in the state. See https://github.com/hashicorp/terraform/pull/2376 for more\ninformation and instructions for recovery. Error message: the specified rule \npeer: sg-1b20b867, UDP, from port: 0, to port: 65535, ALLOW\n already exists\n...\n\n\n\n\nThe fix is to manually delete the security group rules for the NAT box.\n\n\n\n\nLog into the AWS console\n\n\nGo to the Networking and Security \n Security Groups page\n\n\nSelect the NAT security group (\n${env-id}-nat-security-group\n)\n\n\nClick Inbound, then Edit, then remove all 3 security group rules\n\n\nClick Outboud, then Edit, then remove the 1 security group rule\n\n\n\n\nAfter doing the above, \nbbl up\n should work again.\n\n\nIf you have previously run \nbbl up\n with version \nv5.0.x\n-\nv5.8.x\n, and\nyou currently do not have any NAT security groups rules, run \nbbl plan\n\nwith \nv5.10.x+\n to generate the terraform template with the fix, and then\nrun \nbbl up\n to apply the plan.", 
             "title": "Known issues"
-        },
+        }, 
         {
-            "location": "/known-issues/#known-issues",
-            "text": "",
+            "location": "/known-issues/#known-issues", 
+            "text": "", 
             "title": "Known issues"
-        },
+        }, 
         {
-            "location": "/known-issues/#migrating-from-bbl-v4x-to-v5x-on-aws",
-            "text": "An issue was discovered in  v5.6.0  where the NAT security\ngroup rules were getting deleted, which prevents VMs deployed\nby BOSH from being able to access the internet.  The issue is fixed in  v5.10.0  and above, but the fix introduces\na breaking change when migrating from  v4.x  where manual intervention\nis required in order for  bbl up  to succeed.  If you are upgrading an existing bbl environment on AWS from  v4.x  to  v5.x \nyou may see an error during  bbl up  that looks like the following:  Error: Error applying plan:\n\n3 error(s) occurred:\n\n* aws_security_group_rule.nat_udp_rule: 1 error(s) occurred:\n\n* aws_security_group_rule.nat_udp_rule: [WARN] A duplicate Security Group rule was found on (sg-f424bc88). This may be\na side effect of a now-fixed Terraform issue causing two security groups with\nidentical attributes but different source_security_group_ids to overwrite each\nother in the state. See https://github.com/hashicorp/terraform/pull/2376 for more\ninformation and instructions for recovery. Error message: the specified rule  peer: sg-1b20b867, UDP, from port: 0, to port: 65535, ALLOW  already exists\n...  The fix is to manually delete the security group rules for the NAT box.   Log into the AWS console  Go to the Networking and Security   Security Groups page  Select the NAT security group ( ${env-id}-nat-security-group )  Click Inbound, then Edit, then remove all 3 security group rules  Click Outboud, then Edit, then remove the 1 security group rule   After doing the above,  bbl up  should work again.  If you have previously run  bbl up  with version  v5.0.x - v5.8.x , and\nyou currently do not have any NAT security groups rules, run  bbl plan \nwith  v5.10.x+  to generate the terraform template with the fix, and then\nrun  bbl up  to apply the plan.",
+            "location": "/known-issues/#migrating-from-bbl-v4x-to-v5x-on-aws", 
+            "text": "An issue was discovered in  v5.6.0  where the NAT security\ngroup rules were getting deleted, which prevents VMs deployed\nby BOSH from being able to access the internet.  The issue is fixed in  v5.10.0  and above, but the fix introduces\na breaking change when migrating from  v4.x  where manual intervention\nis required in order for  bbl up  to succeed.  If you are upgrading an existing bbl environment on AWS from  v4.x  to  v5.x \nyou may see an error during  bbl up  that looks like the following:  Error: Error applying plan:\n\n3 error(s) occurred:\n\n* aws_security_group_rule.nat_udp_rule: 1 error(s) occurred:\n\n* aws_security_group_rule.nat_udp_rule: [WARN] A duplicate Security Group rule was found on (sg-f424bc88). This may be\na side effect of a now-fixed Terraform issue causing two security groups with\nidentical attributes but different source_security_group_ids to overwrite each\nother in the state. See https://github.com/hashicorp/terraform/pull/2376 for more\ninformation and instructions for recovery. Error message: the specified rule  peer: sg-1b20b867, UDP, from port: 0, to port: 65535, ALLOW  already exists\n...  The fix is to manually delete the security group rules for the NAT box.   Log into the AWS console  Go to the Networking and Security   Security Groups page  Select the NAT security group ( ${env-id}-nat-security-group )  Click Inbound, then Edit, then remove all 3 security group rules  Click Outboud, then Edit, then remove the 1 security group rule   After doing the above,  bbl up  should work again.  If you have previously run  bbl up  with version  v5.0.x - v5.8.x , and\nyou currently do not have any NAT security groups rules, run  bbl plan \nwith  v5.10.x+  to generate the terraform template with the fix, and then\nrun  bbl up  to apply the plan.", 
             "title": "Migrating from bbl v4.x to v5.x on AWS"
-        },
+        }, 
         {
-            "location": "/migration-guide/",
-            "text": "Migration Guide\n\n\nbbl v5 -\n bbl v6\n\n\nKnown issue: trying to destroy a \nbbl5\n environment with \nbbl6\n requires you to\n\nbbl6 plan \n bbl6 up\n against that state directory.\n\n\nThis is due to a PR released in \nbbl6\n that forwarded terraform outputs directly\nthrough to the bosh deployment vars files for \ncreate-env\n and \ndelete-env\n.\n\n\nBy running \nbbl6 up\n, the terraform outputs are updated and so too are the\nbosh deployment vars files.\n\n\nbbl5 up\n\n# some time passes\n\nbbl6 plan\nbbl6 up\n\nbbl6 destroy",
+            "location": "/migration-guide/", 
+            "text": "Migration Guide\n\n\nbbl v5 -\n bbl v6\n\n\nKnown issue: trying to destroy a \nbbl5\n environment with \nbbl6\n requires you to\n\nbbl6 plan \n bbl6 up\n against that state directory.\n\n\nThis is due to a PR released in \nbbl6\n that forwarded terraform outputs directly\nthrough to the bosh deployment vars files for \ncreate-env\n and \ndelete-env\n.\n\n\nBy running \nbbl6 up\n, the terraform outputs are updated and so too are the\nbosh deployment vars files.\n\n\nbbl5 up\n\n# some time passes\n\nbbl6 plan\nbbl6 up\n\nbbl6 destroy", 
             "title": "Migration Guide"
-        },
+        }, 
         {
-            "location": "/migration-guide/#migration-guide",
-            "text": "",
+            "location": "/migration-guide/#migration-guide", 
+            "text": "", 
             "title": "Migration Guide"
-        },
+        }, 
         {
-            "location": "/migration-guide/#bbl-v5-bbl-v6",
-            "text": "Known issue: trying to destroy a  bbl5  environment with  bbl6  requires you to bbl6 plan   bbl6 up  against that state directory.  This is due to a PR released in  bbl6  that forwarded terraform outputs directly\nthrough to the bosh deployment vars files for  create-env  and  delete-env .  By running  bbl6 up , the terraform outputs are updated and so too are the\nbosh deployment vars files.  bbl5 up\n\n# some time passes\n\nbbl6 plan\nbbl6 up\n\nbbl6 destroy",
+            "location": "/migration-guide/#bbl-v5-bbl-v6", 
+            "text": "Known issue: trying to destroy a  bbl5  environment with  bbl6  requires you to bbl6 plan   bbl6 up  against that state directory.  This is due to a PR released in  bbl6  that forwarded terraform outputs directly\nthrough to the bosh deployment vars files for  create-env  and  delete-env .  By running  bbl6 up , the terraform outputs are updated and so too are the\nbosh deployment vars files.  bbl5 up\n\n# some time passes\n\nbbl6 plan\nbbl6 up\n\nbbl6 destroy", 
             "title": "bbl v5 -&gt; bbl v6"
         }
     ]

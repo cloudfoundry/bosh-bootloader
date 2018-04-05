@@ -36,7 +36,7 @@
     
     
       
-        <title>Getting started vsphere - BBL</title>
+        <title>Getting Started: vSphere - BBL</title>
       
     
     
@@ -100,7 +100,7 @@
                 BBL
               </span>
               <span class="md-header-nav__topic">
-                Getting started vsphere
+                Getting Started: vSphere
               </span>
             
           
@@ -195,8 +195,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../cf-load-balancers/" title="CF Load Balancers" class="md-nav__link">
-      CF Load Balancers
+    <a href="../cf-lbs/" title="Cloud Foundry Load Balancers" class="md-nav__link">
+      Cloud Foundry Load Balancers
     </a>
   </li>
 
@@ -207,8 +207,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../cleaning-up/" title="Cleaning up" class="md-nav__link">
-      Cleaning up
+    <a href="../cleaning-up/" title="Cleaning Up" class="md-nav__link">
+      Cleaning Up
     </a>
   </li>
 
@@ -255,8 +255,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../getting-started-azure/" title="Getting started azure" class="md-nav__link">
-      Getting started azure
+    <a href="../getting-started-azure/" title="Getting Started: Microsoft Azure" class="md-nav__link">
+      Getting Started: Microsoft Azure
     </a>
   </li>
 
@@ -267,8 +267,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../getting-started-gcp/" title="Getting started gcp" class="md-nav__link">
-      Getting started gcp
+    <a href="../getting-started-gcp/" title="Getting Started: GCP" class="md-nav__link">
+      Getting Started: GCP
     </a>
   </li>
 
@@ -279,8 +279,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../getting-started-openstack/" title="Getting started openstack" class="md-nav__link">
-      Getting started openstack
+    <a href="../getting-started-openstack/" title="Getting Started: OpenStack" class="md-nav__link">
+      Getting Started: OpenStack
     </a>
   </li>
 
@@ -300,11 +300,11 @@
     
     
       <label class="md-nav__link md-nav__link--active" for="toc">
-        Getting started vsphere
+        Getting Started: vSphere
       </label>
     
-    <a href="./" title="Getting started vsphere" class="md-nav__link md-nav__link--active">
-      Getting started vsphere
+    <a href="./" title="Getting Started: vSphere" class="md-nav__link md-nav__link--active">
+      Getting Started: vSphere
     </a>
     
       
@@ -318,8 +318,8 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#required-credentials" title="Required credentials" class="md-nav__link">
-    Required credentials
+  <a href="#jumbpox-director" title="Jumbpox, Director" class="md-nav__link">
+    Jumbpox, Director
   </a>
   
 </li>
@@ -392,8 +392,8 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#required-credentials" title="Required credentials" class="md-nav__link">
-    Required credentials
+  <a href="#jumbpox-director" title="Jumbpox, Director" class="md-nav__link">
+    Jumbpox, Director
   </a>
   
 </li>
@@ -415,18 +415,27 @@
               
                 
                 
-                <h1 id="getting-started-vsphere">Getting started vsphere</h1>
-<h2 id="required-credentials">Required credentials</h2>
-<pre><code>--vsphere-vcenter-user             vSphere vCenter User             env: $BBL_VSPHERE_VCENTER_USER
---vsphere-vcenter-password         vSphere vCenter Password         env: $BBL_VSPHERE_VCENTER_PASSWORD
---vsphere-vcenter-ip               vSphere vCenter IP               env: $BBL_VSPHERE_VCENTER_IP
---vsphere-vcenter-dc               vSphere vCenter Datacenter       env: $BBL_VSPHERE_VCENTER_DC
---vsphere-vcenter-cluster          vSphere vCenter Cluster          env: $BBL_VSPHERE_VCENTER_CLUSTER
---vsphere-vcenter-rp               vSphere vCenter Resource Pool    env: $BBL_VSPHERE_VCENTER_RP
---vsphere-network                  vSphere Network                  env: $BBL_VSPHERE_NETWORK
---vsphere-vcenter-ds               vSphere vCenter Datastore        env: $BBL_VSPHERE_VCENTER_DS
---vsphere-subnet                   vSphere Subnet                   env: $BBL_VSPHERE_SUBNET
-</code></pre>
+                <h1 id="getting-started-vsphere">Getting Started: vSphere</h1>
+<h2 id="jumbpox-director">Jumbpox, Director</h2>
+<ol>
+<li>
+<p>Export environment variables.
+    <code>export BBL_IAAS=vsphere
+    export BBL_VSPHERE_VCENTER_USER
+    export BBL_VSPHERE_VCENTER_PASSWORD
+    export BBL_VSPHERE_VCENTER_IP
+    export BBL_VSPHERE_VCENTER_DC
+    export BBL_VSPHERE_VCENTER_CLUSTER
+    export BBL_VSPHERE_VCENTER_RP
+    export BBL_VSPHERE_NETWORK
+    export BBL_VSPHERE_VCENTER_DS
+    export BBL_VSPHERE_SUBNET</code></p>
+</li>
+<li>
+<p>Create jumpbox and bosh director.
+    <code>bbl up</code></p>
+</li>
+</ol>
                 
                   
                 
@@ -447,7 +456,7 @@
     <div class="md-footer-nav">
       <nav class="md-footer-nav__inner md-grid">
         
-          <a href="../getting-started-openstack/" title="Getting started openstack" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+          <a href="../getting-started-openstack/" title="Getting Started: OpenStack" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
             <div class="md-flex__cell md-flex__cell--shrink">
               <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
             </div>
@@ -456,7 +465,7 @@
                 <span class="md-footer-nav__direction">
                   Previous
                 </span>
-                Getting started openstack
+                Getting Started: OpenStack
               </span>
             </div>
           </a>

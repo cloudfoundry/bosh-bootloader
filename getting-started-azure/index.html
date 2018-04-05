@@ -36,7 +36,7 @@
     
     
       
-        <title>Getting started azure - BBL</title>
+        <title>Getting Started: Microsoft Azure - BBL</title>
       
     
     
@@ -74,7 +74,7 @@
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="search" autocomplete="off">
     <label class="md-overlay" data-md-component="overlay" for="drawer"></label>
     
-      <a href="#getting-started-azure" tabindex="1" class="md-skip">
+      <a href="#getting-started-microsoft-azure" tabindex="1" class="md-skip">
         Skip to content
       </a>
     
@@ -100,7 +100,7 @@
                 BBL
               </span>
               <span class="md-header-nav__topic">
-                Getting started azure
+                Getting Started: Microsoft Azure
               </span>
             
           
@@ -195,8 +195,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../cf-load-balancers/" title="CF Load Balancers" class="md-nav__link">
-      CF Load Balancers
+    <a href="../cf-lbs/" title="Cloud Foundry Load Balancers" class="md-nav__link">
+      Cloud Foundry Load Balancers
     </a>
   </li>
 
@@ -207,8 +207,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../cleaning-up/" title="Cleaning up" class="md-nav__link">
-      Cleaning up
+    <a href="../cleaning-up/" title="Cleaning Up" class="md-nav__link">
+      Cleaning Up
     </a>
   </li>
 
@@ -264,11 +264,11 @@
     
     
       <label class="md-nav__link md-nav__link--active" for="toc">
-        Getting started azure
+        Getting Started: Microsoft Azure
       </label>
     
-    <a href="./" title="Getting started azure" class="md-nav__link md-nav__link--active">
-      Getting started azure
+    <a href="./" title="Getting Started: Microsoft Azure" class="md-nav__link md-nav__link--active">
+      Getting Started: Microsoft Azure
     </a>
     
       
@@ -282,8 +282,22 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#azure-application-gateway" title="Azure Application Gateway" class="md-nav__link">
-    Azure Application Gateway
+  <a href="#create-a-service-principal-account" title="Create a Service Principal Account" class="md-nav__link">
+    Create a Service Principal Account
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#infrastructure-jumpbox-director" title="Infrastructure, Jumpbox, Director" class="md-nav__link">
+    Infrastructure, Jumpbox, Director
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cloud-foundry-load-balancers" title="+ Cloud Foundry Load Balancers" class="md-nav__link">
+    + Cloud Foundry Load Balancers
   </a>
   
 </li>
@@ -392,8 +406,22 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#azure-application-gateway" title="Azure Application Gateway" class="md-nav__link">
-    Azure Application Gateway
+  <a href="#create-a-service-principal-account" title="Create a Service Principal Account" class="md-nav__link">
+    Create a Service Principal Account
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#infrastructure-jumpbox-director" title="Infrastructure, Jumpbox, Director" class="md-nav__link">
+    Infrastructure, Jumpbox, Director
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cloud-foundry-load-balancers" title="+ Cloud Foundry Load Balancers" class="md-nav__link">
+    + Cloud Foundry Load Balancers
   </a>
   
 </li>
@@ -415,22 +443,44 @@
               
                 
                 
-                <h1 id="getting-started-azure">Getting started azure</h1>
-<h2 id="azure-application-gateway">Azure Application Gateway</h2>
+                <h1 id="getting-started-microsoft-azure">Getting Started: Microsoft Azure</h1>
+<h2 id="create-a-service-principal-account">Create a Service Principal Account</h2>
+<p>You can use the cli utility <a href="https://github.com/genevieve/az-automation">az-automation</a>
+for creating a service principal account given you
+have authenticated with the <code>az</code> cli.</p>
+<p>The output will include your subscription id,
+your tenant id, the client id, and the client secret.</p>
+<p>These credentials will be passed to <code>bbl</code> so that
+it can interact with Azure.</p>
+<h2 id="infrastructure-jumpbox-director">Infrastructure, Jumpbox, Director</h2>
+<ol>
+<li>Export environment variables.
+    <code>export BBL_IAAS=azure
+    export BBL_AZURE_CLIENT_ID=
+    export BBL_AZURE_CLIENT_SECRET=
+    export BBL_AZURE_REGION=
+    export BBL_AZURE_SUBSCRIPTION_ID=
+    export BBL_AZURE_TENANT_ID=</code></li>
+<li>Create infrastructure, jumpbox, and bosh director.
+    <code>bbl up</code></li>
+</ol>
+<h2 id="cloud-foundry-load-balancers">+ Cloud Foundry Load Balancers</h2>
+<p>To get all of the above plus load balancers for Cloud Foundry:</p>
 <ol>
 <li>
-<p>To create azure load balancers, prepare your certificates in the <code>.pfx</code> format:
-    ```
-    openssl genrsa -out DOMAIN_NAME.key 2048
+<p>To create cf load balancers for azure you must provide a certificate
+in the <code>.pfx</code> format:
+    <code>openssl genrsa -out DOMAIN_NAME.key 2048
     openssl req -new -x509 -days 365 -key DOMAIN_NAME.key -out DOMAIN_NAME.crt
-    openssl pkcs12 -export -out PFX_FILE -inkey DOMAIN_NAME.key -in DOMAIN_NAME.crt</p>
-<h1 id="you-will-be-asked-to-input-the-password-for-the-pfx-certificate">You will be asked to input the password for the ".pfx" certificate</h1>
-<p><code>1. Save the password to a file</code>
-echo SuperSecretPassword &gt; PFX_FILE_PASSWORD
-<code>1. To `bbl  plan` or `bbl up` you will provide that pfx file and password:</code>
-bbl up --lb-type cf --lb-cert PFX_FILE --lb-key PFX_FILE_PASSWORD
-```</p>
+    openssl pkcs12 -export -out PFX_FILE -inkey DOMAIN_NAME.key -in DOMAIN_NAME.crt</code></p>
 </li>
+<li>
+<p>Save the password you entered when prompted by <code>openssl</code> to a file.
+    <code>echo SuperSecretPassword &gt; PFX_FILE_PASSWORD</code></p>
+</li>
+<li>To <code>bbl  plan</code> or <code>bbl up</code> you can provide the pfx file and password:
+    <code>bbl plan --lb-type cf --lb-cert PFX_FILE --lb-key PFX_FILE_PASSWORD
+    bbl up</code></li>
 </ol>
                 
                   
