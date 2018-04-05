@@ -86,3 +86,12 @@ Once you are done kicking the tires on CF and BOSH, clean up your environment to
 1. You must first delete any deployments on BOSH. e.g. `bosh -d cf delete-deployment`
 
 1. `bbl down` with your IaaS user/account information.
+
+### Automating the automation tool
+
+In order to use `bbl` in your concourse pipelines, the current supported way
+for `cf-deployment` is to use the
+[cf-deployment-concourse-tasks](https://github.com/cloudfoundry/cf-deployment-concourse-tasks).
+
+There is a work-in-progress concourse resource for bbl:
+[bbl-state-resource](https://github.com/cloudfoundry/bbl-state-resource).
