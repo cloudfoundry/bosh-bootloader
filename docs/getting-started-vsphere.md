@@ -1,5 +1,9 @@
 # Getting Started: vSphere
 
+`bbl` creates and maintains the lifecycle of the jumpbox and BOSH director.
+
+It does not create any networks, security groups, or load balancers on vSphere.
+
 ## Jumbpox, Director
 
 1. Export environment variables.
