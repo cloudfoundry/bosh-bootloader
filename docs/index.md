@@ -1,40 +1,40 @@
 # BOSH Bootloader
+Also known as `bbl` *(pronounced: "bubble")*, bosh-bootloader is a command line
+utility for standing up a [CloudFoundry](https://cloudfoundry.org/) or [Concourse](https://concourse-ci.org) installation
+on an IaaS. `bbl` currently supports AWS, GCP and Azure. Openstack and vSphere support are planned.
 
-```
-Usage:
-  bbl [GLOBAL OPTIONS] COMMAND [OPTIONS]
+* [CI](https://wings.concourse-ci.org/teams/cf-infrastructure/pipelines/bosh-bootloader)
+* [Tracker](https://www.pivotaltracker.com/n/projects/1488988)
 
-Global Options:
-  --help       [-h]        Prints usage. Use "bbl [command] --help" for more information about a command
-  --state-dir  [-s]        Directory containing the bbl state                                            env:"BBL_STATE_DIRECTORY"
-  --debug      [-d]        Prints debugging output                                                       env:"BBL_DEBUG"
-  --version    [-v]        Prints version
-  --no-confirm [-n]        No confirm
+## What `bbl` does
 
-Basic Commands: A good place to start
-  up                      Deploys BOSH director on an IAAS, creates CF/Concourse load balancers. Updates existing director.
-  print-env               All environment variables needed for targeting BOSH. Use with: eval "$(bbl print-env)"
+![a list of steps that bbl executes, which are elaborated on below](theme/bbl-process.png)
 
-Maintenance Lifecycle Commands:
-  destroy                 Tears down BOSH director infrastructure. Cleans up state directory
-  rotate                  Rotates SSH key for the jumpbox user
-  plan                    Populates a state directory with the latest config without applying it
-  cleanup-leftovers       Cleans up orphaned IAAS resources
+### Generate Terraform template
+The first step that `bbl up` does is to generate a Terraform template based on your IAAS, IAAS region, and chosen load balancer type (or lack thereof).
 
-Environmental Detail Commands: Useful for automation and gaining access
-  jumpbox-address         Prints BOSH jumpbox address
-  director-address        Prints BOSH director address
-  director-username       Prints BOSH director username
-  director-password       Prints BOSH director password
-  director-ca-cert        Prints BOSH director CA certificate
-  env-id                  Prints environment ID
-  ssh-key                 Prints jumpbox SSH private key
-  director-ssh-key        Prints director SSH private key
-  lbs                     Prints load balancer(s) and DNS records
-  outputs                 Prints the outputs from terraform
+The resulting Terraform template is emitted to the `terraform/bbl-template.tf` file within your state directory.
 
-Troubleshooting Commands:
-  help                    Prints usage
-  version                 Prints version
-  latest-error            Prints the output from the latest call to terraform
-```
+### Apply Terraform template
+After generating the Terraform template, `bbl up` will run Terraform to apply that template, using also a variables file located at
+`vars/bbl.tfvars` within the state directory.
+
+### Map Terraform outputs to BOSH create-env vars
+Having applied the Terraform template, we now have a number of Terraform outputs, such as subnet CIDRs, reserved IP addresses, and load balancer configuration.
+`bbl` will transform those outputs into the inputs required by `jumpbox-deployment` and `bosh-deployment` and write them to the files `vars/jumpbox-vars-file.yml`
+and `vars/director-vars-file.yml`.
+
+### BOSH create-env (jumpbox, director)
+Next, `bbl` shells out to the BOSH CLI to run `bosh create-env` twice. The first time, `bbl` uses `jumpbox-deployment` and creates the jumpbox vm; the second time,
+`bbl` uses `bosh-deployment` and creates the director VM. The exact commands that `bbl` will run are emitted to the `create-jumpbox.sh` and `create-director.sh`
+files within the state directory.
+
+### Generate cloud-config template
+After the director VM comes up, `bbl` generates a base cloud-config, based on the IAAS, IAAS region, and chosen load balancer type.
+
+### Map Terraform outputs to BOSH cloud-config vars
+Having generated a base cloud-config template, `bbl` maps Terraform outputs to cloud-config variables. These variables include network and subnetwork names,
+security groups or tags, and CIDR ranges, as well as load balancer target pool names.
+
+### Update cloud-config (director)
+Finally, `bbl` will update the director's cloud config, by shelling out to `bosh update-cloud-config`.
