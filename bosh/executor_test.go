@@ -1,7 +1,6 @@
 package bosh_test
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -65,7 +64,7 @@ var _ = Describe("Executor", func() {
 				StateDir: stateDir,
 			}
 
-			executor = bosh.NewExecutor(cmd, fs, json.Unmarshal, json.Marshal)
+			executor = bosh.NewExecutor(cmd, fs)
 		})
 
 		It("writes bosh-deployment assets to the deployment dir", func() {
@@ -321,7 +320,7 @@ var _ = Describe("Executor", func() {
 				StateDir: stateDir,
 			}
 
-			executor = bosh.NewExecutor(cmd, fs, json.Unmarshal, json.Marshal)
+			executor = bosh.NewExecutor(cmd, fs)
 		})
 
 		It("writes bosh-deployment assets to the deployment dir", func() {
@@ -492,7 +491,7 @@ var _ = Describe("Executor", func() {
 			stateDir, err := fs.TempDir("", "")
 			Expect(err).NotTo(HaveOccurred())
 
-			executor = bosh.NewExecutor(cmd, fs, json.Unmarshal, json.Marshal)
+			executor = bosh.NewExecutor(cmd, fs)
 
 			dirInput = bosh.DirInput{
 				Deployment: "some-deployment",
@@ -536,7 +535,7 @@ var _ = Describe("Executor", func() {
 			stateDir, err = fs.TempDir("", "")
 			Expect(err).NotTo(HaveOccurred())
 
-			executor = bosh.NewExecutor(cmd, fs, json.Unmarshal, json.Marshal)
+			executor = bosh.NewExecutor(cmd, fs)
 
 			dirInput = bosh.DirInput{
 				Deployment: "some-deployment",
@@ -718,7 +717,7 @@ var _ = Describe("Executor", func() {
 			stateDir, err = fs.TempDir("", "")
 			Expect(err).NotTo(HaveOccurred())
 
-			executor = bosh.NewExecutor(cmd, fs, json.Unmarshal, json.Marshal)
+			executor = bosh.NewExecutor(cmd, fs)
 
 			dirInput = bosh.DirInput{
 				Deployment: "director",
@@ -925,7 +924,7 @@ var _ = Describe("Executor", func() {
 				return nil
 			}
 
-			executor = bosh.NewExecutor(cmd, fs, json.Unmarshal, json.Marshal)
+			executor = bosh.NewExecutor(cmd, fs)
 		})
 
 		It("passes the correct args and dir to run command", func() {

@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"crypto/rand"
-	"encoding/json"
 	"io"
 	"io/ioutil"
 	"log"
@@ -117,7 +116,7 @@ func main() {
 		log.Fatal(err)
 	}
 	boshCommand := bosh.NewCmd(os.Stderr, boshPath)
-	boshExecutor := bosh.NewExecutor(boshCommand, afs, json.Unmarshal, json.Marshal)
+	boshExecutor := bosh.NewExecutor(boshCommand, afs)
 	sshKeyGetter := bosh.NewSSHKeyGetter(stateStore, afs)
 	allProxyGetter := bosh.NewAllProxyGetter(sshKeyGetter, afs)
 	credhubGetter := bosh.NewCredhubGetter(stateStore, afs)

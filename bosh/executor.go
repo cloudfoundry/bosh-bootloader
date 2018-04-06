@@ -22,10 +22,8 @@ type executorFs interface {
 }
 
 type Executor struct {
-	command       command
-	fs            executorFs
-	unmarshalJSON func([]byte, interface{}) error
-	marshalJSON   func(interface{}) ([]byte, error)
+	command command
+	fs      executorFs
 }
 
 type DirInput struct {
@@ -50,14 +48,10 @@ var (
 	boshDeploymentRepo    = "vendor/github.com/cloudfoundry/bosh-deployment"
 )
 
-func NewExecutor(cmd command, fs executorFs,
-	unmarshalJSON func([]byte, interface{}) error,
-	marshalJSON func(interface{}) ([]byte, error)) Executor {
+func NewExecutor(cmd command, fs executorFs) Executor {
 	return Executor{
-		command:       cmd,
-		fs:            fs,
-		unmarshalJSON: unmarshalJSON,
-		marshalJSON:   marshalJSON,
+		command: cmd,
+		fs:      fs,
 	}
 }
 
