@@ -53,6 +53,8 @@ var _ = Describe("Instances", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(client.DescribeInstancesCall.CallCount).To(Equal(1))
+			Expect(client.DescribeInstancesCall.Receives.Input.Filters[0].Name).To(Equal(aws.String("instance-state-name")))
+
 			Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(1))
 			Expect(logger.PromptWithDetailsCall.Receives.Type).To(Equal("EC2 Instance"))
 			Expect(logger.PromptWithDetailsCall.Receives.Name).To(Equal("the-instance-id (Name:banana-instance)"))
@@ -89,7 +91,7 @@ var _ = Describe("Instances", func() {
 				items, err := instances.List(filter)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(1))
+				Expect(logger.PromptWithDetailsCall.Receives.Name).To(Equal("the-instance-id"))
 
 				Expect(items).To(HaveLen(1))
 			})
@@ -108,36 +110,13 @@ var _ = Describe("Instances", func() {
 				}
 			})
 
-			It("uses just the instance id in the prompt", func() {
+			It("uses it in the prompt", func() {
 				items, err := instances.List(filter)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(logger.PromptWithDetailsCall.Receives.Name).To(Equal("the-instance-id (KeyPairName:the-key-pair)"))
 
 				Expect(items).To(HaveLen(1))
-			})
-		})
-
-		Context("when the instance state is terminated", func() {
-			BeforeEach(func() {
-				client.DescribeInstancesCall.Returns.Output = &awsec2.DescribeInstancesOutput{
-					Reservations: []*awsec2.Reservation{{
-						Instances: []*awsec2.Instance{{
-							State:      &awsec2.InstanceState{Name: aws.String("terminated")},
-							InstanceId: aws.String("the-instance-id"),
-						}},
-					}},
-				}
-			})
-
-			It("does not return it in the list", func() {
-				items, err := instances.List(filter)
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(client.DescribeInstancesCall.CallCount).To(Equal(1))
-				Expect(client.TerminateInstancesCall.CallCount).To(Equal(0))
-				Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(0))
-				Expect(items).To(HaveLen(0))
 			})
 		})
 

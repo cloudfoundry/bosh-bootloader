@@ -57,7 +57,7 @@ func (v Folders) List(filter string) ([]Deletable, error) {
 
 			folder := NewFolder(childFolder, name)
 
-			proceed := v.logger.Prompt(fmt.Sprintf("Are you sure you want to delete empty folder %s?", name))
+			proceed := v.logger.PromptWithDetails(folder.Type(), folder.Name())
 			if !proceed {
 				continue
 			}
@@ -72,7 +72,7 @@ func (v Folders) List(filter string) ([]Deletable, error) {
 
 				vm := NewVirtualMachine(g)
 
-				proceed := v.logger.Prompt(fmt.Sprintf("Are you sure you want to delete virtual machine %s?", vm.Name()))
+				proceed := v.logger.PromptWithDetails(vm.Type(), vm.Name())
 				if !proceed {
 					continue
 				}

@@ -25,30 +25,7 @@ func NewServerCertificates(client serverCertificatesClient, logger logger) Serve
 	}
 }
 
-func (s ServerCertificates) ListOnly(filter string) ([]common.Deletable, error) {
-	return s.getServerCertificates(filter)
-}
-
 func (s ServerCertificates) List(filter string) ([]common.Deletable, error) {
-	resources, err := s.getServerCertificates(filter)
-	if err != nil {
-		return nil, err
-	}
-
-	var delete []common.Deletable
-	for _, r := range resources {
-		proceed := s.logger.PromptWithDetails(r.Type(), r.Name())
-		if !proceed {
-			continue
-		}
-
-		delete = append(delete, r)
-	}
-
-	return delete, nil
-}
-
-func (s ServerCertificates) getServerCertificates(filter string) ([]common.Deletable, error) {
 	certificates, err := s.client.ListServerCertificates(&awsiam.ListServerCertificatesInput{})
 	if err != nil {
 		return nil, fmt.Errorf("List IAM Server Certificates: %s", err)
@@ -56,13 +33,18 @@ func (s ServerCertificates) getServerCertificates(filter string) ([]common.Delet
 
 	var resources []common.Deletable
 	for _, c := range certificates.ServerCertificateMetadataList {
-		resource := NewServerCertificate(s.client, c.ServerCertificateName)
+		r := NewServerCertificate(s.client, c.ServerCertificateName)
 
-		if !strings.Contains(resource.Name(), filter) {
+		if !strings.Contains(r.Name(), filter) {
 			continue
 		}
 
-		resources = append(resources, resource)
+		proceed := s.logger.PromptWithDetails(r.Type(), r.Name())
+		if !proceed {
+			continue
+		}
+
+		resources = append(resources, r)
 	}
 
 	return resources, nil

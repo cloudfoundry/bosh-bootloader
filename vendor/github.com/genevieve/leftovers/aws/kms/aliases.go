@@ -25,30 +25,7 @@ func NewAliases(client aliasesClient, logger logger) Aliases {
 	}
 }
 
-func (a Aliases) ListOnly(filter string) ([]common.Deletable, error) {
-	return a.get(filter)
-}
-
 func (a Aliases) List(filter string) ([]common.Deletable, error) {
-	resources, err := a.get(filter)
-	if err != nil {
-		return nil, err
-	}
-
-	var delete []common.Deletable
-	for _, r := range resources {
-		proceed := a.logger.PromptWithDetails(r.Type(), r.Name())
-		if !proceed {
-			continue
-		}
-
-		delete = append(delete, r)
-	}
-
-	return delete, nil
-}
-
-func (a Aliases) get(filter string) ([]common.Deletable, error) {
 	aliases, err := a.client.ListAliases(&awskms.ListAliasesInput{})
 	if err != nil {
 		return nil, fmt.Errorf("Listing KMS Aliases: %s", err)
@@ -56,13 +33,18 @@ func (a Aliases) get(filter string) ([]common.Deletable, error) {
 
 	var resources []common.Deletable
 	for _, alias := range aliases.Aliases {
-		resource := NewAlias(a.client, alias.AliasName)
+		r := NewAlias(a.client, alias.AliasName)
 
-		if !strings.Contains(resource.Name(), filter) {
+		if !strings.Contains(r.Name(), filter) {
 			continue
 		}
 
-		resources = append(resources, resource)
+		proceed := a.logger.PromptWithDetails(r.Type(), r.Name())
+		if !proceed {
+			continue
+		}
+
+		resources = append(resources, r)
 	}
 
 	return resources, nil

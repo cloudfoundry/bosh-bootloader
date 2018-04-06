@@ -28,30 +28,7 @@ func NewPolicies(client policiesClient, logger logger) Policies {
 	}
 }
 
-func (p Policies) ListOnly(filter string) ([]common.Deletable, error) {
-	return p.getPolicies(filter)
-}
-
 func (p Policies) List(filter string) ([]common.Deletable, error) {
-	resources, err := p.getPolicies(filter)
-	if err != nil {
-		return nil, err
-	}
-
-	var delete []common.Deletable
-	for _, r := range resources {
-		proceed := p.logger.PromptWithDetails(r.Type(), r.Name())
-		if !proceed {
-			continue
-		}
-
-		delete = append(delete, r)
-	}
-
-	return delete, nil
-}
-
-func (p Policies) getPolicies(filter string) ([]common.Deletable, error) {
 	policies, err := p.client.ListPolicies(&awsiam.ListPoliciesInput{Scope: aws.String("Local")})
 	if err != nil {
 		return nil, fmt.Errorf("List IAM Policies: %s", err)
@@ -59,13 +36,18 @@ func (p Policies) getPolicies(filter string) ([]common.Deletable, error) {
 
 	var resources []common.Deletable
 	for _, o := range policies.Policies {
-		resource := NewPolicy(p.client, p.logger, o.PolicyName, o.Arn)
+		r := NewPolicy(p.client, p.logger, o.PolicyName, o.Arn)
 
-		if !strings.Contains(resource.Name(), filter) {
+		if !strings.Contains(r.Name(), filter) {
 			continue
 		}
 
-		resources = append(resources, resource)
+		proceed := p.logger.PromptWithDetails(r.Type(), r.Name())
+		if !proceed {
+			continue
+		}
+
+		resources = append(resources, r)
 	}
 
 	return resources, nil

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/aws/aws-sdk-go/aws"
 	awsec2 "github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/genevieve/leftovers/aws/common"
 )
@@ -11,6 +12,9 @@ import (
 type instancesClient interface {
 	DescribeInstances(*awsec2.DescribeInstancesInput) (*awsec2.DescribeInstancesOutput, error)
 	TerminateInstances(*awsec2.TerminateInstancesInput) (*awsec2.TerminateInstancesOutput, error)
+
+	DescribeAddresses(*awsec2.DescribeAddressesInput) (*awsec2.DescribeAddressesOutput, error)
+	ReleaseAddress(*awsec2.ReleaseAddressInput) (*awsec2.ReleaseAddressOutput, error)
 }
 
 type Instances struct {
@@ -27,55 +31,34 @@ func NewInstances(client instancesClient, logger logger, resourceTags resourceTa
 	}
 }
 
-func (a Instances) ListOnly(filter string) ([]common.Deletable, error) {
-	return a.get(filter)
-}
-
-func (a Instances) List(filter string) ([]common.Deletable, error) {
-	resources, err := a.get(filter)
-	if err != nil {
-		return nil, err
-	}
-
-	var delete []common.Deletable
-	for _, r := range resources {
-		proceed := a.logger.PromptWithDetails(r.Type(), r.Name())
-		if !proceed {
-			continue
-		}
-
-		delete = append(delete, r)
-	}
-
-	return delete, nil
-}
-
-func (a Instances) get(filter string) ([]common.Deletable, error) {
-	instances, err := a.client.DescribeInstances(&awsec2.DescribeInstancesInput{})
+func (i Instances) List(filter string) ([]common.Deletable, error) {
+	instances, err := i.client.DescribeInstances(&awsec2.DescribeInstancesInput{
+		Filters: []*awsec2.Filter{{
+			Name:   aws.String("instance-state-name"),
+			Values: []*string{aws.String("pending"), aws.String("running"), aws.String("shutting-down"), aws.String("stopping"), aws.String("stopped")},
+		}},
+	})
 	if err != nil {
 		return nil, fmt.Errorf("Describing EC2 Instances: %s", err)
 	}
 
 	var resources []common.Deletable
 	for _, r := range instances.Reservations {
-		for _, i := range r.Instances {
-			resource := NewInstance(a.client, a.resourceTags, i.InstanceId, i.KeyName, i.Tags)
+		for _, instance := range r.Instances {
+			r := NewInstance(i.client, i.resourceTags, instance.InstanceId, instance.KeyName, instance.Tags)
 
-			if a.alreadyShutdown(*i.State.Name) {
+			if !strings.Contains(r.Name(), filter) {
 				continue
 			}
 
-			if !strings.Contains(resource.identifier, filter) {
+			proceed := i.logger.PromptWithDetails(r.Type(), r.Name())
+			if !proceed {
 				continue
 			}
 
-			resources = append(resources, resource)
+			resources = append(resources, r)
 		}
 	}
 
 	return resources, nil
-}
-
-func (a Instances) alreadyShutdown(state string) bool {
-	return state == "shutting-down" || state == "terminated"
 }

@@ -25,44 +25,27 @@ func NewLoadBalancers(client loadBalancersClient, logger logger) LoadBalancers {
 	}
 }
 
-func (l LoadBalancers) ListOnly(filter string) ([]common.Deletable, error) {
-	return l.get(filter)
-}
-
 func (l LoadBalancers) List(filter string) ([]common.Deletable, error) {
-	resources, err := l.get(filter)
+	loadBalancers, err := l.client.DescribeLoadBalancers(&awselbv2.DescribeLoadBalancersInput{})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Describe ELBV2 Load Balancers: %s", err)
+
 	}
 
-	var delete []common.Deletable
-	for _, r := range resources {
+	var resources []common.Deletable
+	for _, lb := range loadBalancers.LoadBalancers {
+		r := NewLoadBalancer(l.client, lb.LoadBalancerName, lb.LoadBalancerArn)
+
+		if !strings.Contains(r.Name(), filter) {
+			continue
+		}
+
 		proceed := l.logger.PromptWithDetails(r.Type(), r.Name())
 		if !proceed {
 			continue
 		}
 
-		delete = append(delete, r)
-	}
-
-	return delete, nil
-}
-
-func (l LoadBalancers) get(filter string) ([]common.Deletable, error) {
-	loadBalancers, err := l.client.DescribeLoadBalancers(&awselbv2.DescribeLoadBalancersInput{})
-	if err != nil {
-		return nil, fmt.Errorf("Describe ELBV2 Load Balancers: %s", err)
-	}
-
-	var resources []common.Deletable
-	for _, lb := range loadBalancers.LoadBalancers {
-		resource := NewLoadBalancer(l.client, lb.LoadBalancerName, lb.LoadBalancerArn)
-
-		if !strings.Contains(resource.identifier, filter) {
-			continue
-		}
-
-		resources = append(resources, resource)
+		resources = append(resources, r)
 	}
 
 	return resources, nil

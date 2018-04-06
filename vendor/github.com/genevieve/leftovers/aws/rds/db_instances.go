@@ -25,30 +25,7 @@ func NewDBInstances(client dbInstancesClient, logger logger) DBInstances {
 	}
 }
 
-func (d DBInstances) ListOnly(filter string) ([]common.Deletable, error) {
-	return d.get(filter)
-}
-
 func (d DBInstances) List(filter string) ([]common.Deletable, error) {
-	resources, err := d.get(filter)
-	if err != nil {
-		return nil, err
-	}
-
-	var delete []common.Deletable
-	for _, r := range resources {
-		proceed := d.logger.PromptWithDetails(r.Type(), r.Name())
-		if !proceed {
-			continue
-		}
-
-		delete = append(delete, r)
-	}
-
-	return delete, nil
-}
-
-func (d DBInstances) get(filter string) ([]common.Deletable, error) {
 	dbInstances, err := d.client.DescribeDBInstances(&awsrds.DescribeDBInstancesInput{})
 	if err != nil {
 		return nil, fmt.Errorf("Describing RDS DB Instances: %s", err)
@@ -56,17 +33,22 @@ func (d DBInstances) get(filter string) ([]common.Deletable, error) {
 
 	var resources []common.Deletable
 	for _, db := range dbInstances.DBInstances {
-		resource := NewDBInstance(d.client, db.DBInstanceIdentifier)
-
 		if *db.DBInstanceStatus == "deleting" {
 			continue
 		}
 
-		if !strings.Contains(resource.identifier, filter) {
+		r := NewDBInstance(d.client, db.DBInstanceIdentifier)
+
+		if !strings.Contains(r.Name(), filter) {
 			continue
 		}
 
-		resources = append(resources, resource)
+		proceed := d.logger.PromptWithDetails(r.Type(), r.Name())
+		if !proceed {
+			continue
+		}
+
+		resources = append(resources, r)
 	}
 
 	return resources, nil

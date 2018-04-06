@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/aws/aws-sdk-go/aws"
 	awsec2 "github.com/aws/aws-sdk-go/service/ec2"
 )
 
@@ -41,7 +42,17 @@ func NewInstance(client instancesClient, resourceTags resourceTags, id, keyName 
 }
 
 func (i Instance) Delete() error {
-	_, err := i.client.TerminateInstances(&awsec2.TerminateInstancesInput{InstanceIds: []*string{i.id}})
+	addresses, err := i.client.DescribeAddresses(&awsec2.DescribeAddressesInput{
+		Filters: []*awsec2.Filter{{
+			Name:   aws.String("instance-id"),
+			Values: []*string{i.id},
+		}},
+	})
+	if err != nil {
+		return fmt.Errorf("Describe addresses: %s", err)
+	}
+
+	_, err = i.client.TerminateInstances(&awsec2.TerminateInstancesInput{InstanceIds: []*string{i.id}})
 	if err != nil {
 		return fmt.Errorf("Terminate: %s", err)
 	}
@@ -49,6 +60,13 @@ func (i Instance) Delete() error {
 	err = i.resourceTags.Delete("instance", *i.id)
 	if err != nil {
 		return fmt.Errorf("Delete resource tags: %s", err)
+	}
+
+	for _, a := range addresses.Addresses {
+		_, err = i.client.ReleaseAddress(&awsec2.ReleaseAddressInput{AllocationId: a.AllocationId})
+		if err != nil {
+			return fmt.Errorf("Release address: %s", err)
+		}
 	}
 
 	return nil

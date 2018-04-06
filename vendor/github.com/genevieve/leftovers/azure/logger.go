@@ -1,7 +1,8 @@
 package azure
 
 type logger interface {
-	Printf(m string, a ...interface{})
-	Prompt(m string) bool
-	Println(m string)
+	Printf(message string, args ...interface{})
+	PromptWithDetails(resourceType, resourceName string) bool
+	Println(message string)
+	NoConfirm()
 }

@@ -14,7 +14,9 @@ import (
 	awsiam "github.com/aws/aws-sdk-go/service/iam"
 	awskms "github.com/aws/aws-sdk-go/service/kms"
 	awsrds "github.com/aws/aws-sdk-go/service/rds"
+	awsroute53 "github.com/aws/aws-sdk-go/service/route53"
 	awss3 "github.com/aws/aws-sdk-go/service/s3"
+	awssts "github.com/aws/aws-sdk-go/service/sts"
 	"github.com/fatih/color"
 	"github.com/genevieve/leftovers/aws/common"
 	"github.com/genevieve/leftovers/aws/ec2"
@@ -23,12 +25,12 @@ import (
 	"github.com/genevieve/leftovers/aws/iam"
 	"github.com/genevieve/leftovers/aws/kms"
 	"github.com/genevieve/leftovers/aws/rds"
+	"github.com/genevieve/leftovers/aws/route53"
 	"github.com/genevieve/leftovers/aws/s3"
 )
 
 type resource interface {
 	List(filter string) ([]common.Deletable, error)
-	ListOnly(filter string) ([]common.Deletable, error)
 }
 
 type Leftovers struct {
@@ -55,17 +57,20 @@ func NewLeftovers(logger logger, accessKeyId, secretAccessKey, region string) (L
 	}
 	sess := session.New(config)
 
-	iamClient := awsiam.New(sess)
 	ec2Client := awsec2.New(sess)
 	elbClient := awselb.New(sess)
 	elbv2Client := awselbv2.New(sess)
-	s3Client := awss3.New(sess)
-	rdsClient := awsrds.New(sess)
 	kmsClient := awskms.New(sess)
+	iamClient := awsiam.New(sess)
+	rdsClient := awsrds.New(sess)
+	route53Client := awsroute53.New(sess)
+	s3Client := awss3.New(sess)
+	stsClient := awssts.New(sess)
 
 	rolePolicies := iam.NewRolePolicies(iamClient, logger)
 	userPolicies := iam.NewUserPolicies(iamClient, logger)
 	accessKeys := iam.NewAccessKeys(iamClient, logger)
+
 	internetGateways := ec2.NewInternetGateways(ec2Client, logger)
 	resourceTags := ec2.NewResourceTags(ec2Client)
 	routeTables := ec2.NewRouteTables(ec2Client, logger, resourceTags)
@@ -75,16 +80,16 @@ func NewLeftovers(logger logger, accessKeyId, secretAccessKey, region string) (L
 	return Leftovers{
 		logger: logger,
 		resources: []resource{
-			iam.NewInstanceProfiles(iamClient, logger),
-			iam.NewRoles(iamClient, logger, rolePolicies),
-			iam.NewUsers(iamClient, logger, userPolicies, accessKeys),
-			iam.NewPolicies(iamClient, logger),
-
 			elb.NewLoadBalancers(elbClient, logger),
 			elbv2.NewLoadBalancers(elbv2Client, logger),
 			elbv2.NewTargetGroups(elbv2Client, logger),
 
-			ec2.NewAddresses(ec2Client, logger),
+			iam.NewInstanceProfiles(iamClient, logger),
+			iam.NewRoles(iamClient, logger, rolePolicies),
+			iam.NewUsers(iamClient, logger, userPolicies, accessKeys),
+			iam.NewPolicies(iamClient, logger),
+			iam.NewServerCertificates(iamClient, logger),
+
 			ec2.NewKeyPairs(ec2Client, logger),
 			ec2.NewInstances(ec2Client, logger, resourceTags),
 			ec2.NewSecurityGroups(ec2Client, logger, resourceTags),
@@ -92,24 +97,31 @@ func NewLeftovers(logger logger, accessKeyId, secretAccessKey, region string) (L
 			ec2.NewVolumes(ec2Client, logger),
 			ec2.NewNetworkInterfaces(ec2Client, logger),
 			ec2.NewVpcs(ec2Client, logger, routeTables, subnets, internetGateways, resourceTags),
+			ec2.NewImages(ec2Client, stsClient, logger, resourceTags),
+			ec2.NewAddresses(ec2Client, logger),
+			ec2.NewSnapshots(ec2Client, stsClient, logger),
 
 			s3.NewBuckets(s3Client, logger, bucketManager),
 
 			rds.NewDBInstances(rdsClient, logger),
 			rds.NewDBSubnetGroups(rdsClient, logger),
-
-			iam.NewServerCertificates(iamClient, logger),
+			rds.NewDBClusters(rdsClient, logger),
 
 			kms.NewAliases(kmsClient, logger),
 			kms.NewKeys(kmsClient, logger),
+
+			route53.NewHostedZones(route53Client, logger),
+			route53.NewHealthChecks(route53Client, logger),
 		},
 	}, nil
 }
 
 func (l Leftovers) List(filter string) {
+	l.logger.NoConfirm()
+
 	var all []common.Deletable
 	for _, r := range l.resources {
-		list, err := r.ListOnly(filter)
+		list, err := r.List(filter)
 		if err != nil {
 			l.logger.Println(err.Error())
 		}
@@ -124,7 +136,6 @@ func (l Leftovers) List(filter string) {
 
 func (l Leftovers) Delete(filter string) error {
 	deletables := [][]common.Deletable{}
-
 	for _, r := range l.resources {
 		list, err := r.List(filter)
 		if err != nil {
@@ -135,7 +146,6 @@ func (l Leftovers) Delete(filter string) error {
 	}
 
 	var wg sync.WaitGroup
-
 	for _, resources := range deletables {
 		for _, r := range resources {
 			wg.Add(1)
@@ -143,7 +153,6 @@ func (l Leftovers) Delete(filter string) error {
 			go func(r common.Deletable) {
 				defer wg.Done()
 
-				//TODO: Create a prefixed logger
 				l.logger.Println(fmt.Sprintf("[%s: %s] Deleting...", r.Type(), r.Name()))
 
 				err := r.Delete()
@@ -157,6 +166,5 @@ func (l Leftovers) Delete(filter string) error {
 
 		wg.Wait()
 	}
-
 	return nil
 }

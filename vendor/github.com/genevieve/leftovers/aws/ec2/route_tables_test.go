@@ -45,6 +45,8 @@ var _ = Describe("RouteTables", func() {
 			Expect(client.DescribeRouteTablesCall.CallCount).To(Equal(1))
 			Expect(client.DescribeRouteTablesCall.Receives.Input.Filters[0].Name).To(Equal(aws.String("vpc-id")))
 			Expect(client.DescribeRouteTablesCall.Receives.Input.Filters[0].Values[0]).To(Equal(aws.String("the-vpc-id")))
+			Expect(client.DescribeRouteTablesCall.Receives.Input.Filters[1].Name).To(Equal(aws.String("association.main")))
+			Expect(client.DescribeRouteTablesCall.Receives.Input.Filters[1].Values[0]).To(Equal(aws.String("false")))
 
 			Expect(client.DeleteRouteTableCall.CallCount).To(Equal(1))
 			Expect(client.DeleteRouteTableCall.Receives.Input.RouteTableId).To(Equal(aws.String("the-route-table-id")))
@@ -102,33 +104,6 @@ var _ = Describe("RouteTables", func() {
 					"[EC2 VPC: the-vpc-id] Deleted route table the-route-table-id",
 					"[EC2 VPC: the-vpc-id] Deleted route table the-route-table-id tags",
 				}))
-			})
-
-			Context("when that association is the main one", func() {
-				BeforeEach(func() {
-					client.DescribeRouteTablesCall.Returns.Output = &awsec2.DescribeRouteTablesOutput{
-						RouteTables: []*awsec2.RouteTable{{
-							RouteTableId: aws.String("the-route-table-id"),
-							VpcId:        aws.String("the-vpc-id"),
-							Associations: []*awsec2.RouteTableAssociation{{
-								Main: aws.Bool(true),
-								RouteTableAssociationId: aws.String("the-association-id"),
-								RouteTableId:            aws.String("the-route-table-id"),
-							}},
-						}},
-					}
-				})
-
-				It("does not dissociate or delete the route table", func() {
-					err := routeTables.Delete("the-vpc-id")
-					Expect(err).NotTo(HaveOccurred())
-
-					Expect(client.DescribeRouteTablesCall.CallCount).To(Equal(1))
-					Expect(client.DisassociateRouteTableCall.CallCount).To(Equal(0))
-					Expect(client.DeleteRouteTableCall.CallCount).To(Equal(0))
-
-					Expect(logger.PrintfCall.Messages).To(BeNil())
-				})
 			})
 
 			Context("when the client fails to disassociate the route table", func() {

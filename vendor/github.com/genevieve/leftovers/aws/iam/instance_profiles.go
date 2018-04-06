@@ -26,30 +26,7 @@ func NewInstanceProfiles(client instanceProfilesClient, logger logger) InstanceP
 	}
 }
 
-func (i InstanceProfiles) ListOnly(filter string) ([]common.Deletable, error) {
-	return i.get(filter)
-}
-
 func (i InstanceProfiles) List(filter string) ([]common.Deletable, error) {
-	resources, err := i.get(filter)
-	if err != nil {
-		return nil, err
-	}
-
-	var delete []common.Deletable
-	for _, r := range resources {
-		proceed := i.logger.PromptWithDetails(r.Type(), r.Name())
-		if !proceed {
-			continue
-		}
-
-		delete = append(delete, r)
-	}
-
-	return delete, nil
-}
-
-func (i InstanceProfiles) get(filter string) ([]common.Deletable, error) {
 	profiles, err := i.client.ListInstanceProfiles(&awsiam.ListInstanceProfilesInput{})
 	if err != nil {
 		return nil, fmt.Errorf("List IAM Instance Profiles: %s", err)
@@ -57,13 +34,18 @@ func (i InstanceProfiles) get(filter string) ([]common.Deletable, error) {
 
 	var resources []common.Deletable
 	for _, p := range profiles.InstanceProfiles {
-		resource := NewInstanceProfile(i.client, p.InstanceProfileName, p.Roles, i.logger)
+		r := NewInstanceProfile(i.client, p.InstanceProfileName, p.Roles, i.logger)
 
-		if !strings.Contains(resource.Name(), filter) {
+		if !strings.Contains(r.Name(), filter) {
 			continue
 		}
 
-		resources = append(resources, resource)
+		proceed := i.logger.PromptWithDetails(r.Type(), r.Name())
+		if !proceed {
+			continue
+		}
+
+		resources = append(resources, r)
 	}
 
 	return resources, nil

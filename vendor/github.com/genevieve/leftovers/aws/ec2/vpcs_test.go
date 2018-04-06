@@ -53,6 +53,9 @@ var _ = Describe("Vpcs", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(client.DescribeVpcsCall.CallCount).To(Equal(1))
+			Expect(client.DescribeVpcsCall.Receives.Input.Filters[0].Name).To(Equal(aws.String("isDefault")))
+			Expect(client.DescribeVpcsCall.Receives.Input.Filters[0].Values[0]).To(Equal(aws.String("false")))
+
 			Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(1))
 			Expect(logger.PromptWithDetailsCall.Receives.Type).To(Equal("EC2 VPC"))
 			Expect(logger.PromptWithDetailsCall.Receives.Name).To(Equal("the-vpc-id (Name:banana)"))
@@ -65,23 +68,6 @@ var _ = Describe("Vpcs", func() {
 				items, err := vpcs.List("kiwi")
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(items).To(HaveLen(0))
-			})
-		})
-
-		Context("when the vpc is a default", func() {
-			BeforeEach(func() {
-				client.DescribeVpcsCall.Returns.Output = &awsec2.DescribeVpcsOutput{
-					Vpcs: []*awsec2.Vpc{{
-						IsDefault: aws.Bool(true),
-						VpcId:     aws.String("the-vpc-id"),
-					}},
-				}
-			})
-
-			It("does not return it in the list", func() {
-				items, err := vpcs.List(filter)
-				Expect(err).NotTo(HaveOccurred())
 				Expect(items).To(HaveLen(0))
 			})
 		})

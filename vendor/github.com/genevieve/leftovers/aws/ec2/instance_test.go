@@ -32,9 +32,21 @@ var _ = Describe("Instance", func() {
 	})
 
 	Describe("Delete", func() {
-		It("terminates the instance", func() {
+		BeforeEach(func() {
+			client.DescribeAddressesCall.Returns.Output = &awsec2.DescribeAddressesOutput{
+				Addresses: []*awsec2.Address{{
+					AllocationId: aws.String("the-allocation-id"),
+				}},
+			}
+		})
+
+		It("terminates the instance, deletes it's tags, and releases the address", func() {
 			err := instance.Delete()
 			Expect(err).NotTo(HaveOccurred())
+
+			Expect(client.DescribeAddressesCall.CallCount).To(Equal(1))
+			Expect(client.DescribeAddressesCall.Receives.Input.Filters[0].Name).To(Equal(aws.String("instance-id")))
+			Expect(client.DescribeAddressesCall.Receives.Input.Filters[0].Values[0]).To(Equal(id))
 
 			Expect(client.TerminateInstancesCall.CallCount).To(Equal(1))
 			Expect(client.TerminateInstancesCall.Receives.Input.InstanceIds).To(HaveLen(1))
@@ -43,9 +55,23 @@ var _ = Describe("Instance", func() {
 			Expect(resourceTags.DeleteCall.CallCount).To(Equal(1))
 			Expect(resourceTags.DeleteCall.Receives.ResourceType).To(Equal("instance"))
 			Expect(resourceTags.DeleteCall.Receives.ResourceId).To(Equal("the-id"))
+
+			Expect(client.ReleaseAddressCall.CallCount).To(Equal(1))
+			Expect(client.ReleaseAddressCall.Receives.Input.AllocationId).To(Equal(aws.String("the-allocation-id")))
 		})
 
-		Context("when the client fails", func() {
+		Context("when the client fails to describe addresses", func() {
+			BeforeEach(func() {
+				client.DescribeAddressesCall.Returns.Error = errors.New("banana")
+			})
+
+			It("returns the error", func() {
+				err := instance.Delete()
+				Expect(err).To(MatchError("Describe addresses: banana"))
+			})
+		})
+
+		Context("when the client fails to terminate the instance", func() {
 			BeforeEach(func() {
 				client.TerminateInstancesCall.Returns.Error = errors.New("banana")
 			})
@@ -64,6 +90,17 @@ var _ = Describe("Instance", func() {
 			It("returns the error", func() {
 				err := instance.Delete()
 				Expect(err).To(MatchError("Delete resource tags: banana"))
+			})
+		})
+
+		Context("when the client fails to release the address", func() {
+			BeforeEach(func() {
+				client.ReleaseAddressCall.Returns.Error = errors.New("banana")
+			})
+
+			It("returns the error", func() {
+				err := instance.Delete()
+				Expect(err).To(MatchError("Release address: banana"))
 			})
 		})
 	})

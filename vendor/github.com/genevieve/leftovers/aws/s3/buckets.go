@@ -30,30 +30,7 @@ func NewBuckets(client bucketsClient, logger logger, manager bucketManager) Buck
 	}
 }
 
-func (b Buckets) ListOnly(filter string) ([]common.Deletable, error) {
-	return b.get(filter)
-}
-
 func (b Buckets) List(filter string) ([]common.Deletable, error) {
-	resources, err := b.get(filter)
-	if err != nil {
-		return nil, err
-	}
-
-	var delete []common.Deletable
-	for _, r := range resources {
-		proceed := b.logger.PromptWithDetails(r.Type(), r.Name())
-		if !proceed {
-			continue
-		}
-
-		delete = append(delete, r)
-	}
-
-	return delete, nil
-}
-
-func (b Buckets) get(filter string) ([]common.Deletable, error) {
 	buckets, err := b.client.ListBuckets(&awss3.ListBucketsInput{})
 	if err != nil {
 		return nil, fmt.Errorf("Listing S3 Buckets: %s", err)
@@ -61,17 +38,22 @@ func (b Buckets) get(filter string) ([]common.Deletable, error) {
 
 	var resources []common.Deletable
 	for _, bucket := range buckets.Buckets {
-		resource := NewBucket(b.client, bucket.Name)
+		r := NewBucket(b.client, bucket.Name)
 
-		if !strings.Contains(resource.identifier, filter) {
+		if !strings.Contains(r.Name(), filter) {
 			continue
 		}
 
-		if !b.manager.IsInRegion(resource.identifier) {
+		if !b.manager.IsInRegion(r.Name()) {
 			continue
 		}
 
-		resources = append(resources, resource)
+		proceed := b.logger.PromptWithDetails(r.Type(), r.Name())
+		if !proceed {
+			continue
+		}
+
+		resources = append(resources, r)
 	}
 
 	return resources, nil

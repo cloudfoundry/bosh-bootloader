@@ -25,30 +25,7 @@ func NewTags(client tagsClient, logger logger) Tags {
 	}
 }
 
-func (a Tags) ListOnly(filter string) ([]common.Deletable, error) {
-	return a.get(filter)
-}
-
 func (a Tags) List(filter string) ([]common.Deletable, error) {
-	resources, err := a.get(filter)
-	if err != nil {
-		return nil, err
-	}
-
-	var delete []common.Deletable
-	for _, r := range resources {
-		proceed := a.logger.PromptWithDetails(r.Type(), r.Name())
-		if !proceed {
-			continue
-		}
-
-		delete = append(delete, r)
-	}
-
-	return delete, nil
-}
-
-func (a Tags) get(filter string) ([]common.Deletable, error) {
 	output, err := a.client.DescribeTags(&awsec2.DescribeTagsInput{})
 	if err != nil {
 		return nil, fmt.Errorf("Describe EC2 Tags: %s", err)
@@ -60,13 +37,18 @@ func (a Tags) get(filter string) ([]common.Deletable, error) {
 			continue
 		}
 
-		resource := NewTag(a.client, t.Key, t.Value, t.ResourceId)
+		r := NewTag(a.client, t.Key, t.Value, t.ResourceId)
 
-		if !strings.Contains(resource.Name(), filter) {
+		if !strings.Contains(r.Name(), filter) {
 			continue
 		}
 
-		resources = append(resources, resource)
+		proceed := a.logger.PromptWithDetails(r.Type(), r.Name())
+		if !proceed {
+			continue
+		}
+
+		resources = append(resources, r)
 	}
 
 	return resources, nil

@@ -52,33 +52,6 @@ var _ = Describe("Addresses", func() {
 			Expect(items).To(HaveLen(1))
 		})
 
-		Context("when the address name does not contain the filter", func() {
-			It("does not try to release it", func() {
-				// The address resource may not be named after the environment
-			})
-		})
-
-		Context("when the address is in use by an instance", func() {
-			BeforeEach(func() {
-				logger.PromptWithDetailsCall.Returns.Proceed = true
-				client.DescribeAddressesCall.Returns.Output = &awsec2.DescribeAddressesOutput{
-					Addresses: []*awsec2.Address{{
-						PublicIp:   aws.String("banana"),
-						InstanceId: aws.String("the-instance-using-it"),
-					}},
-				}
-			})
-
-			It("does not try to release it", func() {
-				items, err := addresses.List(filter)
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(client.DescribeAddressesCall.CallCount).To(Equal(1))
-				Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(0))
-				Expect(items).To(HaveLen(0))
-			})
-		})
-
 		Context("when the client fails to describe addresses", func() {
 			BeforeEach(func() {
 				client.DescribeAddressesCall.Returns.Error = errors.New("some error")

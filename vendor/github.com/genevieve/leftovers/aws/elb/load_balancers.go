@@ -25,30 +25,7 @@ func NewLoadBalancers(client loadBalancersClient, logger logger) LoadBalancers {
 	}
 }
 
-func (l LoadBalancers) ListOnly(filter string) ([]common.Deletable, error) {
-	return l.get(filter)
-}
-
 func (l LoadBalancers) List(filter string) ([]common.Deletable, error) {
-	resources, err := l.get(filter)
-	if err != nil {
-		return nil, err
-	}
-
-	var delete []common.Deletable
-	for _, r := range resources {
-		proceed := l.logger.PromptWithDetails(r.Type(), r.Name())
-		if !proceed {
-			continue
-		}
-
-		delete = append(delete, r)
-	}
-
-	return delete, nil
-}
-
-func (l LoadBalancers) get(filter string) ([]common.Deletable, error) {
 	loadBalancers, err := l.client.DescribeLoadBalancers(&awselb.DescribeLoadBalancersInput{})
 	if err != nil {
 		return nil, fmt.Errorf("Describe ELB Load Balancers: %s", err)
@@ -56,13 +33,18 @@ func (l LoadBalancers) get(filter string) ([]common.Deletable, error) {
 
 	var resources []common.Deletable
 	for _, lb := range loadBalancers.LoadBalancerDescriptions {
-		resource := NewLoadBalancer(l.client, lb.LoadBalancerName)
+		r := NewLoadBalancer(l.client, lb.LoadBalancerName)
 
-		if !strings.Contains(resource.Name(), filter) {
+		if !strings.Contains(r.Name(), filter) {
 			continue
 		}
 
-		resources = append(resources, resource)
+		proceed := l.logger.PromptWithDetails(r.Type(), r.Name())
+		if !proceed {
+			continue
+		}
+
+		resources = append(resources, r)
 	}
 
 	return resources, nil

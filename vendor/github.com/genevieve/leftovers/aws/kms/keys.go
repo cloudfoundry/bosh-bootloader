@@ -25,33 +25,11 @@ func NewKeys(client keysClient, logger logger) Keys {
 	return Keys{
 		client: client,
 		logger: logger,
+		//TODO: Add	resourceTags
 	}
-}
-
-func (k Keys) ListOnly(filter string) ([]common.Deletable, error) {
-	return k.get(filter)
 }
 
 func (k Keys) List(filter string) ([]common.Deletable, error) {
-	resources, err := k.get(filter)
-	if err != nil {
-		return nil, err
-	}
-
-	var delete []common.Deletable
-	for _, r := range resources {
-		proceed := k.logger.PromptWithDetails(r.Type(), r.Name())
-		if !proceed {
-			continue
-		}
-
-		delete = append(delete, r)
-	}
-
-	return delete, nil
-}
-
-func (k Keys) get(filter string) ([]common.Deletable, error) {
 	keys, err := k.client.ListKeys(&awskms.ListKeysInput{})
 	if err != nil {
 		return nil, fmt.Errorf("Listing KMS Keys: %s", err)
@@ -66,13 +44,18 @@ func (k Keys) get(filter string) ([]common.Deletable, error) {
 
 		tags, _ := k.client.ListResourceTags(&awskms.ListResourceTagsInput{KeyId: key.KeyId})
 
-		resource := NewKey(k.client, key.KeyId, metadata.KeyMetadata, tags.Tags)
+		r := NewKey(k.client, key.KeyId, metadata.KeyMetadata, tags.Tags)
 
-		if !strings.Contains(resource.Name(), filter) {
+		if !strings.Contains(r.Name(), filter) {
 			continue
 		}
 
-		resources = append(resources, resource)
+		proceed := k.logger.PromptWithDetails(r.Type(), r.Name())
+		if !proceed {
+			continue
+		}
+
+		resources = append(resources, r)
 	}
 
 	return resources, nil

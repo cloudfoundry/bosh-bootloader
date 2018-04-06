@@ -1,5 +1,5 @@
 ### elb
-* Delete load balancers.
+* Delete load balancers. This deletes the associated listeners and policies..
 
 
 ### elbv2
@@ -18,6 +18,10 @@
 * Delete subnets **before** deleting vpcs.
 * Delete tags associated to a resource **after** deleting the resource.
 * Delete tags without a resource at any time.
+* Terminate instances **before** releasing addresses.
+* Release addresses that have no instances bound or that instance matches
+the filter and will be terminated in the same run of leftovers.
+* Delete images **before** deleting snapshots.
 
 
 ### iam

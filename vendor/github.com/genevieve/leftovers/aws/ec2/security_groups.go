@@ -29,30 +29,7 @@ func NewSecurityGroups(client securityGroupsClient, logger logger, resourceTags 
 	}
 }
 
-func (s SecurityGroups) ListOnly(filter string) ([]common.Deletable, error) {
-	return s.get(filter)
-}
-
 func (s SecurityGroups) List(filter string) ([]common.Deletable, error) {
-	resources, err := s.get(filter)
-	if err != nil {
-		return nil, err
-	}
-
-	var delete []common.Deletable
-	for _, r := range resources {
-		proceed := s.logger.PromptWithDetails(r.Type(), r.Name())
-		if !proceed {
-			continue
-		}
-
-		delete = append(delete, r)
-	}
-
-	return delete, nil
-}
-
-func (s SecurityGroups) get(filter string) ([]common.Deletable, error) {
 	output, err := s.client.DescribeSecurityGroups(&awsec2.DescribeSecurityGroupsInput{})
 	if err != nil {
 		return nil, fmt.Errorf("Describe EC2 Security Groups: %s", err)
@@ -60,13 +37,18 @@ func (s SecurityGroups) get(filter string) ([]common.Deletable, error) {
 
 	var resources []common.Deletable
 	for _, sg := range output.SecurityGroups {
-		r := NewSecurityGroup(s.client, s.logger, s.resourceTags, sg.GroupId, sg.GroupName, sg.Tags, sg.IpPermissions, sg.IpPermissionsEgress)
-
 		if *sg.GroupName == "default" {
 			continue
 		}
 
+		r := NewSecurityGroup(s.client, s.logger, s.resourceTags, sg.GroupId, sg.GroupName, sg.Tags, sg.IpPermissions, sg.IpPermissionsEgress)
+
 		if !strings.Contains(r.Name(), filter) {
+			continue
+		}
+
+		proceed := s.logger.PromptWithDetails(r.Type(), r.Name())
+		if !proceed {
 			continue
 		}
 

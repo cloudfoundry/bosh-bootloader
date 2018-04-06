@@ -29,30 +29,7 @@ func NewUsers(client usersClient, logger logger, policies userPolicies, accessKe
 	}
 }
 
-func (u Users) ListOnly(filter string) ([]common.Deletable, error) {
-	return u.getUsers(filter)
-}
-
 func (u Users) List(filter string) ([]common.Deletable, error) {
-	resources, err := u.getUsers(filter)
-	if err != nil {
-		return nil, err
-	}
-
-	var delete []common.Deletable
-	for _, r := range resources {
-		proceed := u.logger.PromptWithDetails(r.Type(), r.Name())
-		if !proceed {
-			continue
-		}
-
-		delete = append(delete, r)
-	}
-
-	return delete, nil
-}
-
-func (u Users) getUsers(filter string) ([]common.Deletable, error) {
 	users, err := u.client.ListUsers(&awsiam.ListUsersInput{})
 	if err != nil {
 		return nil, fmt.Errorf("List IAM Users: %s", err)
@@ -60,13 +37,18 @@ func (u Users) getUsers(filter string) ([]common.Deletable, error) {
 
 	var resources []common.Deletable
 	for _, r := range users.Users {
-		resource := NewUser(u.client, u.policies, u.accessKeys, r.UserName)
+		r := NewUser(u.client, u.policies, u.accessKeys, r.UserName)
 
-		if !strings.Contains(resource.identifier, filter) {
+		if !strings.Contains(r.Name(), filter) {
 			continue
 		}
 
-		resources = append(resources, resource)
+		proceed := u.logger.PromptWithDetails(r.Type(), r.Name())
+		if !proceed {
+			continue
+		}
+
+		resources = append(resources, r)
 	}
 
 	return resources, nil

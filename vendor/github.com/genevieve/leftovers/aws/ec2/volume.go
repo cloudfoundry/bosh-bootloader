@@ -10,15 +10,13 @@ type Volume struct {
 	client     volumesClient
 	id         *string
 	identifier string
-	rtype      string
 }
 
-func NewVolume(client volumesClient, id *string) Volume {
+func NewVolume(client volumesClient, id, state *string) Volume {
 	return Volume{
 		client:     client,
 		id:         id,
-		identifier: *id,
-		rtype:      "EC2 Volume",
+		identifier: fmt.Sprintf("%s (State:%s)", *id, *state),
 	}
 }
 
@@ -36,5 +34,5 @@ func (v Volume) Name() string {
 }
 
 func (v Volume) Type() string {
-	return v.rtype
+	return "EC2 Volume"
 }

@@ -36,6 +36,9 @@ func (u RouteTables) Delete(vpcId string) error {
 		Filters: []*awsec2.Filter{{
 			Name:   aws.String("vpc-id"),
 			Values: []*string{aws.String(vpcId)},
+		}, {
+			Name:   aws.String("association.main"),
+			Values: []*string{aws.String("false")},
 		}},
 	})
 	if err != nil {
@@ -44,13 +47,6 @@ func (u RouteTables) Delete(vpcId string) error {
 
 	for _, r := range routeTables.RouteTables {
 		n := *r.RouteTableId
-
-		if len(r.Associations) > 0 {
-			isMain := *r.Associations[0].Main
-			if isMain {
-				continue
-			}
-		}
 
 		for _, a := range r.Associations {
 			_, err = u.client.DisassociateRouteTable(&awsec2.DisassociateRouteTableInput{AssociationId: a.RouteTableAssociationId})

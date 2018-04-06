@@ -3,6 +3,7 @@ package ec2
 import (
 	"fmt"
 
+	"github.com/aws/aws-sdk-go/aws"
 	awsec2 "github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/genevieve/leftovers/aws/common"
 )
@@ -24,44 +25,27 @@ func NewVolumes(client volumesClient, logger logger) Volumes {
 	}
 }
 
-func (v Volumes) ListOnly(filter string) ([]common.Deletable, error) {
-	return v.get(filter)
-}
-
 func (v Volumes) List(filter string) ([]common.Deletable, error) {
-	resources, err := v.get(filter)
-	if err != nil {
-		return nil, err
-	}
-
-	var delete []common.Deletable
-	for _, r := range resources {
-		proceed := v.logger.PromptWithDetails(r.Type(), r.Name())
-		if !proceed {
-			continue
-		}
-
-		delete = append(delete, r)
-	}
-
-	return delete, nil
-}
-
-func (v Volumes) get(filter string) ([]common.Deletable, error) {
-	output, err := v.client.DescribeVolumes(&awsec2.DescribeVolumesInput{})
+	output, err := v.client.DescribeVolumes(&awsec2.DescribeVolumesInput{
+		Filters: []*awsec2.Filter{{
+			Name:   aws.String("status"),
+			Values: []*string{aws.String("available")},
+		}},
+	})
 	if err != nil {
 		return nil, fmt.Errorf("Describe EC2 Volumes: %s", err)
 	}
 
 	var resources []common.Deletable
 	for _, volume := range output.Volumes {
-		resource := NewVolume(v.client, volume.VolumeId)
+		r := NewVolume(v.client, volume.VolumeId, volume.State)
 
-		if *volume.State != "available" {
+		proceed := v.logger.PromptWithDetails(r.Type(), r.Name())
+		if !proceed {
 			continue
 		}
 
-		resources = append(resources, resource)
+		resources = append(resources, r)
 	}
 
 	return resources, nil

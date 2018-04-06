@@ -16,13 +16,15 @@ var _ = Describe("Volume", func() {
 		volume ec2.Volume
 		client *fakes.VolumesClient
 		id     *string
+		state  *string
 	)
 
 	BeforeEach(func() {
 		client = &fakes.VolumesClient{}
 		id = aws.String("the-id")
+		state = aws.String("available")
 
-		volume = ec2.NewVolume(client, id)
+		volume = ec2.NewVolume(client, id, state)
 	})
 
 	Describe("Delete", func() {
@@ -48,7 +50,7 @@ var _ = Describe("Volume", func() {
 
 	Describe("Name", func() {
 		It("returns the identifier", func() {
-			Expect(volume.Name()).To(Equal("the-id"))
+			Expect(volume.Name()).To(Equal("the-id (State:available)"))
 		})
 	})
 

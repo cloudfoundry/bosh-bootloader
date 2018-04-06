@@ -12,7 +12,6 @@ import (
 )
 
 type resource interface {
-	ListOnly(filter string) ([]Deletable, error)
 	List(filter string) ([]Deletable, error)
 }
 
@@ -22,9 +21,11 @@ type Leftovers struct {
 }
 
 func (l Leftovers) List(filter string) {
+	l.logger.NoConfirm()
+
 	var all []Deletable
 	for _, r := range l.resources {
-		list, err := r.ListOnly(filter)
+		list, err := r.List(filter)
 		if err != nil {
 			l.logger.Println(color.YellowString(err.Error()))
 		}

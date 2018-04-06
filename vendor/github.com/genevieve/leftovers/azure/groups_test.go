@@ -30,7 +30,7 @@ var _ = Describe("Groups", func() {
 
 	Describe("List", func() {
 		BeforeEach(func() {
-			logger.PromptCall.Returns.Proceed = true
+			logger.PromptWithDetailsCall.Returns.Proceed = true
 			client.ListCall.Returns.Output = resources.GroupListResult{
 				Value: &[]resources.Group{{
 					Name: aws.String("banana-group"),
@@ -43,6 +43,7 @@ var _ = Describe("Groups", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(client.ListCall.CallCount).To(Equal(1))
+			Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(1))
 
 			Expect(items).To(HaveLen(1))
 		})
@@ -60,14 +61,16 @@ var _ = Describe("Groups", func() {
 
 		Context("when the user responds no to the prompt", func() {
 			BeforeEach(func() {
-				logger.PromptCall.Returns.Proceed = false
+				logger.PromptWithDetailsCall.Returns.Proceed = false
 			})
 
 			It("does not return it in the list", func() {
 				items, err := groups.List(filter)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(logger.PromptCall.Receives.Message).To(Equal("Are you sure you want to delete Resource Group banana-group?"))
+				Expect(logger.PromptWithDetailsCall.Receives.Type).To(Equal("Resource Group"))
+				Expect(logger.PromptWithDetailsCall.Receives.Name).To(Equal("banana-group"))
+
 				Expect(items).To(HaveLen(0))
 			})
 		})
@@ -77,7 +80,7 @@ var _ = Describe("Groups", func() {
 				items, err := groups.List("grape")
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(logger.PromptCall.CallCount).To(Equal(0))
+				Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(0))
 				Expect(items).To(HaveLen(0))
 			})
 		})

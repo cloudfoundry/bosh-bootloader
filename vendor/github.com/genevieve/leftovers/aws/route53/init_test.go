@@ -1,4 +1,4 @@
-package ghttp_test
+package route53_test
 
 import (
 	. "github.com/onsi/ginkgo"
@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestGHTTP(t *testing.T) {
+func TestRoute53(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "GHTTP Suite")
+	RunSpecs(t, "aws/route53")
 }

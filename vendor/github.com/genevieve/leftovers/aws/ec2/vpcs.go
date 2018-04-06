@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/aws/aws-sdk-go/aws"
 	awsec2 "github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/genevieve/leftovers/aws/common"
 )
@@ -33,48 +34,31 @@ func NewVpcs(client vpcsClient, logger logger, routes routeTables, subnets subne
 	}
 }
 
-func (v Vpcs) ListOnly(filter string) ([]common.Deletable, error) {
-	return v.get(filter)
-}
-
 func (v Vpcs) List(filter string) ([]common.Deletable, error) {
-	resources, err := v.get(filter)
-	if err != nil {
-		return nil, err
-	}
-
-	var delete []common.Deletable
-	for _, r := range resources {
-		proceed := v.logger.PromptWithDetails(r.Type(), r.Name())
-		if !proceed {
-			continue
-		}
-
-		delete = append(delete, r)
-	}
-
-	return delete, nil
-}
-
-func (v Vpcs) get(filter string) ([]common.Deletable, error) {
-	output, err := v.client.DescribeVpcs(&awsec2.DescribeVpcsInput{})
+	output, err := v.client.DescribeVpcs(&awsec2.DescribeVpcsInput{
+		Filters: []*awsec2.Filter{{
+			Name:   aws.String("isDefault"),
+			Values: []*string{aws.String("false")},
+		}},
+	})
 	if err != nil {
 		return nil, fmt.Errorf("Describe EC2 VPCs: %s", err)
 	}
 
 	var resources []common.Deletable
 	for _, vpc := range output.Vpcs {
-		resource := NewVpc(v.client, v.routes, v.subnets, v.gateways, v.resourceTags, vpc.VpcId, vpc.Tags)
+		r := NewVpc(v.client, v.routes, v.subnets, v.gateways, v.resourceTags, vpc.VpcId, vpc.Tags)
 
-		if *vpc.IsDefault {
+		if !strings.Contains(r.Name(), filter) {
 			continue
 		}
 
-		if !strings.Contains(resource.Name(), filter) {
+		proceed := v.logger.PromptWithDetails(r.Type(), r.Name())
+		if !proceed {
 			continue
 		}
 
-		resources = append(resources, resource)
+		resources = append(resources, r)
 	}
 
 	return resources, nil

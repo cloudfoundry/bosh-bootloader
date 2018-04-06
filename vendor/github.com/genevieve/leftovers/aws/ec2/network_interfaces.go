@@ -25,30 +25,7 @@ func NewNetworkInterfaces(client networkInterfacesClient, logger logger) Network
 	}
 }
 
-func (e NetworkInterfaces) ListOnly(filter string) ([]common.Deletable, error) {
-	return e.get(filter)
-}
-
 func (e NetworkInterfaces) List(filter string) ([]common.Deletable, error) {
-	resources, err := e.get(filter)
-	if err != nil {
-		return nil, err
-	}
-
-	var delete []common.Deletable
-	for _, r := range resources {
-		proceed := e.logger.PromptWithDetails(r.Type(), r.Name())
-		if !proceed {
-			continue
-		}
-
-		delete = append(delete, r)
-	}
-
-	return delete, nil
-}
-
-func (e NetworkInterfaces) get(filter string) ([]common.Deletable, error) {
 	networkInterfaces, err := e.client.DescribeNetworkInterfaces(&awsec2.DescribeNetworkInterfacesInput{})
 	if err != nil {
 		return nil, fmt.Errorf("Describing EC2 Network Interfaces: %s", err)
@@ -56,13 +33,18 @@ func (e NetworkInterfaces) get(filter string) ([]common.Deletable, error) {
 
 	var resources []common.Deletable
 	for _, i := range networkInterfaces.NetworkInterfaces {
-		resource := NewNetworkInterface(e.client, i.NetworkInterfaceId, i.TagSet)
+		r := NewNetworkInterface(e.client, i.NetworkInterfaceId, i.TagSet)
 
-		if !strings.Contains(resource.Name(), filter) {
+		if !strings.Contains(r.Name(), filter) {
 			continue
 		}
 
-		resources = append(resources, resource)
+		proceed := e.logger.PromptWithDetails(r.Type(), r.Name())
+		if !proceed {
+			continue
+		}
+
+		resources = append(resources, r)
 	}
 
 	return resources, nil

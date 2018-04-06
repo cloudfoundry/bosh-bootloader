@@ -25,30 +25,7 @@ func NewKeyPairs(client keyPairsClient, logger logger) KeyPairs {
 	}
 }
 
-func (k KeyPairs) ListOnly(filter string) ([]common.Deletable, error) {
-	return k.get(filter)
-}
-
 func (k KeyPairs) List(filter string) ([]common.Deletable, error) {
-	resources, err := k.get(filter)
-	if err != nil {
-		return nil, err
-	}
-
-	var delete []common.Deletable
-	for _, r := range resources {
-		proceed := k.logger.PromptWithDetails(r.Type(), r.Name())
-		if !proceed {
-			continue
-		}
-
-		delete = append(delete, r)
-	}
-
-	return delete, nil
-}
-
-func (k KeyPairs) get(filter string) ([]common.Deletable, error) {
 	keyPairs, err := k.client.DescribeKeyPairs(&awsec2.DescribeKeyPairsInput{})
 	if err != nil {
 		return nil, fmt.Errorf("Describing EC2 Key Pairs: %s", err)
@@ -56,13 +33,18 @@ func (k KeyPairs) get(filter string) ([]common.Deletable, error) {
 
 	var resources []common.Deletable
 	for _, key := range keyPairs.KeyPairs {
-		resource := NewKeyPair(k.client, key.KeyName)
+		r := NewKeyPair(k.client, key.KeyName)
 
-		if !strings.Contains(resource.Name(), filter) {
+		if !strings.Contains(r.Name(), filter) {
 			continue
 		}
 
-		resources = append(resources, resource)
+		proceed := k.logger.PromptWithDetails(r.Type(), r.Name())
+		if !proceed {
+			continue
+		}
+
+		resources = append(resources, r)
 	}
 
 	return resources, nil
