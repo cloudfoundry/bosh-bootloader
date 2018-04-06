@@ -10,9 +10,9 @@ type BOSH struct {
 	DirectorSSLCA          string                 `json:"directorSSLCA"`
 	DirectorSSLCertificate string                 `json:"directorSSLCertificate"`
 	DirectorSSLPrivateKey  string                 `json:"directorSSLPrivateKey"`
-	Variables              string                 `json:"variables"`
-	State                  map[string]interface{} `json:"state"`
-	Manifest               string                 `json:"manifest"`
+	Variables              string                 `json:"variables,omitempty"`
+	State                  map[string]interface{} `json:"state,omitempty"`
+	Manifest               string                 `json:"manifest,omitempty"`
 }
 
 func (b BOSH) IsEmpty() bool {

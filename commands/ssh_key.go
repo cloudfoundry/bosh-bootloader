@@ -38,12 +38,7 @@ func NewDirectorSSHKey(logger logger, stateValidator stateValidator, sshKeyGette
 }
 
 func (s SSHKey) CheckFastFails(subcommandFlags []string, state storage.State) error {
-	err := s.stateValidator.Validate()
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return s.stateValidator.Validate()
 }
 
 func (s SSHKey) Execute(subcommandFlags []string, state storage.State) error {

@@ -303,6 +303,10 @@ func (m *Manager) DeleteDirector(state storage.State, terraformOutputs terraform
 }
 
 func (m *Manager) DeleteJumpbox(state storage.State, terraformOutputs terraform.Outputs) error {
+	if state.Jumpbox.IsEmpty() {
+		return nil
+	}
+
 	m.logger.Step("destroying jumpbox")
 
 	varsDir, err := m.stateStore.GetVarsDir()

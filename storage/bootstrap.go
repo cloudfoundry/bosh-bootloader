@@ -26,36 +26,34 @@ func NewStateBootstrap(logger logger, bblVersion string) StateBootstrap {
 }
 
 func (b StateBootstrap) GetState(dir string) (State, error) {
-	state := State{}
-
 	_, err := os.Stat(dir)
 	if err != nil {
-		return state, err
+		return State{}, err
 	}
 
 	file, err := os.Open(filepath.Join(dir, STATE_FILE))
 	if err != nil {
 		if os.IsNotExist(err) {
-			return state, nil
+			return State{}, nil
 		}
-		return state, err
+		return State{}, err
 	}
 
+	state := State{}
 	err = json.NewDecoder(file).Decode(&state)
 	if err != nil {
 		return state, err
 	}
 
-	emptyState := State{}
-	if reflect.DeepEqual(state, emptyState) {
-		state = State{
+	if reflect.DeepEqual(state, State{}) {
+		return State{
 			Version:    STATE_SCHEMA,
 			BBLVersion: b.bblVersion,
-		}
-	} else {
-		if state.BBLVersion == "" {
-			state.BBLVersion = b.getBBLVersion(state.Version)
-		}
+		}, nil
+	}
+
+	if state.BBLVersion == "" {
+		state.BBLVersion = b.getBBLVersion(state.Version)
 	}
 
 	if state.Version < 3 {
