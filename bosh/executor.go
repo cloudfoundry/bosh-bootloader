@@ -102,9 +102,7 @@ func (e Executor) PlanJumpbox(input DirInput, deploymentDir, iaas string) error 
 		if err != nil {
 			return fmt.Errorf("Jumpbox write vsphere network ops file: %s", err) //not tested
 		}
-	}
-
-	if iaas == "openstack" {
+	} else if iaas == "openstack" {
 		path := filepath.Join(deploymentDir, "openstack-keystone-v3-ops.yml")
 		sharedArgs = append(sharedArgs, "-o", path)
 		err := e.fs.WriteFile(path, []byte(OpenStackJumpboxKeystoneV3Ops), os.ModePerm)
@@ -115,10 +113,7 @@ func (e Executor) PlanJumpbox(input DirInput, deploymentDir, iaas string) error 
 
 	jumpboxState := filepath.Join(input.VarsDir, "jumpbox-state.json")
 
-	boshArgs := append([]string{
-		filepath.Join(deploymentDir, "jumpbox.yml"),
-		"--state", jumpboxState,
-	}, sharedArgs...)
+	boshArgs := append([]string{filepath.Join(deploymentDir, "jumpbox.yml"), "--state", jumpboxState}, sharedArgs...)
 
 	switch iaas {
 	case "aws":
@@ -182,17 +177,11 @@ func (e Executor) getDirectorSetupFiles(stateDir, deploymentDir, iaas string) []
 			dest:     filepath.Join(statePath, "bosh-director-ephemeral-ip-ops.yml"),
 			contents: []byte(GCPBoshDirectorEphemeralIPOps),
 		})
-	}
-	if iaas == "aws" {
+	} else if iaas == "aws" {
 		files = append(files, setupFile{
 			source:   filepath.Join(assetPath, "bosh-director-ephemeral-ip-ops.yml"),
 			dest:     filepath.Join(statePath, "bosh-director-ephemeral-ip-ops.yml"),
 			contents: []byte(AWSBoshDirectorEphemeralIPOps),
-		})
-		files = append(files, setupFile{
-			source:   filepath.Join(assetPath, "bosh-director-encrypt-disk-ops.yml"),
-			dest:     filepath.Join(statePath, "bosh-director-encrypt-disk-ops.yml"),
-			contents: []byte(AWSEncryptDiskOps),
 		})
 	}
 
@@ -208,13 +197,11 @@ func (e Executor) getDirectorOpsFiles(stateDir, deploymentDir, iaas string) []st
 	}
 	if iaas == "gcp" {
 		files = append(files, filepath.Join(stateDir, "bbl-ops-files", iaas, "bosh-director-ephemeral-ip-ops.yml"))
-	}
-	if iaas == "aws" {
+	} else if iaas == "aws" {
 		files = append(files, filepath.Join(stateDir, "bbl-ops-files", iaas, "bosh-director-ephemeral-ip-ops.yml"))
 		files = append(files, filepath.Join(deploymentDir, iaas, "iam-instance-profile.yml"))
-		files = append(files, filepath.Join(stateDir, "bbl-ops-files", iaas, "bosh-director-encrypt-disk-ops.yml"))
-	}
-	if iaas == "vsphere" {
+		files = append(files, filepath.Join(deploymentDir, iaas, "encrypted-disk.yml"))
+	} else if iaas == "vsphere" {
 		files = append(files, filepath.Join(deploymentDir, "vsphere", "resource-pool.yml"))
 	}
 	return files
@@ -243,12 +230,7 @@ func (e Executor) PlanDirector(input DirInput, deploymentDir, iaas string) error
 
 	boshState := filepath.Join(input.VarsDir, "bosh-state.json")
 
-	boshPath := e.command.GetBOSHPath()
-
-	boshArgs := append([]string{
-		filepath.Join(deploymentDir, "bosh.yml"),
-		"--state", boshState,
-	}, sharedArgs...)
+	boshArgs := append([]string{filepath.Join(deploymentDir, "bosh.yml"), "--state", boshState}, sharedArgs...)
 
 	switch iaas {
 	case "aws":
@@ -280,6 +262,8 @@ func (e Executor) PlanDirector(input DirInput, deploymentDir, iaas string) error
 			"-v", `openstack_password="${BBL_OPENSTACK_PASSWORD}"`,
 		)
 	}
+
+	boshPath := e.command.GetBOSHPath()
 
 	createEnvCmd := []byte(formatScript(boshPath, input.StateDir, "create-env", boshArgs))
 	err := e.fs.WriteFile(filepath.Join(input.StateDir, "create-director.sh"), createEnvCmd, 0750)

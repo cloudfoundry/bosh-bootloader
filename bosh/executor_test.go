@@ -356,7 +356,7 @@ var _ = Describe("Executor", func() {
 					"-o", filepath.Join(relativeDeploymentDir, "credhub.yml"),
 					"-o", filepath.Join(relativeStateDir, "bbl-ops-files", "aws", "bosh-director-ephemeral-ip-ops.yml"),
 					"-o", filepath.Join(relativeDeploymentDir, "aws", "iam-instance-profile.yml"),
-					"-o", filepath.Join(relativeStateDir, "bbl-ops-files", "aws", "bosh-director-encrypt-disk-ops.yml"),
+					"-o", filepath.Join(relativeDeploymentDir, "aws", "encrypted-disk.yml"),
 					"-v", `access_key_id="${BBL_AWS_ACCESS_KEY_ID}"`,
 					"-v", `secret_access_key="${BBL_AWS_SECRET_ACCESS_KEY}"`,
 				}
@@ -369,32 +369,12 @@ var _ = Describe("Executor", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				ipOpsFile := filepath.Join(stateDir, "bbl-ops-files", "aws", "bosh-director-ephemeral-ip-ops.yml")
-				encryptDiskOpsFile := filepath.Join(stateDir, "bbl-ops-files", "aws", "bosh-director-encrypt-disk-ops.yml")
 
 				ipOpsFileContents, err := fs.ReadFile(ipOpsFile)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(string(ipOpsFileContents)).To(Equal(`
 - type: replace
   path: /resource_pools/name=vms/cloud_properties/auto_assign_public_ip?
-  value: true
-`))
-				encryptDiskOpsFileContents, err := fs.ReadFile(encryptDiskOpsFile)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(string(encryptDiskOpsFileContents)).To(Equal(`---
-- type: replace
-  path: /cloud_provider/properties/aws/kms_key_arn?
-  value: ((kms_key_arn))
-
-- type: replace
-  path: /cloud_provider/properties/aws/encrypted?
-  value: true
-
-- type: replace
-  path: /instance_groups/name=bosh/properties/aws/kms_key_arn?
-  value: ((kms_key_arn))
-
-- type: replace
-  path: /instance_groups/name=bosh/properties/aws/encrypted?
   value: true
 `))
 			})
