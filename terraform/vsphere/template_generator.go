@@ -27,6 +27,15 @@ variable "vcenter_ip" {}
 variable "vcenter_dc" {}
 variable "vcenter_rp" {}
 variable "vcenter_ds" {}
+variable "vcenter_templates_folder" {
+	default = "%s_templates"
+}
+variable "vcenter_vms_folder" {
+	default = "%s_vms"
+}
+variable "vcenter_disks_folder" {
+	default = "%s"
+}
 
 output "internal_cidr" { value = "${var.vsphere_subnet}" }
 output "internal_gw" { value = "${var.internal_gw}" }
@@ -37,12 +46,12 @@ output "external_ip" { value = "${var.jumpbox_ip}" }
 output "jumpbox__internal_ip" { value = "${var.jumpbox_ip}" }
 output "director__internal_ip" { value = "${var.director_internal_ip}" }
 output "director_name" { value = "bosh-${var.env_id}" }
-output "vcenter_disks" { value = "${var.network_name}" }
-output "vcenter_vms" { value = "${var.network_name}_vms" }
-output "vcenter_templates" { value = "${var.network_name}_templates" }
+output "vcenter_disks" { value = "${var.vcenter_disks_folder}" }
+output "vcenter_vms" { value = "${var.vcenter_vms_folder}" }
+output "vcenter_templates" { value = "${var.vcenter_templates_folder}" }
 output "vcenter_ip" { value = "${var.vcenter_ip}" }
 output "vcenter_dc" { value = "${var.vcenter_dc}" }
 output "vcenter_rp" { value = "${var.vcenter_rp}" }
 output "vcenter_ds" { value = "${var.vcenter_ds}" }
-`)
+`, state.VSphere.Network, state.VSphere.Network, state.VSphere.Network)
 }
