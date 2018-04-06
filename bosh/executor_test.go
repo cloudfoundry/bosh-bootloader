@@ -18,89 +18,85 @@ import (
 )
 
 var _ = Describe("Executor", func() {
-	var fs *afero.Afero
+	var (
+		fs                    *afero.Afero
+		cmd                   *fakes.BOSHCommand
+		stateDir              string
+		deploymentDir         string
+		varsDir               string
+		relativeDeploymentDir string
+		relativeVarsDir       string
+		relativeStateDir      string
+		dirInput              bosh.DirInput
+
+		executor bosh.Executor
+	)
+
 	BeforeEach(func() {
 		fs = &afero.Afero{afero.NewMemMapFs()}
+		cmd = &fakes.BOSHCommand{}
+		cmd.RunStub = func(stdout io.Writer, workingDirectory string, args []string) error {
+			stdout.Write([]byte("some-manifest"))
+			return nil
+		}
+		cmd.GetBOSHPathCall.Returns.Path = "bosh-path"
+
+		var err error
+		stateDir, err = fs.TempDir("", "")
+		Expect(err).NotTo(HaveOccurred())
+
+		deploymentDir = filepath.Join(stateDir, "deployment")
+		err = fs.Mkdir(deploymentDir, os.ModePerm)
+		Expect(err).NotTo(HaveOccurred())
+
+		varsDir = filepath.Join(stateDir, "vars")
+		err = fs.Mkdir(varsDir, os.ModePerm)
+		Expect(err).NotTo(HaveOccurred())
+
+		relativeDeploymentDir = "${BBL_STATE_DIR}/deployment"
+		relativeVarsDir = "${BBL_STATE_DIR}/vars"
+		relativeStateDir = "${BBL_STATE_DIR}"
+
+		dirInput = bosh.DirInput{
+			VarsDir:  varsDir,
+			StateDir: stateDir,
+		}
+
+		executor = bosh.NewExecutor(cmd, fs)
 	})
 
 	Describe("PlanJumpbox", func() {
-		var (
-			cmd *fakes.BOSHCommand
-
-			stateDir              string
-			deploymentDir         string
-			relativeDeploymentDir string
-			relativeVarsDir       string
-
-			executor bosh.Executor
-			dirInput bosh.DirInput
-		)
-
-		BeforeEach(func() {
-			cmd = &fakes.BOSHCommand{}
-			cmd.RunStub = func(stdout io.Writer, workingDirectory string, args []string) error {
-				stdout.Write([]byte("some-manifest"))
-				return nil
-			}
-			cmd.GetBOSHPathCall.Returns.Path = "bosh-path"
-
-			var err error
-			stateDir, err = fs.TempDir("", "")
-			Expect(err).NotTo(HaveOccurred())
-
-			deploymentDir = filepath.Join(stateDir, "deployment")
-			err = fs.Mkdir(deploymentDir, os.ModePerm)
-			Expect(err).NotTo(HaveOccurred())
-
-			varsDir := filepath.Join(stateDir, "vars")
-			err = fs.Mkdir(varsDir, os.ModePerm)
-			Expect(err).NotTo(HaveOccurred())
-
-			relativeDeploymentDir = "${BBL_STATE_DIR}/deployment"
-			relativeVarsDir = "${BBL_STATE_DIR}/vars"
-
-			dirInput = bosh.DirInput{
-				VarsDir:  varsDir,
-				StateDir: stateDir,
-			}
-
-			executor = bosh.NewExecutor(cmd, fs)
-		})
-
 		It("writes bosh-deployment assets to the deployment dir", func() {
 			err := executor.PlanJumpbox(dirInput, deploymentDir, "aws")
 			Expect(err).NotTo(HaveOccurred())
 
-			simplePath := filepath.Join(deploymentDir, "no-external-ip.yml")
-			expectedContents := bosh.MustAsset("vendor/github.com/cppforlife/jumpbox-deployment/no-external-ip.yml")
+			By("writing bosh-deployment assets to the deployment dir", func() {
+				simplePath := filepath.Join(deploymentDir, "no-external-ip.yml")
+				expectedContents := bosh.MustAsset("vendor/github.com/cppforlife/jumpbox-deployment/no-external-ip.yml")
 
-			contents, err := fs.ReadFile(simplePath)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(contents).To(Equal(expectedContents))
+				contents, err := fs.ReadFile(simplePath)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(contents).To(Equal(expectedContents))
 
-			nestedPath := filepath.Join(deploymentDir, "vsphere", "cpi.yml")
-			expectedContents = bosh.MustAsset("vendor/github.com/cppforlife/jumpbox-deployment/vsphere/cpi.yml")
+				nestedPath := filepath.Join(deploymentDir, "vsphere", "cpi.yml")
+				expectedContents = bosh.MustAsset("vendor/github.com/cppforlife/jumpbox-deployment/vsphere/cpi.yml")
 
-			contents, err = fs.ReadFile(nestedPath)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(contents).To(Equal(expectedContents))
-		})
+				contents, err = fs.ReadFile(nestedPath)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(contents).To(Equal(expectedContents))
+			})
 
-		It("generates create-env args for jumpbox", func() {
-			err := executor.PlanJumpbox(dirInput, deploymentDir, "aws")
-			Expect(err).NotTo(HaveOccurred())
+			By("writing create-env and delete-env scripts", func() {
+				expectedArgs := []string{
+					fmt.Sprintf("%s/jumpbox.yml", relativeDeploymentDir),
+					"--state", fmt.Sprintf("%s/jumpbox-state.json", relativeVarsDir),
+					"--vars-store", fmt.Sprintf("%s/jumpbox-vars-store.yml", relativeVarsDir),
+					"--vars-file", fmt.Sprintf("%s/jumpbox-vars-file.yml", relativeVarsDir),
+					"-o", fmt.Sprintf("%s/aws/cpi.yml", relativeDeploymentDir),
+					"-v", `access_key_id="${BBL_AWS_ACCESS_KEY_ID}"`,
+					"-v", `secret_access_key="${BBL_AWS_SECRET_ACCESS_KEY}"`,
+				}
 
-			expectedArgs := []string{
-				fmt.Sprintf("%s/jumpbox.yml", relativeDeploymentDir),
-				"--state", fmt.Sprintf("%s/jumpbox-state.json", relativeVarsDir),
-				"--vars-store", fmt.Sprintf("%s/jumpbox-vars-store.yml", relativeVarsDir),
-				"--vars-file", fmt.Sprintf("%s/jumpbox-vars-file.yml", relativeVarsDir),
-				"-o", fmt.Sprintf("%s/aws/cpi.yml", relativeDeploymentDir),
-				"-v", `access_key_id="${BBL_AWS_ACCESS_KEY_ID}"`,
-				"-v", `secret_access_key="${BBL_AWS_SECRET_ACCESS_KEY}"`,
-			}
-
-			By("writing the create-env args to a shell script", func() {
 				expectedScript := formatScript("create-env", stateDir, expectedArgs)
 				scriptPath := fmt.Sprintf("%s/create-jumpbox.sh", stateDir)
 				shellScript, err := fs.ReadFile(scriptPath)
@@ -109,21 +105,17 @@ var _ = Describe("Executor", func() {
 				fileinfo, err := fs.Stat(scriptPath)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(fileinfo.Mode().String()).To(Equal("-rwxr-x---"))
-
 				Expect(string(shellScript)).To(Equal(expectedScript))
-			})
 
-			By("writing the delete-env args to a shell script", func() {
-				expectedScript := formatScript("delete-env", stateDir, expectedArgs)
-				scriptPath := fmt.Sprintf("%s/delete-jumpbox.sh", stateDir)
-				shellScript, err := fs.ReadFile(scriptPath)
+				expectedScript = formatScript("delete-env", stateDir, expectedArgs)
+				scriptPath = fmt.Sprintf("%s/delete-jumpbox.sh", stateDir)
+				shellScript, err = fs.ReadFile(scriptPath)
 				Expect(err).NotTo(HaveOccurred())
 
-				fileinfo, err := fs.Stat(scriptPath)
+				fileinfo, err = fs.Stat(scriptPath)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(fileinfo.Mode().String()).To(Equal("-rwxr-x---"))
 				Expect(err).NotTo(HaveOccurred())
-
 				Expect(string(shellScript)).To(Equal(expectedScript))
 			})
 		})
@@ -282,47 +274,6 @@ var _ = Describe("Executor", func() {
 	})
 
 	Describe("PlanDirector", func() {
-		var (
-			cmd *fakes.BOSHCommand
-
-			stateDir              string
-			deploymentDir         string
-			relativeDeploymentDir string
-			relativeVarsDir       string
-			relativeStateDir      string
-
-			executor bosh.Executor
-			dirInput bosh.DirInput
-		)
-
-		BeforeEach(func() {
-			cmd = &fakes.BOSHCommand{}
-			cmd.GetBOSHPathCall.Returns.Path = "bosh-path"
-
-			var err error
-			stateDir, err = fs.TempDir("", "")
-			Expect(err).NotTo(HaveOccurred())
-
-			deploymentDir = filepath.Join(stateDir, "deployment")
-			err = fs.Mkdir(deploymentDir, os.ModePerm)
-			Expect(err).NotTo(HaveOccurred())
-
-			varsDir := filepath.Join(stateDir, "vars")
-			err = fs.Mkdir(varsDir, os.ModePerm)
-			Expect(err).NotTo(HaveOccurred())
-
-			relativeDeploymentDir = "${BBL_STATE_DIR}/deployment"
-			relativeVarsDir = "${BBL_STATE_DIR}/vars"
-			relativeStateDir = "${BBL_STATE_DIR}"
-
-			dirInput = bosh.DirInput{
-				VarsDir:  varsDir,
-				StateDir: stateDir,
-			}
-
-			executor = bosh.NewExecutor(cmd, fs)
-		})
-
 		It("writes bosh-deployment assets to the deployment dir", func() {
 			err := executor.PlanDirector(dirInput, deploymentDir, "warden")
 			Expect(err).NotTo(HaveOccurred())
@@ -477,38 +428,18 @@ var _ = Describe("Executor", func() {
 	})
 
 	Describe("WriteDeploymentVars", func() {
-		var (
-			executor bosh.Executor
-			varsDir  string
-			dirInput bosh.DirInput
-		)
-
 		BeforeEach(func() {
-			var err error
-			cmd := &fakes.BOSHCommand{}
-			varsDir, err = fs.TempDir("", "")
-			Expect(err).NotTo(HaveOccurred())
-			stateDir, err := fs.TempDir("", "")
-			Expect(err).NotTo(HaveOccurred())
-
-			executor = bosh.NewExecutor(cmd, fs)
-
-			dirInput = bosh.DirInput{
-				Deployment: "some-deployment",
-				StateDir:   stateDir,
-				VarsDir:    varsDir,
-			}
+			dirInput.Deployment = "some-deployment"
 		})
 
 		It("writes the deployment vars yml file", func() {
-			By("writing deployment vars to the state dir", func() {
-				err := executor.WriteDeploymentVars(dirInput, "some-deployment-vars")
-				Expect(err).NotTo(HaveOccurred())
-				deploymentVars, err := fs.ReadFile(filepath.Join(varsDir, "some-deployment-vars-file.yml"))
-				Expect(err).NotTo(HaveOccurred())
+			err := executor.WriteDeploymentVars(dirInput, "some-deployment-vars")
+			Expect(err).NotTo(HaveOccurred())
 
-				Expect(string(deploymentVars)).To(Equal("some-deployment-vars"))
-			})
+			deploymentVars, err := fs.ReadFile(filepath.Join(varsDir, "some-deployment-vars-file.yml"))
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(string(deploymentVars)).To(Equal("some-deployment-vars"))
 		})
 	})
 
@@ -696,7 +627,6 @@ var _ = Describe("Executor", func() {
 
 	Describe("DeleteEnv", func() {
 		var (
-			cmd      *fakes.BOSHCommand
 			executor bosh.Executor
 
 			deleteEnvPath string
@@ -711,7 +641,6 @@ var _ = Describe("Executor", func() {
 			fs = &afero.Afero{afero.NewOsFs()} // real os fs so we can exec scripts...
 
 			var err error
-			cmd = &fakes.BOSHCommand{}
 			varsDir, err = fs.TempDir("", "")
 			Expect(err).NotTo(HaveOccurred())
 			stateDir, err = fs.TempDir("", "")
@@ -927,47 +856,38 @@ var _ = Describe("Executor", func() {
 			executor = bosh.NewExecutor(cmd, fs)
 		})
 
-		It("passes the correct args and dir to run command", func() {
-			_, err := executor.Version()
+		It("returns the correctly trimmed version", func() {
+			version, err := executor.Version()
 			Expect(err).NotTo(HaveOccurred())
 
 			_, _, args := cmd.RunArgsForCall(0)
 			Expect(args).To(Equal([]string{"-v"}))
-		})
 
-		It("returns the correctly trimmed version", func() {
-			version, err := executor.Version()
-			Expect(err).NotTo(HaveOccurred())
 			Expect(version).To(Equal("1.1.1"))
 		})
 
-		Context("failure cases", func() {
-			Context("when the run cmd fails", func() {
-				BeforeEach(func() {
-					cmd.RunReturns(errors.New("failed to run cmd"))
-				})
-
-				It("returns an error", func() {
-					_, err := executor.Version()
-					Expect(err).To(MatchError("failed to run cmd"))
-				})
+		Context("when the run cmd fails", func() {
+			BeforeEach(func() {
+				cmd.RunReturns(errors.New("banana"))
 			})
 
-			Context("when the version cannot be parsed", func() {
-				var expectedError error
+			It("returns an error", func() {
+				_, err := executor.Version()
+				Expect(err).To(MatchError("banana"))
+			})
+		})
 
-				BeforeEach(func() {
-					expectedError = bosh.NewBOSHVersionError(errors.New("BOSH version could not be parsed"))
-					cmd.RunStub = func(stdout io.Writer, workingDirectory string, args []string) error {
-						stdout.Write([]byte(""))
-						return nil
-					}
-				})
+		Context("when the version cannot be parsed", func() {
+			BeforeEach(func() {
+				cmd.RunStub = func(stdout io.Writer, workingDirectory string, args []string) error {
+					stdout.Write([]byte(""))
+					return nil
+				}
+			})
 
-				It("returns a bosh version error", func() {
-					_, err := executor.Version()
-					Expect(err).To(Equal(expectedError))
-				})
+			It("returns a bosh version error", func() {
+				_, err := executor.Version()
+				Expect(err).To(MatchError("BOSH version could not be parsed"))
 			})
 		})
 	})
