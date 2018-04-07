@@ -110,7 +110,7 @@
   branch = "master"
   name = "github.com/genevieve/cartographer"
   packages = ["."]
-  revision = "d7d5e9e546c8fcd6a568b07888e5b14783511137"
+  revision = "87ee417c1cc2b74aa18c95deadb7ec977549f585"
 
 [[projects]]
   branch = "master"

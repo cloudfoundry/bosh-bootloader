@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -15,7 +14,10 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
-var redactedError = "Some output has been redacted, use `bbl latest-error` to see it or run again with --debug for additional debug output"
+const (
+	TFSTATE        = "terraform.tfstate"
+	REDACTED_ERROR = "Some output has been redacted, use `bbl latest-error` to see it or run again with --debug for additional debug output"
+)
 
 type Executor struct {
 	cmd          terraformCmd
@@ -126,7 +128,7 @@ func (e Executor) runTFCommandWithEnvs(args, envs []string) error {
 		return err
 	}
 
-	tfStatePath := filepath.Join(varsDir, "terraform.tfstate")
+	tfStatePath := filepath.Join(varsDir, TFSTATE)
 
 	terraformDir, err := e.stateStore.GetTerraformDir()
 	if err != nil {
@@ -161,7 +163,7 @@ func (e Executor) runTFCommandWithEnvs(args, envs []string) error {
 		if e.debug {
 			return err
 		}
-		return fmt.Errorf(redactedError)
+		return fmt.Errorf(REDACTED_ERROR)
 	}
 
 	return nil
@@ -222,7 +224,7 @@ func (e Executor) Outputs() (map[string]interface{}, error) {
 		return map[string]interface{}{}, err
 	}
 
-	tfstate := filepath.Join(varsDir, "terraform.tfstate")
+	tfstate := filepath.Join(varsDir, TFSTATE)
 
 	outputs, err := e.carto.GetMap(tfstate)
 	if err != nil {
@@ -233,34 +235,19 @@ func (e Executor) Outputs() (map[string]interface{}, error) {
 }
 
 func (e Executor) IsPaved() (bool, error) {
-	terraformDir, err := e.stateStore.GetTerraformDir()
-	if err != nil {
-		return false, err
-	}
-
-	err = e.cmd.Run(ioutil.Discard, terraformDir, []string{"init"})
-	if err != nil {
-		return false, fmt.Errorf("Run terraform init in terraform dir: %s", err)
-	}
-
 	varsDir, err := e.stateStore.GetVarsDir()
 	if err != nil {
 		return false, err
 	}
 
-	buffer := bytes.NewBuffer([]byte{})
-	args := []string{"show"}
-	_, err = e.fs.Stat(filepath.Join(varsDir, "terraform.tfstate"))
-	if err == nil {
-		args = append(args, filepath.Join(varsDir, "terraform.tfstate"))
-	}
+	tfstate := filepath.Join(varsDir, TFSTATE)
 
-	err = e.bufferingCmd.Run(buffer, terraformDir, args)
+	outputs, err := e.carto.GetMap(tfstate)
 	if err != nil {
-		return false, fmt.Errorf("Run terraform show: %s", err)
+		return false, err
 	}
 
-	if strings.TrimSpace(string(buffer.Bytes())) == "No state." {
+	if len(outputs) == 0 {
 		return false, nil
 	}
 
