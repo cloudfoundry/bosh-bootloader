@@ -34,8 +34,8 @@ type boshManager interface {
 	CreateDirector(bblState storage.State, terraformOutputs terraform.Outputs) (storage.State, error)
 	InitializeJumpbox(bblState storage.State) error
 	CreateJumpbox(bblState storage.State, terraformOutputs terraform.Outputs) (storage.State, error)
-	DeleteDirector(bblState storage.State, terraformOutputs terraform.Outputs) error
-	DeleteJumpbox(bblState storage.State, terraformOutputs terraform.Outputs) error
+	DeleteDirector(bblState storage.State) error
+	DeleteJumpbox(bblState storage.State) error
 	GetDirectorDeploymentVars(string) (string, error)
 	GetJumpboxDeploymentVars(string) (string, error)
 	Path() string
