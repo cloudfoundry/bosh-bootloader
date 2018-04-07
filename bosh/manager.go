@@ -130,7 +130,7 @@ func (m *Manager) CreateJumpbox(state storage.State, terraformOutputs terraform.
 		VarsDir:    varsDir,
 	}
 
-	err = m.executor.WriteDeploymentVars(dirInput, m.GetJumpboxDeploymentVars(state, terraformOutputs))
+	err = m.executor.WriteDeploymentVars(dirInput, m.GetJumpboxDeploymentVars(terraformOutputs))
 	if err != nil {
 		return storage.State{}, fmt.Errorf("Write deployment vars: %s", err)
 	}
@@ -209,7 +209,7 @@ func (m *Manager) CreateDirector(state storage.State, terraformOutputs terraform
 		VarsDir:    varsDir,
 	}
 
-	err = m.executor.WriteDeploymentVars(dirInput, m.GetDirectorDeploymentVars(state, terraformOutputs))
+	err = m.executor.WriteDeploymentVars(dirInput, m.GetDirectorDeploymentVars(terraformOutputs))
 	if err != nil {
 		return storage.State{}, fmt.Errorf("Write deployment vars: %s", err)
 	}
@@ -270,7 +270,7 @@ func (m *Manager) DeleteDirector(state storage.State, terraformOutputs terraform
 		VarsDir:    varsDir,
 	}
 
-	err = m.executor.WriteDeploymentVars(dirInput, m.GetDirectorDeploymentVars(state, terraformOutputs))
+	err = m.executor.WriteDeploymentVars(dirInput, m.GetDirectorDeploymentVars(terraformOutputs))
 	if err != nil {
 		return fmt.Errorf("Write deployment vars: %s", err)
 	}
@@ -322,7 +322,7 @@ func (m *Manager) DeleteJumpbox(state storage.State, terraformOutputs terraform.
 		VarsDir:    varsDir,
 	}
 
-	err = m.executor.WriteDeploymentVars(dirInput, m.GetJumpboxDeploymentVars(state, terraformOutputs))
+	err = m.executor.WriteDeploymentVars(dirInput, m.GetJumpboxDeploymentVars(terraformOutputs))
 	if err != nil {
 		return fmt.Errorf("Write deployment vars: %s", err)
 	}
@@ -335,7 +335,7 @@ func (m *Manager) DeleteJumpbox(state storage.State, terraformOutputs terraform.
 	return nil
 }
 
-func (m *Manager) GetJumpboxDeploymentVars(state storage.State, terraformOutputs terraform.Outputs) string {
+func (m *Manager) GetJumpboxDeploymentVars(terraformOutputs terraform.Outputs) string {
 	allOutputs := map[string]interface{}{}
 	for k, v := range terraformOutputs.Map {
 		if strings.HasPrefix(k, "director__") || strings.HasPrefix(k, "jumpbox__") {
@@ -367,7 +367,7 @@ func mustMarshal(yamlStruct interface{}) []byte {
 	return yamlBytes
 }
 
-func (m *Manager) GetDirectorDeploymentVars(state storage.State, terraformOutputs terraform.Outputs) string {
+func (m *Manager) GetDirectorDeploymentVars(terraformOutputs terraform.Outputs) string {
 	allOutputs := map[string]interface{}{}
 	for k, v := range terraformOutputs.Map {
 		if strings.HasPrefix(k, "director__") || strings.HasPrefix(k, "jumpbox__") {
