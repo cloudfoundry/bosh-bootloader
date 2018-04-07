@@ -90,6 +90,7 @@ func main() {
 	certificateValidator := certs.NewValidator()
 	lbArgsHandler := commands.NewLBArgsHandler(certificateValidator)
 	sshCmd := ssh.NewCmd(os.Stdin, os.Stdout, os.Stderr)
+	carto := cartographer.NewCartographer()
 
 	// Terraform
 	terraformOutputBuffer := bytes.NewBuffer([]byte{})
@@ -107,7 +108,7 @@ func main() {
 		terraformCmd = bufferingCmd
 		out = ioutil.Discard
 	}
-	terraformExecutor := terraform.NewExecutor(terraformCmd, bufferingCmd, stateStore, afs, appConfig.Global.Debug, out)
+	terraformExecutor := terraform.NewExecutor(terraformCmd, bufferingCmd, stateStore, afs, appConfig.Global.Debug, out, carto)
 
 	// BOSH
 	hostKey := proxy.NewHostKey()
@@ -121,7 +122,6 @@ func main() {
 	sshKeyGetter := bosh.NewSSHKeyGetter(stateStore, afs)
 	allProxyGetter := bosh.NewAllProxyGetter(sshKeyGetter, afs)
 	credhubGetter := bosh.NewCredhubGetter(stateStore, afs)
-	carto := cartographer.NewCartographer()
 	boshManager := bosh.NewManager(boshExecutor, logger, stateStore, sshKeyGetter, afs, carto)
 	boshClientProvider := bosh.NewClientProvider(socks5Proxy, sshKeyGetter)
 

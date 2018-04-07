@@ -35,20 +35,17 @@ var _ = Describe("Cartographer", func() {
 			Expect(yml).To(HelpfullyMatchYAML(expectedYml))
 		})
 
-		PContext("when there is a prefix", func() {})
-		PContext("when no dest is provided", func() {})
-
 		Context("when the source file path is invalid", func() {
 			It("returns an error", func() {
 				_, err := carto.Ymlize("banana")
-				Expect(err).To(MatchError("open banana: no such file or directory"))
+				Expect(err).To(MatchError("Read terraform.tfstate: open banana: no such file or directory"))
 			})
 		})
 
 		Context("when the source file content is invalid", func() {
 			It("returns an error", func() {
 				_, err := carto.Ymlize("fixtures/invalid.tfstate")
-				Expect(err).To(MatchError("invalid character '%' looking for beginning of object key string"))
+				Expect(err).To(MatchError("Unmarshal terraform.tfstate: invalid character '%' looking for beginning of object key string"))
 			})
 		})
 	})
@@ -84,6 +81,15 @@ var _ = Describe("Cartographer", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(yml).To(HelpfullyMatchYAML(expectedYml))
 			})
+		})
+	})
+
+	Describe("GetMap", func() {
+		It("converts terraform outputs to a map of output name to value", func() {
+			yml, err := carto.GetMap(tfstate)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(yml["director__internal_ip"]).To(Equal("10.87.0.6"))
+			Expect(yml["jumpbox__tags"]).To(Equal([]interface{}{"external", "internal"}))
 		})
 	})
 })

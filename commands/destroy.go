@@ -6,7 +6,6 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/helpers"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
-	"github.com/cloudfoundry/bosh-bootloader/terraform"
 )
 
 type Destroy struct {
@@ -121,12 +120,7 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
 		return nil
 	}
 
-	terraformOutputs, err := d.terraformManager.GetOutputs()
-	if err != nil {
-		return err
-	}
-
-	state, err = d.deleteBOSH(state, terraformOutputs)
+	state, err = d.deleteBOSH(state)
 	switch err.(type) {
 	case bosh.ManagerDeleteError:
 		mdErr := err.(bosh.ManagerDeleteError)
@@ -162,7 +156,7 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
 	return nil
 }
 
-func (d Destroy) deleteBOSH(state storage.State, terraformOutputs terraform.Outputs) (storage.State, error) {
+func (d Destroy) deleteBOSH(state storage.State) (storage.State, error) {
 	if state.NoDirector {
 		d.logger.Println("No BOSH director, skipping...")
 		return state, nil

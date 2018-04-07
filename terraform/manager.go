@@ -24,7 +24,6 @@ type executor interface {
 	Apply(credentials map[string]string) error
 	Destroy(credentials map[string]string) error
 	Outputs() (map[string]interface{}, error)
-	Output(string) (string, error)
 	IsPaved() (bool, error)
 }
 
