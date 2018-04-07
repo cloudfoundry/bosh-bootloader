@@ -22,6 +22,7 @@ var _ = Describe("Manager", func() {
 		stateStore   *fakes.StateStore
 		sshKeyGetter *fakes.SSHKeyGetter
 		fs           *fakes.FileIO
+		carto        *fakes.Cartographer
 
 		boshManager      *bosh.Manager
 		terraformOutputs terraform.Outputs
@@ -38,6 +39,7 @@ var _ = Describe("Manager", func() {
 		sshKeyGetter = &fakes.SSHKeyGetter{}
 		sshKeyGetter.GetCall.Returns.PrivateKey = "some-jumpbox-private-key"
 		fs = &fakes.FileIO{}
+		carto = &fakes.Cartographer{}
 
 		stateStore = &fakes.StateStore{}
 		stateStore.GetVarsDirCall.Returns.Directory = "some-bbl-vars-dir"
@@ -45,7 +47,7 @@ var _ = Describe("Manager", func() {
 		stateStore.GetDirectorDeploymentDirCall.Returns.Directory = "some-director-deployment-dir"
 		stateStore.GetJumpboxDeploymentDirCall.Returns.Directory = "some-jumpbox-deployment-dir"
 
-		boshManager = bosh.NewManager(boshExecutor, logger, stateStore, sshKeyGetter, fs)
+		boshManager = bosh.NewManager(boshExecutor, logger, stateStore, sshKeyGetter, fs, carto)
 
 		boshVars = `admin_password: some-admin-password
 director_ssl:
@@ -63,6 +65,8 @@ director_ssl:
 			osUnsetenvKey = key
 			return nil
 		})
+
+		carto.YmlizeWithPrefixCall.Returns.Yml = "some-key: some-value"
 	})
 
 	AfterEach(func() {
@@ -510,32 +514,26 @@ director_ssl:
 	})
 
 	Describe("GetJumpboxDeploymentVars", func() {
+		BeforeEach(func() {
+			carto.YmlizeWithPrefixCall.Returns.Yml = "internal_ip: 10.0.0.1"
+		})
 		It("removes the jumpbox__ prefix from variable names", func() {
-			vars := boshManager.GetJumpboxDeploymentVars(terraform.Outputs{Map: map[string]interface{}{
-				"some-key":      "some-value",
-				"director__key": "some-director-value",
-				"jumpbox__key":  "some-jumpbox-value",
-				"key":           "some-ignored-value",
-			}})
-			Expect(vars).To(MatchYAML(`---
-some-key: some-value
-key: some-jumpbox-value
-`))
+			vars, err := boshManager.GetJumpboxDeploymentVars("some-bbl-vars-dir")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(carto.YmlizeWithPrefixCall.Receives.Prefix).To(Equal("jumpbox"))
+			Expect(vars).To(MatchYAML("internal_ip: 10.0.0.1"))
 		})
 	})
 
 	Describe("GetDirectorDeploymentVars", func() {
+		BeforeEach(func() {
+			carto.YmlizeWithPrefixCall.Returns.Yml = "internal_ip: 10.0.0.2"
+		})
 		It("removes the director__ prefix from variable names", func() {
-			vars := boshManager.GetDirectorDeploymentVars(terraform.Outputs{Map: map[string]interface{}{
-				"some-key":      "some-value",
-				"director__key": "some-director-value",
-				"jumpbox__key":  "some-jumpbox-value",
-				"key":           "some-ignored-value",
-			}})
-			Expect(vars).To(MatchYAML(`---
-some-key: some-value
-key: some-director-value
-`))
+			vars, err := boshManager.GetDirectorDeploymentVars("some-bbl-vars-dir")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(carto.YmlizeWithPrefixCall.Receives.Prefix).To(Equal("director"))
+			Expect(vars).To(MatchYAML("internal_ip: 10.0.0.2"))
 		})
 	})
 

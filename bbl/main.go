@@ -37,6 +37,7 @@ import (
 	openstackterraform "github.com/cloudfoundry/bosh-bootloader/terraform/openstack"
 	vsphereterraform "github.com/cloudfoundry/bosh-bootloader/terraform/vsphere"
 
+	"github.com/genevieve/cartographer"
 	awsleftovers "github.com/genevieve/leftovers/aws"
 	azureleftovers "github.com/genevieve/leftovers/azure"
 	gcpleftovers "github.com/genevieve/leftovers/gcp"
@@ -120,7 +121,8 @@ func main() {
 	sshKeyGetter := bosh.NewSSHKeyGetter(stateStore, afs)
 	allProxyGetter := bosh.NewAllProxyGetter(sshKeyGetter, afs)
 	credhubGetter := bosh.NewCredhubGetter(stateStore, afs)
-	boshManager := bosh.NewManager(boshExecutor, logger, stateStore, sshKeyGetter, afs)
+	carto := cartographer.NewCartographer()
+	boshManager := bosh.NewManager(boshExecutor, logger, stateStore, sshKeyGetter, afs, carto)
 	boshClientProvider := bosh.NewClientProvider(socks5Proxy, sshKeyGetter)
 
 	// Clients that require IAAS credentials.
