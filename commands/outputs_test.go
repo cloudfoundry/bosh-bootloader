@@ -6,7 +6,6 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/commands"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
-	"github.com/cloudfoundry/bosh-bootloader/terraform"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -14,17 +13,19 @@ import (
 
 var _ = Describe("Outputs", func() {
 	var (
-		outputsCommand   commands.Outputs
-		stateValidator   *fakes.StateValidator
-		logger           *fakes.Logger
-		terraformManager *fakes.TerraformManager
+		logger         *fakes.Logger
+		stateStore     *fakes.StateStore
+		carto          *fakes.Cartographer
+		stateValidator *fakes.StateValidator
+		outputsCommand commands.Outputs
 	)
 
 	BeforeEach(func() {
-		stateValidator = &fakes.StateValidator{}
 		logger = &fakes.Logger{}
-		terraformManager = &fakes.TerraformManager{}
-		outputsCommand = commands.NewOutputs(logger, terraformManager, stateValidator)
+		carto = &fakes.Cartographer{}
+		stateStore = &fakes.StateStore{}
+		stateValidator = &fakes.StateValidator{}
+		outputsCommand = commands.NewOutputs(logger, carto, stateStore, stateValidator)
 	})
 
 	Describe("CheckFastFails", func() {
@@ -35,37 +36,35 @@ var _ = Describe("Outputs", func() {
 
 			It("returns an error", func() {
 				err := outputsCommand.CheckFastFails([]string{}, storage.State{})
-
-				Expect(stateValidator.ValidateCall.CallCount).To(Equal(1))
 				Expect(err).To(MatchError("state validation failed"))
+				Expect(stateValidator.ValidateCall.CallCount).To(Equal(1))
 			})
 		})
 	})
 
 	Describe("Execute", func() {
+		BeforeEach(func() {
+			carto.YmlizeCall.Returns.Yml = `external: address
+firewall: |-
+  cidr
+  make sure we quote multiline strings`
+		})
+
 		It("prints the terraform outputs", func() {
-			terraformOutputs := terraform.Outputs{
-				Map: map[string]interface{}{
-					"firewall": `cidr
-make sure we quote multiline strings`,
-					"external": "address",
-				},
-			}
-			terraformManager.GetOutputsCall.Returns.Outputs = terraformOutputs
 			err := outputsCommand.Execute([]string{}, storage.State{})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(logger.PrintfCall.Receives.Message).To(ContainSubstring("external: address\nfirewall: |-\n  cidr\n  make sure we quote multiline strings"))
 		})
 
-		Context("failure cases", func() {
-			Context("when getOutputs failes", func() {
-				It("returns an error", func() {
-					terraformManager.GetOutputsCall.Returns.Error = errors.New("tangelo")
+		Context("when cartographer fails to ymlize", func() {
+			BeforeEach(func() {
+				carto.YmlizeCall.Returns.Error = errors.New("tangelo")
+			})
 
-					err := outputsCommand.Execute([]string{}, storage.State{})
+			It("returns an error", func() {
+				err := outputsCommand.Execute([]string{}, storage.State{})
 
-					Expect(err).To(MatchError("tangelo"))
-				})
+				Expect(err).To(MatchError("tangelo"))
 			})
 		})
 	})

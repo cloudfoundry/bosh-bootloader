@@ -1,6 +1,17 @@
 package fakes
 
 type Cartographer struct {
+	YmlizeCall struct {
+		CallCount int
+		Receives  struct {
+			Tfstate string
+		}
+		Returns struct {
+			Yml   string
+			Error error
+		}
+	}
+
 	YmlizeWithPrefixCall struct {
 		CallCount int
 		Receives  struct {
@@ -23,6 +34,13 @@ type Cartographer struct {
 			Error error
 		}
 	}
+}
+
+func (c *Cartographer) Ymlize(tfstate string) (string, error) {
+	c.YmlizeCall.CallCount++
+	c.YmlizeCall.Receives.Tfstate = tfstate
+
+	return c.YmlizeCall.Returns.Yml, c.YmlizeCall.Returns.Error
 }
 
 func (c *Cartographer) YmlizeWithPrefix(tfstate, prefix string) (string, error) {
