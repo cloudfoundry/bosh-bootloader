@@ -1,29 +1,21 @@
 package commands
 
 import (
-	"path/filepath"
-
 	"github.com/cloudfoundry/bosh-bootloader/storage"
-	"github.com/cloudfoundry/bosh-bootloader/terraform"
+	yaml "gopkg.in/yaml.v2"
 )
 
-type carto interface {
-	Ymlize(string) (string, error)
-}
-
 type Outputs struct {
-	logger         logger
-	carto          carto
-	stateStore     stateStore
-	stateValidator stateValidator
+	logger           logger
+	terraformManager terraformManager
+	stateValidator   stateValidator
 }
 
-func NewOutputs(logger logger, carto carto, stateStore stateStore, stateValidator stateValidator) Outputs {
+func NewOutputs(logger logger, terraformManager terraformManager, stateValidator stateValidator) Outputs {
 	return Outputs{
-		logger:         logger,
-		carto:          carto,
-		stateStore:     stateStore,
-		stateValidator: stateValidator,
+		logger:           logger,
+		terraformManager: terraformManager,
+		stateValidator:   stateValidator,
 	}
 }
 
@@ -32,18 +24,14 @@ func (o Outputs) CheckFastFails(subcommandFlags []string, state storage.State) e
 }
 
 func (o Outputs) Execute(subcommandFlags []string, state storage.State) error {
-	dir, err := o.stateStore.GetVarsDir()
+	outputs, err := o.terraformManager.GetOutputs()
 	if err != nil {
 		return err
 	}
-
-	tfstate := filepath.Join(dir, terraform.TFSTATE)
-
-	yml, err := o.carto.Ymlize(tfstate)
+	marshalled, err := yaml.Marshal(outputs.Map)
 	if err != nil {
 		return err
 	}
-
-	o.logger.Printf(string(yml))
+	o.logger.Printf(string(marshalled))
 	return nil
 }
