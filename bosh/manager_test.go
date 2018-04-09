@@ -511,7 +511,7 @@ director_ssl:
 
 	Describe("GetJumpboxDeploymentVars", func() {
 		It("removes the jumpbox__ prefix from variable names", func() {
-			vars := boshManager.GetJumpboxDeploymentVars(terraform.Outputs{Map: map[string]interface{}{
+			vars := boshManager.GetJumpboxDeploymentVars(storage.State{}, terraform.Outputs{Map: map[string]interface{}{
 				"some-key":      "some-value",
 				"director__key": "some-director-value",
 				"jumpbox__key":  "some-jumpbox-value",
@@ -526,7 +526,7 @@ key: some-jumpbox-value
 
 	Describe("GetDirectorDeploymentVars", func() {
 		It("removes the director__ prefix from variable names", func() {
-			vars := boshManager.GetDirectorDeploymentVars(terraform.Outputs{Map: map[string]interface{}{
+			vars := boshManager.GetDirectorDeploymentVars(storage.State{}, terraform.Outputs{Map: map[string]interface{}{
 				"some-key":      "some-value",
 				"director__key": "some-director-value",
 				"jumpbox__key":  "some-jumpbox-value",
