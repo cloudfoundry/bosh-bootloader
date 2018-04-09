@@ -265,7 +265,7 @@ func (m *Manager) CreateDirector(state storage.State, terraformOutputs terraform
 	return state, nil
 }
 
-func (m *Manager) DeleteDirector(state storage.State) error {
+func (m *Manager) DeleteDirector(state storage.State, terraformOutputs terraform.Outputs) error {
 	if state.BOSH.IsEmpty() {
 		return nil
 	}
@@ -322,7 +322,8 @@ func (m *Manager) DeleteDirector(state storage.State) error {
 	return nil
 }
 
-func (m *Manager) DeleteJumpbox(state storage.State) error {
+//TODO: Remove terraformOutputs
+func (m *Manager) DeleteJumpbox(state storage.State, terraformOutputs terraform.Outputs) error {
 	if state.Jumpbox.IsEmpty() {
 		return nil
 	}

@@ -168,14 +168,14 @@ func (d Destroy) deleteBOSH(state storage.State, terraformOutputs terraform.Outp
 		return state, nil
 	}
 
-	err := d.boshManager.DeleteDirector(state)
+	err := d.boshManager.DeleteDirector(state, terraformOutputs)
 	if err != nil {
 		return state, err
 	}
 
 	state.BOSH = storage.BOSH{}
 
-	err = d.boshManager.DeleteJumpbox(state)
+	err = d.boshManager.DeleteJumpbox(state, terraformOutputs)
 	if err != nil {
 		return state, err
 	}

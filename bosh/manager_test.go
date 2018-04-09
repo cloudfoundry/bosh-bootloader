@@ -377,7 +377,9 @@ director_ssl:
 		})
 
 		It("calls delete env", func() {
-			err := boshManager.DeleteJumpbox(incomingState)
+			err := boshManager.DeleteJumpbox(incomingState, terraform.Outputs{Map: map[string]interface{}{
+				"some-key": "some-value",
+			}})
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(boshExecutor.WriteDeploymentVarsCall.Receives.DirInput.Deployment).To(Equal("jumpbox"))
@@ -400,7 +402,7 @@ director_ssl:
 			})
 
 			It("returns a bosh manager delete error with a valid state", func() {
-				err := boshManager.DeleteJumpbox(incomingState)
+				err := boshManager.DeleteJumpbox(incomingState, terraform.Outputs{})
 				Expect(err).To(MatchError(expectedError))
 			})
 		})
@@ -431,7 +433,7 @@ director_ssl:
 					},
 					Variables: boshVars,
 				},
-			})
+			}, terraform.Outputs{Map: map[string]interface{}{"some-key": "some-value"}})
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(boshExecutor.WriteDeploymentVarsCall.Receives.DirInput.Deployment).To(Equal("director"))
@@ -470,7 +472,7 @@ director_ssl:
 				})
 
 				It("returns an error", func() {
-					err := boshManager.DeleteDirector(state)
+					err := boshManager.DeleteDirector(state, terraform.Outputs{})
 					Expect(err).To(MatchError("Get jumpbox private key: rambutan"))
 				})
 			})
@@ -481,7 +483,7 @@ director_ssl:
 				})
 
 				It("returns a helpful error", func() {
-					err := boshManager.DeleteDirector(state)
+					err := boshManager.DeleteDirector(state, terraformOutputs)
 					Expect(err).To(MatchError("Create temp dir for jumpbox private key: fig"))
 				})
 			})
@@ -492,7 +494,7 @@ director_ssl:
 				})
 
 				It("returns a helpful error", func() {
-					err := boshManager.DeleteDirector(state)
+					err := boshManager.DeleteDirector(state, terraformOutputs)
 					Expect(err).To(MatchError("Write jumpbox private key: starfruit"))
 				})
 			})
@@ -504,7 +506,7 @@ director_ssl:
 
 					expectedError := bosh.NewManagerDeleteError(state, deleteEnvError)
 
-					err := boshManager.DeleteDirector(state)
+					err := boshManager.DeleteDirector(state, terraform.Outputs{})
 					Expect(err).To(MatchError(expectedError))
 				})
 			})

@@ -1,3 +1,0 @@
-# cartographer
-
-ymlize terraform outputs.

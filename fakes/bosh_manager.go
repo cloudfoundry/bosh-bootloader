@@ -127,15 +127,17 @@ func (b *BOSHManager) CreateDirector(state storage.State, terraformOutputs terra
 	return b.CreateDirectorCall.Returns.State, b.CreateDirectorCall.Returns.Error
 }
 
-func (b *BOSHManager) DeleteDirector(state storage.State) error {
+func (b *BOSHManager) DeleteDirector(state storage.State, terraformOutputs terraform.Outputs) error {
 	b.DeleteDirectorCall.CallCount++
 	b.DeleteDirectorCall.Receives.State = state
+	b.DeleteDirectorCall.Receives.TerraformOutputs = terraformOutputs
 	return b.DeleteDirectorCall.Returns.Error
 }
 
-func (b *BOSHManager) DeleteJumpbox(state storage.State) error {
+func (b *BOSHManager) DeleteJumpbox(state storage.State, terraformOutputs terraform.Outputs) error {
 	b.DeleteJumpboxCall.CallCount++
 	b.DeleteJumpboxCall.Receives.State = state
+	b.DeleteJumpboxCall.Receives.TerraformOutputs = terraformOutputs
 	return b.DeleteJumpboxCall.Returns.Error
 }
 
