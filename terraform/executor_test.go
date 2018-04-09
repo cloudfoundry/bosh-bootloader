@@ -2,6 +2,7 @@ package terraform_test
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -467,37 +468,62 @@ var _ = Describe("Executor", func() {
 	})
 
 	Describe("IsPaved", func() {
-		BeforeEach(func() {
-			carto.GetMapCall.Returns.Map = map[string]interface{}{"key": "value"}
-		})
-
-		It("checks that there are outputs", func() {
-			isPaved, err := executor.IsPaved()
-
-			Expect(err).NotTo(HaveOccurred())
-			Expect(isPaved).To(Equal(true))
-		})
-
-		Context("when the state store fails to get the vars directory", func() {
-			BeforeEach(func() {
-				stateStore.GetVarsDirCall.Returns.Error = errors.New("guava")
-			})
-
+		Context("when the state store fails to get the terraform directory", func() {
 			It("returns an error", func() {
+				stateStore.GetTerraformDirCall.Returns.Error = errors.New("guava")
+
 				_, err := executor.IsPaved()
+
 				Expect(err).To(MatchError("guava"))
 			})
 		})
 
-		Context("when carto returns a map with zero outputs", func() {
-			BeforeEach(func() {
-				carto.GetMapCall.Returns.Map = map[string]interface{}{}
-			})
+		Context("when the state store fails to get the vars directory", func() {
+			It("returns an error", func() {
+				stateStore.GetVarsDirCall.Returns.Error = errors.New("guava")
 
+				_, err := executor.IsPaved()
+
+				Expect(err).To(MatchError("guava"))
+			})
+		})
+
+		Context("when terraform show returns No state", func() {
+			BeforeEach(func() {
+				bufferingCmd.RunCall.Stub = func(stdout io.Writer) {
+					fmt.Fprint(stdout, "No state.")
+				}
+			})
 			It("returns false", func() {
 				isPaved, err := executor.IsPaved()
+
 				Expect(err).NotTo(HaveOccurred())
 				Expect(isPaved).To(Equal(false))
+			})
+		})
+
+		Context("when terraform show returns outputs", func() {
+			BeforeEach(func() {
+				bufferingCmd.RunCall.Stub = func(stdout io.Writer) {
+					fmt.Fprint(stdout, "Pretty much anything else.")
+				}
+			})
+			It("returns true", func() {
+				isPaved, err := executor.IsPaved()
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(isPaved).To(Equal(true))
+			})
+		})
+
+		Context("when it fails to call terraform command run", func() {
+			BeforeEach(func() {
+				bufferingCmd.RunCall.Returns.Errors = []error{errors.New("failed")}
+			})
+
+			It("returns an error", func() {
+				_, err := executor.IsPaved()
+				Expect(err).To(MatchError("Run terraform show: failed"))
 			})
 		})
 	})

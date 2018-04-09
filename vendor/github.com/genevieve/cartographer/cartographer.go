@@ -98,5 +98,10 @@ func (c Cartographer) outputs(path string) (map[string]output, error) {
 		return nil, errors.New("No modules found.")
 	}
 
-	return state.Modules[0].Outputs, nil
+	mod := state.Modules[0]
+	if len(mod.Outputs) == 0 {
+		return nil, errors.New("No outputs found.")
+	}
+
+	return mod.Outputs, nil
 }
