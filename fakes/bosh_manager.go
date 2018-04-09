@@ -82,21 +82,21 @@ type BOSHManager struct {
 	GetDirectorDeploymentVarsCall struct {
 		CallCount int
 		Receives  struct {
-			VarsDir string
+			State            storage.State
+			TerraformOutputs terraform.Outputs
 		}
 		Returns struct {
-			Vars  string
-			Error error
+			Vars string
 		}
 	}
 	GetJumpboxDeploymentVarsCall struct {
 		CallCount int
 		Receives  struct {
-			VarsDir string
+			State            storage.State
+			TerraformOutputs terraform.Outputs
 		}
 		Returns struct {
-			Vars  string
-			Error error
+			Vars string
 		}
 	}
 }
@@ -141,16 +141,18 @@ func (b *BOSHManager) DeleteJumpbox(state storage.State, terraformOutputs terraf
 	return b.DeleteJumpboxCall.Returns.Error
 }
 
-func (b *BOSHManager) GetDirectorDeploymentVars(varsDir string) (string, error) {
+func (b *BOSHManager) GetDirectorDeploymentVars(state storage.State, terraformOutputs terraform.Outputs) string {
 	b.GetDirectorDeploymentVarsCall.CallCount++
-	b.GetDirectorDeploymentVarsCall.Receives.VarsDir = varsDir
-	return b.GetDirectorDeploymentVarsCall.Returns.Vars, b.GetDirectorDeploymentVarsCall.Returns.Error
+	b.GetDirectorDeploymentVarsCall.Receives.State = state
+	b.GetDirectorDeploymentVarsCall.Receives.TerraformOutputs = terraformOutputs
+	return b.GetDirectorDeploymentVarsCall.Returns.Vars
 }
 
-func (b *BOSHManager) GetJumpboxDeploymentVars(varsDir string) (string, error) {
+func (b *BOSHManager) GetJumpboxDeploymentVars(state storage.State, terraformOutputs terraform.Outputs) string {
 	b.GetJumpboxDeploymentVarsCall.CallCount++
-	b.GetJumpboxDeploymentVarsCall.Receives.VarsDir = varsDir
-	return b.GetJumpboxDeploymentVarsCall.Returns.Vars, b.GetJumpboxDeploymentVarsCall.Returns.Error
+	b.GetJumpboxDeploymentVarsCall.Receives.State = state
+	b.GetJumpboxDeploymentVarsCall.Receives.TerraformOutputs = terraformOutputs
+	return b.GetJumpboxDeploymentVarsCall.Returns.Vars
 }
 
 func (b *BOSHManager) Path() string {

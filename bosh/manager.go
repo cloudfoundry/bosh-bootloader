@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	yaml "gopkg.in/yaml.v2"
 
@@ -28,7 +29,6 @@ type Manager struct {
 	stateStore   stateStore
 	sshKeyGetter sshKeyGetter
 	fs           managerFs
-	carto        carto
 }
 
 type directorVars struct {
@@ -65,19 +65,13 @@ type sshKeyGetter interface {
 	Get(string) (string, error)
 }
 
-type carto interface {
-	YmlizeWithPrefix(tfstate, prefix string) (string, error)
-}
-
-func NewManager(executor executor, logger logger, stateStore stateStore,
-	sshKeyGetter sshKeyGetter, fs deleterFs, carto carto) *Manager {
+func NewManager(executor executor, logger logger, stateStore stateStore, sshKeyGetter sshKeyGetter, fs deleterFs) *Manager {
 	return &Manager{
 		executor:     executor,
 		logger:       logger,
 		stateStore:   stateStore,
 		sshKeyGetter: sshKeyGetter,
 		fs:           fs,
-		carto:        carto,
 	}
 }
 
@@ -136,12 +130,7 @@ func (m *Manager) CreateJumpbox(state storage.State, terraformOutputs terraform.
 		VarsDir:    varsDir,
 	}
 
-	yml, err := m.GetJumpboxDeploymentVars(varsDir)
-	if err != nil {
-		return storage.State{}, err
-	}
-
-	err = m.executor.WriteDeploymentVars(dirInput, yml)
+	err = m.executor.WriteDeploymentVars(dirInput, m.GetJumpboxDeploymentVars(terraformOutputs))
 	if err != nil {
 		return storage.State{}, fmt.Errorf("Write deployment vars: %s", err)
 	}
@@ -212,18 +201,15 @@ func (m *Manager) CreateDirector(state storage.State, terraformOutputs terraform
 		return storage.State{}, err
 	}
 
+	stateDir := m.stateStore.GetStateDir()
+
 	dirInput := DirInput{
 		Deployment: "director",
-		StateDir:   m.stateStore.GetStateDir(),
+		StateDir:   stateDir,
 		VarsDir:    varsDir,
 	}
 
-	yml, err := m.GetDirectorDeploymentVars(varsDir)
-	if err != nil {
-		return storage.State{}, err
-	}
-
-	err = m.executor.WriteDeploymentVars(dirInput, yml)
+	err = m.executor.WriteDeploymentVars(dirInput, m.GetDirectorDeploymentVars(terraformOutputs))
 	if err != nil {
 		return storage.State{}, fmt.Errorf("Write deployment vars: %s", err)
 	}
@@ -235,8 +221,6 @@ func (m *Manager) CreateDirector(state storage.State, terraformOutputs terraform
 		}
 		return storage.State{}, NewManagerCreateError(state, err)
 	}
-
-	m.logger.Step("created bosh director")
 
 	directorVars := getDirectorVars(variables)
 
@@ -262,6 +246,7 @@ func (m *Manager) CreateDirector(state storage.State, terraformOutputs terraform
 		DirectorSSLPrivateKey:  directorVars.sslPrivateKey,
 	}
 
+	m.logger.Step("created bosh director")
 	return state, nil
 }
 
@@ -285,12 +270,7 @@ func (m *Manager) DeleteDirector(state storage.State, terraformOutputs terraform
 		VarsDir:    varsDir,
 	}
 
-	yml, err := m.GetDirectorDeploymentVars(varsDir)
-	if err != nil {
-		return err
-	}
-
-	err = m.executor.WriteDeploymentVars(dirInput, yml)
+	err = m.executor.WriteDeploymentVars(dirInput, m.GetDirectorDeploymentVars(terraformOutputs))
 	if err != nil {
 		return fmt.Errorf("Write deployment vars: %s", err)
 	}
@@ -322,7 +302,6 @@ func (m *Manager) DeleteDirector(state storage.State, terraformOutputs terraform
 	return nil
 }
 
-//TODO: Remove terraformOutputs
 func (m *Manager) DeleteJumpbox(state storage.State, terraformOutputs terraform.Outputs) error {
 	if state.Jumpbox.IsEmpty() {
 		return nil
@@ -343,12 +322,7 @@ func (m *Manager) DeleteJumpbox(state storage.State, terraformOutputs terraform.
 		VarsDir:    varsDir,
 	}
 
-	yml, err := m.GetJumpboxDeploymentVars(varsDir)
-	if err != nil {
-		return err
-	}
-
-	err = m.executor.WriteDeploymentVars(dirInput, yml)
+	err = m.executor.WriteDeploymentVars(dirInput, m.GetJumpboxDeploymentVars(terraformOutputs))
 	if err != nil {
 		return fmt.Errorf("Write deployment vars: %s", err)
 	}
@@ -361,16 +335,59 @@ func (m *Manager) DeleteJumpbox(state storage.State, terraformOutputs terraform.
 	return nil
 }
 
-func (m *Manager) GetJumpboxDeploymentVars(varsDir string) (string, error) {
-	tfstate := filepath.Join(varsDir, "terraform.tfstate")
+func (m *Manager) GetJumpboxDeploymentVars(terraformOutputs terraform.Outputs) string {
+	allOutputs := map[string]interface{}{}
+	for k, v := range terraformOutputs.Map {
+		if strings.HasPrefix(k, "director__") || strings.HasPrefix(k, "jumpbox__") {
+			continue
+		}
+		allOutputs[k] = v
+	}
 
-	return m.carto.YmlizeWithPrefix(tfstate, "jumpbox")
+	for k, v := range terraformOutputs.Map {
+		if strings.HasPrefix(k, "jumpbox__") {
+			k = strings.Replace(k, "jumpbox__", "", 1)
+			allOutputs[k] = v
+		}
+	}
+
+	vars := sharedDeploymentVarsYAML{
+		TerraformOutputs: allOutputs,
+	}
+
+	return string(mustMarshal(vars))
 }
 
-func (m *Manager) GetDirectorDeploymentVars(varsDir string) (string, error) {
-	tfstate := filepath.Join(varsDir, "terraform.tfstate")
+func mustMarshal(yamlStruct interface{}) []byte {
+	yamlBytes, err := yaml.Marshal(yamlStruct)
+	if err != nil {
+		// this should never happen since we are constructing the YAML to be marshaled
+		panic("bosh manager: marshal yaml: unexpected error")
+	}
+	return yamlBytes
+}
 
-	return m.carto.YmlizeWithPrefix(tfstate, "director")
+func (m *Manager) GetDirectorDeploymentVars(terraformOutputs terraform.Outputs) string {
+	allOutputs := map[string]interface{}{}
+	for k, v := range terraformOutputs.Map {
+		if strings.HasPrefix(k, "director__") || strings.HasPrefix(k, "jumpbox__") {
+			continue
+		}
+		allOutputs[k] = v
+	}
+
+	for k, v := range terraformOutputs.Map {
+		if strings.HasPrefix(k, "director__") {
+			k = strings.Replace(k, "director__", "", 1)
+			allOutputs[k] = v
+		}
+	}
+
+	vars := sharedDeploymentVarsYAML{
+		TerraformOutputs: allOutputs,
+	}
+
+	return string(mustMarshal(vars))
 }
 
 func getDirectorVars(v string) directorVars {
