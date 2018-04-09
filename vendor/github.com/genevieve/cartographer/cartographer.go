@@ -19,13 +19,23 @@ func NewCartographer() Cartographer {
 // Ymlize reads the outputs from terraform.tfstate
 // specified at path and returns yml.
 func (c Cartographer) Ymlize(path string) (string, error) {
-	outputs, err := c.outputs(path)
+	cont, err := ioutil.ReadFile(path)
 	if err != nil {
 		return "", err
 	}
 
+	var state tfstate
+	err = json.Unmarshal(cont, &state)
+	if err != nil {
+		return "", err
+	}
+
+	if len(state.Modules) == 0 {
+		return "", errors.New("No modules found.")
+	}
+
 	yml := map[string]interface{}{}
-	for name, output := range outputs {
+	for name, output := range state.Modules[0].Outputs {
 		yml[name] = output.Value
 	}
 
@@ -37,30 +47,28 @@ func (c Cartographer) Ymlize(path string) (string, error) {
 	return string(output), nil
 }
 
-func (c Cartographer) GetMap(path string) (map[string]interface{}, error) {
-	outputs, err := c.outputs(path)
-	if err != nil {
-		return nil, err
-	}
-
-	yml := map[string]interface{}{}
-	for name, output := range outputs {
-		yml[name] = output.Value
-	}
-
-	return yml, nil
-}
-
 // Ymlize reads the terraform.tfstate specified at the path.
 // It returns yml for the outputs that contain that prefix
 // or outputs that have no prefix of the form `prefix__name`.
 func (c Cartographer) YmlizeWithPrefix(path, prefix string) (string, error) {
-	outputs, err := c.outputs(path)
+	cont, err := ioutil.ReadFile(path)
 	if err != nil {
 		return "", err
 	}
 
+	var state tfstate
+	err = json.Unmarshal(cont, &state)
+	if err != nil {
+		return "", err
+	}
+
+	if len(state.Modules) == 0 {
+		return "", errors.New("No modules found.")
+	}
+
 	yml := map[string]interface{}{}
+
+	outputs := state.Modules[0].Outputs
 
 	for name, output := range outputs {
 		if strings.Contains(name, "__") {
@@ -76,32 +84,8 @@ func (c Cartographer) YmlizeWithPrefix(path, prefix string) (string, error) {
 
 	output, err := yaml.Marshal(yml)
 	if err != nil {
-		return "", fmt.Errorf("Yaml marshal: %s", err)
+		return "", err
 	}
 
 	return string(output), nil
-}
-
-func (c Cartographer) outputs(path string) (map[string]output, error) {
-	cont, err := ioutil.ReadFile(path)
-	if err != nil {
-		return nil, fmt.Errorf("Read terraform.tfstate: %s", err)
-	}
-
-	var state tfstate
-	err = json.Unmarshal(cont, &state)
-	if err != nil {
-		return nil, fmt.Errorf("Unmarshal terraform.tfstate: %s", err)
-	}
-
-	if len(state.Modules) == 0 {
-		return nil, errors.New("No modules found.")
-	}
-
-	mod := state.Modules[0]
-	if len(mod.Outputs) == 0 {
-		return nil, errors.New("No outputs found.")
-	}
-
-	return mod.Outputs, nil
 }

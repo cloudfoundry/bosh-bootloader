@@ -23,7 +23,6 @@ var _ = Describe("Executor", func() {
 		cmd          *fakes.TerraformCmd
 		stateStore   *fakes.StateStore
 		fileIO       *fakes.FileIO
-		carto        *fakes.Cartographer
 		executor     terraform.Executor
 		debugFalse   terraform.Executor
 
@@ -43,10 +42,9 @@ var _ = Describe("Executor", func() {
 		cmd = &fakes.TerraformCmd{}
 		stateStore = &fakes.StateStore{}
 		fileIO = &fakes.FileIO{}
-		carto = &fakes.Cartographer{}
 
-		executor = terraform.NewExecutor(cmd, bufferingCmd, stateStore, fileIO, true, os.Stdout, carto)
-		debugFalse = terraform.NewExecutor(cmd, bufferingCmd, stateStore, fileIO, false, nil, carto)
+		executor = terraform.NewExecutor(cmd, bufferingCmd, stateStore, fileIO, true, os.Stdout)
+		debugFalse = terraform.NewExecutor(cmd, bufferingCmd, stateStore, fileIO, false, nil)
 
 		var err error
 		terraformDir, err = ioutil.TempDir("", "terraform")
@@ -427,42 +425,152 @@ var _ = Describe("Executor", func() {
 		})
 	})
 
-	Describe("Outputs", func() {
-		var stateMap map[string]interface{}
+	Describe("Output", func() {
 		BeforeEach(func() {
-			stateMap = map[string]interface{}{"key": "value"}
-			carto.GetMapCall.Returns.Map = stateMap
+			err := ioutil.WriteFile(tfStatePath, []byte("some-tf-state"), storage.StateMode)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("returns an output from the terraform state", func() {
+			bufferingCmd.RunCall.Stub = func(stdout io.Writer) {
+				fmt.Fprintf(stdout, "some-external-ip\n")
+			}
+			output, err := executor.Output("external_ip")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(output).To(Equal("some-external-ip"))
+
+			Expect(bufferingCmd.RunCall.Receives.WorkingDirectory).To(Equal(terraformDir))
+			Expect(bufferingCmd.RunCall.Receives.Args).To(Equal([]string{"output", "external_ip", "-state", tfStatePath}))
+			Expect(cmd.RunCall.Receives.Args).To(Equal([]string{"init"}))
+		})
+
+		Context("when an error occurs", func() {
+			Context("when it fails to get terraform dir", func() {
+				BeforeEach(func() {
+					stateStore.GetTerraformDirCall.Returns.Error = errors.New("failed")
+				})
+
+				It("returns an error", func() {
+					_, err := executor.Output("external_ip")
+					Expect(err).To(MatchError("failed"))
+				})
+			})
+
+			Context("when it fails to get vars dir", func() {
+				BeforeEach(func() {
+					stateStore.GetVarsDirCall.Returns.Error = errors.New("failed")
+				})
+
+				It("returns an error", func() {
+					_, err := executor.Output("external_ip")
+					Expect(err).To(MatchError("failed"))
+				})
+			})
+
+			Context("when terraform init fails", func() {
+				BeforeEach(func() {
+					cmd.RunCall.Returns.Errors = []error{errors.New("failed")}
+				})
+
+				It("returns an error", func() {
+					_, err := executor.Output("external_ip")
+					Expect(err).To(MatchError("Run terraform init in terraform dir: failed"))
+				})
+			})
+
+			Context("when it fails to call terraform command run", func() {
+				BeforeEach(func() {
+					bufferingCmd.RunCall.Returns.Errors = []error{errors.New("failed")}
+				})
+
+				It("returns an error", func() {
+					_, err := executor.Output("external_ip")
+					Expect(err).To(MatchError("Run terraform output -state: failed"))
+				})
+			})
+		})
+	})
+
+	Describe("Outputs", func() {
+		BeforeEach(func() {
+			bufferingCmd.RunCall.Stub = func(stdout io.Writer) {
+				fmt.Fprintf(stdout, `{
+					"director_address": {
+						"sensitive": false,
+						"type": "string",
+						"value": "some-director-address"
+					},
+					"external_ip": {
+						"sensitive": false,
+						"type": "string",
+						"value": "some-external-ip"
+					}
+				}`)
+			}
 		})
 
 		It("returns all outputs from the terraform state", func() {
 			outputs, err := executor.Outputs()
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(carto.GetMapCall.CallCount).To(Equal(1))
-			Expect(carto.GetMapCall.Receives.Tfstate).To(Equal(tfStatePath))
+			Expect(outputs).To(Equal(map[string]interface{}{
+				"director_address": "some-director-address",
+				"external_ip":      "some-external-ip",
+			}))
 
-			Expect(outputs).To(Equal(stateMap))
+			Expect(bufferingCmd.RunCall.Receives.WorkingDirectory).To(Equal(terraformDir))
+			Expect(bufferingCmd.RunCall.Receives.Args).To(Equal([]string{
+				"output", "--json", "-state", tfStatePath,
+			}))
+			Expect(cmd.RunCall.Receives.WorkingDirectory).To(Equal(terraformDir))
+			Expect(cmd.RunCall.Receives.Args).To(Equal([]string{"init", varsDir}))
 		})
 
-		Context("when it fails to get vars dir", func() {
-			BeforeEach(func() {
-				stateStore.GetVarsDirCall.Returns.Error = errors.New("failed")
+		Context("when an error occurs", func() {
+			Context("when it fails to get vars dir", func() {
+				BeforeEach(func() {
+					stateStore.GetVarsDirCall.Returns.Error = errors.New("failed")
+				})
+
+				It("returns an error", func() {
+					_, err := executor.Outputs()
+					Expect(err).To(MatchError("failed"))
+				})
 			})
 
-			It("returns an error", func() {
-				_, err := executor.Outputs()
-				Expect(err).To(MatchError("failed"))
-			})
-		})
+			Context("when terraform init fails", func() {
+				BeforeEach(func() {
+					cmd.RunCall.Returns.Errors = []error{errors.New("failed")}
+				})
 
-		Context("when cartographer fails", func() {
-			BeforeEach(func() {
-				carto.GetMapCall.Returns.Error = errors.New("banana")
+				It("returns an error", func() {
+					_, err := executor.Outputs()
+					Expect(err).To(MatchError("Run terraform init in terraform dir: failed"))
+				})
 			})
 
-			It("returns an error", func() {
-				_, err := executor.Outputs()
-				Expect(err).To(MatchError("banana"))
+			Context("when it fails to call terraform command run", func() {
+				BeforeEach(func() {
+					bufferingCmd.RunCall.Returns.Errors = []error{errors.New("failed")}
+				})
+
+				It("returns an error", func() {
+					_, err := executor.Outputs()
+					Expect(err).To(MatchError("Run terraform output --json in vars dir: failed"))
+				})
+			})
+
+			Context("when it fails to unmarshal the terraform outputs", func() {
+				BeforeEach(func() {
+					bufferingCmd.RunCall.Stub = func(stdout io.Writer) {
+						fmt.Fprintf(stdout, "%%%")
+					}
+				})
+
+				It("returns an error", func() {
+					_, err := executor.Outputs()
+					Expect(err).To(MatchError("Unmarshal terraform output: invalid character '%' looking for beginning of value"))
+				})
 			})
 		})
 	})

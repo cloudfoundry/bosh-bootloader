@@ -333,25 +333,36 @@ var _ = Describe("Destroy", func() {
 			})
 		})
 
-		Context("when bosh delete fails", func() {
-			It("returns an error", func() {
-				boshManager.DeleteDirectorCall.Returns.Error = errors.New("bosh delete-env failed")
+		Context("failure cases", func() {
+			Context("when the terraform manager fails to get outputs", func() {
+				It("returns an error", func() {
+					terraformManager.GetOutputsCall.Returns.Error = errors.New("nope")
 
-				err := destroy.Execute([]string{}, storage.State{
-					BOSH: storage.BOSH{
-						DirectorName: "some-director",
-					},
+					err := destroy.Execute([]string{}, storage.State{})
+					Expect(err).To(MatchError("nope"))
 				})
-				Expect(err).To(MatchError("bosh delete-env failed"))
 			})
-		})
 
-		Context("when state store fails to set the state before destroying infrastructure", func() {
-			It("returns an error", func() {
-				stateStore.SetCall.Returns = []fakes.SetCallReturn{{errors.New("failed to set state")}}
+			Context("when bosh delete fails", func() {
+				It("returns an error", func() {
+					boshManager.DeleteDirectorCall.Returns.Error = errors.New("bosh delete-env failed")
 
-				err := destroy.Execute([]string{}, storage.State{})
-				Expect(err).To(MatchError("failed to set state"))
+					err := destroy.Execute([]string{}, storage.State{
+						BOSH: storage.BOSH{
+							DirectorName: "some-director",
+						},
+					})
+					Expect(err).To(MatchError("bosh delete-env failed"))
+				})
+			})
+
+			Context("when state store fails to set the state before destroying infrastructure", func() {
+				It("returns an error", func() {
+					stateStore.SetCall.Returns = []fakes.SetCallReturn{{errors.New("failed to set state")}}
+
+					err := destroy.Execute([]string{}, storage.State{})
+					Expect(err).To(MatchError("failed to set state"))
+				})
 			})
 		})
 
