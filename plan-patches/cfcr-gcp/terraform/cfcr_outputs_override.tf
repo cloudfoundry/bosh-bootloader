@@ -1,19 +1,17 @@
 output "cfcr_master_target_pool" {
-   value = "${google_compute_target_pool.cfcr-tcp-public.name}"
+  value = "${google_compute_target_pool.cfcr-tcp-public.name}"
+}
+
+output "cfcr_master_service_account_address" {
+  value = "${google_service_account.master.email}"
+}
+
+output "cfcr_worker_service_account_address" {
+  value = "${google_service_account.worker.email}"
 }
 
 output "master_lb_ip_address" {
   value = "${google_compute_address.cfcr-tcp.address}"
-}
-
-output "service_key_master" {
-  sensitive = true
-  value = "${base64decode(element(concat(google_service_account_key.master.*.private_key, list("")), 0))}"
-}
-
-output "service_key_worker" {
-  sensitive = true
-  value = "${base64decode(element(concat(google_service_account_key.worker.*.private_key, list("")), 0))}"
 }
 
 output "gcp_project_id" {

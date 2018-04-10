@@ -8,14 +8,6 @@ resource "google_service_account" "worker" {
   display_name = "${var.env_id} cfcr-worker"
 }
 
-resource "google_service_account_key" "master" {
-  service_account_id   = "${google_service_account.master.id}"
-}
-
-resource "google_service_account_key" "worker" {
-  service_account_id   = "${google_service_account.worker.id}"
-}
-
 resource "google_project_iam_policy" "policy" {
   project     = "${var.project_id}"
   policy_data = "${data.google_iam_policy.admin.policy_data}"

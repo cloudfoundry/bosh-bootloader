@@ -15,26 +15,28 @@ Steps to deploy cfcr with bbl:
 
 1. `bosh upload-stemcell https://bosh.io/d/stemcells/bosh-google-kvm-ubuntu-trusty-go_agent`
 
-1. export KD as your path to kubo-deployment so you can copy-paste from below if you so desire
+1. export KD as your path to kubo-deployment so you can copy-paste from below if you so desire.
+   be careful to check out the manifest that matches the kubo-release you downloaded above.
    ```
    git clone git@github.com:cloudfoundry-incubator/kubo-deployment.git
    export KD=$(pwd)/kubo-deployment
    ```
 
-1. Create cfcr-vars.yml from your bbl outputs:
-    ```
-    bosh int cfcr-vars-template.yml -l <(bbl outputs) -l vars/director-vars-file.yml > cfcr-vars.yml
-    ```
-    this file will contain the additional variables necessary for a cfcr deployment.
-
-1. Deploy the cfcr manifest
+1. Deploy the cfcr manifest.
    ```
    bosh deploy -d cfcr ${KD}/manifests/cfcr.yml \
    -o ${KD}/manifests/ops-files/iaas/gcp/cloud-provider.yml \
-   -o ${KD}/manifests/ops-files/iaas/gcp/add-service-key-worker.yml \
-   -o ${KD}/manifests/ops-files/iaas/gcp/add-service-key-master.yml \
    -o cfcr-ops.yml \
-   -l cfcr-vars.yml
+   -l <(bosh int cfcr-vars-template.yml -l <(bbl outputs))
+   ```
+
+   If you'd like to use compiled releases to speed up your deployment and worry a bit less about matching release+manifest versions check out [cfcr-compiled-deployment](https://github.com/starkandwayne/cfcr-compiled-deployment).
+   ```
+   export CFCRC=~/go/github.com/starkandwayne/cfcr-compiled-deployment
+   bosh deploy -d cfcr ${CFCRC}/cfcr.yml \
+   -o ${CFCRC}/ops-files/iaas/gcp/cloud-provider.yml \
+   -o cfcr-ops.yml \
+   -l <(bosh int cfcr-vars-template.yml -l <(bbl outputs))
    ```
 
 1. Configure kubectl

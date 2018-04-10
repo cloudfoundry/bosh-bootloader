@@ -1,4 +1,9 @@
 - type: replace
   path: /instance_groups/name=master/vm_extensions?
   value:
-  - cfcr-master-network-properties
+  - cfcr-master-cloud-properties
+
+- type: replace
+  path: /instance_groups/name=worker/vm_extensions?
+  value:
+  - cfcr-worker-cloud-properties

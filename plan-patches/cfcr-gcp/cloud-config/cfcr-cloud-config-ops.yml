@@ -1,8 +1,16 @@
 - type: replace
   path: /vm_extensions/-
   value:
-    name: cfcr-master-network-properties
+    name: cfcr-master-cloud-properties
     cloud_properties:
       target_pool: ((cfcr_master_target_pool))
+      service_account: ((cfcr_master_service_account_address))
       tags:
       - ((cfcr_master_target_pool))
+
+- type: replace
+  path: /vm_extensions/-
+  value:
+    name: cfcr-worker-cloud-properties
+    cloud_properties:
+      service_account: ((cfcr_worker_service_account_address))

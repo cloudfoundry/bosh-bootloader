@@ -4,5 +4,3 @@ deployment_name: cfcr
 network: ((network))
 project_id: ((gcp_project_id))
 director_name: ((director_name))
-service_key_master: ((service_key_master))
-service_key_worker: ((service_key_worker))
