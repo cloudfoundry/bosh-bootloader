@@ -92,3 +92,10 @@
   + virtual machines
   + empty folders
   ```
+
+### OpenStack
+
+  ```
+  - floating ips
+  - ports
+  ```

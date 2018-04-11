@@ -48,7 +48,7 @@ var _ = Describe("Tags", func() {
 			Expect(client.DescribeTagsCall.CallCount).To(Equal(1))
 			Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(1))
 			Expect(logger.PromptWithDetailsCall.Receives.Type).To(Equal("EC2 Tag"))
-			Expect(logger.PromptWithDetailsCall.Receives.Name).To(Equal("banana-tag"))
+			Expect(logger.PromptWithDetailsCall.Receives.Name).To(Equal("the-key:banana-tag"))
 
 			Expect(items).To(HaveLen(1))
 		})

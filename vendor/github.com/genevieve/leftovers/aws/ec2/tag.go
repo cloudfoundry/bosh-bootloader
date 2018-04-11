@@ -16,12 +16,13 @@ type Tag struct {
 }
 
 func NewTag(client tagsClient, key, value, resourceId *string) Tag {
+	identifier := fmt.Sprintf("%s:%s", *key, *value)
 	return Tag{
 		client:     client,
 		key:        key,
 		value:      value,
 		resourceId: resourceId,
-		identifier: *value,
+		identifier: identifier,
 		rtype:      "EC2 Tag",
 	}
 }

@@ -65,7 +65,7 @@
   branch = "master"
   name = "github.com/genevieve/leftovers"
   packages = ["aws","aws/common","aws/ec2","aws/elb","aws/elbv2","aws/iam","aws/kms","aws/rds","aws/route53","aws/s3","azure","gcp","gcp/common","gcp/compute","gcp/dns","vsphere"]
-  revision = "3812d2d1d21a7eb1837d21bc690188793ac43a9f"
+  revision = "17e7d160b10e128ecab5484c8104291ec4211c09"
 
 [[projects]]
   name = "github.com/go-ini/ini"

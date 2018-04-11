@@ -56,7 +56,7 @@ var _ = Describe("Tag", func() {
 
 	Describe("Name", func() {
 		It("returns the identifier", func() {
-			Expect(tag.Name()).To(Equal("the-value"))
+			Expect(tag.Name()).To(Equal("the-key:the-value"))
 		})
 	})
 
