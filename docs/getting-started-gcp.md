@@ -29,9 +29,8 @@ gcloud projects add-iam-policy-binding <project id> --member='serviceAccount:<se
 
 To get all of the above plus load balancers for Cloud Foundry:
 
-    ```
 1. To `bbl  plan` or `bbl up` you can provide a cert, key, and (optionally) a domain:
     ```
-    bbl plan --lb-type cf --lb-cert $CERT --lb-key $KEY --lb-comdin $DOMAIN
+    bbl plan --lb-type cf --lb-cert $CERT --lb-key $KEY --lb-domain $DOMAIN
     bbl up
     ```
