@@ -1,10 +1,10 @@
 resource "google_service_account" "master" {
-  account_id   = "${var.env_id}-cfcr-master"
+  account_id   = "${substr(var.env_id, 0, min(length(var.env_id), 10))}-cfcr-master"
   display_name = "${var.env_id} cfcr-master"
 }
 
 resource "google_service_account" "worker" {
-  account_id   = "${var.env_id}-cfcr-worker"
+  account_id   = "${substr(var.env_id, 0, min(length(var.env_id), 10))}-cfcr-worker"
   display_name = "${var.env_id} cfcr-worker"
 }
 
