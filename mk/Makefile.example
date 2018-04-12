@@ -1,0 +1,22 @@
+### REQUIRED VARS ###
+#
+GCP_PROJECT := bosh-bootloader
+GCP_SERVICE_ACCOUNT := bosh-bootloader
+GCP_REGION := us-east1
+
+BOSH_DIRECTOR := me
+
+CF_DOMAIN := bbl.pivotal.io
+
+### OPTIONAL VARS ###
+#
+BBL_MKS ?= $(CURDIR)/bosh-bootloader/mk
+
+### BBL INTEGRATION ###
+#
+$(BBL_MKS)/gcp.mk:
+	@git clone https://github.com/cloudfoundry/bosh-bootloader.git
+include $(BBL_MKS)/gcp.mk
+
+### CUSTOM TARGETS ###
+#
