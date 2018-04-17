@@ -1,0 +1,7 @@
+# replace the IP below with one that's within BBL_VSPHERE_SUBNET
+# but is not reserved. IPs 10 or more above the base of your cidr should be safe.
+---
+- type: replace
+  path: /networks/name=default/subnets/0/static?
+  value:
+	- 10.87.35.35
