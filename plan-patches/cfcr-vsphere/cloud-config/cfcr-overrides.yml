@@ -4,4 +4,4 @@
 - type: replace
   path: /networks/name=default/subnets/0/static?
   value:
-	- 10.87.35.35
+	- 10.0.0.35
