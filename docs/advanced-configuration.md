@@ -3,8 +3,7 @@
 ## Table of Contents
 * <a href='#opsfile'>Using a BOSH ops-file with bbl</a>
 * <a href='#terraform'>Customizing IaaS Paving with Terraform</a>
-* <a href='#boshlite'>Deploying BOSH lite on GCP</a>
-* <a href='#isoseg'>Deploying an isolation segment</a>
+* <a href='#plan-patches'>Applying and authoring plan patches, bundled modifications to default bbl configurations.</a>
 
 ## <a name='opsfile'></a>Using a BOSH ops-file with bbl
 
@@ -72,44 +71,11 @@ Numerous settings can be reconfigured repeatedly by editing `$BBL_STATE_DIR/vars
     ```
     That's it. Your director is now at `192.168.0.6`.
 
+## <a name='plan-patches'> [Plan Patches](https://github.com/cloudfoundry/bosh-bootloader/tree/master/plan-patches)
 
-## <a name='boshlite'></a>Deploying BOSH lite on GCP
+Through operations files and terraform overrides, all sorts of wild modifications can be done to the vanilla bosh environments that bbl creates. The basic principal of a plan patch is to make several modifications to a bbl plan in override files that bbl finds under `terraform/`, `cloud-config/`, and `{create,delete}-{jumpbox,director}.sh` . BBL will read and merge those into it's plan when you run `bbl up`.
 
-1. Plan the environment:
-    ```
-    git clone https://github.com/cloudfoundry/bosh-bootloader.git
-    mkdir some-env && cd some-env
-    export BBL_IAAS=gcp
-    export BBL_GCP_REGION=us-west1
-    export BBL_GCP_SERVICE_ACCOUNT_KEY=my-key
-    bbl plan --name some-env
-    cp -r ../bosh-bootloader/plan-patches/bosh-lite-gcp/* .
-    ```
-1. Create the environment:
-    ```
-    bbl up
-    ```
-1. Determine your external IP:
-    ```
-    bosh int vars/director-vars-file.yml --path /external_ip
-    ```
-1. Add it to your DNS:
-    ```
-    bosh-lite.infrastructure.cf-app.com.	A	300	${bosh_lite_external_ip}
-    *.bosh-lite.infrastructure.cf-app.com.	CNAME	300	bosh-lite.infrastructure.cf-app.com.
-    ```
-1. Deploy cf-deployment:
-    ```
-    $ bosh upload-stemcell https://bosh.io/d/stemcells/bosh-warden-boshlite-ubuntu-trusty-go_agent?v=3468.5
-    $ bosh deploy -d cf -v 'system_domain=cf.evanfarrar.com' -o operations/bosh-lite.yml cf-deployment.yml -o operations/use-compiled-releases.yml
-    ```
+We've used plan patches to [deploy bosh-lite directors on gcp](https://github.com/cloudfoundry/bosh-bootloader/tree/master/plan-patches/bosh-lite-gcp), to deploy CF Isolation Segments on [public](https://github.com/cloudfoundry/bosh-bootloader/tree/master/plan-patches/iso-segs-gcp) [clouds](https://github.com/cloudfoundry/bosh-bootloader/tree/master/plan-patches/iso-segs-aws), and to deploy bosh managed k8s clusters with working cloud-providers using [cfcr](https://github.com/cloudfoundry-incubator/kubo-deployment/tree/master/manifests).
 
-## <a name='isoseg'></a>Deploying an isolation segment
-You can use this process on AWS to create an isolation segment with 
-```
-mkdir some-env && cd some-env
-bbl plan --name some-env --lb-type cf --lb-cert /path/to/lb.crt --lb-key /path/to/lb.key
-cp /path/to/patch-dir/cloud-config/iso-segs-ops.yml cloudconfig/
-TF_VAR_isolation_segments="1" bbl up
-```
-To set the TF_VAR it is also possible to add `isolation_segments="1"` to `terraform.tfvars` before running up.
+Our plan patches are experimental. They were tested a bit when we wrote them, but we don't continuously integrate against their dependencies or even check if they still work with recent versions of terraform. They should be used with caution. Operators should make sure they understand each modification and its implications before using our patches in their own environments. Regardless, the plan-patches in this repo are great examples of the different ways you can configure bbl to deploy whatever you might need. To see all the plan patches, visit the [Plan Patches README.md](https://github.com/cloudfoundry/bosh-bootloader/tree/master/plan-patches). If you write your own plan patch that gets you what you need, please consider upstreaming it in a PR.
+
