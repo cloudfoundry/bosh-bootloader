@@ -47,6 +47,15 @@ type TerraformExecutor struct {
 			Error error
 		}
 	}
+	ValidateCall struct {
+		CallCount int
+		Receives  struct {
+			Credentials map[string]string
+		}
+		Returns struct {
+			Error error
+		}
+	}
 	VersionCall struct {
 		CallCount int
 		Returns   struct {
@@ -109,6 +118,12 @@ func (t *TerraformExecutor) Destroy(credentials map[string]string) error {
 	t.DestroyCall.CallCount++
 	t.DestroyCall.Receives.Credentials = credentials
 	return t.DestroyCall.Returns.Error
+}
+
+func (t *TerraformExecutor) Validate(credentials map[string]string) error {
+	t.ValidateCall.CallCount++
+	t.ValidateCall.Receives.Credentials = credentials
+	return t.ValidateCall.Returns.Error
 }
 
 func (t *TerraformExecutor) Version() (string, error) {

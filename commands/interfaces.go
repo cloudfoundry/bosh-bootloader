@@ -25,6 +25,7 @@ type terraformManager interface {
 	GetOutputs() (terraform.Outputs, error)
 	Init(storage.State) error
 	Apply(storage.State) (storage.State, error)
+	Validate(storage.State) (storage.State, error)
 	Destroy(storage.State) (storage.State, error)
 	IsPaved() (bool, error)
 }

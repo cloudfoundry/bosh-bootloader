@@ -35,6 +35,16 @@ type TerraformManager struct {
 			Error    error
 		}
 	}
+	ValidateCall struct {
+		CallCount int
+		Receives  struct {
+			BBLState storage.State
+		}
+		Returns struct {
+			BBLState storage.State
+			Error    error
+		}
+	}
 	ImportCall struct {
 		CallCount int
 		Receives  struct {
@@ -94,6 +104,13 @@ func (t *TerraformManager) Destroy(bblState storage.State) (storage.State, error
 	t.DestroyCall.Receives.BBLState = bblState
 
 	return t.DestroyCall.Returns.BBLState, t.DestroyCall.Returns.Error
+}
+
+func (t *TerraformManager) Validate(bblState storage.State) (storage.State, error) {
+	t.ValidateCall.CallCount++
+	t.ValidateCall.Receives.BBLState = bblState
+
+	return t.ValidateCall.Returns.BBLState, t.ValidateCall.Returns.Error
 }
 
 func (t *TerraformManager) Import(bblState storage.State, outputs map[string]string) (storage.State, error) {

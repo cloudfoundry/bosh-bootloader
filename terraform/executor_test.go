@@ -190,6 +190,112 @@ var _ = Describe("Executor", func() {
 		})
 	})
 
+	Describe("Validate", func() {
+		BeforeEach(func() {
+			fileIO.ReadDirCall.Returns.FileInfos = []os.FileInfo{
+				fakes.FileInfo{
+					FileName: "bbl.tfvars",
+				},
+			}
+			err := ioutil.WriteFile(tfStatePath, []byte("some-updated-terraform-state"), storage.StateMode)
+			Expect(err).NotTo(HaveOccurred())
+
+			err = ioutil.WriteFile(tfVarsPath, []byte("some-tfvars"), storage.StateMode)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		AfterEach(func() {
+			os.RemoveAll(varsDir)
+		})
+
+		It("runs terraform validate", func() {
+			err := executor.Validate(map[string]string{
+				"some-cert": "some-cert-value",
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			By("passing the correct args and dir to run command", func() {
+				Expect(cmd.RunCall.Receives.WorkingDirectory).To(Equal(terraformDir))
+				Expect(cmd.RunCall.Receives.Args).To(ConsistOf([]string{
+					"validate",
+					"-var", "some-cert=some-cert-value",
+					"-var-file", relativeVarsPath,
+				}))
+				Expect(bufferingCmd.RunCall.CallCount).To(Equal(0))
+			})
+		})
+
+		Context("when other vars files are in the directory", func() {
+			var (
+				relativeUserProvidedVarsPathA string
+				relativeUserProvidedVarsPathC string
+			)
+			BeforeEach(func() {
+				fileIO.ReadDirCall.Returns.FileInfos = []os.FileInfo{
+					fakes.FileInfo{
+						FileName: "bbl.tfvars",
+					},
+					fakes.FileInfo{
+						FileName: "awesome-user-vars.tfvars",
+					},
+					fakes.FileInfo{
+						FileName: "custom-user-vars.tfvars",
+					},
+					fakes.FileInfo{
+						FileName: "definitely-not-a-tf-vars-file",
+					},
+				}
+
+				relativeUserProvidedVarsPathA = strings.Replace(relativeVarsPath, "bbl", "awesome-user-vars", 1)
+				relativeUserProvidedVarsPathC = strings.Replace(relativeVarsPath, "bbl", "custom-user-vars", 1)
+			})
+
+			It("passes all user provided tfvars files to the run command in alphabetic order", func() {
+				err := executor.Validate(map[string]string{
+					"some-cert": "some-cert-value",
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(cmd.RunCall.Receives.Args).To(ConsistOf([]string{
+					"validate",
+					"-var", "some-cert=some-cert-value",
+					"-var-file", relativeUserProvidedVarsPathA,
+					"-var-file", relativeVarsPath,
+					"-var-file", relativeUserProvidedVarsPathC,
+				}))
+				Expect(bufferingCmd.RunCall.CallCount).To(Equal(0))
+
+				// be sure we don't leak env vars from destroy
+				Expect(cmd.RunCall.Receives.Env).NotTo(ContainElement("TF_WARN_OUTPUT_ERRORS=1"))
+			})
+		})
+
+		Context("when terraform command run fails", func() {
+			BeforeEach(func() {
+				err := ioutil.WriteFile(tfStatePath, []byte("some-tf-state"), storage.StateMode)
+				Expect(err).NotTo(HaveOccurred())
+
+				cmd.RunCall.Returns.Errors = []error{errors.New("the-executor-error")}
+			})
+
+			It("returns the error", func() {
+				err := executor.Validate(map[string]string{})
+				Expect(err).To(MatchError("the-executor-error"))
+			})
+
+			Context("and --debug is false", func() {
+				BeforeEach(func() {
+					cmd.RunCall.Returns.Errors = []error{errors.New("hidden error")}
+				})
+
+				It("returns a redacted error message", func() {
+					err := debugFalse.Validate(map[string]string{})
+					Expect(err).To(MatchError("Some output has been redacted, use `bbl latest-error` to see it or run again with --debug for additional debug output"))
+				})
+			})
+		})
+	})
+
 	Describe("Apply", func() {
 		BeforeEach(func() {
 			fileIO.ReadDirCall.Returns.FileInfos = []os.FileInfo{

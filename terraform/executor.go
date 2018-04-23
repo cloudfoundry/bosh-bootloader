@@ -187,6 +187,51 @@ func (e Executor) Apply(credentials map[string]string) error {
 	return e.runTFCommand(args)
 }
 
+func (e Executor) Validate(credentials map[string]string) error {
+	args := []string{"validate"}
+	for key, value := range credentials {
+		arg := fmt.Sprintf("%s=%s", key, value)
+		args = append(args, "-var", arg)
+	}
+
+	varsDir, err := e.stateStore.GetVarsDir()
+	if err != nil {
+		return err
+	}
+
+	terraformDir, err := e.stateStore.GetTerraformDir()
+	if err != nil {
+		return err
+	}
+
+	varsFiles, err := e.fs.ReadDir(varsDir)
+	if err != nil {
+		return fmt.Errorf("Read contents of vars directory: %s", err)
+	}
+
+	for _, file := range varsFiles {
+		if strings.HasSuffix(file.Name(), ".tfvars") {
+			relativeFilePath, err := filepath.Rel(terraformDir, filepath.Join(varsDir, file.Name()))
+			if err != nil {
+				return fmt.Errorf("Get relative terraform vars path: %s", err) //not tested
+			}
+			args = append(args,
+				"-var-file", relativeFilePath,
+			)
+		}
+	}
+
+	err = e.cmd.RunWithEnv(e.out, terraformDir, args, []string{})
+	if err != nil {
+		if e.debug {
+			return err
+		}
+		return fmt.Errorf(redactedError)
+	}
+
+	return nil
+}
+
 func (e Executor) Destroy(credentials map[string]string) error {
 	args := []string{"destroy", "-force"}
 	for key, value := range credentials {

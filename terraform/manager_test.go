@@ -219,6 +219,53 @@ var _ = Describe("Manager", func() {
 		})
 	})
 
+	Describe("Validate", func() {
+		var (
+			incomingState storage.State
+			expectedState storage.State
+			credentials   map[string]string
+		)
+
+		BeforeEach(func() {
+			incomingState = storage.State{
+				EnvID: "some-env-id",
+			}
+			credentials = map[string]string{
+				"some-credential": "some-credential-value",
+			}
+
+			expectedState = incomingState
+			expectedState.LatestTFOutput = expectedTFOutput
+
+			inputGenerator.CredentialsCall.Returns.Credentials = credentials
+			terraformOutputBuffer.Write([]byte(expectedTFOutput))
+		})
+
+		It("returns a state with output from executor validate", func() {
+			state, err := manager.Validate(incomingState)
+
+			Expect(executor.ValidateCall.Receives.Credentials).To(Equal(credentials))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(state).To(Equal(expectedState))
+			Expect(logger.StepCall.Messages).To(gomegamatchers.ContainSequence([]string{
+				"terraform validate",
+			}))
+		})
+
+		Context("when executor validate fails", func() {
+			BeforeEach(func() {
+				executor.ValidateCall.Returns.Error = errors.New("grape")
+				incomingState.LatestTFOutput = "some terraform output"
+			})
+
+			It("returns the bbl state and the error", func() {
+				state, err := manager.Validate(incomingState)
+				Expect(err).To(MatchError("Executor validate: grape"))
+				Expect(state.LatestTFOutput).To(Equal(incomingState.LatestTFOutput))
+			})
+		})
+	})
+
 	Describe("GetOutputs", func() {
 		BeforeEach(func() {
 			executor.OutputsCall.Returns.Outputs = map[string]interface{}{"external_ip": "some-external-ip"}

@@ -139,6 +139,8 @@ func (PrintEnv) Usage() string { return PrintEnvCommandUsage }
 
 func (LatestError) Usage() string { return LatestErrorCommandUsage }
 
+func (Validate) Usage() string { return "" }
+
 func (s SSHKey) Usage() string {
 	if s.Director {
 		return DirectorSSHKeyCommandUsage

@@ -22,6 +22,7 @@ type executor interface {
 	Setup(terraformTemplate string, inputs map[string]interface{}) error
 	Init() error
 	Apply(credentials map[string]string) error
+	Validate(credentials map[string]string) error
 	Destroy(credentials map[string]string) error
 	Outputs() (map[string]interface{}, error)
 	Output(string) (string, error)
@@ -129,6 +130,19 @@ func (m Manager) Destroy(bblState storage.State) (storage.State, error) {
 	}
 
 	m.logger.Step("finished destroying infrastructure")
+	return bblState, nil
+}
+
+func (m Manager) Validate(bblState storage.State) (storage.State, error) {
+	m.logger.Step("terraform validate")
+	err := m.executor.Validate(m.inputGenerator.Credentials(bblState))
+
+	bblState.LatestTFOutput = readAndReset(m.terraformOutputBuffer)
+
+	if err != nil {
+		return bblState, fmt.Errorf("Executor validate: %s", err)
+	}
+
 	return bblState, nil
 }
 
