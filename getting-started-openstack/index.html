@@ -32,15 +32,15 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-0.17.3, mkdocs-material-2.7.1">
+      <meta name="generator" content="mkdocs-0.17.3, mkdocs-material-2.7.2">
     
     
       
-        <title>Getting Started: OpenStack - BBL</title>
+        <title>Getting started openstack - BBL</title>
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/application.78aab2dc.css">
+      <link rel="stylesheet" href="../assets/stylesheets/application.8d40d89b.css">
       
         <link rel="stylesheet" href="../assets/stylesheets/application-palette.6079476c.css">
       
@@ -100,7 +100,7 @@
                 BBL
               </span>
               <span class="md-header-nav__topic">
-                Getting Started: OpenStack
+                Getting started openstack
               </span>
             
           
@@ -195,8 +195,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../cf-lbs/" title="Cloud Foundry Load Balancers" class="md-nav__link">
-      Cloud Foundry Load Balancers
+    <a href="../cf-load-balancers/" title="CF Load Balancers" class="md-nav__link">
+      CF Load Balancers
     </a>
   </li>
 
@@ -207,8 +207,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../cleaning-up/" title="Cleaning Up" class="md-nav__link">
-      Cleaning Up
+    <a href="../cleaning-up/" title="Cleaning up" class="md-nav__link">
+      Cleaning up
     </a>
   </li>
 
@@ -255,8 +255,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../getting-started-azure/" title="Getting Started: Microsoft Azure" class="md-nav__link">
-      Getting Started: Microsoft Azure
+    <a href="../getting-started-azure/" title="Getting started azure" class="md-nav__link">
+      Getting started azure
     </a>
   </li>
 
@@ -267,8 +267,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../getting-started-gcp/" title="Getting Started: GCP" class="md-nav__link">
-      Getting Started: GCP
+    <a href="../getting-started-gcp/" title="Getting started gcp" class="md-nav__link">
+      Getting started gcp
     </a>
   </li>
 
@@ -288,11 +288,11 @@
     
     
       <label class="md-nav__link md-nav__link--active" for="toc">
-        Getting Started: OpenStack
+        Getting started openstack
       </label>
     
-    <a href="./" title="Getting Started: OpenStack" class="md-nav__link md-nav__link--active">
-      Getting Started: OpenStack
+    <a href="./" title="Getting started openstack" class="md-nav__link md-nav__link--active">
+      Getting started openstack
     </a>
     
       
@@ -306,8 +306,8 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#jumpbox-director" title="Jumpbox, Director" class="md-nav__link">
-    Jumpbox, Director
+  <a href="#required-credentials" title="Required credentials" class="md-nav__link">
+    Required credentials
   </a>
   
 </li>
@@ -392,8 +392,8 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#jumpbox-director" title="Jumpbox, Director" class="md-nav__link">
-    Jumpbox, Director
+  <a href="#required-credentials" title="Required credentials" class="md-nav__link">
+    Required credentials
   </a>
   
 </li>
@@ -415,27 +415,22 @@
               
                 
                 
-                <h1 id="getting-started-openstack">Getting Started: OpenStack</h1>
-<h2 id="jumpbox-director">Jumpbox, Director</h2>
-<ol>
-<li>Export environment variables.
-    <code>export BBL_IAAS=openstack
-    export BBL_OPENSTACK_INTERNAL_CIDR=
-    export BBL_OPENSTACK_EXTERNAL_IP=
-    export BBL_OPENSTACK_AUTH_URL=
-    export BBL_OPENSTACK_AZ=
-    export BBL_OPENSTACK_DEFAULT_KEY_NAME=
-    export BBL_OPENSTACK_DEFAULT_SECURITY_GROUP=
-    export BBL_OPENSTACK_NETWORK_ID=
-    export BBL_OPENSTACK_PASSWORD=
-    export BBL_OPENSTACK_USERNAME=
-    export BBL_OPENSTACK_PROJECT=
-    export BBL_OPENSTACK_DOMAIN=
-    export BBL_OPENSTACK_REGION=
-    export BBL_OPENSTACK_PRIVATE_KEY=</code></li>
-<li>Create jumpbox and bosh director.
-    <code>bbl up</code></li>
-</ol>
+                <h1 id="getting-started-openstack">Getting started openstack</h1>
+<h2 id="required-credentials">Required credentials</h2>
+<pre><code>--openstack-internal-cidr          OpenStack Internal CIDR          env: $BBL_OPENSTACK_INTERNAL_CIDR
+--openstack-external-ip            OpenStack External IP            env: $BBL_OPENSTACK_EXTERNAL_IP
+--openstack-auth-url               OpenStack Auth URL               env: $BBL_OPENSTACK_AUTH_URL
+--openstack-az                     OpenStack Availability Zone      env: $BBL_OPENSTACK_AZ
+--openstack-default-key-name       OpenStack Default Key Name       env: $BBL_OPENSTACK_DEFAULT_KEY_NAME
+--openstack-default-security-group OpenStack Default Security Group env: $BBL_OPENSTACK_DEFAULT_SECURITY_GROUP
+--openstack-network-id             OpenStack Network ID             env: $BBL_OPENSTACK_NETWORK_ID
+--openstack-password               OpenStack Password               env: $BBL_OPENSTACK_PASSWORD
+--openstack-username               OpenStack Username               env: $BBL_OPENSTACK_USERNAME
+--openstack-project                OpenStack Project                env: $BBL_OPENSTACK_PROJECT
+--openstack-domain                 OpenStack Domain                 env: $BBL_OPENSTACK_DOMAIN
+--openstack-region                 OpenStack Region                 env: $BBL_OPENSTACK_REGION
+--openstack-private-key            OpenStack Private Key            env: $BBL_OPENSTACK_PRIVATE_KEY`
+</code></pre>
                 
                   
                 
@@ -456,7 +451,7 @@
     <div class="md-footer-nav">
       <nav class="md-footer-nav__inner md-grid">
         
-          <a href="../getting-started-gcp/" title="Getting Started: GCP" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+          <a href="../getting-started-gcp/" title="Getting started gcp" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
             <div class="md-flex__cell md-flex__cell--shrink">
               <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
             </div>
@@ -465,7 +460,7 @@
                 <span class="md-footer-nav__direction">
                   Previous
                 </span>
-                Getting Started: GCP
+                Getting started gcp
               </span>
             </div>
           </a>
@@ -507,7 +502,7 @@
       
     </div>
     
-      <script src="../assets/javascripts/application.8eb9be28.js"></script>
+      <script src="../assets/javascripts/application.b438e6c5.js"></script>
       
       <script>app.initialize({version:"0.17.3",url:{base:".."}})</script>
       

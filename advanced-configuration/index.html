@@ -32,7 +32,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-0.17.3, mkdocs-material-2.7.1">
+      <meta name="generator" content="mkdocs-0.17.3, mkdocs-material-2.7.2">
     
     
       
@@ -40,7 +40,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/application.78aab2dc.css">
+      <link rel="stylesheet" href="../assets/stylesheets/application.8d40d89b.css">
       
         <link rel="stylesheet" href="../assets/stylesheets/application-palette.6079476c.css">
       
@@ -254,8 +254,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../cf-lbs/" title="Cf lbs" class="md-nav__link">
-      Cf lbs
+    <a href="../cf-load-balancers/" title="Cf load balancers" class="md-nav__link">
+      Cf load balancers
     </a>
   </li>
 
@@ -500,6 +500,7 @@ bosh create-env \
   --vars-file  ${BBL_STATE_DIR}/vars/director-vars-file.yml \
 +  -o ${BBL_STATE_DIR}/../../bbl-envs/shared/increase-workers-threads-and-flush-arp.yml
   -o  ${BBL_STATE_DIR}/bosh-deployment/cpi.yml \
+  -o  ${BBL_STATE_DIR}/bosh-deployment/cpi.yml \
   -o  ${BBL_STATE_DIR}/bosh-deployment/jumpbox-user.yml \
   -o  ${BBL_STATE_DIR}/bosh-deployment/uaa.yml \
   -o  ${BBL_STATE_DIR}/../shared/bosh-deployment/credhub.yml
@@ -511,11 +512,9 @@ bosh create-env \
 <ol>
 <li>Plan the environment:
     <code>mkdir some-env &amp;&amp; cd some-env
-    export BBL_IAAS=aws
-    export BBL_AWS_REGION=us-west-1
-    export BBL_AWS_ACCESS_KEY_ID=12345678
-    export BBL_AWS_SECRET_ACCESS_KEY=12345678
-    bbl plan
+    echo BBL_AWS_ACCESS_KEY_ID=MYKEY
+    echo BBL_AWS_SECRET_ACCESS_KEY=MYSECRET
+    bbl plan --iaas aws --aws-region us-west-1
     echo -e "\nvpc_cidr=\"192.168.0.0/20\"" &gt;&gt; vars/terraform.tfvars</code></li>
 <li>Create the environment:
     <code>bbl up</code>
@@ -526,10 +525,8 @@ bosh create-env \
 <li>Plan the environment:
     <code>git clone https://github.com/cloudfoundry/bosh-bootloader.git
     mkdir some-env &amp;&amp; cd some-env
-    export BBL_IAAS=gcp
-    export BBL_GCP_REGION=us-west1
-    export BBL_GCP_SERVICE_ACCOUNT_KEY=my-key
-    bbl plan --name some-env
+    BBL_GCP_SERVICE_ACCOUNT_KEY=&lt;MYSERVICEACCOUNTKEY&gt;
+    bbl plan --name some-env --iaas gcp --gcp-region us-west-1
     cp -r ../bosh-bootloader/plan-patches/bosh-lite-gcp/* .</code></li>
 <li>Create the environment:
     <code>bbl up</code></li>
@@ -550,7 +547,7 @@ cp /path/to/patch-dir/cloud-config/iso-segs-ops.yml cloudconfig/
 TF_VAR_isolation_segments=&quot;1&quot; bbl up
 </code></pre>
 
-<p>To set the TF_VAR it is also possible to add <code>isolation_segments="1"</code> to <code>terraform.tfvars</code> before running up.</p>
+<p>To se the TF_VAR it is also possible to add <code>isolation_segments="1"</code> to <code>terraform.tfvars</code> before running up.</p>
                 
                   
                 
@@ -586,13 +583,13 @@ TF_VAR_isolation_segments=&quot;1&quot; bbl up
           </a>
         
         
-          <a href="../cf-lbs/" title="Cf lbs" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+          <a href="../cf-load-balancers/" title="Cf load balancers" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
             <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
               <span class="md-flex__ellipsis">
                 <span class="md-footer-nav__direction">
                   Next
                 </span>
-                Cf lbs
+                Cf load balancers
               </span>
             </div>
             <div class="md-flex__cell md-flex__cell--shrink">
@@ -622,7 +619,7 @@ TF_VAR_isolation_segments=&quot;1&quot; bbl up
       
     </div>
     
-      <script src="../assets/javascripts/application.8eb9be28.js"></script>
+      <script src="../assets/javascripts/application.b438e6c5.js"></script>
       
       <script>app.initialize({version:"0.17.3",url:{base:".."}})</script>
       

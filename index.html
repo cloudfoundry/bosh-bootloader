@@ -32,7 +32,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="./assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-0.17.3, mkdocs-material-2.7.1">
+      <meta name="generator" content="mkdocs-0.17.3, mkdocs-material-2.7.2">
     
     
       
@@ -40,7 +40,7 @@
       
     
     
-      <link rel="stylesheet" href="./assets/stylesheets/application.78aab2dc.css">
+      <link rel="stylesheet" href="./assets/stylesheets/application.8d40d89b.css">
       
         <link rel="stylesheet" href="./assets/stylesheets/application-palette.6079476c.css">
       
@@ -179,93 +179,9 @@
       
     
     
-      <label class="md-nav__link md-nav__link--active" for="toc">
-        BOSH Bootloader
-      </label>
-    
     <a href="." title="BOSH Bootloader" class="md-nav__link md-nav__link--active">
       BOSH Bootloader
     </a>
-    
-      
-<nav class="md-nav md-nav--secondary">
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="toc">Table of contents</label>
-    <ul class="md-nav__list" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#what-bbl-does" title="What bbl does" class="md-nav__link">
-    What bbl does
-  </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#generate-terraform-template" title="Generate Terraform template" class="md-nav__link">
-    Generate Terraform template
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#apply-terraform-template" title="Apply Terraform template" class="md-nav__link">
-    Apply Terraform template
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#map-terraform-outputs-to-bosh-create-env-vars" title="Map Terraform outputs to BOSH create-env vars" class="md-nav__link">
-    Map Terraform outputs to BOSH create-env vars
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#bosh-create-env-jumpbox-director" title="BOSH create-env (jumpbox, director)" class="md-nav__link">
-    BOSH create-env (jumpbox, director)
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#generate-cloud-config-template" title="Generate cloud-config template" class="md-nav__link">
-    Generate cloud-config template
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#map-terraform-outputs-to-bosh-cloud-config-vars" title="Map Terraform outputs to BOSH cloud-config vars" class="md-nav__link">
-    Map Terraform outputs to BOSH cloud-config vars
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#update-cloud-config-director" title="Update cloud-config (director)" class="md-nav__link">
-    Update cloud-config (director)
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-      
-      
-      
-      
-    </ul>
-  
-</nav>
     
   </li>
 
@@ -288,8 +204,8 @@
 
 
   <li class="md-nav__item">
-    <a href="cf-lbs/" title="Cf lbs" class="md-nav__link">
-      Cf lbs
+    <a href="cf-load-balancers/" title="Cf load balancers" class="md-nav__link">
+      Cf load balancers
     </a>
   </li>
 
@@ -443,77 +359,6 @@
     
   
   
-    <label class="md-nav__title" for="toc">Table of contents</label>
-    <ul class="md-nav__list" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#what-bbl-does" title="What bbl does" class="md-nav__link">
-    What bbl does
-  </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#generate-terraform-template" title="Generate Terraform template" class="md-nav__link">
-    Generate Terraform template
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#apply-terraform-template" title="Apply Terraform template" class="md-nav__link">
-    Apply Terraform template
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#map-terraform-outputs-to-bosh-create-env-vars" title="Map Terraform outputs to BOSH create-env vars" class="md-nav__link">
-    Map Terraform outputs to BOSH create-env vars
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#bosh-create-env-jumpbox-director" title="BOSH create-env (jumpbox, director)" class="md-nav__link">
-    BOSH create-env (jumpbox, director)
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#generate-cloud-config-template" title="Generate cloud-config template" class="md-nav__link">
-    Generate cloud-config template
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#map-terraform-outputs-to-bosh-cloud-config-vars" title="Map Terraform outputs to BOSH cloud-config vars" class="md-nav__link">
-    Map Terraform outputs to BOSH cloud-config vars
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#update-cloud-config-director" title="Update cloud-config (director)" class="md-nav__link">
-    Update cloud-config (director)
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-      
-      
-      
-      
-    </ul>
-  
 </nav>
                   </div>
                 </div>
@@ -526,36 +371,46 @@
                 
                 
                 <h1 id="bosh-bootloader">BOSH Bootloader</h1>
-<p>Also known as <code>bbl</code> <em>(pronounced: "bubble")</em>, bosh-bootloader is a command line
-utility for standing up a <a href="https://cloudfoundry.org/">CloudFoundry</a> or <a href="https://concourse-ci.org">Concourse</a> installation
-on an IaaS. <code>bbl</code> currently supports AWS, GCP and Azure. Openstack and vSphere support are planned.</p>
-<ul>
-<li><a href="https://wings.concourse-ci.org/teams/cf-infrastructure/pipelines/bosh-bootloader">CI</a></li>
-<li><a href="https://www.pivotaltracker.com/n/projects/1488988">Tracker</a></li>
-</ul>
-<h2 id="what-bbl-does">What <code>bbl</code> does</h2>
-<p><img alt="a list of steps that bbl executes, which are elaborated on below" src="./theme/bbl-process.png" /></p>
-<h3 id="generate-terraform-template">Generate Terraform template</h3>
-<p>The first step that <code>bbl up</code> does is to generate a Terraform template based on your IAAS, IAAS region, and chosen load balancer type (or lack thereof).</p>
-<p>The resulting Terraform template is emitted to the <code>terraform/bbl-template.tf</code> file within your state directory.</p>
-<h3 id="apply-terraform-template">Apply Terraform template</h3>
-<p>After generating the Terraform template, <code>bbl up</code> will run Terraform to apply that template, using also a variables file located at
-<code>vars/bbl.tfvars</code> within the state directory.</p>
-<h3 id="map-terraform-outputs-to-bosh-create-env-vars">Map Terraform outputs to BOSH create-env vars</h3>
-<p>Having applied the Terraform template, we now have a number of Terraform outputs, such as subnet CIDRs, reserved IP addresses, and load balancer configuration.
-<code>bbl</code> will transform those outputs into the inputs required by <code>jumpbox-deployment</code> and <code>bosh-deployment</code> and write them to the files <code>vars/jumpbox-vars-file.yml</code>
-and <code>vars/director-vars-file.yml</code>.</p>
-<h3 id="bosh-create-env-jumpbox-director">BOSH create-env (jumpbox, director)</h3>
-<p>Next, <code>bbl</code> shells out to the BOSH CLI to run <code>bosh create-env</code> twice. The first time, <code>bbl</code> uses <code>jumpbox-deployment</code> and creates the jumpbox vm; the second time,
-<code>bbl</code> uses <code>bosh-deployment</code> and creates the director VM. The exact commands that <code>bbl</code> will run are emitted to the <code>create-jumpbox.sh</code> and <code>create-director.sh</code>
-files within the state directory.</p>
-<h3 id="generate-cloud-config-template">Generate cloud-config template</h3>
-<p>After the director VM comes up, <code>bbl</code> generates a base cloud-config, based on the IAAS, IAAS region, and chosen load balancer type.</p>
-<h3 id="map-terraform-outputs-to-bosh-cloud-config-vars">Map Terraform outputs to BOSH cloud-config vars</h3>
-<p>Having generated a base cloud-config template, <code>bbl</code> maps Terraform outputs to cloud-config variables. These variables include network and subnetwork names,
-security groups or tags, and CIDR ranges, as well as load balancer target pool names.</p>
-<h3 id="update-cloud-config-director">Update cloud-config (director)</h3>
-<p>Finally, <code>bbl</code> will update the director's cloud config, by shelling out to <code>bosh update-cloud-config</code>.</p>
+<pre><code>Usage:
+  bbl [GLOBAL OPTIONS] COMMAND [OPTIONS]
+
+Global Options:
+  --help      [-h]       Prints usage. Use &quot;bbl [command] --help&quot; for more information about a command
+  --state-dir            Directory containing the bbl state
+  --debug                Prints debugging output
+  --version   [-v]       Prints version
+
+Basic Commands: A good place to start
+  up                      Deploys BOSH director on an IAAS. Updates existing director
+  print-env               All environment variables needed for targeting BOSH. Use with: eval &quot;$(bbl print-env)&quot;
+  create-lbs              Creates recommended load balancer(s) for CF, Concourse
+
+Maintenance Lifecycle Commands:
+  destroy                 Tears down BOSH director infrastructure. Cleans up state directory
+  update-lbs              Updates load balancer(s)
+  delete-lbs              Deletes attached load balancer(s)
+  rotate                  Rotates SSH key for the jumpbox user
+  plan                    Populates a state directory with the latest config without applying it
+
+Environmental Detail Commands: Useful for automation and gaining access
+  bosh-deployment-vars    Prints required variables for BOSH deployment
+  jumpbox-deployment-vars Prints required variables for jumpbox deployment
+  cloud-config            Prints suggested cloud configuration for BOSH environment
+  jumpbox-address         Prints BOSH jumpbox address
+  director-address        Prints BOSH director address
+  director-username       Prints BOSH director username
+  director-password       Prints BOSH director password
+  director-ca-cert        Prints BOSH director CA certificate
+  env-id                  Prints environment ID
+  ssh-key                 Prints jumpbox SSH private key
+  director-ssh-key        Prints director SSH private key
+  lbs                     Prints load balancer(s) and DNS records
+
+Troubleshooting Commands:
+  help                    Prints usage
+  version                 Prints version
+  latest-error            Prints the output from the latest call to terraform
+</code></pre>
                 
                   
                 
@@ -613,7 +468,7 @@ security groups or tags, and CIDR ranges, as well as load balancer target pool n
       
     </div>
     
-      <script src="./assets/javascripts/application.8eb9be28.js"></script>
+      <script src="./assets/javascripts/application.b438e6c5.js"></script>
       
       <script>app.initialize({version:"0.17.3",url:{base:"."}})</script>
       

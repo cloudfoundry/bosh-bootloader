@@ -32,7 +32,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-0.17.3, mkdocs-material-2.7.1">
+      <meta name="generator" content="mkdocs-0.17.3, mkdocs-material-2.7.2">
     
     
       
@@ -40,7 +40,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/application.78aab2dc.css">
+      <link rel="stylesheet" href="../assets/stylesheets/application.8d40d89b.css">
       
         <link rel="stylesheet" href="../assets/stylesheets/application-palette.6079476c.css">
       
@@ -195,8 +195,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../cf-lbs/" title="Cloud Foundry Load Balancers" class="md-nav__link">
-      Cloud Foundry Load Balancers
+    <a href="../cf-load-balancers/" title="CF Load Balancers" class="md-nav__link">
+      CF Load Balancers
     </a>
   </li>
 
@@ -207,8 +207,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../cleaning-up/" title="Cleaning Up" class="md-nav__link">
-      Cleaning Up
+    <a href="../cleaning-up/" title="Cleaning up" class="md-nav__link">
+      Cleaning up
     </a>
   </li>
 
@@ -266,8 +266,8 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#getting-started-aws" title="Getting started: AWS" class="md-nav__link">
-    Getting started: AWS
+  <a href="#getting-started-aws" title="Getting started aws" class="md-nav__link">
+    Getting started aws
   </a>
   
 </li>
@@ -280,8 +280,15 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#bbl-up" title="bbl up" class="md-nav__link">
-    bbl up
+  <a href="#creating-infrastructure-and-bosh-director" title="Creating infrastructure and BOSH director" class="md-nav__link">
+    Creating infrastructure and BOSH director
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#state-management" title="State management" class="md-nav__link">
+    State management
   </a>
   
 </li>
@@ -420,8 +427,8 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#getting-started-aws" title="Getting started: AWS" class="md-nav__link">
-    Getting started: AWS
+  <a href="#getting-started-aws" title="Getting started aws" class="md-nav__link">
+    Getting started aws
   </a>
   
 </li>
@@ -434,8 +441,15 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#bbl-up" title="bbl up" class="md-nav__link">
-    bbl up
+  <a href="#creating-infrastructure-and-bosh-director" title="Creating infrastructure and BOSH director" class="md-nav__link">
+    Creating infrastructure and BOSH director
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#state-management" title="State management" class="md-nav__link">
+    State management
   </a>
   
 </li>
@@ -479,21 +493,20 @@
                 
                   <h1>Getting started aws</h1>
                 
-                <h3 id="getting-started-aws">Getting started: AWS</h3>
+                <h3 id="getting-started-aws">Getting started aws</h3>
 <p>This guide is a walkthrough for deploying a BOSH director with <code>bbl</code>
 on AWS. Upon completion, you will have the following:</p>
 <ol>
-<li>A BOSH director</li>
-<li>A jumpbox</li>
-<li>A set of randomly generated BOSH director credentials</li>
+<li>A BOSH director instance in the availability zone of your choice.</li>
+<li>A set of randomly generated BOSH director credentials.</li>
 <li>A generated keypair allowing you to SSH into the BOSH director and
-any instances BOSH deploys</li>
+any instances BOSH deploys.</li>
 <li>A copy of the manifest the BOSH director was deployed with</li>
 <li>A basic cloud config</li>
 </ol>
 <h3 id="creating-an-iam-user">Creating an IAM user</h3>
-<p>In order for <code>bbl</code> to interact with AWS, an <code>IAM</code> user must be created.</p>
-<p>This user will be issuing API requests to create the infrastructure such
+<p>In order for <code>bbl</code> to interact with AWS, an <code>IAM</code> user must be created.
+This user will be issuing API requests to create the infrastructure such
 as EC2 instances, load balancers, subnets, etc.</p>
 <p>The user must have the following <code>policy</code>:</p>
 <pre><code>{
@@ -530,7 +543,7 @@ $ aws iam create-access-key --user-name &quot;bbl-user&quot;
 access key" to the terminal. These values are important and should
 be kept secret. In the next section <code>bbl</code> will use these commands to
 create infrastructure on AWS.</p>
-<h3 id="bbl-up">bbl up</h3>
+<h3 id="creating-infrastructure-and-bosh-director">Creating infrastructure and BOSH director</h3>
 <p><code>bbl</code> will create infrastructure and deploy a BOSH director with the
 following command:</p>
 <pre><code>bbl up \
@@ -540,14 +553,45 @@ following command:</p>
     --iaas aws
 </code></pre>
 
-<p>The process takes around 5-8 minutes.</p>
-<p>The bbl state directory contains all of the files that were used to
-create your bosh director. This should be checked in to version control,
-so that you have all the information necessary to later destroy or
-update this environment at a later date.</p>
+<p>The process takes around 5-8 minutes. When the process is finished
+a file named <code>bbl-state.json</code> will be created in the current working
+directory. This file is very important as it contains credentials
+and other metadata related to your BOSH director and infrastructure.
+It is highly recommended that you backup this file into version control
+or another safe location. For more info about the <code>bbl-state.json</code> see
+the "State management" section.</p>
+<h3 id="state-management">State management</h3>
+<p>The <code>bbl-state.json</code> is an important file that contains confidential
+information about your infrastructure.</p>
+<p>The state file allows you to easily upgrade to the newest BOSH director
+and stemcell versions when new versions of bbl are released. It will
+allow you to issue a <code>bbl destroy</code> to destroy the many resources that
+<code>bbl</code> creates in AWS which is much easier and less error prone
+than manually finding the resources in the AWS console or CLI.</p>
+<p>Backing up this file into a safe place is highly recommended. The file
+should never be modified by hand.</p>
+<p><code>bbl-state.json</code> contains the following:</p>
+<ul>
+<li>Environment ID (unique ID for tag on all resources bbl deploys)</li>
+<li>BOSH director username and password</li>
+<li>BOSH director IP</li>
+<li>BOSH director SSL CA, certificate, private key</li>
+</ul>
+<p>The best way to extract this info is by issuing commands like</p>
+<pre><code>$ bbl director-username
+some-username
+$ bbl director-ca-cert
+--- BEGIN CERTIFICATE ---
+...
+--- END CERTIFICATE ---
+</code></pre>
+
+<p>and so on...</p>
+<p>In order to run these commands, the current directory must contain the
+<code>bbl-state.json</code>.</p>
 <h3 id="connecting-to-the-bosh-director">Connecting to the BOSH director</h3>
-<p>To setup your BOSH CLI with the director you'll need the following
-command to set the credentials:</p>
+<p>To setup your BOSH CLI with the new director you'll need the following
+command to get the credentials:</p>
 <pre><code>eval &quot;$(bbl print-env)&quot;
 </code></pre>
 
@@ -555,13 +599,10 @@ command to set the credentials:</p>
 <p>Separate commands are available for the <code>bbl print-env</code> fields:</p>
 <pre><code>$ bbl director-address
 https://10.0.0.6:25555
-
 $ bbl director-username
 user-d3783rk
-
 $ bbl director-password
 p-23dah71skl
-
 $ bbl director-ca-cert
 -----BEGIN CERTIFICATE-----
 MIIDtzCCAp+gAwIBAgIJAIPgaUgWRCE8MA0GCSqGSIb3DQEBBQUAMEUxCzAJBgNV
@@ -587,7 +628,7 @@ Password: p-23dah71sk1
 ...
 </code></pre>
 
-<p>Now you're ready to deploy software with BOSH.</p>
+<p>Now you're ready to deploy software with BOSH!</p>
                 
                   
                 
@@ -659,7 +700,7 @@ Password: p-23dah71sk1
       
     </div>
     
-      <script src="../assets/javascripts/application.8eb9be28.js"></script>
+      <script src="../assets/javascripts/application.b438e6c5.js"></script>
       
       <script>app.initialize({version:"0.17.3",url:{base:".."}})</script>
       

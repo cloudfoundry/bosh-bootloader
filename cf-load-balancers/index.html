@@ -32,15 +32,15 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-0.17.3, mkdocs-material-2.7.1">
+      <meta name="generator" content="mkdocs-0.17.3, mkdocs-material-2.7.2">
     
     
       
-        <title>Cloud Foundry Load Balancers - BBL</title>
+        <title>CF Load Balancers - BBL</title>
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/application.78aab2dc.css">
+      <link rel="stylesheet" href="../assets/stylesheets/application.8d40d89b.css">
       
         <link rel="stylesheet" href="../assets/stylesheets/application-palette.6079476c.css">
       
@@ -74,7 +74,7 @@
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="search" autocomplete="off">
     <label class="md-overlay" data-md-component="overlay" for="drawer"></label>
     
-      <a href="#cloud-foundry-load-balancers" tabindex="1" class="md-skip">
+      <a href="#cf-load-balancers" tabindex="1" class="md-skip">
         Skip to content
       </a>
     
@@ -100,7 +100,7 @@
                 BBL
               </span>
               <span class="md-header-nav__topic">
-                Cloud Foundry Load Balancers
+                CF Load Balancers
               </span>
             
           
@@ -204,11 +204,11 @@
     
     
       <label class="md-nav__link md-nav__link--active" for="toc">
-        Cloud Foundry Load Balancers
+        CF Load Balancers
       </label>
     
-    <a href="./" title="Cloud Foundry Load Balancers" class="md-nav__link md-nav__link--active">
-      Cloud Foundry Load Balancers
+    <a href="./" title="CF Load Balancers" class="md-nav__link md-nav__link--active">
+      CF Load Balancers
     </a>
     
       
@@ -222,37 +222,36 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#aws" title="AWS" class="md-nav__link">
-    AWS
+  <a href="#bbl-up-lb-type-cf" title="bbl up --lb-type cf" class="md-nav__link">
+    bbl up --lb-type cf
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#-iaas-aws" title="--iaas aws" class="md-nav__link">
+    --iaas aws
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#gcp" title="GCP" class="md-nav__link">
-    GCP
+        
+          <li class="md-nav__item">
+  <a href="#-iaas-gcp" title="--iaas gcp" class="md-nav__link">
+    --iaas gcp
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#microsoft-azure" title="Microsoft Azure" class="md-nav__link">
-    Microsoft Azure
+        
+          <li class="md-nav__item">
+  <a href="#-iaas-azure" title="--iaas azure" class="md-nav__link">
+    --iaas azure
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#vsphere" title="vSphere" class="md-nav__link">
-    vSphere
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#openstack" title="OpenStack" class="md-nav__link">
-    OpenStack
-  </a>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -420,37 +419,36 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#aws" title="AWS" class="md-nav__link">
-    AWS
+  <a href="#bbl-up-lb-type-cf" title="bbl up --lb-type cf" class="md-nav__link">
+    bbl up --lb-type cf
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#-iaas-aws" title="--iaas aws" class="md-nav__link">
+    --iaas aws
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#gcp" title="GCP" class="md-nav__link">
-    GCP
+        
+          <li class="md-nav__item">
+  <a href="#-iaas-gcp" title="--iaas gcp" class="md-nav__link">
+    --iaas gcp
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#microsoft-azure" title="Microsoft Azure" class="md-nav__link">
-    Microsoft Azure
+        
+          <li class="md-nav__item">
+  <a href="#-iaas-azure" title="--iaas azure" class="md-nav__link">
+    --iaas azure
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#vsphere" title="vSphere" class="md-nav__link">
-    vSphere
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#openstack" title="OpenStack" class="md-nav__link">
-    OpenStack
-  </a>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -471,121 +469,136 @@
               
                 
                 
-                <h1 id="cloud-foundry-load-balancers">Cloud Foundry Load Balancers</h1>
-<h2 id="aws">AWS</h2>
-<p><code>bbl</code> creates 3 load balancers on AWS.</p>
+                <h1 id="cf-load-balancers">CF Load Balancers</h1>
+<h2 id="bbl-up-lb-type-cf"><code>bbl up --lb-type cf</code></h2>
+<h3 id="-iaas-aws"><code>--iaas aws</code></h3>
+<p>There are 3 elastic load balancers.</p>
 <ol>
 <li>
 <p><strong>cf-ssh-lb</strong></p>
 <ul>
-<li>In the cloud-config, this lb is referenced with the vm extension <code>diego-ssh-proxy-network-properties</code>.</li>
-<li>In cf-deployment, this vm extension will be associated with the <code>scheduler</code> vm.</li>
-<li>It forwards <code>TCP:2222</code> to <code>TCP:2222</code>.</li>
+<li>deployment</li>
+<li>
+<p>destination vm <code>scheduler</code> with vm_extension <code>diego-ssh-proxy-network-properties</code></p>
+</li>
+<li>
+<p>forwarding</p>
+</li>
+<li><code>tcp:2222</code> -&gt; <code>tcp:2222</code></li>
 </ul>
 </li>
 <li>
 <p><strong>cf-tcp-lb</strong></p>
 <ul>
-<li>In the cloud-config, this lb is referenced with the vm extension <code>cf-tcp-router-network-properties</code>.</li>
-<li>In cf-deployment, this vm extension will be associated with the <code>tcp-router</code> vm.</li>
-<li>It forwards <code>TCP:1024-1123</code> to <code>TCP:1024-1123</code>.</li>
+<li>deployment</li>
+<li>
+<p>destination vm <code>tcp-router</code> with vm_extension <code>cf-tcp-router-network-properties</code></p>
+</li>
+<li>
+<p>forwarding</p>
+</li>
+<li><code>tcp:1024-1123</code> -&gt; <code>tcp:1024-1123</code></li>
 </ul>
 </li>
 <li>
 <p><strong>cf-router-lb</strong></p>
 <ul>
-<li>In the cloud-config, this lb is referenced with the vm extension <code>cf-router-network-properties</code>.</li>
-<li>In cf-deployment, this vm extension will be associated with the <code>router</code> vm.</li>
-<li>It forwards:<ul>
-<li><code>HTTP:80</code>   to <code>HTTP:80</code></li>
-<li><code>HTTPS:443</code> to <code>HTTP:80</code></li>
-<li><code>TLS:4443</code>  to <code>TCP:80</code></li>
-</ul>
+<li>deployment</li>
+<li>
+<p>destination vm <code>router</code> with vm_extension <code>cf-router-network-properties</code></p>
 </li>
+<li>
+<p>forwarding</p>
+</li>
+<li><code>http:80</code>   -&gt; <code>http:80</code></li>
+<li><code>https:443</code> -&gt; <code>http:80</code></li>
+<li><code>tls:4443</code>  -&gt; <code>tcp:80</code></li>
 </ul>
 </li>
 </ol>
-<h2 id="gcp">GCP</h2>
-<p><code>bbl</code> creates 4 load balancers on GCP.</p>
+<h3 id="-iaas-gcp"><code>--iaas gcp</code></h3>
+<p>There are 5 load balancers.</p>
 <ol>
 <li>
 <p><strong>cf-router-lb</strong></p>
 <ul>
-<li>In the cloud-config, this lb is referenced with the vm extension <code>cf-router-network-properties</code>.</li>
-<li>In cf-deployment, this vm extension will be associated with the <code>router</code> vm.</li>
-<li>Configuration:<ul>
-<li>Compute address</li>
-<li>Backend service with an instance group per availability zone</li>
-<li>Instance group per availability zone allowing <code>https:443</code></li>
-<li>Firewall rule allowing <code>tcp:80</code> &amp; <code>tcp:443</code> to the backend service</li>
-<li>Health check for <code>tcp:8080</code> &amp; <code>tcp:80</code></li>
-</ul>
+<li>deployment</li>
+<li>
+<p>destination vm <code>router</code> with vm_extension <code>cf-router-network-properties</code></p>
 </li>
+<li>
+<p>components</p>
+</li>
+<li>a backend service with an instance group per availability zone</li>
+<li>instance group per availability zone allowing <code>https:443</code></li>
+<li>a firewall rule allowing <code>tcp:80</code> &amp; <code>tcp:443</code> to the backend service</li>
+<li>a health check for <code>tcp:8080</code> &amp; <code>tcp:80</code></li>
 </ul>
 </li>
 <li>
 <p><strong>cf-ws-lb</strong></p>
 <ul>
-<li>In the cloud-config, this lb is referenced with the vm extension <code>cf-router-network-properties</code>.</li>
-<li>In cf-deployment, this vm extension will be associated with the <code>router</code> vm.</li>
-<li>Configuration:<ul>
-<li>Compute address</li>
-<li>Target pool</li>
-<li>Forwarding rule allowing <code>tcp:443</code> to the target pool</li>
-<li>Forwarding rule allowing <code>tcp:80</code> to the target pool</li>
+<li>deployment</li>
+<li>
+<p>destination vm <code>router</code> with vm_extension <code>cf-router-network-properties</code></p>
+</li>
+<li>
+<p>components</p>
+</li>
+<li>a target pool</li>
+<li>a forwarding rule allowing <code>tcp:443</code> to the target pool</li>
+<li>a forwarding rule allowing <code>tcp:80</code> to the target pool</li>
+<li>no firewall rule?</li>
 </ul>
 </li>
+<li>
+<p><strong>cf-credhub-lb</strong></p>
+<ul>
+<li>deployment</li>
+<li>
+<p>destination vm <code>some</code> with vm_extension <code>credhub-network-properties</code></p>
+</li>
+<li>
+<p>components</p>
+</li>
+<li>a target pool</li>
+<li>a firewall rule allowing <code>tcp:8844</code> to the target pool</li>
+<li>a forwarding rule for <code>tcp:8844</code> to the target pool</li>
 </ul>
 </li>
 <li>
 <p><strong>cf-tcp-router-lb</strong></p>
 <ul>
-<li>In the cloud-config, this lb is referenced with the vm extension <code>cf-tcp-router-network-properties</code>.</li>
-<li>In cf-deployment, this vm extension will be associated with the <code>tcp-router</code> vm.</li>
-<li>Configuration:<ul>
-<li>Compute address</li>
-<li>Target pool</li>
-<li>Firewall rule allowing <code>tcp:1024-32768</code> to the target pool</li>
-<li>Forwarding rule for <code>tcp:1024-32768</code> to the target pool</li>
-</ul>
+<li>deployment</li>
+<li>
+<p>destination vm <code>tcp-router</code> with vm_extension <code>cf-tcp-router-network-properties</code></p>
 </li>
+<li>
+<p>components</p>
+</li>
+<li>a target pool</li>
+<li>a firewall rule allowing <code>tcp:1024-32768</code> to the target pool</li>
+<li>a forwarding rule for <code>tcp:1024-32768</code> to the target pool</li>
 </ul>
 </li>
 <li>
 <p><strong>cf-ssh-proxy-lb</strong></p>
 <ul>
-<li>In the cloud-config, this lb is referenced with the vm extension <code>diego-ssh-proxy-network-properties</code>.</li>
-<li>In cf-deployment, this vm extension will be associated with the <code>scheduler</code> vm.</li>
-<li>Configuration:<ul>
-<li>Compute address</li>
-<li>Target pool</li>
-<li>Firewall rule allowing <code>tcp:2222</code> to the target pool</li>
-<li>Forwarding rule for <code>tcp:2222</code> to the target pool</li>
-</ul>
+<li>deployment</li>
+<li>
+<p>destination vm <code>scheduler</code> with vm_extension <code>diego-ssh-proxy-network-properties</code></p>
 </li>
-</ul>
+<li>
+<p>components</p>
 </li>
-</ol>
-<h2 id="microsoft-azure">Microsoft Azure</h2>
-<p>There is an application gateway.</p>
-<ol>
-<li><strong>cf-app-gateway</strong><ul>
-<li>In the cloud-config, this lb is referenced with the vm extension <code>cf-router-network-properties</code>.</li>
-<li>In cf-deployment, this vm extension will be associated with the <code>router</code> vm.</li>
-<li>Configuration:<ul>
-<li>Public IP</li>
-<li>Application Gateway</li>
-<li>Network Security Rules</li>
-<li>Network Security Group</li>
-</ul>
-</li>
+<li>a target pool</li>
+<li>a firewall rule allowing <code>tcp:2222</code> to the target pool</li>
+<li>a forwarding rule for <code>tcp:2222</code> to the target pool</li>
 </ul>
 </li>
 </ol>
-<h2 id="vsphere">vSphere</h2>
-<p>N/A.</p>
-<h2 id="openstack">OpenStack</h2>
-<p>N/A.</p>
+<h3 id="-iaas-azure"><code>--iaas azure</code></h3>
+<p>There is 1 application gateway.</p>
                 
                   
                 
@@ -657,7 +670,7 @@
       
     </div>
     
-      <script src="../assets/javascripts/application.8eb9be28.js"></script>
+      <script src="../assets/javascripts/application.b438e6c5.js"></script>
       
       <script>app.initialize({version:"0.17.3",url:{base:".."}})</script>
       
