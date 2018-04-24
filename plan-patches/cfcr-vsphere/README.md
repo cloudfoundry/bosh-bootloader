@@ -58,11 +58,14 @@ EOF
 
    credhub login
    export admin_password=$(bosh int <(credhub get -n "${director_name}/cfcr/kubo-admin-password" --output-json) --path=/value)
+   ```
 
-   # right now, we don't support TLS verification of the kubernetes master, so we also don't need to run these commmands.
+   If you want to have a tls-secured kubernetes api, you'll need to add credhub's generated CA to your trusted CAs. We'll leave that as an exercise for the operator.
+   ```
    # export tmp_ca_file="$(mktemp)"
    # bosh int <(credhub get -n "${director_name}/cfcr/tls-kubernetes" --output-json) --path=/value/ca > "${tmp_ca_file}"
    ```
+
    ```
    kubectl config set-cluster "${cluster_name}" --server="${address}" --insecure-skip-tls-verify=true
    kubectl config set-credentials "${user_name}" --token="${admin_password}"
@@ -70,12 +73,12 @@ EOF
    kubectl config use-context "${context_name}"
    ```
 
-1. create, scale, and expose apps with the kubernetes bootcamp docker image. please note that the vsphere cloud-provider, like vsphere, does not have load balancer support built in, so you'll have to use nodeports.
+1. Create, scale, and expose apps with the kubernetes bootcamp docker image.
+Please note that the vsphere cloud-provider, like vsphere, does not have load balancer support built in, so you'll have to use nodeports.
    ```
    kubectl run kubernetes-bootcamp --image=docker.io/jocatalin/kubernetes-bootcamp:v1 --port=8080
    kubectl get pods
    kubectl expose deployment kubernetes-bootcamp --type NodePort --name k8s-bootcamp-service
    ```
-   to curl this app, you'll want to find its nodeport with `kubectl get service k8s-bootcamp-service -o wide`.
-   and its IP by correlating the node listed in `kubectl get pods -o wide` against the external IP from `kubectl get nodes -o wide`.
+   After you've completed this, other services within your vsphere network cluster should be able to reach kubernetes-bootcamp on any worker's NodePort.
 

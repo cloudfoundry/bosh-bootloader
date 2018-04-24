@@ -1,0 +1,29 @@
+# replace the IP below with one that's within BBL_VSPHERE_SUBNET
+# but is not reserved. IPs 10 or more above the base of your cidr should be safe.
+---
+- type: replace
+  path: /networks/-
+  value:
+    name: vip
+    type: vip
+
+- type: replace
+  path: /vm_types/-
+  value:
+    name: minimal
+    cloud_properties:
+      instance_type: m1.tiny
+
+- type: replace
+  path: /vm_types/-
+  value:
+    name: small
+    cloud_properties:
+      instance_type: m1.small
+
+- type: replace
+  path: /vm_types/-
+  value:
+    name: small-highmem
+    cloud_properties:
+      instance_type: m1.medium

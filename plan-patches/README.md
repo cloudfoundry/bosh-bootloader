@@ -30,4 +30,4 @@ Many of these have additional prep steps or specific downstream bosh deployments
 | **VSPHERE** |     |
 | [cfcr-vsphere](cfcr-vsphere/) | Deploy a CFCR with a single master static IP and the vsphere cloud-provider |
 | **OPENSTACK** |     |
-| [cfcr-vsphere](cfcr-openstack/) | Deploy a CFCR with a single master floating static IP and the openstack cloud-provider |
+| [cfcr-openstack](cfcr-openstack/) | Deploy a CFCR with a single master floating static IP |
