@@ -1,4 +1,4 @@
-# Migration/Upgrade Guide
+# Upgrade
 
 In order to use a later version of `bbl` against an older
 `bbl` environment/state directory, you will need to run

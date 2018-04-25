@@ -6,11 +6,11 @@ on an IaaS. `bbl` currently supports AWS, GCP, Microsoft Azure, Openstack and vS
 * [CI](https://wings.concourse-ci.org/teams/cf-infrastructure/pipelines/bosh-bootloader)
 * [Tracker](https://www.pivotaltracker.com/n/projects/1488988)
 
-## Guides
+## Docs
 
 - [Getting Started: GCP](docs/getting-started-gcp.md)
 - [Deploying Concourse](docs/concourse.md)
-- [Migration/Upgrade](docs/migration-guide.md)
+- [Upgrade](docs/upgrade.md)
 - [Advanced Configuration](docs/advanced-configuration.md)
 
 ## Prerequisites
