@@ -1,22 +1,22 @@
-# Migration Guide
+# Migration/Upgrade Guide
 
-## bbl v5 -> bbl v6
+In order to use a later version of `bbl` against an older
+`bbl` environment/state directory, you will need to run
+`bbl plan` before running `bbl up`.
 
-Known issue: trying to destroy a `bbl5` environment with `bbl6` requires you to
-`bbl6 plan && bbl6 up` against that state directory.
+`bbl plan` just writes the latest files and state directory structure.
 
-This is due to a PR released in `bbl6` that forwarded terraform outputs directly
-through to the bosh deployment vars files for `create-env` and `delete-env`.
+`bbl up` is the applier. It will run `terraform apply`,
+`bosh create-env`, and `bosh update-cloud-config`.
 
-By running `bbl6 up`, the terraform outputs are updated and so too are the
-bosh deployment vars files.
+### Example
 
 ```
-bbl5 up
+bbl5 up --lb-type cf --lb-cert cert --lb-key key --lb-domain domain.com
 
 # some time passes
 
-bbl6 plan
+bbl6 plan --lb-type cf --lb-cert cert --lb-key key --lb-domain domain.com
 bbl6 up
 
 bbl6 destroy
