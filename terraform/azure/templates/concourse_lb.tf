@@ -3,6 +3,7 @@ resource "azurerm_public_ip" "concourse" {
   location                     = "${var.region}"
   resource_group_name          = "${azurerm_resource_group.bosh.name}"
   public_ip_address_allocation = "static"
+  sku                          = "Standard"
 
   tags {
     environment = "${var.env_id}"
@@ -13,6 +14,7 @@ resource "azurerm_lb" "concourse" {
   name                = "${var.env_id}-concourse-lb"
   resource_group_name = "${azurerm_resource_group.bosh.name}"
   location            = "${var.region}"
+  sku                 = "Standard"
 
   frontend_ip_configuration {
     name                 = "${var.env_id}-concourse-frontend-ip-configuration"
