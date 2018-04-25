@@ -24,6 +24,15 @@ data "google_iam_policy" "admin" {
   }
 
   binding {
+    role = "roles/storage.objectViewer"
+
+    members = [
+      "serviceAccount:${google_service_account.master.email}",
+      "serviceAccount:${google_service_account.worker.email}",
+    ]
+  }
+
+  binding {
     role = "roles/compute.networkAdmin"
 
     members = [
