@@ -1,5 +1,10 @@
 # Patch: cfcr-gcp
 
+Prerequisites:
+
+1. When running `bbl up`, ensure the service account used has the additional role 'roles/resourcemanager.projectIamAdmin'.
+   This is required to create the cfcr IAM bindings for your project
+
 Steps to deploy cfcr with bbl:
 
 1. Supply a kubernetes master host. Your k8s api will be at this hostname.
