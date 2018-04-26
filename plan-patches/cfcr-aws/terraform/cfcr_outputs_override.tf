@@ -1,9 +1,9 @@
 output "kubernetes-cluster-tag" {
-  value = "${random_id.kubernetes-cluster-tag.b64}"
+  value = "${random_id.kubernetes_cluster_tag.b64}"
 }
 
 output "cfcr_master_target_pool" {
-   value = "${aws_elb.api.name}"
+   value = "${aws_elb.cfcr_api.name}"
 }
 
 output "kubernetes_master_host" {
@@ -11,9 +11,9 @@ output "kubernetes_master_host" {
 }
 
 output "master_iam_instance_profile" {
-  value = "${aws_iam_instance_profile.cfcr-master.name}"
+  value = "${aws_iam_instance_profile.cfcr_master.name}"
 }
 
 output "worker_iam_instance_profile" {
-  value = "${aws_iam_instance_profile.cfcr-worker.name}"
+  value = "${aws_iam_instance_profile.cfcr_worker.name}"
 }

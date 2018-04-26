@@ -1,6 +1,6 @@
-resource "aws_iam_role_policy" "cfcr-master" {
+resource "aws_iam_role_policy" "cfcr_master" {
   name = "${var.env_id}-cfcr-master"
-  role = "${aws_iam_role.cfcr-master.id}"
+  role = "${aws_iam_role.cfcr_master.id}"
 
   policy = <<EOF
 {
@@ -85,12 +85,12 @@ resource "aws_iam_role_policy" "cfcr-master" {
 EOF
 }
 
-resource "aws_iam_instance_profile" "cfcr-master" {
+resource "aws_iam_instance_profile" "cfcr_master" {
   name = "${var.env_id}-cfcr-master"
-  role = "${aws_iam_role.cfcr-master.name}"
+  role = "${aws_iam_role.cfcr_master.name}"
 }
 
-resource "aws_iam_role" "cfcr-master" {
+resource "aws_iam_role" "cfcr_master" {
   name = "${var.env_id}-cfcr-master"
 
   assume_role_policy = <<EOF
@@ -110,9 +110,9 @@ resource "aws_iam_role" "cfcr-master" {
 EOF
 }
 
-resource "aws_iam_role_policy" "cfcr-worker" {
+resource "aws_iam_role_policy" "cfcr_worker" {
   name = "${var.env_id}-cfcr-worker"
-  role = "${aws_iam_role.cfcr-worker.id}"
+  role = "${aws_iam_role.cfcr_worker.id}"
 
   policy = <<EOF
 {
@@ -133,12 +133,12 @@ resource "aws_iam_role_policy" "cfcr-worker" {
 EOF
 }
 
-resource "aws_iam_instance_profile" "cfcr-worker" {
+resource "aws_iam_instance_profile" "cfcr_worker" {
   name = "${var.env_id}-cfcr-worker"
-  role = "${aws_iam_role.cfcr-worker.name}"
+  role = "${aws_iam_role.cfcr_worker.name}"
 }
 
-resource "aws_iam_role" "cfcr-worker" {
+resource "aws_iam_role" "cfcr_worker" {
   name = "${var.env_id}-cfcr-worker"
 
   assume_role_policy = <<EOF

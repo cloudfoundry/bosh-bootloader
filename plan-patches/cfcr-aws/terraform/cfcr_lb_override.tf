@@ -1,16 +1,16 @@
-resource "random_id" "kubernetes-cluster-tag" {
+resource "random_id" "kubernetes_cluster_tag" {
   byte_length = 16
 }
 
 resource "aws_subnet" "bosh_subnet" {
   tags {
     Name              = "${var.env_id}-bosh-subnet"
-    KubernetesCluster = "${random_id.kubernetes-cluster-tag.b64}"
+    KubernetesCluster = "${random_id.kubernetes_cluster_tag.b64}"
   }
 }
 
-resource "aws_security_group" "api" {
-  name   = "${var.env_id}-api-access"
+resource "aws_security_group" "cfcr_api" {
+  name   = "${var.short_env_id}-cfcr-api-access"
   vpc_id = "${local.vpc_id}"
 
   ingress {
@@ -34,13 +34,13 @@ resource "aws_security_group_rule" "cfcr_api_to_internal" {
   protocol                 = "tcp"
   from_port                = 8443
   to_port                  = 8443
-  source_security_group_id = "${aws_security_group.api.id}"
+  source_security_group_id = "${aws_security_group.cfcr_api.id}"
 }
 
-resource "aws_elb" "api" {
+resource "aws_elb" "cfcr_api" {
   name            = "${var.short_env_id}-cfcr-api"
   subnets         = ["${aws_subnet.bosh_subnet.id}"]
-  security_groups = ["${aws_security_group.api.id}"]
+  security_groups = ["${aws_security_group.cfcr_api.id}"]
 
   listener {
     instance_port     = "8443"
