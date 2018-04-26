@@ -17,7 +17,7 @@ Steps to deploy cfcr with bbl:
 - type: replace
   path: /networks/name=default/subnets/0/static?
   value:
-  - $kubernetes_master_host
+  - ${kubernetes_master_host}
 EOF
     bbl up
     eval "$(bbl print-env)"

@@ -1,12 +1,19 @@
-# Patch: cfcr-gcp
+# Patch: cfcr-aws
 
 Steps to deploy cfcr with bbl:
 
+1. Supply a kubernetes master host. Your k8s api will be at this hostname.
+    ```
+    export kubernetes_master_host=cfcr.your-domain-here.biz
+    ```
 1. Follow the normal steps to bbl up with a patch
     ```
     mkdir banana-env && cd banana-env
     bbl plan --name banana-env
     cp -r bosh-bootloader/plan-patches/cfcr-aws/. .
+    cat > vars/cfcr.tfvars << EOF
+system_domain="${kubernetes_master_host}"
+EOF
     bbl up
     eval "$(bbl print-env)"
     ```
@@ -33,8 +40,7 @@ Steps to deploy cfcr with bbl:
 
    Then run the following to mix them together into kubectl-appropriate forms:
    ```
-   export director_name=$(bosh int vars/director-vars-file.yml --path=/director_name)
-   export kubernetes_master_host=$(bosh int vars/director-vars-file.yml --path=/master_lb_ip_address)
+   export director_name=$(bosh int <(bbl outputs) --path=/director_name)
    export address="https://${kubernetes_master_host}:8443"
    export cluster_name="kubo:${director_name}:cfcr"
    export user_name="kubo:${director_name}:cfcr-admin"
@@ -44,10 +50,10 @@ Steps to deploy cfcr with bbl:
    export admin_password=$(bosh int <(credhub get -n "${director_name}/cfcr/kubo-admin-password" --output-json) --path=/value)
 
    # right now, we don't support TLS verification of the kubernetes master, so we also don't need to run these commmands.
-   # export tmp_ca_file="$(mktemp)"
-   # bosh int <(credhub get -n "${director_name}/cfcr/tls-kubernetes" --output-json) --path=/value/ca > "${tmp_ca_file}"
-   ```
-   ```
+   # add this CA to your system keyring if you'd like to authenticate without --insecure-skip-tls-verify=true
+   export tmp_ca_file="$(mktemp)"
+   bosh int <(credhub get -n "${director_name}/cfcr/tls-kubernetes" --output-json) --path=/value/ca > "${tmp_ca_file}"
+
    kubectl config set-cluster "${cluster_name}" --server="${address}" --insecure-skip-tls-verify=true
    kubectl config set-credentials "${user_name}" --token="${admin_password}"
    kubectl config set-context "${context_name}" --cluster="${cluster_name}" --user="${user_name}"
