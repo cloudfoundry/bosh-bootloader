@@ -11,9 +11,8 @@ Steps to deploy cfcr with bbl:
     mkdir banana-env && cd banana-env
     bbl plan --name banana-env
     cp -r bosh-bootloader/plan-patches/cfcr-aws/. .
-    cat > vars/cfcr.tfvars << EOF
-system_domain="${kubernetes_master_host}"
-EOF
+    echo kubernetes_master_host=\"${kubernetes_master_host}\" > vars/cfcr.tfvars
+
     bbl up
     eval "$(bbl print-env)"
     ```
@@ -33,7 +32,7 @@ EOF
    bosh deploy -d cfcr ${KD}/manifests/cfcr.yml \
    -o ${KD}/manifests/ops-files/iaas/aws/cloud-provider.yml \
    -o cfcr-ops.yml \
-   -l vars/cloud-config-vars.yml
+   -l <(bbl outputs)
    ```
 
 1. Configure kubectl
@@ -49,8 +48,7 @@ EOF
    credhub login
    export admin_password=$(bosh int <(credhub get -n "${director_name}/cfcr/kubo-admin-password" --output-json) --path=/value)
 
-   # right now, we don't support TLS verification of the kubernetes master, so we also don't need to run these commmands.
-   # add this CA to your system keyring if you'd like to authenticate without --insecure-skip-tls-verify=true
+   # add this credhub-generated CA to your system keyring if you'd like to authenticate without --insecure-skip-tls-verify=true
    export tmp_ca_file="$(mktemp)"
    bosh int <(credhub get -n "${director_name}/cfcr/tls-kubernetes" --output-json) --path=/value/ca > "${tmp_ca_file}"
 
