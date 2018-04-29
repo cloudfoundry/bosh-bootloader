@@ -1,7 +1,7 @@
 # Concourse
 
 This document will walk through deploying a concourse clustered
-install to GCP using `bbl` and `bosh`.
+install using `bbl` and `bosh`.
 
 ## Prerequisites
 
