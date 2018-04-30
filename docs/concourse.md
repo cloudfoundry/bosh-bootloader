@@ -16,7 +16,7 @@ install using `bbl` and `bosh`.
   ```bash
   bbl up --lb-type concourse
 
-  export external_url="https://$(bbl lbs |awk -F':' '{print $2}' |sed 's/ //')"
+  export external_url="$(bbl lbs | awk -F':' '{print $2}' | awk -F'[' '{print $2}' | awk -F']' '{print $1}')"
 
   eval "$(bbl print-env)"
 
