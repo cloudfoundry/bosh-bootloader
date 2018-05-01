@@ -39,7 +39,7 @@ var _ = Describe("Manager", func() {
 		terraformOutputBuffer.Reset()
 	})
 
-	Describe("Init", func() {
+	Describe("Setup", func() {
 		var incomingState storage.State
 
 		BeforeEach(func() {
@@ -59,7 +59,7 @@ var _ = Describe("Manager", func() {
 		})
 
 		It("returns a state with new tfState and output from executor apply", func() {
-			err := manager.Init(incomingState)
+			err := manager.Setup(incomingState)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(templateGenerator.GenerateCall.Receives.State).To(Equal(incomingState))
@@ -92,19 +92,8 @@ var _ = Describe("Manager", func() {
 				})
 
 				It("bubbles up the error", func() {
-					err := manager.Init(incomingState)
+					err := manager.Setup(incomingState)
 					Expect(err).To(MatchError("Input generator generate: kiwi"))
-				})
-			})
-
-			Context("when the executor init causes an executor error", func() {
-				BeforeEach(func() {
-					executor.InitCall.Returns.Error = errors.New("canteloupe")
-				})
-
-				It("returns the bblState with latest terraform output and a ManagerError", func() {
-					err := manager.Init(incomingState)
-					Expect(err).To(MatchError("Executor init: canteloupe"))
 				})
 			})
 
@@ -114,8 +103,19 @@ var _ = Describe("Manager", func() {
 				})
 
 				It("returns the bbl state with latest terraform output and a ManagerError", func() {
-					err := manager.Init(incomingState)
+					err := manager.Setup(incomingState)
 					Expect(err).To(MatchError("Executor setup: canteloupe"))
+				})
+			})
+
+			Context("when the executor init causes an executor error", func() {
+				BeforeEach(func() {
+					executor.InitCall.Returns.Error = errors.New("canteloupe")
+				})
+
+				It("returns the bblState with latest terraform output and a ManagerError", func() {
+					err := manager.Setup(incomingState)
+					Expect(err).To(MatchError("Executor init: canteloupe"))
 				})
 			})
 		})

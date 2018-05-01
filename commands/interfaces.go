@@ -23,6 +23,7 @@ type up interface {
 type terraformManager interface {
 	ValidateVersion() error
 	GetOutputs() (terraform.Outputs, error)
+	Setup(storage.State) error
 	Init(storage.State) error
 	Apply(storage.State) (storage.State, error)
 	Validate(storage.State) (storage.State, error)

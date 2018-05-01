@@ -123,7 +123,7 @@ func (p Plan) InitializePlan(config PlanConfig, state storage.State) (storage.St
 		return storage.State{}, fmt.Errorf("Save state: %s", err)
 	}
 
-	if err := p.terraformManager.Init(state); err != nil {
+	if err := p.terraformManager.Setup(state); err != nil {
 		return storage.State{}, fmt.Errorf("Terraform manager init: %s", err)
 	}
 

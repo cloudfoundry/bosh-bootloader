@@ -79,7 +79,7 @@ func (m Manager) ValidateVersion() error {
 	return nil
 }
 
-func (m Manager) Init(bblState storage.State) error {
+func (m Manager) Setup(bblState storage.State) error {
 	m.logger.Step("generating terraform template")
 	template := m.templateGenerator.Generate(bblState)
 
@@ -93,11 +93,14 @@ func (m Manager) Init(bblState storage.State) error {
 		return fmt.Errorf("Executor setup: %s", err)
 	}
 
+	return m.Init(bblState)
+}
+
+func (m Manager) Init(bblState storage.State) error {
 	m.logger.Step("terraform init")
 	if err := m.executor.Init(); err != nil {
 		return fmt.Errorf("Executor init: %s", err)
 	}
-
 	return nil
 }
 

@@ -68,6 +68,9 @@ var _ = Describe("Validate", func() {
 			Expect(plan.IsInitializedCall.CallCount).To(Equal(1))
 			Expect(plan.IsInitializedCall.Receives.State).To(Equal(incomingState))
 
+			Expect(terraformManager.InitCall.CallCount).To(Equal(1))
+			Expect(terraformManager.InitCall.Receives.BBLState).To(Equal(incomingState))
+
 			Expect(terraformManager.ValidateCall.CallCount).To(Equal(1))
 			Expect(terraformManager.ValidateCall.Receives.BBLState).To(Equal(incomingState))
 			Expect(stateStore.SetCall.Receives[0].State).To(Equal(expectedState))
@@ -82,6 +85,17 @@ var _ = Describe("Validate", func() {
 				It("returns an error", func() {
 					err := command.Execute([]string{}, storage.State{})
 					Expect(err).To(MatchError("bbl state has not been initialized yet, please run bbl plan"))
+				})
+			})
+
+			Context("when terraform manager fails to run terraform init", func() {
+				BeforeEach(func() {
+					terraformManager.InitCall.Returns.Error = errors.New("passionfruit")
+				})
+
+				It("returns the error", func() {
+					err := command.Execute([]string{}, storage.State{})
+					Expect(err).To(MatchError("passionfruit"))
 				})
 			})
 

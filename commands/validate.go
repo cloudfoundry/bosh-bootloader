@@ -33,7 +33,12 @@ func (v Validate) Execute(args []string, state storage.State) error {
 		return errors.New("bbl state has not been initialized yet, please run bbl plan")
 	}
 
-	state, err := v.terraformManager.Validate(state)
+	err := v.terraformManager.Init(state)
+	if err != nil {
+		return handleTerraformError(err, state, v.stateStore)
+	}
+
+	state, err = v.terraformManager.Validate(state)
 	if err != nil {
 		return handleTerraformError(err, state, v.stateStore)
 	}

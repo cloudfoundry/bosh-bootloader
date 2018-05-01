@@ -97,7 +97,7 @@ var _ = Describe("Up", func() {
 
 				Expect(plan.InitializePlanCall.CallCount).To(Equal(0))
 
-				Expect(terraformManager.InitCall.CallCount).To(Equal(0))
+				Expect(terraformManager.SetupCall.CallCount).To(Equal(0))
 
 				Expect(terraformManager.ApplyCall.CallCount).To(Equal(1))
 				Expect(terraformManager.ApplyCall.Receives.BBLState).To(Equal(incomingState))

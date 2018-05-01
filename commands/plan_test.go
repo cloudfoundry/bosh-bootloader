@@ -78,8 +78,8 @@ var _ = Describe("Plan", func() {
 			Expect(stateStore.SetCall.CallCount).To(Equal(1))
 			Expect(stateStore.SetCall.Receives[0].State).To(Equal(syncedState))
 
-			Expect(terraformManager.InitCall.CallCount).To(Equal(1))
-			Expect(terraformManager.InitCall.Receives.BBLState).To(Equal(syncedState))
+			Expect(terraformManager.SetupCall.CallCount).To(Equal(1))
+			Expect(terraformManager.SetupCall.Receives.BBLState).To(Equal(syncedState))
 
 			Expect(boshManager.InitializeJumpboxCall.CallCount).To(Equal(1))
 			Expect(boshManager.InitializeJumpboxCall.Receives.State).To(Equal(syncedState))
@@ -136,7 +136,7 @@ var _ = Describe("Plan", func() {
 			})
 
 			It("returns an error if terraform manager init fails", func() {
-				terraformManager.InitCall.Returns.Error = errors.New("pomegranate")
+				terraformManager.SetupCall.Returns.Error = errors.New("pomegranate")
 
 				err := command.Execute([]string{}, storage.State{})
 				Expect(err).To(MatchError("Terraform manager init: pomegranate"))

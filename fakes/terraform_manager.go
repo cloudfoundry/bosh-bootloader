@@ -15,6 +15,15 @@ type TerraformManager struct {
 			Error error
 		}
 	}
+	SetupCall struct {
+		CallCount int
+		Receives  struct {
+			BBLState storage.State
+		}
+		Returns struct {
+			Error error
+		}
+	}
 	ApplyCall struct {
 		CallCount int
 		Receives  struct {
@@ -83,6 +92,13 @@ type TerraformManager struct {
 			Error   error
 		}
 	}
+}
+
+func (t *TerraformManager) Setup(bblState storage.State) error {
+	t.SetupCall.CallCount++
+	t.SetupCall.Receives.BBLState = bblState
+
+	return t.SetupCall.Returns.Error
 }
 
 func (t *TerraformManager) Init(bblState storage.State) error {
