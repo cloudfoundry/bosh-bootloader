@@ -1,5 +1,9 @@
+locals {
+  short_env_id = "${substr(var.env_id, 0, min(20, length(var.env_id)))}"
+}
+
 resource "google_compute_firewall" "bosh-director-lite" {
-  name    = "${var.env_id}-bosh-director-lite"
+  name    = "${local.short_env_id}-bosh-director-lite"
   network = "${google_compute_network.bbl-network.name}"
 
   source_ranges = ["0.0.0.0/0"]
@@ -9,7 +13,7 @@ resource "google_compute_firewall" "bosh-director-lite" {
     protocol = "tcp"
   }
 
-  target_tags = ["${var.env_id}-bosh-director"]
+  target_tags = ["${local.short_env_id}-bosh-director"]
 }
 
 resource "google_compute_address" "bosh-director-ip" {
@@ -27,7 +31,7 @@ resource "google_compute_route" "bosh-lite-vms" {
 }
 
 resource "google_compute_firewall" "bosh-director-lite-tcp-routing" {
-  name    = "${var.env_id}-bosh-director-lite-tcp-routing"
+  name    = "${local.short_env_id}-bosh-director-lite-tcp-routing"
   network = "${google_compute_network.bbl-network.name}"
 
   source_ranges = ["0.0.0.0/0"]
@@ -37,7 +41,7 @@ resource "google_compute_firewall" "bosh-director-lite-tcp-routing" {
     protocol = "tcp"
   }
 
-  target_tags = ["${var.env_id}-bosh-director"]
+  target_tags = ["${local.short_env_id}-bosh-director"]
 }
 
 output "external_ip" {
