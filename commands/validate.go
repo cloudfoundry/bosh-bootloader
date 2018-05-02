@@ -2,7 +2,6 @@ package commands
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
@@ -41,13 +40,6 @@ func (v Validate) Execute(args []string, state storage.State) error {
 	state, err = v.terraformManager.Validate(state)
 	if err != nil {
 		return handleTerraformError(err, state, v.stateStore)
-	}
-
-	state.NoDirector = false
-
-	err = v.stateStore.Set(state)
-	if err != nil {
-		return fmt.Errorf("Save state after terraform validate: %s", err)
 	}
 
 	return nil

@@ -73,7 +73,6 @@ var _ = Describe("Validate", func() {
 
 			Expect(terraformManager.ValidateCall.CallCount).To(Equal(1))
 			Expect(terraformManager.ValidateCall.Receives.BBLState).To(Equal(incomingState))
-			Expect(stateStore.SetCall.Receives[0].State).To(Equal(expectedState))
 		})
 
 		Describe("failure cases", func() {
@@ -107,17 +106,6 @@ var _ = Describe("Validate", func() {
 				It("returns the error", func() {
 					err := command.Execute([]string{}, storage.State{})
 					Expect(err).To(MatchError("passionfruit"))
-				})
-			})
-
-			Context("when saving the state fails after terraform validate", func() {
-				BeforeEach(func() {
-					stateStore.SetCall.Returns = []fakes.SetCallReturn{{Error: errors.New("kiwi")}}
-				})
-
-				It("returns an error", func() {
-					err := command.Execute([]string{}, storage.State{})
-					Expect(err).To(MatchError("Save state after terraform validate: kiwi"))
 				})
 			})
 
