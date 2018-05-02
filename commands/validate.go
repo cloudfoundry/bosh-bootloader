@@ -21,9 +21,6 @@ func NewValidate(plan plan, stateStore stateStore, terraformManager terraformMan
 }
 
 func (v Validate) CheckFastFails(args []string, state storage.State) error {
-	if state.IAAS == "" {
-		return errors.New("bbl state has not been initialized yet, please run bbl plan")
-	}
 	return v.plan.CheckFastFails(args, state)
 }
 

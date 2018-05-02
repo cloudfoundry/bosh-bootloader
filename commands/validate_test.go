@@ -35,15 +35,6 @@ var _ = Describe("Validate", func() {
 			Expect(plan.CheckFastFailsCall.Receives.SubcommandFlags).To(Equal([]string{}))
 			Expect(plan.CheckFastFailsCall.Receives.State).To(Equal(storage.State{Version: 999, IAAS: "some-iaas"}))
 		})
-
-		Context("without an iaas", func() {
-			It("returns an error", func() {
-				err := command.CheckFastFails([]string{}, storage.State{Version: 999})
-				Expect(err).To(MatchError("bbl state has not been initialized yet, please run bbl plan"))
-
-				Expect(plan.IsInitializedCall.CallCount).To(Equal(0))
-			})
-		})
 	})
 
 	Describe("Execute", func() {
