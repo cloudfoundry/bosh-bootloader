@@ -14,12 +14,17 @@ import (
 type SSH struct {
 	cli           sshCLI
 	keyGetter     sshKeyGetter
+	pathFinder    pathFinder
 	tempDirWriter tempDirWriter
 	randomPort    randomPort
 }
 
 type sshCLI interface {
 	Run([]string) error
+}
+
+type pathFinder interface {
+	CommandExists(string) bool
 }
 
 type randomPort interface {
@@ -31,10 +36,11 @@ type tempDirWriter interface {
 	fileio.TempDirer
 }
 
-func NewSSH(sshCLI sshCLI, sshKeyGetter sshKeyGetter, tempDirWriter tempDirWriter, randomPort randomPort) SSH {
+func NewSSH(sshCLI sshCLI, sshKeyGetter sshKeyGetter, pathFinder pathFinder, tempDirWriter tempDirWriter, randomPort randomPort) SSH {
 	return SSH{
 		cli:           sshCLI,
 		keyGetter:     sshKeyGetter,
+		pathFinder:    pathFinder,
 		tempDirWriter: tempDirWriter,
 		randomPort:    randomPort,
 	}
@@ -110,7 +116,12 @@ func (s SSH) Execute(args []string, state storage.State) error {
 		return fmt.Errorf("Open tunnel to jumpbox: %s", err)
 	}
 
+	proxyCommandPrefix := "nc -x"
+	if s.pathFinder.CommandExists("connect-proxy") {
+		proxyCommandPrefix = "connect-proxy -S"
+	}
+
 	ip := strings.Split(strings.TrimPrefix(state.BOSH.DirectorAddress, "https://"), ":")[0]
 
-	return s.cli.Run([]string{fmt.Sprintf("-o ProxyCommand=nc -x localhost:%s %s", port, "%h %p"), "-i", directorKeyPath, fmt.Sprintf("jumpbox@%s", ip)})
+	return s.cli.Run([]string{fmt.Sprintf("-o ProxyCommand=%s localhost:%s %%h %%p", proxyCommandPrefix, port), "-i", directorKeyPath, fmt.Sprintf("jumpbox@%s", ip)})
 }

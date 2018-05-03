@@ -89,6 +89,7 @@ func main() {
 	certificateValidator := certs.NewValidator()
 	lbArgsHandler := commands.NewLBArgsHandler(certificateValidator)
 	sshCLI := ssh.NewCLI(os.Stdin, os.Stdout, os.Stderr)
+	pathFinder := helpers.NewPathFinder()
 
 	// Terraform
 	terraformOutputBuffer := bytes.NewBuffer([]byte{})
@@ -278,7 +279,7 @@ func main() {
 	commandSet["env-id"] = commands.NewStateQuery(logger, stateValidator, terraformManager, commands.EnvIDPropertyName)
 	commandSet["latest-error"] = commands.NewLatestError(logger, stateValidator)
 	commandSet["print-env"] = commands.NewPrintEnv(logger, stderrLogger, stateValidator, allProxyGetter, credhubGetter, terraformManager, afs)
-	commandSet["ssh"] = commands.NewSSH(sshCLI, sshKeyGetter, afs, ssh.RandomPort{})
+	commandSet["ssh"] = commands.NewSSH(sshCLI, sshKeyGetter, pathFinder, afs, ssh.RandomPort{})
 
 	app := application.New(commandSet, appConfig, usage)
 

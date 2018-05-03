@@ -17,6 +17,7 @@ var _ = Describe("SSH", func() {
 	var (
 		ssh          commands.SSH
 		sshCLI       *fakes.SSHCLI
+		pathFinder   *fakes.PathFinder
 		sshKeyGetter *fakes.FancySSHKeyGetter
 		fileIO       *fakes.FileIO
 		randomPort   *fakes.RandomPort
@@ -25,10 +26,11 @@ var _ = Describe("SSH", func() {
 	BeforeEach(func() {
 		sshCLI = &fakes.SSHCLI{}
 		sshKeyGetter = &fakes.FancySSHKeyGetter{}
+		pathFinder = &fakes.PathFinder{}
 		fileIO = &fakes.FileIO{}
 		randomPort = &fakes.RandomPort{}
 
-		ssh = commands.NewSSH(sshCLI, sshKeyGetter, fileIO, randomPort)
+		ssh = commands.NewSSH(sshCLI, sshKeyGetter, pathFinder, fileIO, randomPort)
 	})
 
 	Describe("CheckFastFails", func() {
@@ -54,6 +56,7 @@ var _ = Describe("SSH", func() {
 			fileIO.TempDirCall.Returns.Name = "some-temp-dir"
 			sshKeyGetter.JumpboxGetCall.Returns.PrivateKey = "jumpbox-private-key"
 			jumpboxPrivateKeyPath = filepath.Join("some-temp-dir", "jumpbox-private-key")
+			pathFinder.CommandExistsCall.Returns.Exists = false
 
 			state = storage.State{
 				Jumpbox: storage.Jumpbox{
@@ -102,6 +105,27 @@ var _ = Describe("SSH", func() {
 				Expect(sshCLI.RunCall.Receives[1].Args).To(ConsistOf(
 					"-o ProxyCommand=nc -x localhost:60000 %h %p", "-i", directorPrivateKeyPath, "jumpbox@directorURL",
 				))
+			})
+
+			Context("when connect-proxy is found", func() {
+				BeforeEach(func() {
+					pathFinder.CommandExistsCall.Returns.Exists = true
+				})
+
+				It("uses connect-proxy instead of netcat", func() {
+					err := ssh.Execute([]string{"--director"}, state)
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(pathFinder.CommandExistsCall.Receives.Command).To(Equal("connect-proxy"))
+
+					Expect(sshCLI.RunCall.Receives[0].Args).To(ConsistOf(
+						"-4 -D", "60000", "-fNC", "jumpbox@jumpboxURL", "-i", jumpboxPrivateKeyPath,
+					))
+
+					Expect(sshCLI.RunCall.Receives[1].Args).To(ConsistOf(
+						"-o ProxyCommand=connect-proxy -S localhost:60000 %h %p", "-i", directorPrivateKeyPath, "jumpbox@directorURL",
+					))
+				})
 			})
 
 			Context("failure cases", func() {
