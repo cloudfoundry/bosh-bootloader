@@ -124,7 +124,7 @@ var _ = Describe("EnvIDManager", func() {
 			Context("when the name ends with a hyphen", func() {
 				It("returns the name", func() {
 					_, err := envIDManager.Sync(storage.State{IAAS: "gcp"}, "c-")
-					Expect(err).To(MatchError("Names must start with a letter and be alphanumeric or hyphenated."))
+					Expect(err).To(MatchError("Names must start with a letter, be all lowercase, and be alphanumeric or hyphenated."))
 				})
 			})
 		})
@@ -144,7 +144,7 @@ var _ = Describe("EnvIDManager", func() {
 			Context("when an invalid name is provided", func() {
 				It("returns an error with a helpful message", func() {
 					_, err := envIDManager.Sync(storage.State{}, "some_bad_name")
-					Expect(err).To(MatchError("Names must start with a letter and be alphanumeric or hyphenated."))
+					Expect(err).To(MatchError("Names must start with a letter, be all lowercase, and be alphanumeric or hyphenated."))
 				})
 			})
 

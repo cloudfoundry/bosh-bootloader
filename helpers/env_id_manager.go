@@ -92,7 +92,7 @@ func (e EnvIDManager) validateName(envID string) error {
 	}
 
 	if !matched {
-		return errors.New("Names must start with a letter and be alphanumeric or hyphenated.")
+		return errors.New("Names must start with a letter, be all lowercase, and be alphanumeric or hyphenated.")
 	}
 
 	return nil
