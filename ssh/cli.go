@@ -5,21 +5,21 @@ import (
 	"os/exec"
 )
 
-type Cmd struct {
+type CLI struct {
 	in  io.Reader
 	out io.Writer
 	err io.Writer
 }
 
-func NewCmd(in io.Reader, out, err io.Writer) Cmd {
-	return Cmd{
+func NewCLI(in io.Reader, out, err io.Writer) CLI {
+	return CLI{
 		in:  in,
 		out: out,
 		err: err,
 	}
 }
 
-func (c Cmd) Run(args []string) error {
+func (c CLI) Run(args []string) error {
 	command := exec.Command("ssh", args...)
 
 	command.Stdin = c.in

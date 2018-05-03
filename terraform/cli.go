@@ -6,25 +6,25 @@ import (
 	"os/exec"
 )
 
-type Cmd struct {
+type CLI struct {
 	errorBuffer  io.Writer
 	outputBuffer io.Writer
 	tfDataDir    string
 }
 
-func NewCmd(errorBuffer, outputBuffer io.Writer, tfDataDir string) Cmd {
-	return Cmd{
+func NewCLI(errorBuffer, outputBuffer io.Writer, tfDataDir string) CLI {
+	return CLI{
 		errorBuffer:  errorBuffer,
 		outputBuffer: outputBuffer,
 		tfDataDir:    tfDataDir,
 	}
 }
 
-func (c Cmd) Run(stdout io.Writer, workingDirectory string, args []string) error {
+func (c CLI) Run(stdout io.Writer, workingDirectory string, args []string) error {
 	return c.RunWithEnv(stdout, workingDirectory, args, []string{})
 }
 
-func (c Cmd) RunWithEnv(stdout io.Writer, workingDirectory string, args []string, extraEnvVars []string) error {
+func (c CLI) RunWithEnv(stdout io.Writer, workingDirectory string, args []string, extraEnvVars []string) error {
 	command := exec.Command("terraform", args...)
 	command.Dir = workingDirectory
 

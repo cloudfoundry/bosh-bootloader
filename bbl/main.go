@@ -88,25 +88,25 @@ func main() {
 	stateValidator := application.NewStateValidator(appConfig.Global.StateDir)
 	certificateValidator := certs.NewValidator()
 	lbArgsHandler := commands.NewLBArgsHandler(certificateValidator)
-	sshCmd := ssh.NewCmd(os.Stdin, os.Stdout, os.Stderr)
+	sshCLI := ssh.NewCLI(os.Stdin, os.Stdout, os.Stderr)
 
 	// Terraform
 	terraformOutputBuffer := bytes.NewBuffer([]byte{})
 	dotTerraformDir := filepath.Join(appConfig.Global.StateDir, "terraform", ".terraform")
-	bufferingCmd := terraform.NewCmd(terraformOutputBuffer, terraformOutputBuffer, dotTerraformDir)
+	bufferingCLI := terraform.NewCLI(terraformOutputBuffer, terraformOutputBuffer, dotTerraformDir)
 	var (
-		terraformCmd terraform.Cmd
+		terraformCLI terraform.CLI
 		out          io.Writer
 	)
 	if appConfig.Global.Debug {
 		errBuffer := io.MultiWriter(os.Stderr, terraformOutputBuffer)
-		terraformCmd = terraform.NewCmd(errBuffer, terraformOutputBuffer, dotTerraformDir)
+		terraformCLI = terraform.NewCLI(errBuffer, terraformOutputBuffer, dotTerraformDir)
 		out = os.Stdout
 	} else {
-		terraformCmd = bufferingCmd
+		terraformCLI = bufferingCLI
 		out = ioutil.Discard
 	}
-	terraformExecutor := terraform.NewExecutor(terraformCmd, bufferingCmd, stateStore, afs, appConfig.Global.Debug, out)
+	terraformExecutor := terraform.NewExecutor(terraformCLI, bufferingCLI, stateStore, afs, appConfig.Global.Debug, out)
 
 	// BOSH
 	hostKey := proxy.NewHostKey()
@@ -115,7 +115,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	boshCommand := bosh.NewCmd(os.Stderr, boshPath)
+	boshCommand := bosh.NewCLI(os.Stderr, boshPath)
 	boshExecutor := bosh.NewExecutor(boshCommand, afs)
 	sshKeyGetter := bosh.NewSSHKeyGetter(stateStore, afs)
 	allProxyGetter := bosh.NewAllProxyGetter(sshKeyGetter, afs)
@@ -278,7 +278,7 @@ func main() {
 	commandSet["env-id"] = commands.NewStateQuery(logger, stateValidator, terraformManager, commands.EnvIDPropertyName)
 	commandSet["latest-error"] = commands.NewLatestError(logger, stateValidator)
 	commandSet["print-env"] = commands.NewPrintEnv(logger, stderrLogger, stateValidator, allProxyGetter, credhubGetter, terraformManager, afs)
-	commandSet["ssh"] = commands.NewSSH(sshCmd, sshKeyGetter, afs, ssh.RandomPort{})
+	commandSet["ssh"] = commands.NewSSH(sshCLI, sshKeyGetter, afs, ssh.RandomPort{})
 
 	app := application.New(commandSet, appConfig, usage)
 

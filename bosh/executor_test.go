@@ -20,7 +20,7 @@ import (
 var _ = Describe("Executor", func() {
 	var (
 		fs                    *afero.Afero
-		cmd                   *fakes.BOSHCommand
+		cli                   *fakes.BOSHCLI
 		stateDir              string
 		deploymentDir         string
 		varsDir               string
@@ -34,12 +34,12 @@ var _ = Describe("Executor", func() {
 
 	BeforeEach(func() {
 		fs = &afero.Afero{afero.NewMemMapFs()}
-		cmd = &fakes.BOSHCommand{}
-		cmd.RunStub = func(stdout io.Writer, workingDirectory string, args []string) error {
+		cli = &fakes.BOSHCLI{}
+		cli.RunStub = func(stdout io.Writer, workingDirectory string, args []string) error {
 			stdout.Write([]byte("some-manifest"))
 			return nil
 		}
-		cmd.GetBOSHPathCall.Returns.Path = "bosh-path"
+		cli.GetBOSHPathCall.Returns.Path = "bosh-path"
 
 		var err error
 		stateDir, err = fs.TempDir("", "")
@@ -62,7 +62,7 @@ var _ = Describe("Executor", func() {
 			StateDir: stateDir,
 		}
 
-		executor = bosh.NewExecutor(cmd, fs)
+		executor = bosh.NewExecutor(cli, fs)
 	})
 
 	Describe("PlanJumpbox", func() {
@@ -311,7 +311,7 @@ var _ = Describe("Executor", func() {
 					"-v", `secret_access_key="${BBL_AWS_SECRET_ACCESS_KEY}"`,
 				}
 
-				behavesLikePlan(expectedArgs, cmd, fs, executor, dirInput, deploymentDir, "aws", stateDir)
+				behavesLikePlan(expectedArgs, cli, fs, executor, dirInput, deploymentDir, "aws", stateDir)
 			})
 
 			It("writes aws-specific ops files", func() {
@@ -347,7 +347,7 @@ var _ = Describe("Executor", func() {
 					"-v", `zone="${BBL_GCP_ZONE}"`,
 				}
 
-				behavesLikePlan(expectedArgs, cmd, fs, executor, dirInput, deploymentDir, "gcp", stateDir)
+				behavesLikePlan(expectedArgs, cli, fs, executor, dirInput, deploymentDir, "gcp", stateDir)
 			})
 
 			It("writes gcp-specific ops files", func() {
@@ -383,7 +383,7 @@ var _ = Describe("Executor", func() {
 					"-v", `tenant_id="${BBL_AZURE_TENANT_ID}"`,
 				}
 
-				behavesLikePlan(expectedArgs, cmd, fs, executor, dirInput, deploymentDir, "azure", stateDir)
+				behavesLikePlan(expectedArgs, cli, fs, executor, dirInput, deploymentDir, "azure", stateDir)
 			})
 		})
 
@@ -403,7 +403,7 @@ var _ = Describe("Executor", func() {
 					"-v", `vcenter_password="${BBL_VSPHERE_VCENTER_PASSWORD}"`,
 				}
 
-				behavesLikePlan(expectedArgs, cmd, fs, executor, dirInput, deploymentDir, "vsphere", stateDir)
+				behavesLikePlan(expectedArgs, cli, fs, executor, dirInput, deploymentDir, "vsphere", stateDir)
 			})
 		})
 
@@ -422,7 +422,7 @@ var _ = Describe("Executor", func() {
 					"-v", `openstack_password="${BBL_OPENSTACK_PASSWORD}"`,
 				}
 
-				behavesLikePlan(expectedArgs, cmd, fs, executor, dirInput, deploymentDir, "openstack", stateDir)
+				behavesLikePlan(expectedArgs, cli, fs, executor, dirInput, deploymentDir, "openstack", stateDir)
 			})
 		})
 	})
@@ -445,7 +445,7 @@ var _ = Describe("Executor", func() {
 
 	Describe("CreateEnv", func() {
 		var (
-			cmd      *fakes.BOSHCommand
+			cli      *fakes.BOSHCLI
 			executor bosh.Executor
 
 			createEnvPath string
@@ -458,7 +458,7 @@ var _ = Describe("Executor", func() {
 
 		BeforeEach(func() {
 			fs = &afero.Afero{afero.NewOsFs()} // real os fs so we can exec scripts...
-			cmd = &fakes.BOSHCommand{}
+			cli = &fakes.BOSHCLI{}
 
 			var err error
 			varsDir, err = fs.TempDir("", "")
@@ -466,7 +466,7 @@ var _ = Describe("Executor", func() {
 			stateDir, err = fs.TempDir("", "")
 			Expect(err).NotTo(HaveOccurred())
 
-			executor = bosh.NewExecutor(cmd, fs)
+			executor = bosh.NewExecutor(cli, fs)
 
 			dirInput = bosh.DirInput{
 				Deployment: "some-deployment",
@@ -499,7 +499,7 @@ var _ = Describe("Executor", func() {
 				vars, err := executor.CreateEnv(dirInput, state)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(cmd.RunCallCount()).To(Equal(0))
+				Expect(cli.RunCallCount()).To(Equal(0))
 				Expect(vars).To(ContainSubstring("override-vars-store-contents"))
 			})
 		})
@@ -508,7 +508,7 @@ var _ = Describe("Executor", func() {
 			vars, err := executor.CreateEnv(dirInput, state)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(cmd.RunCallCount()).To(Equal(0))
+			Expect(cli.RunCallCount()).To(Equal(0))
 			Expect(vars).To(ContainSubstring("some-vars-store-contents"))
 
 			By("setting BBL_STATE_DIR environment variable", func() {
@@ -646,7 +646,7 @@ var _ = Describe("Executor", func() {
 			stateDir, err = fs.TempDir("", "")
 			Expect(err).NotTo(HaveOccurred())
 
-			executor = bosh.NewExecutor(cmd, fs)
+			executor = bosh.NewExecutor(cli, fs)
 
 			dirInput = bosh.DirInput{
 				Deployment: "director",
@@ -688,7 +688,7 @@ var _ = Describe("Executor", func() {
 				err := executor.DeleteEnv(dirInput, state)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(cmd.RunCallCount()).To(Equal(0))
+				Expect(cli.RunCallCount()).To(Equal(0))
 
 				overrideOut, err := fs.ReadFile(filepath.Join(varsDir, "delete-env-output"))
 				Expect(err).NotTo(HaveOccurred())
@@ -716,7 +716,7 @@ var _ = Describe("Executor", func() {
 				err := executor.DeleteEnv(dirInput, state)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(cmd.RunCallCount()).To(Equal(0))
+				Expect(cli.RunCallCount()).To(Equal(0))
 
 				By("setting BBL_STATE_DIR environment variable", func() {
 					bblStateDirEnv := os.Getenv("BBL_STATE_DIR")
@@ -740,7 +740,7 @@ var _ = Describe("Executor", func() {
 			err := executor.DeleteEnv(dirInput, state)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(cmd.RunCallCount()).To(Equal(0))
+			Expect(cli.RunCallCount()).To(Equal(0))
 
 			By("setting BBL_STATE_DIR environment variable", func() {
 				bblStateDirEnv := os.Getenv("BBL_STATE_DIR")
@@ -843,32 +843,32 @@ var _ = Describe("Executor", func() {
 
 	Describe("Version", func() {
 		var (
-			cmd      *fakes.BOSHCommand
+			cli      *fakes.BOSHCLI
 			executor bosh.Executor
 		)
 		BeforeEach(func() {
-			cmd = &fakes.BOSHCommand{}
-			cmd.RunStub = func(stdout io.Writer, workingDirectory string, args []string) error {
+			cli = &fakes.BOSHCLI{}
+			cli.RunStub = func(stdout io.Writer, workingDirectory string, args []string) error {
 				stdout.Write([]byte("some-text version 1.1.1 some-other-text"))
 				return nil
 			}
 
-			executor = bosh.NewExecutor(cmd, fs)
+			executor = bosh.NewExecutor(cli, fs)
 		})
 
 		It("returns the correctly trimmed version", func() {
 			version, err := executor.Version()
 			Expect(err).NotTo(HaveOccurred())
 
-			_, _, args := cmd.RunArgsForCall(0)
+			_, _, args := cli.RunArgsForCall(0)
 			Expect(args).To(Equal([]string{"-v"}))
 
 			Expect(version).To(Equal("1.1.1"))
 		})
 
-		Context("when the run cmd fails", func() {
+		Context("when the run cli fails", func() {
 			BeforeEach(func() {
-				cmd.RunReturns(errors.New("banana"))
+				cli.RunReturns(errors.New("banana"))
 			})
 
 			It("returns an error", func() {
@@ -879,7 +879,7 @@ var _ = Describe("Executor", func() {
 
 		Context("when the version cannot be parsed", func() {
 			BeforeEach(func() {
-				cmd.RunStub = func(stdout io.Writer, workingDirectory string, args []string) error {
+				cli.RunStub = func(stdout io.Writer, workingDirectory string, args []string) error {
 					stdout.Write([]byte(""))
 					return nil
 				}
@@ -911,15 +911,15 @@ type behavesLikePlanFs interface {
 	fileio.Stater
 }
 
-func behavesLikePlan(expectedArgs []string, cmd *fakes.BOSHCommand, fs behavesLikePlanFs, executor bosh.Executor, input bosh.DirInput, deploymentDir, iaas, stateDir string) {
-	cmd.RunStub = func(stdout io.Writer, workingDirectory string, args []string) error {
+func behavesLikePlan(expectedArgs []string, cli *fakes.BOSHCLI, fs behavesLikePlanFs, executor bosh.Executor, input bosh.DirInput, deploymentDir, iaas, stateDir string) {
+	cli.RunStub = func(stdout io.Writer, workingDirectory string, args []string) error {
 		stdout.Write([]byte("some-manifest"))
 		return nil
 	}
 
 	err := executor.PlanDirector(input, deploymentDir, iaas)
 	Expect(err).NotTo(HaveOccurred())
-	Expect(cmd.RunCallCount()).To(Equal(0))
+	Expect(cli.RunCallCount()).To(Equal(0))
 
 	By("writing the create-env args to a shell script", func() {
 		expectedScript := formatScript("create-env", stateDir, expectedArgs)

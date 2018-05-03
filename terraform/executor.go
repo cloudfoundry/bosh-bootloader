@@ -19,8 +19,8 @@ import (
 var redactedError = "Some output has been redacted, use `bbl latest-error` to see it or run again with --debug for additional debug output"
 
 type Executor struct {
-	cmd          terraformCmd
-	bufferingCmd terraformCmd
+	cli          terraformCLI
+	bufferingCLI terraformCLI
 	stateStore   stateStore
 	fs           fs
 	debug        bool
@@ -33,7 +33,7 @@ type tfOutput struct {
 	Value     interface{}
 }
 
-type terraformCmd interface {
+type terraformCLI interface {
 	Run(stdout io.Writer, workingDirectory string, args []string) error
 	RunWithEnv(stdout io.Writer, workingDirectory string, args []string, envs []string) error
 }
@@ -49,10 +49,10 @@ type fs interface {
 	fileio.Stater
 }
 
-func NewExecutor(cmd terraformCmd, bufferingCmd terraformCmd, stateStore stateStore, fs fs, debug bool, out io.Writer) Executor {
+func NewExecutor(cli terraformCLI, bufferingCLI terraformCLI, stateStore stateStore, fs fs, debug bool, out io.Writer) Executor {
 	return Executor{
-		cmd:          cmd,
-		bufferingCmd: bufferingCmd,
+		cli:          cli,
+		bufferingCLI: bufferingCLI,
 		stateStore:   stateStore,
 		fs:           fs,
 		debug:        debug,
@@ -153,7 +153,7 @@ func (e Executor) runTFCommandWithEnvs(args, envs []string) error {
 		}
 	}
 
-	err = e.cmd.RunWithEnv(e.out, terraformDir, args, envs)
+	err = e.cli.RunWithEnv(e.out, terraformDir, args, envs)
 	if err != nil {
 		if e.debug {
 			return err
@@ -170,7 +170,7 @@ func (e Executor) Init() error {
 		return err
 	}
 
-	err = e.cmd.Run(e.out, terraformDir, []string{"init"})
+	err = e.cli.Run(e.out, terraformDir, []string{"init"})
 	if err != nil {
 		return fmt.Errorf("Run terraform init: %s", err)
 	}
@@ -221,7 +221,7 @@ func (e Executor) Validate(credentials map[string]string) error {
 		}
 	}
 
-	err = e.cmd.RunWithEnv(e.out, terraformDir, args, []string{})
+	err = e.cli.RunWithEnv(e.out, terraformDir, args, []string{})
 	if err != nil {
 		if e.debug {
 			return err
@@ -243,7 +243,7 @@ func (e Executor) Destroy(credentials map[string]string) error {
 
 func (e Executor) Version() (string, error) {
 	buffer := bytes.NewBuffer([]byte{})
-	err := e.bufferingCmd.Run(buffer, "/tmp", []string{"version"})
+	err := e.bufferingCLI.Run(buffer, "/tmp", []string{"version"})
 	if err != nil {
 		return "", err
 	}
@@ -269,7 +269,7 @@ func (e Executor) Output(outputName string) (string, error) {
 		return "", err
 	}
 
-	err = e.cmd.Run(e.out, terraformDir, []string{"init"})
+	err = e.cli.Run(e.out, terraformDir, []string{"init"})
 	if err != nil {
 		return "", fmt.Errorf("Run terraform init in terraform dir: %s", err)
 	}
@@ -280,7 +280,7 @@ func (e Executor) Output(outputName string) (string, error) {
 		args = append(args, "-state", filepath.Join(varsDir, "terraform.tfstate"))
 	}
 	buffer := bytes.NewBuffer([]byte{})
-	err = e.bufferingCmd.Run(buffer, terraformDir, args)
+	err = e.bufferingCLI.Run(buffer, terraformDir, args)
 	if err != nil {
 		return "", fmt.Errorf("Run terraform output -state: %s", err)
 	}
@@ -299,7 +299,7 @@ func (e Executor) Outputs() (map[string]interface{}, error) {
 		return map[string]interface{}{}, err
 	}
 
-	err = e.cmd.Run(os.Stderr, terraformDir, []string{"init", varsDir})
+	err = e.cli.Run(os.Stderr, terraformDir, []string{"init", varsDir})
 	if err != nil {
 		return map[string]interface{}{}, fmt.Errorf("Run terraform init in terraform dir: %s", err)
 	}
@@ -310,7 +310,7 @@ func (e Executor) Outputs() (map[string]interface{}, error) {
 	if err == nil {
 		args = append(args, "-state", filepath.Join(varsDir, "terraform.tfstate"))
 	}
-	err = e.bufferingCmd.Run(buffer, terraformDir, args)
+	err = e.bufferingCLI.Run(buffer, terraformDir, args)
 	if err != nil {
 		return map[string]interface{}{}, fmt.Errorf("Run terraform output --json in vars dir: %s", err)
 	}
@@ -335,7 +335,7 @@ func (e Executor) IsPaved() (bool, error) {
 		return false, err
 	}
 
-	err = e.cmd.Run(ioutil.Discard, terraformDir, []string{"init"})
+	err = e.cli.Run(ioutil.Discard, terraformDir, []string{"init"})
 	if err != nil {
 		return false, fmt.Errorf("Run terraform init in terraform dir: %s", err)
 	}
@@ -352,7 +352,7 @@ func (e Executor) IsPaved() (bool, error) {
 		args = append(args, filepath.Join(varsDir, "terraform.tfstate"))
 	}
 
-	err = e.bufferingCmd.Run(buffer, terraformDir, args)
+	err = e.bufferingCLI.Run(buffer, terraformDir, args)
 	if err != nil {
 		return false, fmt.Errorf("Run terraform show: %s", err)
 	}

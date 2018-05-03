@@ -1,6 +1,6 @@
 package fakes
 
-type SSHCmd struct {
+type SSHCLI struct {
 	RunCall struct {
 		CallCount int
 		Receives  []SSHRunReceive
@@ -14,7 +14,7 @@ type SSHRunReturn struct {
 	Error error
 }
 
-func (s *SSHCmd) Run(args []string) error {
+func (s *SSHCLI) Run(args []string) error {
 	s.RunCall.CallCount++
 
 	s.RunCall.Receives = append(s.RunCall.Receives, SSHRunReceive{

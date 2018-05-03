@@ -20,7 +20,7 @@ import (
 var _ = Describe("Manager", func() {
 	var (
 		logger             *fakes.Logger
-		cmd                *fakes.BOSHCommand
+		cli                *fakes.BOSHCLI
 		stateStore         *fakes.StateStore
 		opsGenerator       *fakes.CloudConfigOpsGenerator
 		boshClientProvider *fakes.BOSHClientProvider
@@ -38,7 +38,7 @@ var _ = Describe("Manager", func() {
 
 	BeforeEach(func() {
 		logger = &fakes.Logger{}
-		cmd = &fakes.BOSHCommand{}
+		cli = &fakes.BOSHCLI{}
 		stateStore = &fakes.StateStore{}
 		opsGenerator = &fakes.CloudConfigOpsGenerator{}
 		boshClient = &fakes.BOSHClient{}
@@ -54,7 +54,7 @@ var _ = Describe("Manager", func() {
 		varsDir = "some-vars-dir"
 		stateStore.GetVarsDirCall.Returns.Directory = varsDir
 
-		cmd.RunStub = func(stdout io.Writer, workingDirectory string, args []string) error {
+		cli.RunStub = func(stdout io.Writer, workingDirectory string, args []string) error {
 			stdout.Write([]byte("some-cloud-config"))
 			return nil
 		}
@@ -75,7 +75,7 @@ var _ = Describe("Manager", func() {
 		baseCloudConfig, err = ioutil.ReadFile("fixtures/base-cloud-config.yml")
 		Expect(err).NotTo(HaveOccurred())
 
-		manager = cloudconfig.NewManager(logger, cmd, stateStore, opsGenerator, boshClientProvider, terraformManager, fileIO)
+		manager = cloudconfig.NewManager(logger, cli, stateStore, opsGenerator, boshClientProvider, terraformManager, fileIO)
 	})
 
 	Describe("Initialize", func() {
@@ -303,8 +303,8 @@ var _ = Describe("Manager", func() {
 			cloudConfigYAML, err := manager.Interpolate()
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(cmd.RunCallCount()).To(Equal(1))
-			_, workingDirectory, args := cmd.RunArgsForCall(0)
+			Expect(cli.RunCallCount()).To(Equal(1))
+			_, workingDirectory, args := cli.RunArgsForCall(0)
 			Expect(workingDirectory).To(Equal(cloudConfigDir))
 			Expect(args).To(Equal([]string{
 				"interpolate", fmt.Sprintf("%s%ccloud-config.yml", cloudConfigDir, os.PathSeparator),
@@ -352,7 +352,7 @@ var _ = Describe("Manager", func() {
 
 			Context("when command fails to run", func() {
 				BeforeEach(func() {
-					cmd.RunReturns(errors.New("Interpolate cloud config: failed to run"))
+					cli.RunReturns(errors.New("Interpolate cloud config: failed to run"))
 				})
 
 				It("returns an error", func() {
@@ -387,7 +387,7 @@ var _ = Describe("Manager", func() {
 		Context("failure cases", func() {
 			Context("when manager generate's command fails to run", func() {
 				BeforeEach(func() {
-					cmd.RunReturns(errors.New("failed to run"))
+					cli.RunReturns(errors.New("failed to run"))
 				})
 
 				It("returns an error", func() {

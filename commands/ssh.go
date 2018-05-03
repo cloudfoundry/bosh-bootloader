@@ -12,13 +12,13 @@ import (
 )
 
 type SSH struct {
-	cmd           sshCmd
+	cli           sshCLI
 	keyGetter     sshKeyGetter
 	tempDirWriter tempDirWriter
 	randomPort    randomPort
 }
 
-type sshCmd interface {
+type sshCLI interface {
 	Run([]string) error
 }
 
@@ -31,9 +31,9 @@ type tempDirWriter interface {
 	fileio.TempDirer
 }
 
-func NewSSH(sshCmd sshCmd, sshKeyGetter sshKeyGetter, tempDirWriter tempDirWriter, randomPort randomPort) SSH {
+func NewSSH(sshCLI sshCLI, sshKeyGetter sshKeyGetter, tempDirWriter tempDirWriter, randomPort randomPort) SSH {
 	return SSH{
-		cmd:           sshCmd,
+		cli:           sshCLI,
 		keyGetter:     sshKeyGetter,
 		tempDirWriter: tempDirWriter,
 		randomPort:    randomPort,
@@ -85,7 +85,7 @@ func (s SSH) Execute(args []string, state storage.State) error {
 	jumpboxURL := strings.Split(state.Jumpbox.URL, ":")[0]
 
 	if jumpbox {
-		return s.cmd.Run([]string{"-o StrictHostKeyChecking=no -o ServerAliveInterval=300", fmt.Sprintf("jumpbox@%s", jumpboxURL), "-i", jumpboxKeyPath})
+		return s.cli.Run([]string{"-o StrictHostKeyChecking=no -o ServerAliveInterval=300", fmt.Sprintf("jumpbox@%s", jumpboxURL), "-i", jumpboxKeyPath})
 	}
 
 	directorPrivateKey, err := s.keyGetter.Get("director")
@@ -105,12 +105,12 @@ func (s SSH) Execute(args []string, state storage.State) error {
 		return fmt.Errorf("Open proxy port: %s", err)
 	}
 
-	err = s.cmd.Run([]string{"-4 -D", port, "-fNC", fmt.Sprintf("jumpbox@%s", jumpboxURL), "-i", jumpboxKeyPath})
+	err = s.cli.Run([]string{"-4 -D", port, "-fNC", fmt.Sprintf("jumpbox@%s", jumpboxURL), "-i", jumpboxKeyPath})
 	if err != nil {
 		return fmt.Errorf("Open tunnel to jumpbox: %s", err)
 	}
 
 	ip := strings.Split(strings.TrimPrefix(state.BOSH.DirectorAddress, "https://"), ":")[0]
 
-	return s.cmd.Run([]string{fmt.Sprintf("-o ProxyCommand=nc -x localhost:%s %s", port, "%h %p"), "-i", directorKeyPath, fmt.Sprintf("jumpbox@%s", ip)})
+	return s.cli.Run([]string{fmt.Sprintf("-o ProxyCommand=nc -x localhost:%s %s", port, "%h %p"), "-i", directorKeyPath, fmt.Sprintf("jumpbox@%s", ip)})
 }

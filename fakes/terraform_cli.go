@@ -4,7 +4,7 @@ import (
 	"io"
 )
 
-type TerraformCmd struct {
+type TerraformCLI struct {
 	RunCall struct {
 		CallCount int
 		Stub      func(stdout io.Writer)
@@ -21,7 +21,7 @@ type TerraformCmd struct {
 	}
 }
 
-func (t *TerraformCmd) RunWithEnv(stdout io.Writer, workingDirectory string, args []string, env []string) error {
+func (t *TerraformCLI) RunWithEnv(stdout io.Writer, workingDirectory string, args []string, env []string) error {
 	t.RunCall.CallCount++
 	t.RunCall.Receives.Stdout = stdout
 	t.RunCall.Receives.WorkingDirectory = workingDirectory
@@ -46,6 +46,6 @@ func (t *TerraformCmd) RunWithEnv(stdout io.Writer, workingDirectory string, arg
 	return nil
 }
 
-func (t *TerraformCmd) Run(stdout io.Writer, workingDirectory string, args []string) error {
+func (t *TerraformCLI) Run(stdout io.Writer, workingDirectory string, args []string) error {
 	return t.RunWithEnv(stdout, workingDirectory, args, []string{})
 }

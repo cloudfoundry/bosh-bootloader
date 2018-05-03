@@ -19,8 +19,8 @@ import (
 
 var _ = Describe("Executor", func() {
 	var (
-		bufferingCmd *fakes.TerraformCmd
-		cmd          *fakes.TerraformCmd
+		bufferingCLI *fakes.TerraformCLI
+		cli          *fakes.TerraformCLI
 		stateStore   *fakes.StateStore
 		fileIO       *fakes.FileIO
 		executor     terraform.Executor
@@ -38,13 +38,13 @@ var _ = Describe("Executor", func() {
 	)
 
 	BeforeEach(func() {
-		bufferingCmd = &fakes.TerraformCmd{}
-		cmd = &fakes.TerraformCmd{}
+		bufferingCLI = &fakes.TerraformCLI{}
+		cli = &fakes.TerraformCLI{}
 		stateStore = &fakes.StateStore{}
 		fileIO = &fakes.FileIO{}
 
-		executor = terraform.NewExecutor(cmd, bufferingCmd, stateStore, fileIO, true, os.Stdout)
-		debugFalse = terraform.NewExecutor(cmd, bufferingCmd, stateStore, fileIO, false, nil)
+		executor = terraform.NewExecutor(cli, bufferingCLI, stateStore, fileIO, true, os.Stdout)
+		debugFalse = terraform.NewExecutor(cli, bufferingCLI, stateStore, fileIO, false, nil)
 
 		var err error
 		terraformDir, err = ioutil.TempDir("", "terraform")
@@ -71,10 +71,10 @@ var _ = Describe("Executor", func() {
 			err := executor.Init()
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(cmd.RunCall.CallCount).To(Equal(1))
-			Expect(cmd.RunCall.Receives.Args).To(Equal([]string{"init"}))
+			Expect(cli.RunCall.CallCount).To(Equal(1))
+			Expect(cli.RunCall.Receives.Args).To(Equal([]string{"init"}))
 
-			Expect(bufferingCmd.RunCall.CallCount).To(Equal(0))
+			Expect(bufferingCLI.RunCall.CallCount).To(Equal(0))
 		})
 
 		Context("when getting terraform dir fails", func() {
@@ -90,7 +90,7 @@ var _ = Describe("Executor", func() {
 
 		Context("when terraform init fails", func() {
 			BeforeEach(func() {
-				cmd.RunCall.Returns.Errors = []error{errors.New("guava")}
+				cli.RunCall.Returns.Errors = []error{errors.New("guava")}
 			})
 
 			It("returns an error", func() {
@@ -116,8 +116,8 @@ var _ = Describe("Executor", func() {
 			Expect(fileIO.WriteFileCall.Receives[2].Filename).To(Equal(tfVarsPath))
 			Expect(string(fileIO.WriteFileCall.Receives[2].Contents)).To(ContainSubstring(`project_id="some-project-id"`))
 
-			Expect(cmd.RunCall.CallCount).To(Equal(0))
-			Expect(bufferingCmd.RunCall.CallCount).To(Equal(0))
+			Expect(cli.RunCall.CallCount).To(Equal(0))
+			Expect(bufferingCLI.RunCall.CallCount).To(Equal(0))
 		})
 
 		Context("when an error occurs", func() {
@@ -215,13 +215,13 @@ var _ = Describe("Executor", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("passing the correct args and dir to run command", func() {
-				Expect(cmd.RunCall.Receives.WorkingDirectory).To(Equal(terraformDir))
-				Expect(cmd.RunCall.Receives.Args).To(ConsistOf([]string{
+				Expect(cli.RunCall.Receives.WorkingDirectory).To(Equal(terraformDir))
+				Expect(cli.RunCall.Receives.Args).To(ConsistOf([]string{
 					"validate",
 					"-var", "some-cert=some-cert-value",
 					"-var-file", relativeVarsPath,
 				}))
-				Expect(bufferingCmd.RunCall.CallCount).To(Equal(0))
+				Expect(bufferingCLI.RunCall.CallCount).To(Equal(0))
 			})
 		})
 
@@ -256,17 +256,17 @@ var _ = Describe("Executor", func() {
 				})
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(cmd.RunCall.Receives.Args).To(ConsistOf([]string{
+				Expect(cli.RunCall.Receives.Args).To(ConsistOf([]string{
 					"validate",
 					"-var", "some-cert=some-cert-value",
 					"-var-file", relativeUserProvidedVarsPathA,
 					"-var-file", relativeVarsPath,
 					"-var-file", relativeUserProvidedVarsPathC,
 				}))
-				Expect(bufferingCmd.RunCall.CallCount).To(Equal(0))
+				Expect(bufferingCLI.RunCall.CallCount).To(Equal(0))
 
 				// be sure we don't leak env vars from destroy
-				Expect(cmd.RunCall.Receives.Env).NotTo(ContainElement("TF_WARN_OUTPUT_ERRORS=1"))
+				Expect(cli.RunCall.Receives.Env).NotTo(ContainElement("TF_WARN_OUTPUT_ERRORS=1"))
 			})
 		})
 
@@ -275,7 +275,7 @@ var _ = Describe("Executor", func() {
 				err := ioutil.WriteFile(tfStatePath, []byte("some-tf-state"), storage.StateMode)
 				Expect(err).NotTo(HaveOccurred())
 
-				cmd.RunCall.Returns.Errors = []error{errors.New("the-executor-error")}
+				cli.RunCall.Returns.Errors = []error{errors.New("the-executor-error")}
 			})
 
 			It("returns the error", func() {
@@ -285,7 +285,7 @@ var _ = Describe("Executor", func() {
 
 			Context("and --debug is false", func() {
 				BeforeEach(func() {
-					cmd.RunCall.Returns.Errors = []error{errors.New("hidden error")}
+					cli.RunCall.Returns.Errors = []error{errors.New("hidden error")}
 				})
 
 				It("returns a redacted error message", func() {
@@ -321,15 +321,15 @@ var _ = Describe("Executor", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("passing the correct args and dir to run command", func() {
-				Expect(cmd.RunCall.Receives.WorkingDirectory).To(Equal(terraformDir))
-				Expect(cmd.RunCall.Receives.Args).To(ConsistOf([]string{
+				Expect(cli.RunCall.Receives.WorkingDirectory).To(Equal(terraformDir))
+				Expect(cli.RunCall.Receives.Args).To(ConsistOf([]string{
 					"apply",
 					"--auto-approve",
 					"-var", "some-cert=some-cert-value",
 					"-state", relativeStatePath,
 					"-var-file", relativeVarsPath,
 				}))
-				Expect(bufferingCmd.RunCall.CallCount).To(Equal(0))
+				Expect(bufferingCLI.RunCall.CallCount).To(Equal(0))
 			})
 		})
 
@@ -364,7 +364,7 @@ var _ = Describe("Executor", func() {
 				})
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(cmd.RunCall.Receives.Args).To(ConsistOf([]string{
+				Expect(cli.RunCall.Receives.Args).To(ConsistOf([]string{
 					"apply",
 					"--auto-approve",
 					"-var", "some-cert=some-cert-value",
@@ -373,10 +373,10 @@ var _ = Describe("Executor", func() {
 					"-var-file", relativeVarsPath,
 					"-var-file", relativeUserProvidedVarsPathC,
 				}))
-				Expect(bufferingCmd.RunCall.CallCount).To(Equal(0))
+				Expect(bufferingCLI.RunCall.CallCount).To(Equal(0))
 
 				// be sure we don't leak env vars from destroy
-				Expect(cmd.RunCall.Receives.Env).NotTo(ContainElement("TF_WARN_OUTPUT_ERRORS=1"))
+				Expect(cli.RunCall.Receives.Env).NotTo(ContainElement("TF_WARN_OUTPUT_ERRORS=1"))
 			})
 		})
 
@@ -385,7 +385,7 @@ var _ = Describe("Executor", func() {
 				err := ioutil.WriteFile(tfStatePath, []byte("some-tf-state"), storage.StateMode)
 				Expect(err).NotTo(HaveOccurred())
 
-				cmd.RunCall.Returns.Errors = []error{errors.New("the-executor-error")}
+				cli.RunCall.Returns.Errors = []error{errors.New("the-executor-error")}
 			})
 
 			It("returns the error", func() {
@@ -395,7 +395,7 @@ var _ = Describe("Executor", func() {
 
 			Context("and --debug is false", func() {
 				BeforeEach(func() {
-					cmd.RunCall.Returns.Errors = []error{errors.New("hidden error")}
+					cli.RunCall.Returns.Errors = []error{errors.New("hidden error")}
 				})
 
 				It("returns a redacted error message", func() {
@@ -426,16 +426,16 @@ var _ = Describe("Executor", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			By("passing the correct args and dir to run command", func() {
-				Expect(cmd.RunCall.Receives.WorkingDirectory).To(Equal(terraformDir))
-				Expect(cmd.RunCall.Receives.Args).To(ConsistOf([]string{
+				Expect(cli.RunCall.Receives.WorkingDirectory).To(Equal(terraformDir))
+				Expect(cli.RunCall.Receives.Args).To(ConsistOf([]string{
 					"destroy",
 					"-force",
 					"-var", "some-cert=some-cert-value",
 					"-state", relativeStatePath,
 					"-var-file", relativeVarsPath,
 				}))
-				Expect(cmd.RunCall.Receives.Env).To(ContainElement("TF_WARN_OUTPUT_ERRORS=1"))
-				Expect(bufferingCmd.RunCall.CallCount).To(Equal(0))
+				Expect(cli.RunCall.Receives.Env).To(ContainElement("TF_WARN_OUTPUT_ERRORS=1"))
+				Expect(bufferingCLI.RunCall.CallCount).To(Equal(0))
 			})
 		})
 
@@ -466,7 +466,7 @@ var _ = Describe("Executor", func() {
 				BeforeEach(func() {
 					err := ioutil.WriteFile(tfStatePath, []byte("some-tf-state"), storage.StateMode)
 					Expect(err).NotTo(HaveOccurred())
-					cmd.RunCall.Returns.Errors = []error{errors.New("the-executor-error")}
+					cli.RunCall.Returns.Errors = []error{errors.New("the-executor-error")}
 				})
 
 				It("returns an error", func() {
@@ -486,7 +486,7 @@ var _ = Describe("Executor", func() {
 
 	Describe("Version", func() {
 		BeforeEach(func() {
-			bufferingCmd.RunCall.Stub = func(stdout io.Writer) {
+			bufferingCLI.RunCall.Stub = func(stdout io.Writer) {
 				stdout.Write([]byte("some-text v0.8.9 some-other-text"))
 			}
 		})
@@ -495,7 +495,7 @@ var _ = Describe("Executor", func() {
 			_, err := executor.Version()
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(bufferingCmd.RunCall.Receives.Args).To(Equal([]string{"version"}))
+			Expect(bufferingCLI.RunCall.Receives.Args).To(Equal([]string{"version"}))
 		})
 
 		It("returns the correctly trimmed version", func() {
@@ -507,7 +507,7 @@ var _ = Describe("Executor", func() {
 		Context("when an error occurs", func() {
 			Context("when the run command fails", func() {
 				BeforeEach(func() {
-					bufferingCmd.RunCall.Returns.Errors = []error{errors.New("banana")}
+					bufferingCLI.RunCall.Returns.Errors = []error{errors.New("banana")}
 				})
 
 				It("returns an error", func() {
@@ -518,7 +518,7 @@ var _ = Describe("Executor", func() {
 
 			Context("when the version cannot be parsed", func() {
 				BeforeEach(func() {
-					bufferingCmd.RunCall.Stub = func(stdout io.Writer) {
+					bufferingCLI.RunCall.Stub = func(stdout io.Writer) {
 						stdout.Write([]byte(""))
 					}
 				})
@@ -538,16 +538,16 @@ var _ = Describe("Executor", func() {
 		})
 
 		It("returns an output from the terraform state", func() {
-			bufferingCmd.RunCall.Stub = func(stdout io.Writer) {
+			bufferingCLI.RunCall.Stub = func(stdout io.Writer) {
 				fmt.Fprintf(stdout, "some-external-ip\n")
 			}
 			output, err := executor.Output("external_ip")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(output).To(Equal("some-external-ip"))
 
-			Expect(bufferingCmd.RunCall.Receives.WorkingDirectory).To(Equal(terraformDir))
-			Expect(bufferingCmd.RunCall.Receives.Args).To(Equal([]string{"output", "external_ip", "-state", tfStatePath}))
-			Expect(cmd.RunCall.Receives.Args).To(Equal([]string{"init"}))
+			Expect(bufferingCLI.RunCall.Receives.WorkingDirectory).To(Equal(terraformDir))
+			Expect(bufferingCLI.RunCall.Receives.Args).To(Equal([]string{"output", "external_ip", "-state", tfStatePath}))
+			Expect(cli.RunCall.Receives.Args).To(Equal([]string{"init"}))
 		})
 
 		Context("when an error occurs", func() {
@@ -575,7 +575,7 @@ var _ = Describe("Executor", func() {
 
 			Context("when terraform init fails", func() {
 				BeforeEach(func() {
-					cmd.RunCall.Returns.Errors = []error{errors.New("failed")}
+					cli.RunCall.Returns.Errors = []error{errors.New("failed")}
 				})
 
 				It("returns an error", func() {
@@ -586,7 +586,7 @@ var _ = Describe("Executor", func() {
 
 			Context("when it fails to call terraform command run", func() {
 				BeforeEach(func() {
-					bufferingCmd.RunCall.Returns.Errors = []error{errors.New("failed")}
+					bufferingCLI.RunCall.Returns.Errors = []error{errors.New("failed")}
 				})
 
 				It("returns an error", func() {
@@ -599,7 +599,7 @@ var _ = Describe("Executor", func() {
 
 	Describe("Outputs", func() {
 		BeforeEach(func() {
-			bufferingCmd.RunCall.Stub = func(stdout io.Writer) {
+			bufferingCLI.RunCall.Stub = func(stdout io.Writer) {
 				fmt.Fprintf(stdout, `{
 					"director_address": {
 						"sensitive": false,
@@ -624,12 +624,12 @@ var _ = Describe("Executor", func() {
 				"external_ip":      "some-external-ip",
 			}))
 
-			Expect(bufferingCmd.RunCall.Receives.WorkingDirectory).To(Equal(terraformDir))
-			Expect(bufferingCmd.RunCall.Receives.Args).To(Equal([]string{
+			Expect(bufferingCLI.RunCall.Receives.WorkingDirectory).To(Equal(terraformDir))
+			Expect(bufferingCLI.RunCall.Receives.Args).To(Equal([]string{
 				"output", "--json", "-state", tfStatePath,
 			}))
-			Expect(cmd.RunCall.Receives.WorkingDirectory).To(Equal(terraformDir))
-			Expect(cmd.RunCall.Receives.Args).To(Equal([]string{"init", varsDir}))
+			Expect(cli.RunCall.Receives.WorkingDirectory).To(Equal(terraformDir))
+			Expect(cli.RunCall.Receives.Args).To(Equal([]string{"init", varsDir}))
 		})
 
 		Context("when an error occurs", func() {
@@ -646,7 +646,7 @@ var _ = Describe("Executor", func() {
 
 			Context("when terraform init fails", func() {
 				BeforeEach(func() {
-					cmd.RunCall.Returns.Errors = []error{errors.New("failed")}
+					cli.RunCall.Returns.Errors = []error{errors.New("failed")}
 				})
 
 				It("returns an error", func() {
@@ -657,7 +657,7 @@ var _ = Describe("Executor", func() {
 
 			Context("when it fails to call terraform command run", func() {
 				BeforeEach(func() {
-					bufferingCmd.RunCall.Returns.Errors = []error{errors.New("failed")}
+					bufferingCLI.RunCall.Returns.Errors = []error{errors.New("failed")}
 				})
 
 				It("returns an error", func() {
@@ -668,7 +668,7 @@ var _ = Describe("Executor", func() {
 
 			Context("when it fails to unmarshal the terraform outputs", func() {
 				BeforeEach(func() {
-					bufferingCmd.RunCall.Stub = func(stdout io.Writer) {
+					bufferingCLI.RunCall.Stub = func(stdout io.Writer) {
 						fmt.Fprintf(stdout, "%%%")
 					}
 				})
@@ -704,7 +704,7 @@ var _ = Describe("Executor", func() {
 
 		Context("when terraform show returns No state", func() {
 			BeforeEach(func() {
-				bufferingCmd.RunCall.Stub = func(stdout io.Writer) {
+				bufferingCLI.RunCall.Stub = func(stdout io.Writer) {
 					fmt.Fprint(stdout, "No state.")
 				}
 			})
@@ -718,7 +718,7 @@ var _ = Describe("Executor", func() {
 
 		Context("when terraform show returns outputs", func() {
 			BeforeEach(func() {
-				bufferingCmd.RunCall.Stub = func(stdout io.Writer) {
+				bufferingCLI.RunCall.Stub = func(stdout io.Writer) {
 					fmt.Fprint(stdout, "Pretty much anything else.")
 				}
 			})
@@ -732,7 +732,7 @@ var _ = Describe("Executor", func() {
 
 		Context("when it fails to call terraform command run", func() {
 			BeforeEach(func() {
-				bufferingCmd.RunCall.Returns.Errors = []error{errors.New("failed")}
+				bufferingCLI.RunCall.Returns.Errors = []error{errors.New("failed")}
 			})
 
 			It("returns an error", func() {

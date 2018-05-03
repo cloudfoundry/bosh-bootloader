@@ -22,8 +22,8 @@ type executorFs interface {
 }
 
 type Executor struct {
-	command command
-	fs      executorFs
+	cli cli
+	fs  executorFs
 }
 
 type DirInput struct {
@@ -32,7 +32,7 @@ type DirInput struct {
 	Deployment string
 }
 
-type command interface {
+type cli interface {
 	GetBOSHPath() string
 	Run(stdout io.Writer, workingDirectory string, args []string) error
 }
@@ -48,10 +48,10 @@ var (
 	boshDeploymentRepo    = "vendor/github.com/cloudfoundry/bosh-deployment"
 )
 
-func NewExecutor(cmd command, fs executorFs) Executor {
+func NewExecutor(cmd cli, fs executorFs) Executor {
 	return Executor{
-		command: cmd,
-		fs:      fs,
+		cli: cmd,
+		fs:  fs,
 	}
 }
 
@@ -140,7 +140,7 @@ func (e Executor) PlanJumpbox(input DirInput, deploymentDir, iaas string) error 
 		)
 	}
 
-	boshPath := e.command.GetBOSHPath()
+	boshPath := e.cli.GetBOSHPath()
 
 	createEnvCmd := []byte(formatScript(boshPath, input.StateDir, "create-env", boshArgs))
 	createJumpboxScript := filepath.Join(input.StateDir, "create-jumpbox.sh")
@@ -257,7 +257,7 @@ func (e Executor) PlanDirector(input DirInput, deploymentDir, iaas string) error
 		)
 	}
 
-	boshPath := e.command.GetBOSHPath()
+	boshPath := e.cli.GetBOSHPath()
 
 	createEnvCmd := []byte(formatScript(boshPath, input.StateDir, "create-env", boshArgs))
 	err := e.fs.WriteFile(filepath.Join(input.StateDir, "create-director.sh"), createEnvCmd, 0750)
@@ -405,13 +405,13 @@ func (e Executor) deploymentExists(varsDir, deployment string) (bool, error) {
 }
 
 func (e Executor) Path() string {
-	return e.command.GetBOSHPath()
+	return e.cli.GetBOSHPath()
 }
 
 func (e Executor) Version() (string, error) {
 	args := []string{"-v"}
 	buffer := bytes.NewBuffer([]byte{})
-	err := e.command.Run(buffer, "", args)
+	err := e.cli.Run(buffer, "", args)
 	if err != nil {
 		return "", err
 	}

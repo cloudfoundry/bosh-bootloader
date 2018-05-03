@@ -16,19 +16,19 @@ import (
 var _ = Describe("SSH", func() {
 	var (
 		ssh          commands.SSH
-		sshCmd       *fakes.SSHCmd
+		sshCLI       *fakes.SSHCLI
 		sshKeyGetter *fakes.FancySSHKeyGetter
 		fileIO       *fakes.FileIO
 		randomPort   *fakes.RandomPort
 	)
 
 	BeforeEach(func() {
-		sshCmd = &fakes.SSHCmd{}
+		sshCLI = &fakes.SSHCLI{}
 		sshKeyGetter = &fakes.FancySSHKeyGetter{}
 		fileIO = &fakes.FileIO{}
 		randomPort = &fakes.RandomPort{}
 
-		ssh = commands.NewSSH(sshCmd, sshKeyGetter, fileIO, randomPort)
+		ssh = commands.NewSSH(sshCLI, sshKeyGetter, fileIO, randomPort)
 	})
 
 	Describe("CheckFastFails", func() {
@@ -95,62 +95,64 @@ var _ = Describe("SSH", func() {
 					},
 				))
 
-				Expect(sshCmd.RunCall.Receives[0].Args).To(ConsistOf(
+				Expect(sshCLI.RunCall.Receives[0].Args).To(ConsistOf(
 					"-4 -D", "60000", "-fNC", "jumpbox@jumpboxURL", "-i", jumpboxPrivateKeyPath,
 				))
 
-				Expect(sshCmd.RunCall.Receives[1].Args).To(ConsistOf(
+				Expect(sshCLI.RunCall.Receives[1].Args).To(ConsistOf(
 					"-o ProxyCommand=nc -x localhost:60000 %h %p", "-i", directorPrivateKeyPath, "jumpbox@directorURL",
 				))
 			})
 
-			Context("when ssh key getter fails to get director key", func() {
-				It("returns the error", func() {
-					sshKeyGetter.DirectorGetCall.Returns.Error = errors.New("fig")
+			Context("failure cases", func() {
+				Context("when ssh key getter fails to get director key", func() {
+					It("returns the error", func() {
+						sshKeyGetter.DirectorGetCall.Returns.Error = errors.New("fig")
 
-					err := ssh.Execute([]string{"--director"}, state)
+						err := ssh.Execute([]string{"--director"}, state)
 
-					Expect(err).To(MatchError("Get director private key: fig"))
+						Expect(err).To(MatchError("Get director private key: fig"))
+					})
 				})
-			})
 
-			Context("when fileio fails to create a temp dir", func() {
-				It("returns the error", func() {
-					fileIO.TempDirCall.Returns.Error = errors.New("date")
+				Context("when fileio fails to create a temp dir", func() {
+					It("returns the error", func() {
+						fileIO.TempDirCall.Returns.Error = errors.New("date")
 
-					err := ssh.Execute([]string{"--director"}, state)
+						err := ssh.Execute([]string{"--director"}, state)
 
-					Expect(err).To(MatchError("Create temp directory: date"))
+						Expect(err).To(MatchError("Create temp directory: date"))
+					})
 				})
-			})
 
-			Context("when fileio fails to create a temp dir", func() {
-				It("contextualizes a failure to write the private key", func() {
-					fileIO.WriteFileCall.Returns = []fakes.WriteFileReturn{{Error: errors.New("boisenberry")}}
+				Context("when fileio fails to create a temp dir", func() {
+					It("contextualizes a failure to write the private key", func() {
+						fileIO.WriteFileCall.Returns = []fakes.WriteFileReturn{{Error: errors.New("boisenberry")}}
 
-					err := ssh.Execute([]string{"--director"}, state)
+						err := ssh.Execute([]string{"--director"}, state)
 
-					Expect(err).To(MatchError("Write private key file: boisenberry"))
+						Expect(err).To(MatchError("Write private key file: boisenberry"))
+					})
 				})
-			})
 
-			Context("when random port fails to return a port", func() {
-				It("returns the error", func() {
-					randomPort.GetPortCall.Returns.Error = errors.New("prune")
+				Context("when random port fails to return a port", func() {
+					It("returns the error", func() {
+						randomPort.GetPortCall.Returns.Error = errors.New("prune")
 
-					err := ssh.Execute([]string{"--director"}, state)
+						err := ssh.Execute([]string{"--director"}, state)
 
-					Expect(err).To(MatchError("Open proxy port: prune"))
+						Expect(err).To(MatchError("Open proxy port: prune"))
+					})
 				})
-			})
 
-			Context("when the ssh command fails to open a tunnel to the jumpbox", func() {
-				It("returns the error", func() {
-					sshCmd.RunCall.Returns = []fakes.SSHRunReturn{fakes.SSHRunReturn{Error: errors.New("lignonberry")}}
+				Context("when the ssh command fails to open a tunnel to the jumpbox", func() {
+					It("returns the error", func() {
+						sshCLI.RunCall.Returns = []fakes.SSHRunReturn{fakes.SSHRunReturn{Error: errors.New("lignonberry")}}
 
-					err := ssh.Execute([]string{"--director"}, state)
+						err := ssh.Execute([]string{"--director"}, state)
 
-					Expect(err).To(MatchError("Open tunnel to jumpbox: lignonberry"))
+						Expect(err).To(MatchError("Open tunnel to jumpbox: lignonberry"))
+					})
 				})
 			})
 		})
@@ -167,7 +169,7 @@ var _ = Describe("SSH", func() {
 				Expect(fileIO.WriteFileCall.Receives[0].Contents).To(Equal([]byte("jumpbox-private-key")))
 				Expect(fileIO.WriteFileCall.Receives[0].Mode).To(Equal(os.FileMode(0600)))
 
-				Expect(sshCmd.RunCall.Receives[0].Args).To(ConsistOf(
+				Expect(sshCLI.RunCall.Receives[0].Args).To(ConsistOf(
 					"-o StrictHostKeyChecking=no -o ServerAliveInterval=300", "jumpbox@jumpboxURL", "-i", jumpboxPrivateKeyPath,
 				))
 			})

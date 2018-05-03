@@ -5,19 +5,19 @@ import (
 	"os/exec"
 )
 
-type Cmd struct {
+type CLI struct {
 	stderr io.Writer
 	path   string
 }
 
-func NewCmd(stderr io.Writer, path string) Cmd {
-	return Cmd{
+func NewCLI(stderr io.Writer, path string) CLI {
+	return CLI{
 		stderr: stderr,
 		path:   path,
 	}
 }
 
-func (c Cmd) Run(stdout io.Writer, workingDirectory string, args []string) error {
+func (c CLI) Run(stdout io.Writer, workingDirectory string, args []string) error {
 	command := exec.Command(c.path, args...)
 	command.Dir = workingDirectory
 
@@ -27,6 +27,6 @@ func (c Cmd) Run(stdout io.Writer, workingDirectory string, args []string) error
 	return command.Run()
 }
 
-func (c Cmd) GetBOSHPath() string {
+func (c CLI) GetBOSHPath() string {
 	return c.path
 }
