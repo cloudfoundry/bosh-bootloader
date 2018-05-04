@@ -91,7 +91,12 @@ func (s SSH) Execute(args []string, state storage.State) error {
 	jumpboxURL := strings.Split(state.Jumpbox.URL, ":")[0]
 
 	if jumpbox {
-		return s.cli.Run([]string{"-o StrictHostKeyChecking=no -o ServerAliveInterval=300", fmt.Sprintf("jumpbox@%s", jumpboxURL), "-i", jumpboxKeyPath})
+		return s.cli.Run([]string{
+			"-o", "StrictHostKeyChecking=no",
+			"-o", "ServerAliveInterval=300",
+			fmt.Sprintf("jumpbox@%s", jumpboxURL),
+			"-i", jumpboxKeyPath,
+		})
 	}
 
 	directorPrivateKey, err := s.keyGetter.Get("director")
@@ -111,7 +116,13 @@ func (s SSH) Execute(args []string, state storage.State) error {
 		return fmt.Errorf("Open proxy port: %s", err)
 	}
 
-	err = s.cli.Run([]string{"-4 -D", port, "-fNC", fmt.Sprintf("jumpbox@%s", jumpboxURL), "-i", jumpboxKeyPath})
+	err = s.cli.Run([]string{
+		"-4",
+		"-D", port,
+		"-fNC",
+		fmt.Sprintf("jumpbox@%s", jumpboxURL),
+		"-i", jumpboxKeyPath,
+	})
 	if err != nil {
 		return fmt.Errorf("Open tunnel to jumpbox: %s", err)
 	}
@@ -123,5 +134,11 @@ func (s SSH) Execute(args []string, state storage.State) error {
 
 	ip := strings.Split(strings.TrimPrefix(state.BOSH.DirectorAddress, "https://"), ":")[0]
 
-	return s.cli.Run([]string{fmt.Sprintf("-o ProxyCommand=%s localhost:%s %%h %%p", proxyCommandPrefix, port), "-i", directorKeyPath, fmt.Sprintf("jumpbox@%s", ip)})
+	return s.cli.Run([]string{
+		"-o", "StrictHostKeyChecking=no",
+		"-o", "ServerAliveInterval=300",
+		"-o", fmt.Sprintf("ProxyCommand=%s localhost:%s %%h %%p", proxyCommandPrefix, port),
+		"-i", directorKeyPath,
+		fmt.Sprintf("jumpbox@%s", ip),
+	})
 }

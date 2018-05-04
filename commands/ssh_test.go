@@ -99,11 +99,15 @@ var _ = Describe("SSH", func() {
 				))
 
 				Expect(sshCLI.RunCall.Receives[0].Args).To(ConsistOf(
-					"-4 -D", "60000", "-fNC", "jumpbox@jumpboxURL", "-i", jumpboxPrivateKeyPath,
+					"-4", "-D", "60000", "-fNC", "jumpbox@jumpboxURL", "-i", jumpboxPrivateKeyPath,
 				))
 
 				Expect(sshCLI.RunCall.Receives[1].Args).To(ConsistOf(
-					"-o ProxyCommand=nc -x localhost:60000 %h %p", "-i", directorPrivateKeyPath, "jumpbox@directorURL",
+					"-o", "StrictHostKeyChecking=no",
+					"-o", "ServerAliveInterval=300",
+					"-o", "ProxyCommand=nc -x localhost:60000 %h %p",
+					"-i", directorPrivateKeyPath,
+					"jumpbox@directorURL",
 				))
 			})
 
@@ -119,11 +123,15 @@ var _ = Describe("SSH", func() {
 					Expect(pathFinder.CommandExistsCall.Receives.Command).To(Equal("connect-proxy"))
 
 					Expect(sshCLI.RunCall.Receives[0].Args).To(ConsistOf(
-						"-4 -D", "60000", "-fNC", "jumpbox@jumpboxURL", "-i", jumpboxPrivateKeyPath,
+						"-4", "-D", "60000", "-fNC", "jumpbox@jumpboxURL", "-i", jumpboxPrivateKeyPath,
 					))
 
 					Expect(sshCLI.RunCall.Receives[1].Args).To(ConsistOf(
-						"-o ProxyCommand=connect-proxy -S localhost:60000 %h %p", "-i", directorPrivateKeyPath, "jumpbox@directorURL",
+						"-o", "StrictHostKeyChecking=no",
+						"-o", "ServerAliveInterval=300",
+						"-o", "ProxyCommand=connect-proxy -S localhost:60000 %h %p",
+						"-i", directorPrivateKeyPath,
+						"jumpbox@directorURL",
 					))
 				})
 			})
@@ -194,7 +202,7 @@ var _ = Describe("SSH", func() {
 				Expect(fileIO.WriteFileCall.Receives[0].Mode).To(Equal(os.FileMode(0600)))
 
 				Expect(sshCLI.RunCall.Receives[0].Args).To(ConsistOf(
-					"-o StrictHostKeyChecking=no -o ServerAliveInterval=300", "jumpbox@jumpboxURL", "-i", jumpboxPrivateKeyPath,
+					"-o", "StrictHostKeyChecking=no", "-o", "ServerAliveInterval=300", "jumpbox@jumpboxURL", "-i", jumpboxPrivateKeyPath,
 				))
 			})
 
