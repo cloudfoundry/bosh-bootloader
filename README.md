@@ -35,32 +35,12 @@ $ brew install bbl
 
 ## Usage
 
-### Generic Getting Started Guide
-
-1. Create the necessary IaaS user/account for bbl.
-
-1. `bbl up --iaas <MY IaaS>` with IaaS credentials as flags or environment variables.
-
-1. `eval "$(bbl print-env)"` to target the director that you just created.
-
-1. `bosh ssh`, `bosh deploy` or `bosh env` should all just work with no further information needed from bbl.
-
-
 ### IaaS-Specific Getting Started Guides
 - [Getting Started: Azure](docs/getting-started-azure.md)
 - [Getting Started: GCP](docs/getting-started-gcp.md)
 - [Getting Started: AWS](docs/getting-started-aws.md)
 - [Getting Started: vSphere](docs/getting-started-vsphere.md)
 - [Getting Started: OpenStack](docs/getting-started-openstack.md)
-
-### Generic Steps for Cloud Foundry Deployment
-
-1. Create an environment and target the BOSH director as described above.
-
-1. `bbl plan --lb-type cf --lb-cert cert --lb-key key && bbl up` with a certificate and key as flags or environment variables.
-(Continue to provide the IaaS credentials as flags or environment variables.)
-
-1. `bosh deploy cf-deployment.yml -o operations/<MY IaaS>` using the [CF deployment manifest!](https://github.com/cloudfoundry/cf-deployment)
 
 ### Managing state
 
