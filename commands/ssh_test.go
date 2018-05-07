@@ -204,7 +204,7 @@ var _ = Describe("SSH", func() {
 				Expect(fileIO.WriteFileCall.Receives[0].Mode).To(Equal(os.FileMode(0600)))
 
 				Expect(sshCLI.RunCall.Receives[0].Args).To(ConsistOf(
-					"-o", "StrictHostKeyChecking=no", "-o", "ServerAliveInterval=300", "jumpbox@jumpboxURL", "-i", jumpboxPrivateKeyPath,
+					"-tt", "-o", "StrictHostKeyChecking=no", "-o", "ServerAliveInterval=300", "jumpbox@jumpboxURL", "-i", jumpboxPrivateKeyPath,
 				))
 			})
 
