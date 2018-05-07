@@ -103,6 +103,7 @@ var _ = Describe("SSH", func() {
 				))
 
 				Expect(sshCLI.RunCall.Receives[1].Args).To(ConsistOf(
+					"-tt",
 					"-o", "StrictHostKeyChecking=no",
 					"-o", "ServerAliveInterval=300",
 					"-o", "ProxyCommand=nc -x localhost:60000 %h %p",
@@ -127,6 +128,7 @@ var _ = Describe("SSH", func() {
 					))
 
 					Expect(sshCLI.RunCall.Receives[1].Args).To(ConsistOf(
+						"-tt",
 						"-o", "StrictHostKeyChecking=no",
 						"-o", "ServerAliveInterval=300",
 						"-o", "ProxyCommand=connect-proxy -S localhost:60000 %h %p",
