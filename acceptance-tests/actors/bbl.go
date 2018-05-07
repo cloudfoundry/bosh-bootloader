@@ -11,6 +11,7 @@ import (
 	"time"
 
 	acceptance "github.com/cloudfoundry/bosh-bootloader/acceptance-tests"
+	"github.com/kr/pty"
 
 	"github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -71,6 +72,37 @@ func (b BBL) Rotate() *gexec.Session {
 		"--state-dir", b.stateDirectory,
 		"--debug",
 		"rotate",
+	}, os.Stdout, os.Stderr)
+}
+
+func (b BBL) VerifySSH(sshFunc func() (*exec.Cmd, *os.File)) {
+	cmd, session := sshFunc()
+	defer session.Close()
+
+	fmt.Fprintln(session, "whoami")
+	fmt.Fprintln(session, "exit 0")
+	output, err := ioutil.ReadAll(session)
+	Expect(err).NotTo(HaveOccurred())
+	Expect(string(output)).To(ContainSubstring("jumpbox"))
+
+	Eventually(cmd.Wait).Should(Succeed(), fmt.Sprintf("output was:\n\n%s", output))
+}
+
+func (b BBL) JumpboxSSH() (*exec.Cmd, *os.File) {
+	return b.interactiveExecute([]string{
+		"--state-dir", b.stateDirectory,
+		"--debug",
+		"ssh",
+		"--jumpbox",
+	}, os.Stdout, os.Stderr)
+}
+
+func (b BBL) DirectorSSH() (*exec.Cmd, *os.File) {
+	return b.interactiveExecute([]string{
+		"--state-dir", b.stateDirectory,
+		"--debug",
+		"ssh",
+		"--director",
 	}, os.Stdout, os.Stderr)
 }
 
@@ -164,16 +196,9 @@ func (b BBL) SaveDirectorCA() string {
 
 func (b BBL) ExportBoshAllProxy() string {
 	lines := strings.Split(b.PrintEnv(), "\n")
-	for _, line := range lines {
-		if strings.Contains(line, "export BOSH_ALL_PROXY=") {
-			keyValueParts := strings.Split(line, "export BOSH_ALL_PROXY=")
-			if len(keyValueParts) > 1 {
-				os.Setenv("BOSH_ALL_PROXY", keyValueParts[1])
-				return keyValueParts[1]
-			}
-		}
-	}
-	return ""
+	value := getExport("BOSH_ALL_PROXY", lines)
+	os.Setenv("BOSH_ALL_PROXY", value)
+	return value
 }
 
 func (b BBL) StartSSHTunnel() *gexec.Session {
@@ -203,7 +228,7 @@ func getExport(keyName string, lines []string) string {
 			parts := strings.Split(line, " ")
 			keyValue := parts[1]
 			keyValueParts := strings.Split(keyValue, "=")
-			return keyValueParts[1]
+			return strings.Join(keyValueParts[1:], "=")
 		}
 	}
 	return ""
@@ -228,4 +253,12 @@ func (b BBL) execute(args []string, stdout io.Writer, stderr io.Writer) *gexec.S
 	Expect(err).NotTo(HaveOccurred())
 
 	return session
+}
+
+func (b BBL) interactiveExecute(args []string, stdout io.Writer, stderr io.Writer) (*exec.Cmd, *os.File) {
+	cmd := exec.Command(b.pathToBBL, args...)
+	f, err := pty.Start(cmd)
+	Expect(err).NotTo(HaveOccurred())
+
+	return cmd, f
 }
