@@ -79,8 +79,10 @@ func (b BBL) VerifySSH(sshFunc func() (*exec.Cmd, *os.File)) {
 	cmd, session := sshFunc()
 	defer session.Close()
 
+	time.Sleep(5 * time.Second)
 	fmt.Fprintln(session, "whoami")
 	fmt.Fprintln(session, "exit 0")
+	time.Sleep(5 * time.Second)
 	output, err := ioutil.ReadAll(session)
 	Expect(err).NotTo(HaveOccurred())
 	Expect(string(output)).To(ContainSubstring("jumpbox"))
