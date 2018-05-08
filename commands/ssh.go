@@ -92,7 +92,6 @@ func (s SSH) Execute(args []string, state storage.State) error {
 
 	if jumpbox {
 		return s.cli.Run([]string{
-			"-tt",
 			"-o", "StrictHostKeyChecking=no",
 			"-o", "ServerAliveInterval=300",
 			fmt.Sprintf("jumpbox@%s", jumpboxURL),
@@ -136,7 +135,6 @@ func (s SSH) Execute(args []string, state storage.State) error {
 	ip := strings.Split(strings.TrimPrefix(state.BOSH.DirectorAddress, "https://"), ":")[0]
 
 	return s.cli.Run([]string{
-		"-tt",
 		"-o", "StrictHostKeyChecking=no",
 		"-o", "ServerAliveInterval=300",
 		"-o", fmt.Sprintf("ProxyCommand=%s localhost:%s %%h %%p", proxyCommandPrefix, port),

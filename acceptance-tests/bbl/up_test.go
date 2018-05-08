@@ -43,10 +43,8 @@ var _ = Describe("up", func() {
 	})
 
 	AfterEach(func() {
-		By("destroying the director and the jumpbox", func() {
-			session := bbl.Down()
-			Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
-		})
+		session := bbl.Down()
+		Eventually(session, 10*time.Minute).Should(gexec.Exit())
 	})
 
 	It("bbl's up a new bosh director and jumpbox", func() {
@@ -62,15 +60,11 @@ var _ = Describe("up", func() {
 		session := bbl.Up(args...)
 		Eventually(session, 60*time.Minute).Should(gexec.Exit(0))
 
-		By("checking to see if we can ssh to the jumpbox", func() {
-			bbl.VerifySSH(bbl.JumpboxSSH)
-		})
-
 		By("exporting bosh environment variables", func() {
 			bbl.ExportBoshAllProxy()
 		})
 
-		By("checking if the bosh director exists via the bosh cli", func() {
+		By("checking if the bosh director exists", func() {
 			directorAddress = bbl.DirectorAddress()
 			directorUsername = bbl.DirectorUsername()
 			directorPassword = bbl.DirectorPassword()
@@ -84,10 +78,6 @@ var _ = Describe("up", func() {
 				return exists
 			}
 			Eventually(directorExists, "1m", "10s").Should(BeTrue())
-		})
-
-		By("verifying we can ssh to the director", func() {
-			bbl.VerifySSH(bbl.DirectorSSH)
 		})
 
 		By("verifying that vm extensions were added to the cloud config", func() {
@@ -143,6 +133,11 @@ var _ = Describe("up", func() {
 
 		By("confirming that the load balancers no longer exist", func() {
 			iaasHelper.ConfirmNoLBsExist(bbl.PredefinedEnvID())
+		})
+
+		By("destroying the director and the jumpbox", func() {
+			session := bbl.Down()
+			Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
 		})
 	})
 })

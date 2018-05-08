@@ -9,70 +9,19 @@
 
 [[projects]]
   name = "github.com/Azure/azure-sdk-for-go"
-  packages = [
-    "arm/compute",
-    "arm/network",
-    "arm/resources/resources",
-    "arm/storage"
-  ]
+  packages = ["arm/compute","arm/network","arm/resources/resources","arm/storage"]
   revision = "df4dd90d076ebbf6e87d08d3f00bfac8ff4bde1a"
   version = "v10.3.1-beta"
 
 [[projects]]
   name = "github.com/Azure/go-autorest"
-  packages = [
-    "autorest",
-    "autorest/adal",
-    "autorest/azure",
-    "autorest/date",
-    "autorest/mocks",
-    "autorest/to",
-    "autorest/validation"
-  ]
+  packages = ["autorest","autorest/adal","autorest/azure","autorest/date","autorest/mocks","autorest/to","autorest/validation"]
   revision = "f6be1abbb5abd0517522f850dd785990d373da7e"
   version = "v8.4.0"
 
 [[projects]]
   name = "github.com/aws/aws-sdk-go"
-  packages = [
-    "aws",
-    "aws/awserr",
-    "aws/awsutil",
-    "aws/client",
-    "aws/client/metadata",
-    "aws/corehandlers",
-    "aws/credentials",
-    "aws/credentials/ec2rolecreds",
-    "aws/credentials/endpointcreds",
-    "aws/credentials/stscreds",
-    "aws/defaults",
-    "aws/ec2metadata",
-    "aws/endpoints",
-    "aws/request",
-    "aws/session",
-    "aws/signer/v4",
-    "internal/shareddefaults",
-    "private/protocol",
-    "private/protocol/ec2query",
-    "private/protocol/json/jsonutil",
-    "private/protocol/jsonrpc",
-    "private/protocol/query",
-    "private/protocol/query/queryutil",
-    "private/protocol/rest",
-    "private/protocol/restxml",
-    "private/protocol/xml/xmlutil",
-    "service/ec2",
-    "service/elb",
-    "service/elbv2",
-    "service/iam",
-    "service/kms",
-    "service/rds",
-    "service/route53",
-    "service/s3",
-    "service/s3/s3iface",
-    "service/s3/s3manager",
-    "service/sts"
-  ]
+  packages = ["aws","aws/awserr","aws/awsutil","aws/client","aws/client/metadata","aws/corehandlers","aws/credentials","aws/credentials/ec2rolecreds","aws/credentials/endpointcreds","aws/credentials/stscreds","aws/defaults","aws/ec2metadata","aws/endpoints","aws/request","aws/session","aws/signer/v4","internal/shareddefaults","private/protocol","private/protocol/ec2query","private/protocol/json/jsonutil","private/protocol/jsonrpc","private/protocol/query","private/protocol/query/queryutil","private/protocol/rest","private/protocol/restxml","private/protocol/xml/xmlutil","service/ec2","service/elb","service/elbv2","service/iam","service/kms","service/rds","service/route53","service/s3","service/s3/s3iface","service/s3/s3manager","service/sts"]
   revision = "80bf27afd5602f55c398d43621b9900583df3661"
   version = "v1.12.35"
 
@@ -115,24 +64,7 @@
 [[projects]]
   branch = "master"
   name = "github.com/genevieve/leftovers"
-  packages = [
-    "aws",
-    "aws/common",
-    "aws/ec2",
-    "aws/elb",
-    "aws/elbv2",
-    "aws/iam",
-    "aws/kms",
-    "aws/rds",
-    "aws/route53",
-    "aws/s3",
-    "azure",
-    "gcp",
-    "gcp/common",
-    "gcp/compute",
-    "gcp/dns",
-    "vsphere"
-  ]
+  packages = ["aws","aws/common","aws/ec2","aws/elb","aws/elbv2","aws/iam","aws/kms","aws/rds","aws/route53","aws/s3","azure","gcp","gcp/common","gcp/compute","gcp/dns","vsphere"]
   revision = "17e7d160b10e128ecab5484c8104291ec4211c09"
 
 [[projects]]
@@ -159,12 +91,6 @@
   revision = "0b12d6b5"
 
 [[projects]]
-  name = "github.com/kr/pty"
-  packages = ["."]
-  revision = "282ce0e5322c82529687d609ee670fac7c7d917c"
-  version = "v1.1.1"
-
-[[projects]]
   name = "github.com/mattn/go-colorable"
   packages = ["."]
   revision = "167de6bfdfba052fa6b2d3664c8f5272e23c9072"
@@ -184,60 +110,20 @@
 
 [[projects]]
   name = "github.com/onsi/ginkgo"
-  packages = [
-    ".",
-    "config",
-    "extensions/table",
-    "internal/codelocation",
-    "internal/containernode",
-    "internal/failer",
-    "internal/leafnodes",
-    "internal/remote",
-    "internal/spec",
-    "internal/spec_iterator",
-    "internal/specrunner",
-    "internal/suite",
-    "internal/testingtproxy",
-    "internal/writer",
-    "reporters",
-    "reporters/stenographer",
-    "reporters/stenographer/support/go-colorable",
-    "reporters/stenographer/support/go-isatty",
-    "types"
-  ]
+  packages = [".","config","extensions/table","internal/codelocation","internal/containernode","internal/failer","internal/leafnodes","internal/remote","internal/spec","internal/spec_iterator","internal/specrunner","internal/suite","internal/testingtproxy","internal/writer","reporters","reporters/stenographer","reporters/stenographer/support/go-colorable","reporters/stenographer/support/go-isatty","types"]
   revision = "9eda700730cba42af70d53180f9dcce9266bc2bc"
   version = "v1.4.0"
 
 [[projects]]
   name = "github.com/onsi/gomega"
-  packages = [
-    ".",
-    "format",
-    "gbytes",
-    "gexec",
-    "internal/assertion",
-    "internal/asyncassertion",
-    "internal/oraclematcher",
-    "internal/testingtsupport",
-    "matchers",
-    "matchers/support/goraph/bipartitegraph",
-    "matchers/support/goraph/edge",
-    "matchers/support/goraph/node",
-    "matchers/support/goraph/util",
-    "types"
-  ]
+  packages = [".","format","gbytes","gexec","internal/assertion","internal/asyncassertion","internal/oraclematcher","internal/testingtsupport","matchers","matchers/support/goraph/bipartitegraph","matchers/support/goraph/edge","matchers/support/goraph/node","matchers/support/goraph/util","types"]
   revision = "c893efa28eb45626cdaa76c9f653b62488858837"
   version = "v1.2.0"
 
 [[projects]]
   branch = "master"
   name = "github.com/pivotal-cf-experimental/gomegamatchers"
-  packages = [
-    ".",
-    "internal/deepequal",
-    "internal/diff",
-    "internal/prettyprint"
-  ]
+  packages = [".","internal/deepequal","internal/diff","internal/prettyprint"]
   revision = "760f4795167808cf328330c2765e97973a4e8fdd"
 
 [[projects]]
@@ -248,73 +134,32 @@
 
 [[projects]]
   name = "github.com/spf13/afero"
-  packages = [
-    ".",
-    "mem"
-  ]
+  packages = [".","mem"]
   revision = "bb8f1927f2a9d3ab41c9340aa034f6b803f4359c"
   version = "v1.0.2"
 
 [[projects]]
   name = "github.com/vmware/govmomi"
-  packages = [
-    ".",
-    "find",
-    "list",
-    "nfc",
-    "object",
-    "property",
-    "session",
-    "task",
-    "vim25",
-    "vim25/debug",
-    "vim25/methods",
-    "vim25/mo",
-    "vim25/progress",
-    "vim25/soap",
-    "vim25/types",
-    "vim25/xml"
-  ]
+  packages = [".","find","list","nfc","object","property","session","task","vim25","vim25/debug","vim25/methods","vim25/mo","vim25/progress","vim25/soap","vim25/types","vim25/xml"]
   revision = "58d927a6c3241af7f51cff7915920a616b7af3ee"
   version = "v0.17.0"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/crypto"
-  packages = [
-    "curve25519",
-    "ed25519",
-    "ed25519/internal/edwards25519",
-    "pkcs12",
-    "pkcs12/internal/rc2",
-    "ssh"
-  ]
+  packages = ["curve25519","ed25519","ed25519/internal/edwards25519","pkcs12","pkcs12/internal/rc2","ssh"]
   revision = "847319b7fc94cab682988f93da778204da164588"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/net"
-  packages = [
-    "context",
-    "context/ctxhttp",
-    "html",
-    "html/atom",
-    "html/charset",
-    "proxy"
-  ]
+  packages = ["context","context/ctxhttp","html","html/atom","html/charset","proxy"]
   revision = "0744d001aa8470aaa53df28d32e5ceeb8af9bd70"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/oauth2"
-  packages = [
-    ".",
-    "clientcredentials",
-    "google",
-    "internal",
-    "jws",
-    "jwt"
-  ]
+  packages = [".","clientcredentials","google","internal","jws","jwt"]
   revision = "13449ad91cb26cb47661c1b080790392170385fd"
 
 [[projects]]
@@ -326,56 +171,18 @@
 [[projects]]
   branch = "master"
   name = "golang.org/x/text"
-  packages = [
-    "encoding",
-    "encoding/charmap",
-    "encoding/htmlindex",
-    "encoding/internal",
-    "encoding/internal/identifier",
-    "encoding/japanese",
-    "encoding/korean",
-    "encoding/simplifiedchinese",
-    "encoding/traditionalchinese",
-    "encoding/unicode",
-    "internal/gen",
-    "internal/tag",
-    "internal/triegen",
-    "internal/ucd",
-    "internal/utf8internal",
-    "language",
-    "runes",
-    "transform",
-    "unicode/cldr",
-    "unicode/norm"
-  ]
+  packages = ["encoding","encoding/charmap","encoding/htmlindex","encoding/internal","encoding/internal/identifier","encoding/japanese","encoding/korean","encoding/simplifiedchinese","encoding/traditionalchinese","encoding/unicode","internal/gen","internal/tag","internal/triegen","internal/ucd","internal/utf8internal","language","runes","transform","unicode/cldr","unicode/norm"]
   revision = "1cbadb444a806fd9430d14ad08967ed91da4fa0a"
 
 [[projects]]
   branch = "master"
   name = "google.golang.org/api"
-  packages = [
-    "compute/v1",
-    "dns/v1",
-    "gensupport",
-    "googleapi",
-    "googleapi/internal/uritemplates"
-  ]
+  packages = ["compute/v1","dns/v1","gensupport","googleapi","googleapi/internal/uritemplates"]
   revision = "cec5cc05d57604ba2d2eaaf5381d3248fac4814d"
 
 [[projects]]
   name = "google.golang.org/appengine"
-  packages = [
-    ".",
-    "internal",
-    "internal/app_identity",
-    "internal/base",
-    "internal/datastore",
-    "internal/log",
-    "internal/modules",
-    "internal/remote_api",
-    "internal/urlfetch",
-    "urlfetch"
-  ]
+  packages = [".","internal","internal/app_identity","internal/base","internal/datastore","internal/log","internal/modules","internal/remote_api","internal/urlfetch","urlfetch"]
   revision = "150dc57a1b433e64154302bdc40b6bb8aefa313a"
   version = "v1.0.0"
 
@@ -388,6 +195,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "2cffe041098c2ca2c4aa6de33a585477032e7522a7e97a3b4fd8485d40c3010d"
+  inputs-digest = "f265707cb5bf0b4d2aa243d7fc0241f00ef114072f263308e170f5beb0a50b1d"
   solver-name = "gps-cdcl"
   solver-version = 1
