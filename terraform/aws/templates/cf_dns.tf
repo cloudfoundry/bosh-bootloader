@@ -2,32 +2,46 @@ variable "system_domain" {
   type = "string"
 }
 
-variable "existing_zone_id" {
-  type    = "string"
-  default = ""
+variable "parent_zone" {
+  type        = "string"
+  default     = ""
+  description = "The name of the parent zone for the provided system domain if it exists."
 }
 
-variable "existing_zone_ns" {
-  type    = "string"
-  default = ""
+data "aws_route53_zone" "parent" {
+  count = "${var.parent_zone == "" ? 0 : 1}"
+
+  name = "${var.parent_zone}"
+}
+
+output "env_dns_zone_name_servers" {
+  value = ["${split(",", local.name_servers)}"]
+}
+
+locals {
+  zone_id      = "${var.parent_zone == "" ? element(concat(aws_route53_zone.env_dns_zone.*.zone_id, list("")), 0) : element(concat(data.aws_route53_zone.parent.*.zone_id, list("")), 0)}"
+  name_servers = "${var.parent_zone == "" ? join(",", flatten(concat(aws_route53_zone.env_dns_zone.*.name_servers, list(list(""))))) :  join(",", flatten(concat(data.aws_route53_zone.env_dns_zone.*.name_servers, list(list("")))))}"
 }
 
 resource "aws_route53_zone" "env_dns_zone" {
-  name  = "${var.system_domain}"
-  count = "${var.existing_zone_id == "" ? 1 : 0}"
+  count = "${var.parent_zone == "" ? 1 : 0}"
+
+  name = "${var.system_domain}"
 
   tags {
     Name = "${var.env_id}-hosted-zone"
   }
 }
 
-locals {
-  zone_id     = "${var.existing_zone_id == "" ? element(concat(aws_route53_zone.env_dns_zone.*.zone_id, list("")), 0) : var.existing_zone_id}"
-  new_zone_ns = "${join(",", concat(aws_route53_zone.env_dns_zone.*.name_servers, list("")))}"
-}
+resource "aws_route53_record" "dns" {
+  count = "${var.parent_zone == "" ? 1 : 0}"
 
-output "env_dns_zone_name_servers" {
-  value = ["${split(",", var.existing_zone_ns == "" ?  local.new_zone_ns : var.existing_zone_ns)}"]
+  zone_id = "${local.zone_id}"
+  name    = "${var.system_domain}"
+  type    = "NS"
+  ttl     = 300
+
+  records = ["${local.name_servers}"]
 }
 
 resource "aws_route53_record" "wildcard_dns" {

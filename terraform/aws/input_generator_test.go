@@ -3,7 +3,6 @@ package aws_test
 import (
 	"errors"
 
-	bblaws "github.com/cloudfoundry/bosh-bootloader/aws"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/cloudfoundry/bosh-bootloader/terraform/aws"
@@ -109,10 +108,7 @@ var _ = Describe("InputGenerator", func() {
 			Context("when a domain name is supplied", func() {
 				BeforeEach(func() {
 					state.LB.Domain = "some-domain"
-					awsClient.RetrieveDNSCall.Returns.DNS = bblaws.DNSZone{
-						ID:          "zone-id",
-						NameServers: "ns1,ns2",
-					}
+					awsClient.RetrieveDNSCall.Returns.DNS = "zone-id"
 				})
 
 				It("returns a map with additional domain input", func() {
@@ -131,8 +127,7 @@ var _ = Describe("InputGenerator", func() {
 						"ssl_certificate_chain":       "some-chain",
 						"ssl_certificate_private_key": "some-key",
 						"system_domain":               "some-domain",
-						"existing_zone_id":            "zone-id",
-						"existing_zone_ns":            "ns1,ns2",
+						"parent_zone":                 "zone-id",
 					}))
 				})
 			})

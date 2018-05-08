@@ -1,7 +1,5 @@
 package fakes
 
-import "github.com/cloudfoundry/bosh-bootloader/aws"
-
 type AWSClient struct {
 	RetrieveAZsCall struct {
 		Receives struct {
@@ -18,7 +16,7 @@ type AWSClient struct {
 			URL string
 		}
 		Returns struct {
-			DNS aws.DNSZone
+			DNS string
 		}
 		CallCount int
 	}
@@ -30,7 +28,7 @@ func (a *AWSClient) RetrieveAZs(region string) ([]string, error) {
 	return a.RetrieveAZsCall.Returns.AZs, a.RetrieveAZsCall.Returns.Error
 }
 
-func (a *AWSClient) RetrieveDNS(url string) aws.DNSZone {
+func (a *AWSClient) RetrieveDNS(url string) string {
 	a.RetrieveDNSCall.Receives.URL = url
 	a.RetrieveDNSCall.CallCount++
 	return a.RetrieveDNSCall.Returns.DNS

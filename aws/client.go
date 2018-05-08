@@ -22,7 +22,6 @@ type EC2Client interface {
 
 type Route53Client interface {
 	ListHostedZonesByName(*awsroute53.ListHostedZonesByNameInput) (*awsroute53.ListHostedZonesByNameOutput, error)
-	GetHostedZone(*awsroute53.GetHostedZoneInput) (*awsroute53.GetHostedZoneOutput, error)
 }
 
 type logger interface {
@@ -34,12 +33,7 @@ type AvailabilityZones interface {
 }
 
 type DNSZones interface {
-	RetrieveDNS(domain string) DNSZone
-}
-
-type DNSZone struct {
-	ID          string
-	NameServers string
+	RetrieveDNS(domain string) string
 }
 
 type Client struct {
@@ -61,35 +55,33 @@ func NewClient(creds storage.AWS, logger logger) Client {
 	}
 }
 
-func (c Client) RetrieveDNS(url string) DNSZone {
-	zonesByName, err := c.route53Client.ListHostedZonesByName(&awsroute53.ListHostedZonesByNameInput{
-		DNSName: awslib.String(url),
+// If the parent domain for the provided url exists
+// in AWS Route53, return that zone's name.
+func (c Client) RetrieveDNS(url string) string {
+	parentDomain := fmt.Sprintf("%s.", strings.Join(strings.Split(url, ".")[1:], "."))
+
+	list, err := c.route53Client.ListHostedZonesByName(&awsroute53.ListHostedZonesByNameInput{
+		DNSName: awslib.String(parentDomain),
 	})
-	if err != nil {
-		return DNSZone{}
+	if err != nil || len(list.HostedZones) == 0 {
+		return ""
 	}
 
-	if len(zonesByName.HostedZones) == 0 {
-		return DNSZone{}
+	var found awsroute53.HostedZone
+	for _, zone := range list.HostedZones {
+		if *zone.Name == parentDomain {
+			found = *zone
+		}
 	}
 
-	id := zonesByName.HostedZones[0].Id
-	hostedZone, err := c.route53Client.GetHostedZone(&awsroute53.GetHostedZoneInput{Id: id})
-	if err != nil {
-		return DNSZone{}
+	if found.Id == nil {
+		return ""
 	}
 
-	nameServers := []string{}
-	for _, ns := range hostedZone.DelegationSet.NameServers {
-		nameServers = append(nameServers, *ns)
-	}
-
-	return DNSZone{
-		ID:          *id,
-		NameServers: strings.Join(nameServers, ","),
-	}
+	return parentDomain
 }
 
+// Return the AWS Availability Zones for a given region.
 func (c Client) RetrieveAZs(region string) ([]string, error) {
 	output, err := c.ec2Client.DescribeAvailabilityZones(&awsec2.DescribeAvailabilityZonesInput{
 		Filters: []*awsec2.Filter{{
@@ -118,15 +110,14 @@ func (c Client) RetrieveAZs(region string) ([]string, error) {
 	return azList, nil
 }
 
+// Return true if the network with the provided name exists.
 func (c Client) CheckExists(networkName string) (bool, error) {
 	vpcs, err := c.ec2Client.DescribeVpcs(&awsec2.DescribeVpcsInput{
-		Filters: []*awsec2.Filter{
-			{
-				Name: awslib.String("tag:Name"),
-				Values: []*string{
-					awslib.String(networkName),
-				},
-			},
+		Filters: []*awsec2.Filter{{
+			Name: awslib.String("tag:Name"),
+			Values: []*string{
+				awslib.String(networkName),
+			}},
 		},
 	})
 	if err != nil {

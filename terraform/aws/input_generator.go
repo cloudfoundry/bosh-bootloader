@@ -52,10 +52,9 @@ func (i InputGenerator) Generate(state storage.State) (map[string]interface{}, e
 		if state.LB.Domain != "" {
 			inputs["system_domain"] = state.LB.Domain
 
-			dns := i.awsClient.RetrieveDNS(state.LB.Domain)
-			if dns.ID != "" {
-				inputs["existing_zone_id"] = dns.ID
-				inputs["existing_zone_ns"] = dns.NameServers
+			parentZone := i.awsClient.RetrieveDNS(state.LB.Domain)
+			if parentZone != "" {
+				inputs["parent_zone"] = parentZone
 			}
 		}
 	}
