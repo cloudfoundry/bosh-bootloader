@@ -5,12 +5,14 @@ import "fmt"
 type GlobalHealthCheck struct {
 	client globalHealthChecksClient
 	name   string
+	kind   string
 }
 
 func NewGlobalHealthCheck(client globalHealthChecksClient, name string) GlobalHealthCheck {
 	return GlobalHealthCheck{
 		client: client,
 		name:   name,
+		kind:   "global-health-check",
 	}
 }
 
@@ -30,4 +32,8 @@ func (g GlobalHealthCheck) Name() string {
 
 func (g GlobalHealthCheck) Type() string {
 	return "Global Health Check"
+}
+
+func (g GlobalHealthCheck) Kind() string {
+	return g.kind
 }

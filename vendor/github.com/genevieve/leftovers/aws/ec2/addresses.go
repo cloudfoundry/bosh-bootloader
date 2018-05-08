@@ -48,3 +48,7 @@ func (d Addresses) List(filter string) ([]common.Deletable, error) {
 
 	return resources, nil
 }
+
+func (d Addresses) Type() string {
+	return "ec2-address"
+}

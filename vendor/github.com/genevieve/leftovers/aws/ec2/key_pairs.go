@@ -49,3 +49,7 @@ func (k KeyPairs) List(filter string) ([]common.Deletable, error) {
 
 	return resources, nil
 }
+
+func (k KeyPairs) Type() string {
+	return "ec2-key-pair"
+}

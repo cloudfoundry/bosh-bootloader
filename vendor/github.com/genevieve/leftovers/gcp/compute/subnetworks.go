@@ -42,6 +42,10 @@ func (n Subnetworks) List(filter string) ([]common.Deletable, error) {
 	for _, subnetwork := range subnetworks {
 		resource := NewSubnetwork(n.client, subnetwork.Name, n.regions[subnetwork.Region], subnetwork.Network)
 
+		if subnetwork.Name == "default" {
+			continue
+		}
+
 		if !strings.Contains(subnetwork.Name, filter) {
 			continue
 		}

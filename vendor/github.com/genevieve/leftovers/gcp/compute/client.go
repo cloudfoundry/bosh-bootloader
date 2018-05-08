@@ -28,6 +28,7 @@ type client struct {
 	forwardingRules       *gcpcompute.ForwardingRulesService
 	globalForwardingRules *gcpcompute.GlobalForwardingRulesService
 	subnetworks           *gcpcompute.SubnetworksService
+	sslCertificates       *gcpcompute.SslCertificatesService
 	networks              *gcpcompute.NetworksService
 	targetHttpProxies     *gcpcompute.TargetHttpProxiesService
 	targetHttpsProxies    *gcpcompute.TargetHttpsProxiesService
@@ -57,6 +58,7 @@ func NewClient(project string, service *gcpcompute.Service, logger logger) clien
 		firewalls:             service.Firewalls,
 		forwardingRules:       service.ForwardingRules,
 		globalForwardingRules: service.GlobalForwardingRules,
+		sslCertificates:       service.SslCertificates,
 		subnetworks:           service.Subnetworks,
 		networks:              service.Networks,
 		targetHttpProxies:     service.TargetHttpProxies,
@@ -204,6 +206,14 @@ func (c client) DeleteSubnetwork(region, subnetwork string) error {
 	return c.wait(c.subnetworks.Delete(c.project, region, subnetwork))
 }
 
+func (c client) ListSslCertificates() (*gcpcompute.SslCertificateList, error) {
+	return c.sslCertificates.List(c.project).Do()
+}
+
+func (c client) DeleteSslCertificate(certificate string) error {
+	return c.wait(c.sslCertificates.Delete(c.project, certificate))
+}
+
 func (c client) ListTargetHttpProxies() (*gcpcompute.TargetHttpProxyList, error) {
 	return c.targetHttpProxies.List(c.project).Do()
 }
@@ -241,7 +251,7 @@ func (c client) ListRegions() (map[string]string, error) {
 
 	list, err := c.regions.List(c.project).Do()
 	if err != nil {
-		return regions, err
+		return regions, fmt.Errorf("List Regions: %s", err)
 	}
 
 	for _, r := range list.Items {
@@ -255,7 +265,7 @@ func (c client) ListZones() (map[string]string, error) {
 
 	list, err := c.zones.List(c.project).Do()
 	if err != nil {
-		return zones, err
+		return zones, fmt.Errorf("List Zones: %s", err)
 	}
 
 	for _, z := range list.Items {

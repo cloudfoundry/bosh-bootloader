@@ -51,3 +51,7 @@ func (o Roles) List(filter string) ([]common.Deletable, error) {
 
 	return resources, nil
 }
+
+func (o Roles) Type() string {
+	return "iam-role"
+}

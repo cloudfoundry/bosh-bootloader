@@ -45,7 +45,7 @@ func (i Instances) List(filter string) ([]common.Deletable, error) {
 	var resources []common.Deletable
 	for _, r := range instances.Reservations {
 		for _, instance := range r.Instances {
-			r := NewInstance(i.client, i.resourceTags, instance.InstanceId, instance.KeyName, instance.Tags)
+			r := NewInstance(i.client, i.logger, i.resourceTags, instance.InstanceId, instance.KeyName, instance.Tags)
 
 			if !strings.Contains(r.Name(), filter) {
 				continue
@@ -61,4 +61,8 @@ func (i Instances) List(filter string) ([]common.Deletable, error) {
 	}
 
 	return resources, nil
+}
+
+func (i Instances) Type() string {
+	return "ec2-instance"
 }

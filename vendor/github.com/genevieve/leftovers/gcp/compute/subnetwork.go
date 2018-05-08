@@ -10,6 +10,7 @@ type Subnetwork struct {
 	name        string
 	clearerName string
 	region      string
+	kind        string
 }
 
 func NewSubnetwork(client subnetworksClient, name, region, networkUrl string) Subnetwork {
@@ -25,6 +26,7 @@ func NewSubnetwork(client subnetworksClient, name, region, networkUrl string) Su
 		name:        name,
 		clearerName: clearerName,
 		region:      region,
+		kind:        "subnetwork",
 	}
 }
 
@@ -44,4 +46,8 @@ func (s Subnetwork) Name() string {
 
 func (s Subnetwork) Type() string {
 	return "Subnetwork"
+}
+
+func (s Subnetwork) Kind() string {
+	return s.kind
 }

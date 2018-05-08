@@ -49,3 +49,7 @@ func (e NetworkInterfaces) List(filter string) ([]common.Deletable, error) {
 
 	return resources, nil
 }
+
+func (e NetworkInterfaces) Type() string {
+	return "ec2-network-interface"
+}

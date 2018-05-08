@@ -6,15 +6,24 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"path/filepath"
 	"sync"
 
 	"github.com/fatih/color"
 	"github.com/genevieve/leftovers/gcp/common"
 	"github.com/genevieve/leftovers/gcp/compute"
+	"github.com/genevieve/leftovers/gcp/container"
 	"github.com/genevieve/leftovers/gcp/dns"
+	"github.com/genevieve/leftovers/gcp/iam"
+	"github.com/genevieve/leftovers/gcp/sql"
+	"github.com/genevieve/leftovers/gcp/storage"
 	"golang.org/x/oauth2/google"
 	gcpcompute "google.golang.org/api/compute/v1"
+	gcpcontainer "google.golang.org/api/container/v1"
 	gcpdns "google.golang.org/api/dns/v1"
+	gcpiam "google.golang.org/api/iam/v1"
+	gcpsql "google.golang.org/api/sqladmin/v1beta4"
+	gcpstorage "google.golang.org/api/storage/v1"
 )
 
 type resource interface {
@@ -87,7 +96,9 @@ func NewLeftovers(logger logger, keyPath string) (Leftovers, error) {
 		return Leftovers{}, errors.New("Missing service account key path.")
 	}
 
-	key, err := ioutil.ReadFile(keyPath)
+	absKeyPath, _ := filepath.Abs(keyPath)
+
+	key, err := ioutil.ReadFile(absKeyPath)
 	if err != nil {
 		key = []byte(keyPath)
 	}
@@ -99,32 +110,58 @@ func NewLeftovers(logger logger, keyPath string) (Leftovers, error) {
 		return Leftovers{}, fmt.Errorf("Unmarshalling account key for project id: %s", err)
 	}
 
-	config, err := google.JWTConfigFromJSON(key, gcpcompute.ComputeScope, gcpdns.NdevClouddnsReadwriteScope)
+	config, err := google.JWTConfigFromJSON(key, gcpcompute.CloudPlatformScope)
 	if err != nil {
 		return Leftovers{}, fmt.Errorf("Creating jwt config: %s", err)
 	}
 
-	service, err := gcpcompute.New(config.Client(context.Background()))
+	httpClient := config.Client(context.Background())
+
+	service, err := gcpcompute.New(httpClient)
 	if err != nil {
-		return Leftovers{}, fmt.Errorf("Creating gcp client: %s", err)
+		return Leftovers{}, err
 	}
 	client := compute.NewClient(p.ProjectId, service, logger)
 
+	dnsService, err := gcpdns.New(httpClient)
+	if err != nil {
+		return Leftovers{}, err
+	}
+	dnsClient := dns.NewClient(p.ProjectId, dnsService, logger)
+
+	sqlService, err := gcpsql.New(httpClient)
+	if err != nil {
+		return Leftovers{}, err
+	}
+	sqlClient := sql.NewClient(p.ProjectId, sqlService, logger)
+
+	storageService, err := gcpstorage.New(httpClient)
+	if err != nil {
+		return Leftovers{}, err
+	}
+	storageClient := storage.NewClient(p.ProjectId, storageService, logger)
+
+	iamService, err := gcpiam.New(httpClient)
+	if err != nil {
+		return Leftovers{}, err
+	}
+	iamClient := iam.NewClient(p.ProjectId, iamService, logger)
+
+	containerService, err := gcpcontainer.New(httpClient)
+	if err != nil {
+		return Leftovers{}, err
+	}
+	containerClient := container.NewClient(p.ProjectId, containerService, logger)
+
 	regions, err := client.ListRegions()
 	if err != nil {
-		return Leftovers{}, fmt.Errorf("Listing regions: %s", err)
+		return Leftovers{}, err
 	}
 
 	zones, err := client.ListZones()
 	if err != nil {
-		return Leftovers{}, fmt.Errorf("Listing zones: %s", err)
+		return Leftovers{}, err
 	}
-
-	dnsService, err := gcpdns.New(config.Client(context.Background()))
-	if err != nil {
-		return Leftovers{}, fmt.Errorf("Creating gcp client: %s", err)
-	}
-	dnsClient := dns.NewClient(p.ProjectId, dnsService, logger)
 
 	return Leftovers{
 		logger: logger,
@@ -150,7 +187,12 @@ func NewLeftovers(logger logger, keyPath string) (Leftovers, error) {
 			compute.NewNetworks(client, logger),
 			compute.NewAddresses(client, logger, regions),
 			compute.NewGlobalAddresses(client, logger),
+			compute.NewSslCertificates(client, logger),
+			iam.NewServiceAccounts(iamClient, logger),
 			dns.NewManagedZones(dnsClient, dns.NewRecordSets(dnsClient), logger),
+			sql.NewInstances(sqlClient, logger),
+			storage.NewBuckets(storageClient, logger),
+			container.NewClusters(containerClient, zones, logger),
 		},
 	}, nil
 }

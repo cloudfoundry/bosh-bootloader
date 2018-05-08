@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/genevieve/leftovers/gcp/common"
+
 	gcpcompute "google.golang.org/api/compute/v1"
 )
 
@@ -24,10 +26,7 @@ func NewOperationWaiter(op *gcpcompute.Operation, service *gcpcompute.Service, p
 }
 
 func (w *operationWaiter) Wait() error {
-	state := &state{
-		logger:  w.logger,
-		refresh: w.refreshFunc(),
-	}
+	state := common.NewState(w.logger, w.refreshFunc())
 
 	raw, err := state.Wait()
 	if err != nil {
@@ -42,7 +41,7 @@ func (w *operationWaiter) Wait() error {
 	return nil
 }
 
-func (c *operationWaiter) refreshFunc() stateRefreshFunc {
+func (c *operationWaiter) refreshFunc() common.StateRefreshFunc {
 	return func() (interface{}, string, error) {
 		var op *gcpcompute.Operation
 		var err error

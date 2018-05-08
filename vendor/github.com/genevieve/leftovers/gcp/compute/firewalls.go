@@ -35,7 +35,11 @@ func (f Firewalls) List(filter string) ([]common.Deletable, error) {
 	for _, firewall := range firewalls.Items {
 		resource := NewFirewall(f.client, firewall.Name)
 
-		if !strings.Contains(firewall.Name, filter) {
+		if strings.Contains(resource.Name(), "default") {
+			continue
+		}
+
+		if !strings.Contains(resource.Name(), filter) {
 			continue
 		}
 

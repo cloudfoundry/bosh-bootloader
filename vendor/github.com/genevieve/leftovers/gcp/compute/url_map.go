@@ -5,12 +5,14 @@ import "fmt"
 type UrlMap struct {
 	client urlMapsClient
 	name   string
+	kind   string
 }
 
 func NewUrlMap(client urlMapsClient, name string) UrlMap {
 	return UrlMap{
 		client: client,
 		name:   name,
+		kind:   "url-map",
 	}
 }
 
@@ -30,4 +32,8 @@ func (u UrlMap) Name() string {
 
 func (u UrlMap) Type() string {
 	return "Url Map"
+}
+
+func (u UrlMap) Kind() string {
+	return u.kind
 }

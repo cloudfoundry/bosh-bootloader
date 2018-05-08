@@ -5,12 +5,14 @@ import "fmt"
 type Firewall struct {
 	client firewallsClient
 	name   string
+	kind   string
 }
 
 func NewFirewall(client firewallsClient, name string) Firewall {
 	return Firewall{
 		client: client,
 		name:   name,
+		kind:   "firewall",
 	}
 }
 
@@ -30,4 +32,8 @@ func (f Firewall) Name() string {
 
 func (f Firewall) Type() string {
 	return "Firewall"
+}
+
+func (f Firewall) Kind() string {
+	return f.kind
 }

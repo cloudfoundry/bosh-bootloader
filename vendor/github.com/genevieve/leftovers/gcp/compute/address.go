@@ -7,6 +7,7 @@ type Address struct {
 	name        string
 	clearerName string
 	region      string
+	kind        string
 }
 
 func NewAddress(client addressesClient, name, region string, users int) Address {
@@ -14,11 +15,13 @@ func NewAddress(client addressesClient, name, region string, users int) Address 
 	if users > 0 {
 		clearerName = fmt.Sprintf("%s (Users:%d)", name, users)
 	}
+
 	return Address{
 		client:      client,
 		name:        name,
 		clearerName: clearerName,
 		region:      region,
+		kind:        "address",
 	}
 }
 
@@ -37,4 +40,8 @@ func (a Address) Name() string {
 
 func (a Address) Type() string {
 	return "Address"
+}
+
+func (a Address) Kind() string {
+	return a.kind
 }

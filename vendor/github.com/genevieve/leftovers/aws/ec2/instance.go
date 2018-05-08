@@ -2,21 +2,25 @@ package ec2
 
 import (
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	awsec2 "github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/genevieve/leftovers/aws/common"
 )
 
 type Instance struct {
 	client       instancesClient
+	logger       logger
 	resourceTags resourceTags
 	id           *string
 	identifier   string
 	rtype        string
 }
 
-func NewInstance(client instancesClient, resourceTags resourceTags, id, keyName *string, tags []*awsec2.Tag) Instance {
+func NewInstance(client instancesClient, logger logger, resourceTags resourceTags, id, keyName *string, tags []*awsec2.Tag) Instance {
 	identifier := *id
 
 	extra := []string{}
@@ -34,12 +38,16 @@ func NewInstance(client instancesClient, resourceTags resourceTags, id, keyName 
 
 	return Instance{
 		client:       client,
+		logger:       logger,
 		resourceTags: resourceTags,
 		id:           id,
 		identifier:   identifier,
 		rtype:        "EC2 Instance",
 	}
 }
+
+var pending = []string{"pending", "running", "shutting-down", "stopped", "stopping"}
+var target = []string{"terminated"}
 
 func (i Instance) Delete() error {
 	addresses, err := i.client.DescribeAddresses(&awsec2.DescribeAddressesInput{
@@ -55,6 +63,14 @@ func (i Instance) Delete() error {
 	_, err = i.client.TerminateInstances(&awsec2.TerminateInstancesInput{InstanceIds: []*string{i.id}})
 	if err != nil {
 		return fmt.Errorf("Terminate: %s", err)
+	}
+
+	refresh := instanceRefresh(i.client, i.id)
+	state := common.NewState(i.logger, refresh, pending, target)
+
+	_, err = state.Wait()
+	if err != nil {
+		return fmt.Errorf("Waiting for deletion: %s", err)
 	}
 
 	err = i.resourceTags.Delete("instance", *i.id)
@@ -78,4 +94,29 @@ func (i Instance) Name() string {
 
 func (i Instance) Type() string {
 	return i.rtype
+}
+
+func instanceRefresh(client instancesClient, id *string) common.StateRefreshFunc {
+	return func() (interface{}, string, error) {
+		resp, err := client.DescribeInstances(&awsec2.DescribeInstancesInput{
+			InstanceIds: []*string{id},
+		})
+		if err != nil {
+			if ec2err, ok := err.(awserr.Error); ok && ec2err.Code() == "InvalidInstanceID.NotFound" {
+				resp = nil
+			} else {
+				log.Printf("Error on InstanceStateRefresh: %s", err)
+				return nil, "", err
+			}
+		}
+
+		if resp == nil || len(resp.Reservations) == 0 || len(resp.Reservations[0].Instances) == 0 {
+			return nil, "", nil
+		}
+
+		i := resp.Reservations[0].Instances[0]
+		state := *i.State.Name
+
+		return i, state, nil
+	}
 }

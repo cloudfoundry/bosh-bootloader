@@ -49,3 +49,7 @@ func (t TargetGroups) List(filter string) ([]common.Deletable, error) {
 
 	return resources, nil
 }
+
+func (t TargetGroups) Type() string {
+	return "elbv2-target-group"
+}

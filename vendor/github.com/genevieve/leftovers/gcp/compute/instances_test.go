@@ -49,7 +49,7 @@ var _ = Describe("Instances", func() {
 			Expect(client.ListInstancesCall.Receives.Zone).To(Equal("zone-1"))
 
 			Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(1))
-			Expect(logger.PromptWithDetailsCall.Receives.Type).To(Equal("Instance"))
+			Expect(logger.PromptWithDetailsCall.Receives.Type).To(Equal("Compute Instance"))
 			Expect(logger.PromptWithDetailsCall.Receives.Name).To(Equal("banana-instance"))
 
 			Expect(list).To(HaveLen(1))

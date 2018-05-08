@@ -31,6 +31,7 @@ import (
 
 type resource interface {
 	List(filter string) ([]common.Deletable, error)
+	Type() string
 }
 
 type Leftovers struct {
@@ -96,6 +97,7 @@ func NewLeftovers(logger logger, accessKeyId, secretAccessKey, region string) (L
 			ec2.NewTags(ec2Client, logger),
 			ec2.NewVolumes(ec2Client, logger),
 			ec2.NewNetworkInterfaces(ec2Client, logger),
+			ec2.NewNatGateways(ec2Client, logger),
 			ec2.NewVpcs(ec2Client, logger, routeTables, subnets, internetGateways, resourceTags),
 			ec2.NewImages(ec2Client, stsClient, logger, resourceTags),
 			ec2.NewAddresses(ec2Client, logger),
@@ -157,7 +159,7 @@ func (l Leftovers) Delete(filter string) error {
 
 				err := r.Delete()
 				if err != nil {
-					l.logger.Println(fmt.Sprintf("[%s: %s]: %s", r.Type(), r.Name(), color.YellowString(err.Error())))
+					l.logger.Println(fmt.Sprintf("[%s: %s] %s", r.Type(), r.Name(), color.YellowString(err.Error())))
 				} else {
 					l.logger.Println(fmt.Sprintf("[%s: %s] %s", r.Type(), r.Name(), color.GreenString("Deleted!")))
 				}

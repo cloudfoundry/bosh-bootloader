@@ -53,3 +53,7 @@ func (d DBClusters) List(filter string) ([]common.Deletable, error) {
 
 	return resources, nil
 }
+
+func (d DBClusters) Type() string {
+	return "rds-db-cluster"
+}

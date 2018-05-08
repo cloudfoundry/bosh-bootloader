@@ -49,3 +49,7 @@ func (h HealthChecks) List(filter string) ([]common.Deletable, error) {
 
 	return resources, nil
 }
+
+func (h HealthChecks) Type() string {
+	return "route53-health-check"
+}

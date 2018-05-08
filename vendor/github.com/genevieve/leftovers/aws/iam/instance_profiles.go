@@ -50,3 +50,7 @@ func (i InstanceProfiles) List(filter string) ([]common.Deletable, error) {
 
 	return resources, nil
 }
+
+func (i InstanceProfiles) Type() string {
+	return "iam-instance-profile"
+}

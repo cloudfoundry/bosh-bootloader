@@ -64,3 +64,7 @@ func (s Snapshots) List(filter string) ([]common.Deletable, error) {
 
 	return resources, nil
 }
+
+func (s Snapshots) Type() string {
+	return "ec2-snapshot"
+}

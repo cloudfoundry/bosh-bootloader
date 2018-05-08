@@ -27,12 +27,12 @@ func NewUser(client usersClient, policies userPolicies, accessKeys accessKeys, n
 }
 
 func (u User) Delete() error {
-	err := u.accessKeys.Delete(*u.name)
+	err := u.accessKeys.Delete(u.identifier)
 	if err != nil {
 		return fmt.Errorf("Delete access keys: %s", err)
 	}
 
-	err = u.policies.Delete(*u.name)
+	err = u.policies.Delete(u.identifier)
 	if err != nil {
 		return fmt.Errorf("Delete policies: %s", err)
 	}

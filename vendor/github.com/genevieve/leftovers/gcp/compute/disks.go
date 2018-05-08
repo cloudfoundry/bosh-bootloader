@@ -42,11 +42,7 @@ func (d Disks) List(filter string) ([]common.Deletable, error) {
 	for _, disk := range disks {
 		resource := NewDisk(d.client, disk.Name, d.zones[disk.Zone])
 
-		if !strings.Contains(disk.Name, filter) {
-			continue
-		}
-
-		if len(disk.Users) > 0 {
+		if !strings.Contains(resource.Name(), filter) {
 			continue
 		}
 

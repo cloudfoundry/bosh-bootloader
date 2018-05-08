@@ -53,3 +53,7 @@ func (d DBInstances) List(filter string) ([]common.Deletable, error) {
 
 	return resources, nil
 }
+
+func (d DBInstances) Type() string {
+	return "rds-db-instance"
+}

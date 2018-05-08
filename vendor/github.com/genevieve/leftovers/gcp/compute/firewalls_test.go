@@ -72,6 +72,24 @@ var _ = Describe("Firewalls", func() {
 			})
 		})
 
+		Context("when the firewall name contains default", func() {
+			BeforeEach(func() {
+				client.ListFirewallsCall.Returns.Output = &gcpcompute.FirewallList{
+					Items: []*gcpcompute.Firewall{{
+						Name: "default-allow-banana",
+					}},
+				}
+			})
+
+			It("does not add it to the list", func() {
+				list, err := firewalls.List("banana")
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(0))
+				Expect(list).To(HaveLen(0))
+			})
+		})
+
 		Context("when the user says no to the prompt", func() {
 			BeforeEach(func() {
 				logger.PromptWithDetailsCall.Returns.Proceed = false

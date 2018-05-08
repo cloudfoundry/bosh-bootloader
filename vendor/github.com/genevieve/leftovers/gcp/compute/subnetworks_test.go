@@ -87,7 +87,7 @@ var _ = Describe("Subnetworks", func() {
 			})
 
 			It("does not add it to the list", func() {
-				list, err := subnetworks.List(filter)
+				list, err := subnetworks.List("")
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(0))

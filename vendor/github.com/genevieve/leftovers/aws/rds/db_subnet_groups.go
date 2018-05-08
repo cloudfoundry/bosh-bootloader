@@ -49,3 +49,7 @@ func (d DBSubnetGroups) List(filter string) ([]common.Deletable, error) {
 
 	return resources, nil
 }
+
+func (d DBSubnetGroups) Type() string {
+	return "rds-db-subnet-group"
+}

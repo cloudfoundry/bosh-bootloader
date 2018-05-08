@@ -5,12 +5,14 @@ import "fmt"
 type Network struct {
 	client networksClient
 	name   string
+	kind   string
 }
 
 func NewNetwork(client networksClient, name string) Network {
 	return Network{
 		client: client,
 		name:   name,
+		kind:   "network",
 	}
 }
 
@@ -30,4 +32,8 @@ func (n Network) Name() string {
 
 func (n Network) Type() string {
 	return "Network"
+}
+
+func (n Network) Kind() string {
+	return n.kind
 }

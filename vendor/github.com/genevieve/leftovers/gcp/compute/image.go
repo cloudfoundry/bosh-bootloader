@@ -5,12 +5,14 @@ import "fmt"
 type Image struct {
 	client imagesClient
 	name   string
+	kind   string
 }
 
 func NewImage(client imagesClient, name string) Image {
 	return Image{
 		client: client,
 		name:   name,
+		kind:   "image",
 	}
 }
 
@@ -30,4 +32,8 @@ func (i Image) Name() string {
 
 func (i Image) Type() string {
 	return "Image"
+}
+
+func (i Image) Kind() string {
+	return i.kind
 }

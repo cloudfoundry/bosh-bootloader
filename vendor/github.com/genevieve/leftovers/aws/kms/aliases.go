@@ -49,3 +49,7 @@ func (a Aliases) List(filter string) ([]common.Deletable, error) {
 
 	return resources, nil
 }
+
+func (a Aliases) Type() string {
+	return "kms-alias"
+}

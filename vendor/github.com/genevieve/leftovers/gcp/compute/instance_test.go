@@ -60,7 +60,7 @@ var _ = Describe("Instance", func() {
 
 	Describe("Type", func() {
 		It("returns the type", func() {
-			Expect(instance.Type()).To(Equal("Instance"))
+			Expect(instance.Type()).To(Equal("Compute Instance"))
 		})
 	})
 })

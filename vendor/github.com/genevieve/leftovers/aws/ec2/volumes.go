@@ -50,3 +50,7 @@ func (v Volumes) List(filter string) ([]common.Deletable, error) {
 
 	return resources, nil
 }
+
+func (v Volumes) Type() string {
+	return "ec2-volume"
+}

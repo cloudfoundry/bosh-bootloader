@@ -35,6 +35,10 @@ func (n Networks) List(filter string) ([]common.Deletable, error) {
 	for _, network := range networks.Items {
 		resource := NewNetwork(n.client, network.Name)
 
+		if network.Name == "default" {
+			continue
+		}
+
 		if !strings.Contains(resource.Name(), filter) {
 			continue
 		}

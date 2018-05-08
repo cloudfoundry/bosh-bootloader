@@ -63,3 +63,7 @@ func (v Vpcs) List(filter string) ([]common.Deletable, error) {
 
 	return resources, nil
 }
+
+func (v Vpcs) Type() string {
+	return "ec2-vpc"
+}

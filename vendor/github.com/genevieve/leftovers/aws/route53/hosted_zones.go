@@ -52,3 +52,7 @@ func (z HostedZones) List(filter string) ([]common.Deletable, error) {
 
 	return resources, nil
 }
+
+func (z HostedZones) Type() string {
+	return "route53-hosted-zone"
+}

@@ -17,7 +17,7 @@ var _ = Describe("Image", func() {
 		imageId      *string
 		resourceTags *fakes.ResourceTags
 
-		address ec2.Image
+		image ec2.Image
 	)
 
 	BeforeEach(func() {
@@ -25,12 +25,12 @@ var _ = Describe("Image", func() {
 		imageId = aws.String("the-image-id")
 		resourceTags = &fakes.ResourceTags{}
 
-		address = ec2.NewImage(client, imageId, resourceTags)
+		image = ec2.NewImage(client, imageId, resourceTags)
 	})
 
 	Describe("Delete", func() {
-		It("releases the address", func() {
-			err := address.Delete()
+		It("deletes the resource", func() {
+			err := image.Delete()
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(client.DeregisterImageCall.CallCount).To(Equal(1))
@@ -47,7 +47,7 @@ var _ = Describe("Image", func() {
 			})
 
 			It("returns the error", func() {
-				err := address.Delete()
+				err := image.Delete()
 				Expect(err).To(MatchError("Delete: banana"))
 			})
 		})
@@ -58,7 +58,7 @@ var _ = Describe("Image", func() {
 			})
 
 			It("returns the error", func() {
-				err := address.Delete()
+				err := image.Delete()
 				Expect(err).To(MatchError("Delete tags: banana"))
 			})
 		})
@@ -66,13 +66,13 @@ var _ = Describe("Image", func() {
 
 	Describe("Name", func() {
 		It("returns the identifier", func() {
-			Expect(address.Name()).To(Equal("the-image-id"))
+			Expect(image.Name()).To(Equal("the-image-id"))
 		})
 	})
 
 	Describe("Type", func() {
 		It("returns the type", func() {
-			Expect(address.Type()).To(Equal("EC2 Image"))
+			Expect(image.Type()).To(Equal("EC2 Image"))
 		})
 	})
 })

@@ -53,3 +53,7 @@ func (u Users) List(filter string) ([]common.Deletable, error) {
 
 	return resources, nil
 }
+
+func (u Users) Type() string {
+	return "iam-user"
+}

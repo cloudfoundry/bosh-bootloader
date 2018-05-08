@@ -65,3 +65,7 @@ func (i Images) List(filter string) ([]common.Deletable, error) {
 
 	return resources, nil
 }
+
+func (i Images) Type() string {
+	return "ec2-image"
+}

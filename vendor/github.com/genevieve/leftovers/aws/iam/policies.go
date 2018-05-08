@@ -52,3 +52,7 @@ func (p Policies) List(filter string) ([]common.Deletable, error) {
 
 	return resources, nil
 }
+
+func (p Policies) Type() string {
+	return "iam-policy"
+}

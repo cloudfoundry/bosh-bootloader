@@ -49,3 +49,7 @@ func (l LoadBalancers) List(filter string) ([]common.Deletable, error) {
 
 	return resources, nil
 }
+
+func (l LoadBalancers) Type() string {
+	return "elb-load-balancer"
+}

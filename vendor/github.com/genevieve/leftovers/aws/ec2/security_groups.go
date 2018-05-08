@@ -57,3 +57,7 @@ func (s SecurityGroups) List(filter string) ([]common.Deletable, error) {
 
 	return resources, nil
 }
+
+func (s SecurityGroups) Type() string {
+	return "ec2-security-group"
+}

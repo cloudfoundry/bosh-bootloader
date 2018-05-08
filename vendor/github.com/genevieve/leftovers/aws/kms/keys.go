@@ -60,3 +60,7 @@ func (k Keys) List(filter string) ([]common.Deletable, error) {
 
 	return resources, nil
 }
+
+func (k Keys) Type() string {
+	return "kms-key"
+}

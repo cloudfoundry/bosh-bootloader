@@ -53,3 +53,7 @@ func (a Tags) List(filter string) ([]common.Deletable, error) {
 
 	return resources, nil
 }
+
+func (a Tags) Type() string {
+	return "ec2-tag"
+}

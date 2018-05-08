@@ -1,4 +1,4 @@
-# Resources you can delete by IaaS. 
+# Resources you can delete by IaaS.
 
 ## Amazon Web Services
 
@@ -17,6 +17,7 @@
   + ec2 subnets
   + ec2 route tables
   + ec2 internet gateways
+  + ec2 nat gateways
   + ec2 network interfaces
   + ec2 snapshots
   + elb load balancers
@@ -72,6 +73,7 @@
   + compute images
   + compute subnetworks
   + compute networks
+  + compute ssl certificates
   + compute target pools
   + compute target https proxies
   + compute target http proxies
@@ -82,11 +84,14 @@
   + compute vm instance group managers
   + dns managed zones
   + dns record sets
+  + kubernetes clusters
+  + storage buckets
+  + sql db instances
   - compute routes
   - compute snapshots
   ```
 
-### vSphere
+### VMware vSphere
 
   ```diff
   + virtual machines
@@ -95,7 +100,7 @@
 
 ### OpenStack
 
-  ```
+  ```diff
   - floating ips
   - ports
   ```

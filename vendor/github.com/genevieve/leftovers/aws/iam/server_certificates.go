@@ -49,3 +49,7 @@ func (s ServerCertificates) List(filter string) ([]common.Deletable, error) {
 
 	return resources, nil
 }
+
+func (s ServerCertificates) Type() string {
+	return "iam-server-certificate"
+}

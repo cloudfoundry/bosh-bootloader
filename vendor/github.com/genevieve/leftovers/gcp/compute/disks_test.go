@@ -78,27 +78,6 @@ var _ = Describe("Disks", func() {
 			})
 		})
 
-		Context("when the disk is in use by an instance", func() {
-			BeforeEach(func() {
-				client.ListDisksCall.Returns.Output = &gcpcompute.DiskList{
-					Items: []*gcpcompute.Disk{{
-						Name:  "banana-disk",
-						Zone:  "zone-1",
-						Users: []string{"instance-using-banana-disk"},
-					}},
-				}
-			})
-
-			It("does not add it to the list", func() {
-				list, err := disks.List(filter)
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(client.ListDisksCall.CallCount).To(Equal(1))
-				Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(0))
-				Expect(list).To(HaveLen(0))
-			})
-		})
-
 		Context("when the user says no to the prompt", func() {
 			BeforeEach(func() {
 				logger.PromptWithDetailsCall.Returns.Proceed = false

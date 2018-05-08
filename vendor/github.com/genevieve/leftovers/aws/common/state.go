@@ -1,29 +1,42 @@
-package compute
+package common
 
 import (
 	"fmt"
-	"log"
 	"time"
 )
 
-type state struct {
-	logger  logger
-	refresh stateRefreshFunc
+type logger interface {
+	Printf(m string, a ...interface{})
 }
 
-type stateRefreshFunc func() (result interface{}, state string, err error)
+type State struct {
+	logger  logger
+	refresh StateRefreshFunc
+	pending []string
+	target  []string
+}
+
+func NewState(logger logger, refresh StateRefreshFunc, pending, target []string) State {
+	return State{
+		logger:  logger,
+		refresh: refresh,
+		pending: pending,
+		target:  target,
+	}
+}
+
+type StateRefreshFunc func() (result interface{}, state string, err error)
 
 var refreshGracePeriod = 30 * time.Second
 
 // Copied from terraform-provider-google implementation for compute operation polling.
-func (s *state) Wait() (interface{}, error) {
+func (s *State) Wait() (interface{}, error) {
 	notfoundTick := 0
 	targetOccurence := 0
 	notFoundChecks := 20
 	continuousTargetOccurence := 1
-	target := "DONE"
 	minTimeout := 2 * time.Second
-	delay := 10 * time.Second
+	delay := 2 * time.Second
 
 	type Result struct {
 		Result interface{}
@@ -88,18 +101,20 @@ func (s *state) Wait() (interface{}, error) {
 				notfoundTick = 0
 				found := false
 
-				if currentState == target {
-					found = true
-					targetOccurence++
-					if continuousTargetOccurence == targetOccurence {
-						result.Done = true
-						resCh <- result
-						return
+				for _, allowed := range s.target {
+					if currentState == allowed {
+						found = true
+						targetOccurence++
+						if continuousTargetOccurence == targetOccurence {
+							result.Done = true
+							resCh <- result
+							return
+						}
+						continue
 					}
-					continue
 				}
 
-				for _, allowed := range []string{"PENDING", "RUNNING"} {
+				for _, allowed := range s.pending {
 					if currentState == allowed {
 						found = true
 						targetOccurence = 0
@@ -126,7 +141,7 @@ func (s *state) Wait() (interface{}, error) {
 				wait = 10 * time.Second
 			}
 
-			log.Printf("Waiting %s before next try.", wait)
+			s.logger.Printf("Waiting %s before next try.", wait)
 		}
 	}()
 
@@ -176,12 +191,12 @@ func (s *state) Wait() (interface{}, error) {
 					// TimeoutError and wait for the channel to close
 					lastResult = r
 				case <-timeout:
-					log.Printf("Waiting for state DONE exceeded refresh grace period.")
+					s.logger.Printf("Waiting for state %s exceeded refresh grace period.\n", s.target[0])
 					break forSelect
 				}
 			}
 
-			return nil, fmt.Errorf("Timeout waiting for state to be DONE: %s", lastResult.Error)
+			return nil, fmt.Errorf("Timeout waiting for state to be %s: %s", s.target[0], lastResult.Error)
 		}
 	}
 }

@@ -14,21 +14,24 @@ import (
 
 var _ = Describe("Instance", func() {
 	var (
-		instance     ec2.Instance
 		client       *fakes.InstancesClient
+		logger       *fakes.Logger
 		resourceTags *fakes.ResourceTags
 		id           *string
 		keyName      *string
+
+		instance ec2.Instance
 	)
 
 	BeforeEach(func() {
 		client = &fakes.InstancesClient{}
+		logger = &fakes.Logger{}
 		resourceTags = &fakes.ResourceTags{}
 		id = aws.String("the-id")
 		keyName = aws.String("the-key-name")
 		tags := []*awsec2.Tag{}
 
-		instance = ec2.NewInstance(client, resourceTags, id, keyName, tags)
+		instance = ec2.NewInstance(client, logger, resourceTags, id, keyName, tags)
 	})
 
 	Describe("Delete", func() {
@@ -36,6 +39,13 @@ var _ = Describe("Instance", func() {
 			client.DescribeAddressesCall.Returns.Output = &awsec2.DescribeAddressesOutput{
 				Addresses: []*awsec2.Address{{
 					AllocationId: aws.String("the-allocation-id"),
+				}},
+			}
+			client.DescribeInstancesCall.Returns.Output = &awsec2.DescribeInstancesOutput{
+				Reservations: []*awsec2.Reservation{{
+					Instances: []*awsec2.Instance{{
+						State: &awsec2.InstanceState{Name: aws.String("terminated")},
+					}},
 				}},
 			}
 		})
