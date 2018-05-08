@@ -14,12 +14,12 @@ import (
 )
 
 type OpsGenerator struct {
-	terraformManager          terraformManager
-	availabilityZoneRetriever availabilityZoneRetriever
+	terraformManager  terraformManager
+	availabilityZones availabilityZones
 }
 
-type availabilityZoneRetriever interface {
-	RetrieveAvailabilityZones(string) ([]string, error)
+type availabilityZones interface {
+	RetrieveAZs(region string) ([]string, error)
 }
 
 type terraformManager interface {
@@ -74,10 +74,10 @@ type lbCloudProperties struct {
 
 var marshal func(interface{}) ([]byte, error) = yaml.Marshal
 
-func NewOpsGenerator(terraformManager terraformManager, availabilityZoneRetriever availabilityZoneRetriever) OpsGenerator {
+func NewOpsGenerator(terraformManager terraformManager, availabilityZones availabilityZones) OpsGenerator {
 	return OpsGenerator{
-		terraformManager:          terraformManager,
-		availabilityZoneRetriever: availabilityZoneRetriever,
+		terraformManager:  terraformManager,
+		availabilityZones: availabilityZones,
 	}
 }
 
@@ -215,7 +215,7 @@ func (o OpsGenerator) generateOps(state storage.State) ([]op, error) {
 	ops := []op{}
 	subnets := []networkSubnet{}
 
-	azs, err := o.availabilityZoneRetriever.RetrieveAvailabilityZones(state.AWS.Region)
+	azs, err := o.availabilityZones.RetrieveAZs(state.AWS.Region)
 	if err != nil {
 		return []op{}, fmt.Errorf("Retrieve availability zones: %s", err)
 	}

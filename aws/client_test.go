@@ -10,6 +10,7 @@ import (
 
 	awslib "github.com/aws/aws-sdk-go/aws"
 	awsec2 "github.com/aws/aws-sdk-go/service/ec2"
+	awsroute53 "github.com/aws/aws-sdk-go/service/route53"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -30,12 +31,97 @@ var _ = Describe("Client", func() {
 			ec2Client, ok := client.GetEC2Client().(*awsec2.EC2)
 			Expect(ok).To(BeTrue())
 
+			_, ok = client.GetRoute53Client().(*awsroute53.Route53)
+			Expect(ok).To(BeTrue())
+
 			Expect(ec2Client.Config.Credentials).To(Equal(credentials.NewStaticCredentials("some-access-key-id", "some-secret-access-key", "")))
 			Expect(ec2Client.Config.Region).To(Equal(awslib.String("some-region")))
 		})
 	})
 
-	Describe("RetrieveAvailabilityZones", func() {
+	Describe("RetrieveDNS", func() {
+		var (
+			client        aws.Client
+			route53Client *fakes.AWSRoute53Client
+		)
+
+		BeforeEach(func() {
+			route53Client = &fakes.AWSRoute53Client{}
+			client = aws.NewClientWithInjectedRoute53Client(route53Client, &fakes.Logger{})
+
+			route53Client.ListHostedZonesByNameCall.Returns.Output = &awsroute53.ListHostedZonesByNameOutput{
+				HostedZones: []*awsroute53.HostedZone{{
+					Name: awslib.String("the-domain"),
+					Id:   awslib.String("the-id"),
+				}},
+			}
+			route53Client.GetHostedZoneCall.Returns.Output = &awsroute53.GetHostedZoneOutput{
+				DelegationSet: &awsroute53.DelegationSet{
+					NameServers: []*string{awslib.String("ns1"), awslib.String("ns2")},
+				}}
+		})
+
+		It("fetches dns zone with a given domain", func() {
+			dns := client.RetrieveDNS("the-domain")
+
+			Expect(dns.ID).To(Equal("the-id"))
+			Expect(dns.NameServers).To(Equal("ns1,ns2"))
+
+			Expect(route53Client.ListHostedZonesByNameCall.Receives.Input).To(Equal(&awsroute53.ListHostedZonesByNameInput{
+				DNSName: awslib.String("the-domain"),
+			}))
+			Expect(route53Client.GetHostedZoneCall.Receives.Input).To(Equal(&awsroute53.GetHostedZoneInput{
+				Id: awslib.String("the-id"),
+			}))
+		})
+
+		Context("when no dns zone at that domain exists", func() {
+			BeforeEach(func() {
+				route53Client.ListHostedZonesByNameCall.Returns.Output = &awsroute53.ListHostedZonesByNameOutput{
+					HostedZones: []*awsroute53.HostedZone{},
+				}
+			})
+
+			It("returns an empty struct", func() {
+				dns := client.RetrieveDNS("the-domain")
+
+				Expect(dns.ID).To(Equal(""))
+				Expect(dns.NameServers).To(Equal(""))
+
+				Expect(route53Client.GetHostedZoneCall.CallCount).To(Equal(0))
+			})
+		})
+
+		Describe("failure cases", func() {
+			Context("when hosted zones cannot be listed", func() {
+				BeforeEach(func() {
+					route53Client.ListHostedZonesByNameCall.Returns.Error = errors.New("feijoa")
+				})
+
+				It("returns empty struct", func() {
+					dns := client.RetrieveDNS("the-domain")
+
+					Expect(dns.ID).To(Equal(""))
+					Expect(dns.NameServers).To(Equal(""))
+				})
+			})
+
+			Context("when the hosted zone cannot be described", func() {
+				BeforeEach(func() {
+					route53Client.GetHostedZoneCall.Returns.Error = errors.New("guava")
+				})
+
+				It("returns empty struct", func() {
+					dns := client.RetrieveDNS("the-domain")
+
+					Expect(dns.ID).To(Equal(""))
+					Expect(dns.NameServers).To(Equal(""))
+				})
+			})
+		})
+	})
+
+	Describe("RetrieveAZs", func() {
 		var (
 			client    aws.Client
 			ec2Client *fakes.AWSEC2Client
@@ -56,7 +142,7 @@ var _ = Describe("Client", func() {
 				},
 			}
 
-			azs, err := client.RetrieveAvailabilityZones("us-east-1")
+			azs, err := client.RetrieveAZs("us-east-1")
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(azs).To(Equal([]string{"us-east-1a", "us-east-1b", "us-east-1c", "us-east-1e"}))
@@ -77,7 +163,7 @@ var _ = Describe("Client", func() {
 				})
 
 				It("returns an error", func() {
-					_, err := client.RetrieveAvailabilityZones("us-east-1")
+					_, err := client.RetrieveAZs("us-east-1")
 					Expect(err).To(MatchError("aws returned nil availability zone"))
 				})
 			})
@@ -90,7 +176,7 @@ var _ = Describe("Client", func() {
 				})
 
 				It("returns an error", func() {
-					_, err := client.RetrieveAvailabilityZones("us-east-1")
+					_, err := client.RetrieveAZs("us-east-1")
 					Expect(err).To(MatchError("aws returned availability zone with nil zone name"))
 				})
 			})
@@ -101,7 +187,7 @@ var _ = Describe("Client", func() {
 				})
 
 				It("returns an error", func() {
-					_, err := client.RetrieveAvailabilityZones("us-east-1")
+					_, err := client.RetrieveAZs("us-east-1")
 					Expect(err).To(MatchError("describe availability zones failed"))
 				})
 			})

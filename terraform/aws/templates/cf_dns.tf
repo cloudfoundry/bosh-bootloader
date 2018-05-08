@@ -2,13 +2,19 @@ variable "system_domain" {
   type = "string"
 }
 
-data "aws_route53_zone" "env_dns_zone" {
-  name = "${var.system_domain}"
+variable "existing_zone_id" {
+  type    = "string"
+  default = ""
+}
+
+variable "existing_zone_ns" {
+  type    = "string"
+  default = ""
 }
 
 resource "aws_route53_zone" "env_dns_zone" {
   name  = "${var.system_domain}"
-  count = "${data.aws_route53_zone.env_dns_zone.zone_id == "" ? 1 : 0}"
+  count = "${var.existing_zone_id == "" ? 1 : 0}"
 
   tags {
     Name = "${var.env_id}-hosted-zone"
@@ -16,13 +22,12 @@ resource "aws_route53_zone" "env_dns_zone" {
 }
 
 locals {
-  zone_id                  = "${data.aws_route53_zone.env_dns_zone.zone_id == "" ? element(concat(aws_route53_zone.env_dns_zone.*.zone_id, list("")), 0) : data.aws_route53_zone.env_dns_zone.zone_id}"
-  data_dns_nameservers     = "${join(",", data.aws_route53_zone.env_dns_zone.name_servers)}"
-  resource_dns_nameservers = "${join(",", concat(aws_route53_zone.env_dns_zone.*.name_servers, list("")))}"
+  zone_id     = "${var.existing_zone_id == "" ? element(concat(aws_route53_zone.env_dns_zone.*.zone_id, list("")), 0) : var.existing_zone_id}"
+  new_zone_ns = "${join(",", concat(aws_route53_zone.env_dns_zone.*.name_servers, list("")))}"
 }
 
 output "env_dns_zone_name_servers" {
-  value = ["${split(",", data.aws_route53_zone.env_dns_zone.zone_id == "" ?  local.resource_dns_nameservers : local.data_dns_nameservers)}"]
+  value = ["${split(",", var.existing_zone_ns == "" ?  local.new_zone_ns : var.existing_zone_ns)}"]
 }
 
 resource "aws_route53_record" "wildcard_dns" {

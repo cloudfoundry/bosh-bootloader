@@ -19,16 +19,16 @@ import (
 
 var _ = Describe("OpsGenerator", func() {
 	var (
-		terraformManager          *fakes.TerraformManager
-		availabilityZoneRetriever *fakes.AvailabilityZoneRetriever
-		opsGenerator              aws.OpsGenerator
+		terraformManager  *fakes.TerraformManager
+		availabilityZones *fakes.AWSClient
+		opsGenerator      aws.OpsGenerator
 
 		incomingState storage.State
 	)
 
 	BeforeEach(func() {
 		terraformManager = &fakes.TerraformManager{}
-		availabilityZoneRetriever = &fakes.AvailabilityZoneRetriever{}
+		availabilityZones = &fakes.AWSClient{}
 
 		incomingState = storage.State{
 			IAAS: "aws",
@@ -73,7 +73,7 @@ var _ = Describe("OpsGenerator", func() {
 			"iso_shared_security_group_id": "some-iso-shared-security-group",
 		}}
 
-		opsGenerator = aws.NewOpsGenerator(terraformManager, availabilityZoneRetriever)
+		opsGenerator = aws.NewOpsGenerator(terraformManager, availabilityZones)
 	})
 
 	Describe("GenerateVars", func() {
@@ -212,7 +212,7 @@ iso_az_subnet_id_mapping:
 	Describe("Generate", func() {
 		var expectedOpsYAML string
 		BeforeEach(func() {
-			availabilityZoneRetriever.RetrieveAvailabilityZonesCall.Returns.AZs = []string{"us-east-1a", "us-east-1b", "us-east-1c"}
+			availabilityZones.RetrieveAZsCall.Returns.AZs = []string{"us-east-1a", "us-east-1b", "us-east-1c"}
 		})
 
 		Context("when there are no lbs", func() {

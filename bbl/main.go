@@ -129,15 +129,14 @@ func main() {
 		networkClient            helpers.NetworkClient
 		networkDeletionValidator commands.NetworkDeletionValidator
 
-		availabilityZoneRetriever aws.AvailabilityZoneRetriever
-		leftovers                 commands.FilteredDeleter
+		awsClient aws.Client
+		leftovers commands.FilteredDeleter
 	)
 	if needsIAASCreds {
 		switch appConfig.State.IAAS {
 		case "aws":
-			awsClient := aws.NewClient(appConfig.State.AWS, logger)
+			awsClient = aws.NewClient(appConfig.State.AWS, logger)
 
-			availabilityZoneRetriever = awsClient
 			networkDeletionValidator = awsClient
 			networkClient = awsClient
 
@@ -202,11 +201,11 @@ func main() {
 	switch appConfig.State.IAAS {
 	case "aws":
 		templateGenerator = awsterraform.NewTemplateGenerator()
-		inputGenerator = awsterraform.NewInputGenerator(availabilityZoneRetriever)
+		inputGenerator = awsterraform.NewInputGenerator(awsClient)
 
 		terraformManager = terraform.NewManager(terraformExecutor, templateGenerator, inputGenerator, terraformOutputBuffer, logger)
 
-		cloudConfigOpsGenerator = awscloudconfig.NewOpsGenerator(terraformManager, availabilityZoneRetriever)
+		cloudConfigOpsGenerator = awscloudconfig.NewOpsGenerator(terraformManager, awsClient)
 
 		lbsCmd = commands.NewAWSLBs(terraformManager, logger)
 	case "azure":

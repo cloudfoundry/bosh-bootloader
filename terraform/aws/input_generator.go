@@ -9,19 +9,24 @@ import (
 )
 
 type InputGenerator struct {
-	availabilityZoneRetriever aws.AvailabilityZoneRetriever
+	awsClient awsClient
+}
+
+type awsClient interface {
+	aws.AvailabilityZones
+	aws.DNSZones
 }
 
 const terraformNameCharLimit = 18
 
-func NewInputGenerator(availabilityZoneRetriever aws.AvailabilityZoneRetriever) InputGenerator {
+func NewInputGenerator(awsClient awsClient) InputGenerator {
 	return InputGenerator{
-		availabilityZoneRetriever: availabilityZoneRetriever,
+		awsClient: awsClient,
 	}
 }
 
 func (i InputGenerator) Generate(state storage.State) (map[string]interface{}, error) {
-	azs, err := i.availabilityZoneRetriever.RetrieveAvailabilityZones(state.AWS.Region)
+	azs, err := i.awsClient.RetrieveAZs(state.AWS.Region)
 	if err != nil {
 		return map[string]interface{}{}, err
 	}
@@ -46,6 +51,12 @@ func (i InputGenerator) Generate(state storage.State) (map[string]interface{}, e
 
 		if state.LB.Domain != "" {
 			inputs["system_domain"] = state.LB.Domain
+
+			dns := i.awsClient.RetrieveDNS(state.LB.Domain)
+			if dns.ID != "" {
+				inputs["existing_zone_id"] = dns.ID
+				inputs["existing_zone_ns"] = dns.NameServers
+			}
 		}
 	}
 

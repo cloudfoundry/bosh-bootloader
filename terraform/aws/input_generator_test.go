@@ -3,6 +3,7 @@ package aws_test
 import (
 	"errors"
 
+	bblaws "github.com/cloudfoundry/bosh-bootloader/aws"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/cloudfoundry/bosh-bootloader/terraform/aws"
@@ -13,16 +14,16 @@ import (
 
 var _ = Describe("InputGenerator", func() {
 	var (
-		availabilityZoneRetriever *fakes.AvailabilityZoneRetriever
+		awsClient *fakes.AWSClient
 
 		inputGenerator aws.InputGenerator
 	)
 
 	BeforeEach(func() {
-		availabilityZoneRetriever = &fakes.AvailabilityZoneRetriever{}
-		availabilityZoneRetriever.RetrieveAvailabilityZonesCall.Returns.AZs = []string{"z1", "z2", "z3"}
+		awsClient = &fakes.AWSClient{}
+		awsClient.RetrieveAZsCall.Returns.AZs = []string{"z1", "z2", "z3"}
 
-		inputGenerator = aws.NewInputGenerator(availabilityZoneRetriever)
+		inputGenerator = aws.NewInputGenerator(awsClient)
 	})
 
 	Describe("Generate", func() {
@@ -36,7 +37,7 @@ var _ = Describe("InputGenerator", func() {
 				})
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(availabilityZoneRetriever.RetrieveAvailabilityZonesCall.Receives.Region).To(Equal("some-region"))
+				Expect(awsClient.RetrieveAZsCall.Receives.Region).To(Equal("some-region"))
 
 				Expect(inputs["env_id"]).To(Equal("some-env-id-that-is-pretty-long"))
 				Expect(inputs["short_env_id"]).To(Equal("some-env-i-1fc794e"))
@@ -57,7 +58,7 @@ var _ = Describe("InputGenerator", func() {
 			})
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(availabilityZoneRetriever.RetrieveAvailabilityZonesCall.Receives.Region).To(Equal("some-region"))
+			Expect(awsClient.RetrieveAZsCall.Receives.Region).To(Equal("some-region"))
 
 			Expect(inputs).To(Equal(map[string]interface{}{
 				"env_id":             "some-env-id",
@@ -92,7 +93,7 @@ var _ = Describe("InputGenerator", func() {
 				inputs, err := inputGenerator.Generate(state)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(availabilityZoneRetriever.RetrieveAvailabilityZonesCall.Receives.Region).To(Equal("some-region"))
+				Expect(awsClient.RetrieveAZsCall.Receives.Region).To(Equal("some-region"))
 
 				Expect(inputs).To(Equal(map[string]interface{}{
 					"env_id":                      "some-env-id",
@@ -108,13 +109,18 @@ var _ = Describe("InputGenerator", func() {
 			Context("when a domain name is supplied", func() {
 				BeforeEach(func() {
 					state.LB.Domain = "some-domain"
+					awsClient.RetrieveDNSCall.Returns.DNS = bblaws.DNSZone{
+						ID:          "zone-id",
+						NameServers: "ns1,ns2",
+					}
 				})
 
 				It("returns a map with additional domain input", func() {
 					inputs, err := inputGenerator.Generate(state)
 					Expect(err).NotTo(HaveOccurred())
 
-					Expect(availabilityZoneRetriever.RetrieveAvailabilityZonesCall.Receives.Region).To(Equal("some-region"))
+					Expect(awsClient.RetrieveAZsCall.Receives.Region).To(Equal("some-region"))
+					Expect(awsClient.RetrieveDNSCall.Receives.URL).To(Equal("some-domain"))
 
 					Expect(inputs).To(Equal(map[string]interface{}{
 						"env_id":                      "some-env-id",
@@ -125,6 +131,8 @@ var _ = Describe("InputGenerator", func() {
 						"ssl_certificate_chain":       "some-chain",
 						"ssl_certificate_private_key": "some-key",
 						"system_domain":               "some-domain",
+						"existing_zone_id":            "zone-id",
+						"existing_zone_ns":            "ns1,ns2",
 					}))
 				})
 			})
@@ -133,7 +141,7 @@ var _ = Describe("InputGenerator", func() {
 		Context("failure cases", func() {
 			Context("when the availability zone retriever fails", func() {
 				It("returns an error", func() {
-					availabilityZoneRetriever.RetrieveAvailabilityZonesCall.Returns.Error = errors.New("failed to get zones")
+					awsClient.RetrieveAZsCall.Returns.Error = errors.New("failed to get zones")
 
 					_, err := inputGenerator.Generate(storage.State{})
 					Expect(err).To(MatchError("failed to get zones"))

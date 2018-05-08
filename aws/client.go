@@ -10,6 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	awsec2 "github.com/aws/aws-sdk-go/service/ec2"
+	awsroute53 "github.com/aws/aws-sdk-go/service/route53"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
@@ -19,17 +20,32 @@ type EC2Client interface {
 	DescribeVpcs(*awsec2.DescribeVpcsInput) (*awsec2.DescribeVpcsOutput, error)
 }
 
+type Route53Client interface {
+	ListHostedZonesByName(*awsroute53.ListHostedZonesByNameInput) (*awsroute53.ListHostedZonesByNameOutput, error)
+	GetHostedZone(*awsroute53.GetHostedZoneInput) (*awsroute53.GetHostedZoneOutput, error)
+}
+
 type logger interface {
 	Step(string, ...interface{})
 }
 
-type AvailabilityZoneRetriever interface {
-	RetrieveAvailabilityZones(string) ([]string, error)
+type AvailabilityZones interface {
+	RetrieveAZs(region string) ([]string, error)
+}
+
+type DNSZones interface {
+	RetrieveDNS(domain string) DNSZone
+}
+
+type DNSZone struct {
+	ID          string
+	NameServers string
 }
 
 type Client struct {
-	ec2Client EC2Client
-	logger    logger
+	ec2Client     EC2Client
+	route53Client Route53Client
+	logger        logger
 }
 
 func NewClient(creds storage.AWS, logger logger) Client {
@@ -39,12 +55,42 @@ func NewClient(creds storage.AWS, logger logger) Client {
 	}
 
 	return Client{
-		ec2Client: awsec2.New(session.New(config)),
-		logger:    logger,
+		ec2Client:     awsec2.New(session.New(config)),
+		route53Client: awsroute53.New(session.New(config)),
+		logger:        logger,
 	}
 }
 
-func (c Client) RetrieveAvailabilityZones(region string) ([]string, error) {
+func (c Client) RetrieveDNS(url string) DNSZone {
+	zonesByName, err := c.route53Client.ListHostedZonesByName(&awsroute53.ListHostedZonesByNameInput{
+		DNSName: awslib.String(url),
+	})
+	if err != nil {
+		return DNSZone{}
+	}
+
+	if len(zonesByName.HostedZones) == 0 {
+		return DNSZone{}
+	}
+
+	id := zonesByName.HostedZones[0].Id
+	hostedZone, err := c.route53Client.GetHostedZone(&awsroute53.GetHostedZoneInput{Id: id})
+	if err != nil {
+		return DNSZone{}
+	}
+
+	nameServers := []string{}
+	for _, ns := range hostedZone.DelegationSet.NameServers {
+		nameServers = append(nameServers, *ns)
+	}
+
+	return DNSZone{
+		ID:          *id,
+		NameServers: strings.Join(nameServers, ","),
+	}
+}
+
+func (c Client) RetrieveAZs(region string) ([]string, error) {
 	output, err := c.ec2Client.DescribeAvailabilityZones(&awsec2.DescribeAvailabilityZonesInput{
 		Filters: []*awsec2.Filter{{
 			Name:   awslib.String("region-name"),
