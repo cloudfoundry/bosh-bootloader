@@ -299,11 +299,6 @@ func (e Executor) Outputs() (map[string]interface{}, error) {
 		return map[string]interface{}{}, err
 	}
 
-	err = e.cli.Run(os.Stderr, terraformDir, []string{"init", varsDir})
-	if err != nil {
-		return map[string]interface{}{}, fmt.Errorf("Run terraform init in terraform dir: %s", err)
-	}
-
 	buffer := bytes.NewBuffer([]byte{})
 	args := []string{"output", "--json"}
 	_, err = e.fs.Stat(filepath.Join(varsDir, "terraform.tfstate"))

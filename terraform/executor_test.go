@@ -628,8 +628,6 @@ var _ = Describe("Executor", func() {
 			Expect(bufferingCLI.RunCall.Receives.Args).To(Equal([]string{
 				"output", "--json", "-state", tfStatePath,
 			}))
-			Expect(cli.RunCall.Receives.WorkingDirectory).To(Equal(terraformDir))
-			Expect(cli.RunCall.Receives.Args).To(Equal([]string{"init", varsDir}))
 		})
 
 		Context("when an error occurs", func() {
@@ -641,17 +639,6 @@ var _ = Describe("Executor", func() {
 				It("returns an error", func() {
 					_, err := executor.Outputs()
 					Expect(err).To(MatchError("failed"))
-				})
-			})
-
-			Context("when terraform init fails", func() {
-				BeforeEach(func() {
-					cli.RunCall.Returns.Errors = []error{errors.New("failed")}
-				})
-
-				It("returns an error", func() {
-					_, err := executor.Outputs()
-					Expect(err).To(MatchError("Run terraform init in terraform dir: failed"))
 				})
 			})
 
