@@ -1,17 +1,8 @@
 #!/bin/bash -eu
 
 function main() {
-  local packages
-  packages=${@}
-
   local root_dir
   root_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
-
-  if [ -z "${packages}" ]; then
-    echo "Usage: ./scripts/acceptance_tests packages...
-Example: ./scripts/acceptance_tests bbl"
-    return
-  fi
 
   local parallelFlag
   if [ "${BBL_IAAS}" == "aws" ]; then
@@ -21,7 +12,7 @@ Example: ./scripts/acceptance_tests bbl"
   fi
 
   pushd "${root_dir}/acceptance-tests" > /dev/null
-    ginkgo -r -v ${parallelFlag} -race -failFast -randomizeAllSpecs -randomizeSuites ${packages}
+    ginkgo -r -v ${parallelFlag} -race -failFast -randomizeAllSpecs -randomizeSuites -skipPackage no-iaas
   popd > /dev/null
 }
 
