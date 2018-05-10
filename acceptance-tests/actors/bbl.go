@@ -255,7 +255,6 @@ func (b BBL) execute(args []string, stdout io.Writer, stderr io.Writer) *gexec.S
 func (b BBL) interactiveExecute(args []string, stdout io.Writer, stderr io.Writer, actions func(*gexec.Session, *os.File)) *exec.Cmd {
 	cmd := exec.Command(b.pathToBBL, args...)
 
-	pty.Start(cmd)
 	ptmx, pts, err := pty.Open()
 	Expect(err).NotTo(HaveOccurred())
 	defer ptmx.Close()
