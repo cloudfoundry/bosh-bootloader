@@ -98,11 +98,12 @@ var _ = Describe("SSH", func() {
 					},
 				))
 
-				Expect(sshCLI.RunCall.Receives[0].Args).To(ConsistOf(
-					"-4", "-D", "60000", "-fNC", "jumpbox@jumpboxURL", "-i", jumpboxPrivateKeyPath,
+				Expect(sshCLI.StartCall.Receives[0]).To(ConsistOf(
+					"-4", "-D", "60000", "-nNC", "jumpbox@jumpboxURL", "-i", jumpboxPrivateKeyPath,
 				))
 
-				Expect(sshCLI.RunCall.Receives[1].Args).To(ConsistOf(
+				Expect(sshCLI.RunCall.Receives[0]).To(ConsistOf(
+					"-tt",
 					"-o", "StrictHostKeyChecking=no",
 					"-o", "ServerAliveInterval=300",
 					"-o", "ProxyCommand=nc -x localhost:60000 %h %p",
@@ -122,11 +123,12 @@ var _ = Describe("SSH", func() {
 
 					Expect(pathFinder.CommandExistsCall.Receives.Command).To(Equal("connect-proxy"))
 
-					Expect(sshCLI.RunCall.Receives[0].Args).To(ConsistOf(
-						"-4", "-D", "60000", "-fNC", "jumpbox@jumpboxURL", "-i", jumpboxPrivateKeyPath,
+					Expect(sshCLI.StartCall.Receives[0]).To(ConsistOf(
+						"-4", "-D", "60000", "-nNC", "jumpbox@jumpboxURL", "-i", jumpboxPrivateKeyPath,
 					))
 
-					Expect(sshCLI.RunCall.Receives[1].Args).To(ConsistOf(
+					Expect(sshCLI.RunCall.Receives[0]).To(ConsistOf(
+						"-tt",
 						"-o", "StrictHostKeyChecking=no",
 						"-o", "ServerAliveInterval=300",
 						"-o", "ProxyCommand=connect-proxy -S localhost:60000 %h %p",
@@ -179,7 +181,7 @@ var _ = Describe("SSH", func() {
 
 				Context("when the ssh command fails to open a tunnel to the jumpbox", func() {
 					It("returns the error", func() {
-						sshCLI.RunCall.Returns = []fakes.SSHRunReturn{fakes.SSHRunReturn{Error: errors.New("lignonberry")}}
+						sshCLI.StartCall.Returns = []fakes.SSHStartReturn{{Error: errors.New("lignonberry")}}
 
 						err := ssh.Execute([]string{"--director"}, state)
 
@@ -201,8 +203,8 @@ var _ = Describe("SSH", func() {
 				Expect(fileIO.WriteFileCall.Receives[0].Contents).To(Equal([]byte("jumpbox-private-key")))
 				Expect(fileIO.WriteFileCall.Receives[0].Mode).To(Equal(os.FileMode(0600)))
 
-				Expect(sshCLI.RunCall.Receives[0].Args).To(ConsistOf(
-					"-o", "StrictHostKeyChecking=no", "-o", "ServerAliveInterval=300", "jumpbox@jumpboxURL", "-i", jumpboxPrivateKeyPath,
+				Expect(sshCLI.RunCall.Receives[0]).To(ConsistOf(
+					"-tt", "-o", "StrictHostKeyChecking=no", "-o", "ServerAliveInterval=300", "jumpbox@jumpboxURL", "-i", jumpboxPrivateKeyPath,
 				))
 			})
 

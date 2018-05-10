@@ -3,8 +3,11 @@ package commands
 import (
 	"errors"
 	"fmt"
+	"os/exec"
 	"path/filepath"
 	"strings"
+	"syscall"
+	"time"
 
 	"github.com/cloudfoundry/bosh-bootloader/fileio"
 	"github.com/cloudfoundry/bosh-bootloader/flags"
@@ -21,6 +24,7 @@ type SSH struct {
 
 type sshCLI interface {
 	Run([]string) error
+	Start([]string) (*exec.Cmd, error)
 }
 
 type pathFinder interface {
@@ -92,6 +96,7 @@ func (s SSH) Execute(args []string, state storage.State) error {
 
 	if jumpbox {
 		return s.cli.Run([]string{
+			"-tt",
 			"-o", "StrictHostKeyChecking=no",
 			"-o", "ServerAliveInterval=300",
 			fmt.Sprintf("jumpbox@%s", jumpboxURL),
@@ -116,16 +121,22 @@ func (s SSH) Execute(args []string, state storage.State) error {
 		return fmt.Errorf("Open proxy port: %s", err)
 	}
 
-	err = s.cli.Run([]string{
+	fmt.Println("opening a tunnel through your jumpbox...")
+	backgroundTunnel, err := s.cli.Start([]string{
 		"-4",
 		"-D", port,
-		"-fNC",
+		"-nNC",
 		fmt.Sprintf("jumpbox@%s", jumpboxURL),
 		"-i", jumpboxKeyPath,
 	})
 	if err != nil {
 		return fmt.Errorf("Open tunnel to jumpbox: %s", err)
 	}
+	defer func() {
+		if backgroundTunnel != nil {
+			backgroundTunnel.Process.Signal(syscall.SIGINT)
+		} // removing this will break the acceptance test
+	}()
 
 	proxyCommandPrefix := "nc -x"
 	if s.pathFinder.CommandExists("connect-proxy") {
@@ -134,7 +145,9 @@ func (s SSH) Execute(args []string, state storage.State) error {
 
 	ip := strings.Split(strings.TrimPrefix(state.BOSH.DirectorAddress, "https://"), ":")[0]
 
+	time.Sleep(2 * time.Second) // make sure we give that tunnel a moment to open
 	return s.cli.Run([]string{
+		"-tt",
 		"-o", "StrictHostKeyChecking=no",
 		"-o", "ServerAliveInterval=300",
 		"-o", fmt.Sprintf("ProxyCommand=%s localhost:%s %%h %%p", proxyCommandPrefix, port),

@@ -8,12 +8,15 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"syscall"
 	"time"
 
 	acceptance "github.com/cloudfoundry/bosh-bootloader/acceptance-tests"
+	"github.com/kr/pty"
 
 	"github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
 )
 
@@ -72,6 +75,31 @@ func (b BBL) Rotate() *gexec.Session {
 		"--debug",
 		"rotate",
 	}, os.Stdout, os.Stderr)
+}
+
+func (b BBL) VerifySSH(session *gexec.Session, ptmx *os.File) {
+	fmt.Fprintln(ptmx, "whoami")
+	Eventually(session.Out, 5).Should(gbytes.Say("jumpbox"))
+	fmt.Fprintln(ptmx, "exit 0")
+	Eventually(session, 5).Should(gexec.Exit(0))
+}
+
+func (b BBL) JumpboxSSH(output io.Writer) *exec.Cmd {
+	return b.interactiveExecute([]string{
+		"--state-dir", b.stateDirectory,
+		"--debug",
+		"ssh",
+		"--jumpbox",
+	}, output, output, b.VerifySSH)
+}
+
+func (b BBL) DirectorSSH(output io.Writer) *exec.Cmd {
+	return b.interactiveExecute([]string{
+		"--state-dir", b.stateDirectory,
+		"--debug",
+		"ssh",
+		"--director",
+	}, output, output, b.VerifySSH)
 }
 
 func (b BBL) Destroy() *gexec.Session {
@@ -164,16 +192,9 @@ func (b BBL) SaveDirectorCA() string {
 
 func (b BBL) ExportBoshAllProxy() string {
 	lines := strings.Split(b.PrintEnv(), "\n")
-	for _, line := range lines {
-		if strings.Contains(line, "export BOSH_ALL_PROXY=") {
-			keyValueParts := strings.Split(line, "export BOSH_ALL_PROXY=")
-			if len(keyValueParts) > 1 {
-				os.Setenv("BOSH_ALL_PROXY", keyValueParts[1])
-				return keyValueParts[1]
-			}
-		}
-	}
-	return ""
+	value := getExport("BOSH_ALL_PROXY", lines)
+	os.Setenv("BOSH_ALL_PROXY", value)
+	return value
 }
 
 func (b BBL) StartSSHTunnel() *gexec.Session {
@@ -203,7 +224,7 @@ func getExport(keyName string, lines []string) string {
 			parts := strings.Split(line, " ")
 			keyValue := parts[1]
 			keyValueParts := strings.Split(keyValue, "=")
-			return keyValueParts[1]
+			return strings.Join(keyValueParts[1:], "=")
 		}
 	}
 	return ""
@@ -228,4 +249,33 @@ func (b BBL) execute(args []string, stdout io.Writer, stderr io.Writer) *gexec.S
 	Expect(err).NotTo(HaveOccurred())
 
 	return session
+}
+
+// partially cribbed from https://github.com/cloudfoundry/vizzini/blob/master/ssh_test.go#L473
+func (b BBL) interactiveExecute(args []string, stdout io.Writer, stderr io.Writer, actions func(*gexec.Session, *os.File)) *exec.Cmd {
+	cmd := exec.Command(b.pathToBBL, args...)
+
+	pty.Start(cmd)
+	ptmx, pts, err := pty.Open()
+	Expect(err).NotTo(HaveOccurred())
+	defer ptmx.Close()
+
+	cmd.Stdin = pts
+	cmd.Stdout = pts
+	cmd.Stderr = pts
+
+	cmd.SysProcAttr = &syscall.SysProcAttr{
+		Setctty: true,
+		Setsid:  true,
+	}
+
+	session, err := gexec.Start(cmd, stdout, stderr)
+	Expect(err).NotTo(HaveOccurred())
+
+	// Close our open reference to pts so that ptmx recieves EOF
+	pts.Close()
+
+	actions(session, ptmx)
+
+	return cmd
 }
