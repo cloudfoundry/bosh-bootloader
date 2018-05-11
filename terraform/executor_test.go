@@ -656,7 +656,7 @@ var _ = Describe("Executor", func() {
 			Context("when it fails to unmarshal the terraform outputs", func() {
 				BeforeEach(func() {
 					bufferingCLI.RunCall.Stub = func(stdout io.Writer) {
-						fmt.Fprintf(stdout, "%%%")
+						fmt.Fprintf(stdout, "%%")
 					}
 				})
 

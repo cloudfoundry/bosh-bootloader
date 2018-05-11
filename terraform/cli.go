@@ -25,7 +25,11 @@ func (c CLI) Run(stdout io.Writer, workingDirectory string, args []string) error
 }
 
 func (c CLI) RunWithEnv(stdout io.Writer, workingDirectory string, args []string, extraEnvVars []string) error {
-	command := exec.Command("terraform", args...)
+	path, err := BinaryPath()
+	if err != nil {
+		return err
+	}
+	command := exec.Command(path, args...)
 	command.Dir = workingDirectory
 
 	command.Env = os.Environ()

@@ -7,6 +7,7 @@ import (
 
 type FileInfo struct {
 	FileName string
+	Modtime  *time.Time // this is an optional
 }
 
 func (f FileInfo) Name() string {
@@ -19,7 +20,10 @@ func (f FileInfo) Mode() os.FileMode {
 	return os.ModePerm
 }
 func (f FileInfo) ModTime() time.Time {
-	return time.Now()
+	if f.Modtime == nil {
+		return time.Now()
+	}
+	return *f.Modtime
 }
 func (f FileInfo) IsDir() bool {
 	return false

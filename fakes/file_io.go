@@ -2,6 +2,7 @@ package fakes
 
 import (
 	"os"
+	"time"
 
 	"github.com/spf13/afero"
 )
@@ -28,6 +29,16 @@ type FileIO struct {
 		Returns struct {
 			Name  string
 			Error error
+		}
+	}
+
+	GetTempDirCall struct {
+		CallCount int
+		Receives  struct {
+			Dir string
+		}
+		Returns struct {
+			Name string
 		}
 	}
 
@@ -61,11 +72,34 @@ type FileIO struct {
 		}
 	}
 
+	ExistsCall struct {
+		CallCount int
+		Receives  struct {
+			Path string
+		}
+		Returns struct {
+			Bool  bool
+			Error error
+		}
+	}
+
 	RenameCall struct {
 		CallCount int
 		Receives  struct {
 			Oldpath string
 			Newpath string
+		}
+		Returns struct {
+			Error error
+		}
+	}
+
+	ChtimesCall struct {
+		CallCount int
+		Receives  struct {
+			path    string
+			ATime   time.Time
+			ModTime time.Time
 		}
 		Returns struct {
 			Error error
@@ -147,6 +181,12 @@ func (f *FileIO) TempDir(dir, prefix string) (string, error) {
 	return f.TempDirCall.Returns.Name, f.TempDirCall.Returns.Error
 }
 
+func (f *FileIO) GetTempDir(dir string) string {
+	f.GetTempDirCall.CallCount++
+	f.GetTempDirCall.Receives.Dir = dir
+	return f.GetTempDirCall.Returns.Name
+}
+
 func (f *FileIO) ReadFile(filename string) ([]byte, error) {
 	f.ReadFileCall.CallCount++
 	f.ReadFileCall.Receives.Filename = filename
@@ -181,11 +221,24 @@ func (f *FileIO) Stat(name string) (os.FileInfo, error) {
 	return f.StatCall.Fake(name)
 }
 
+func (f *FileIO) Exists(path string) (bool, error) {
+	f.ExistsCall.CallCount++
+	f.ExistsCall.Receives.Path = path
+	return f.ExistsCall.Returns.Bool, f.ExistsCall.Returns.Error
+}
+
 func (f *FileIO) Rename(oldpath, newpath string) error {
 	f.RenameCall.CallCount++
 	f.RenameCall.Receives.Oldpath = oldpath
 	f.RenameCall.Receives.Newpath = newpath
 	return f.RenameCall.Returns.Error
+}
+
+func (f *FileIO) Chtimes(path string, atime, mtime time.Time) error {
+	f.ChtimesCall.CallCount++
+	f.ChtimesCall.Receives.ATime = atime
+	f.ChtimesCall.Receives.ModTime = mtime
+	return f.ChtimesCall.Returns.Error
 }
 
 func (f *FileIO) Remove(name string) error {

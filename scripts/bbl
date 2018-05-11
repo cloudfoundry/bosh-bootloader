@@ -1,4 +1,5 @@
 #!/bin/bash -exu
 
-go install -ldflags="-X main.Version=$(git rev-parse --short=6 HEAD)" github.com/cloudfoundry/bosh-bootloader/bbl 
+GOBUILDTAGS="${GOBUILDTAGS:-""}"
+go install -tags="${GOBUILDTAGS}" -ldflags="-X main.Version=$(git rev-parse --short=6 HEAD)" github.com/cloudfoundry/bosh-bootloader/bbl
 bbl "${@:-"-v"}"
