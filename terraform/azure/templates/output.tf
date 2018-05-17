@@ -1,13 +1,17 @@
 output "vnet_name" {
-  value = "${azurerm_virtual_network.bosh.name}"
+  value = "${var.vnet_name == "" ? azurerm_virtual_network.bosh.*.name[0] : var.vnet_name}"
 }
 
 output "subnet_name" {
-  value = "${azurerm_subnet.bosh.name}"
+  value = "${var.subnet_name == "" ? var.subnet_name : azurerm_subnet.bosh.name }"
 }
 
 output "resource_group_name" {
-  value = "${azurerm_resource_group.bosh.name}"
+  value = "${var.resource_group_name == "" ? azurerm_resource_group.bosh.*.name[0] : var.resource_group_name}"
+}
+
+output "vnet_resource_group_name" {
+  value = "${var.vnet_resource_group_name}"
 }
 
 output "storage_account_name" {

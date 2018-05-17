@@ -16,6 +16,10 @@ const (
   --azure-client-id                  Azure Client ID                  env: $BBL_AZURE_CLIENT_ID
   --azure-client-secret              Azure Client Secret              env: $BBL_AZURE_CLIENT_SECRET
   --azure-region                     Azure Region                     env: $BBL_AZURE_REGION
+  --azure-resource-group-name        Azure Resource Group Name        env: $BBL_AZURE_RESOURCE_GROUP_NAME
+  --azure-vnet-resource-group-name   Azure Vnet Resource Group Name   env: $BBL_AZURE_VNET_RESOURCE_GROUP_NAME
+  --azure-vnet-name                  Azure Vnet Name                  env: $BBL_AZURE_VNET_NAME
+  --azure-subnet-name                Azure Subnet Name                env: $BBL_AZURE_SUBNET_NAME
 
   --vsphere-vcenter-user             vSphere vCenter User             env: $BBL_VSPHERE_VCENTER_USER
   --vsphere-vcenter-password         vSphere vCenter Password         env: $BBL_VSPHERE_VCENTER_PASSWORD

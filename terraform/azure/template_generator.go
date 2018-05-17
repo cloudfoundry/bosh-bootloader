@@ -26,7 +26,7 @@ func NewTemplateGenerator() TemplateGenerator {
 }
 
 func (t TemplateGenerator) Generate(state storage.State) string {
-	tmpls := readTemplates()
+	tmpls := readTemplates(state)
 
 	template := strings.Join([]string{tmpls.vars, tmpls.resourceGroup, tmpls.network, tmpls.storage, tmpls.networkSecurityGroup, tmpls.output, tmpls.tls}, "\n")
 
@@ -44,7 +44,7 @@ func (t TemplateGenerator) Generate(state storage.State) string {
 	return template
 }
 
-func readTemplates() templates {
+func readTemplates(state storage.State) templates {
 	tmpls := templates{}
 	tmpls.vars = string(MustAsset("templates/vars.tf"))
 	tmpls.resourceGroup = string(MustAsset("templates/resource_group.tf"))

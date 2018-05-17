@@ -24,6 +24,16 @@ func (i InputGenerator) Generate(state storage.State) (map[string]interface{}, e
 		"region":        state.Azure.Region,
 	}
 
+    if state.Azure.ResourceGroupName != "" {
+        input["resource_group_name"] = state.Azure.ResourceGroupName
+    }
+
+    if state.Azure.SubnetName != "" && state.Azure.VnetName != "" {
+        input["vnet_resource_group_name"] = state.Azure.VnetResourceGroupName
+        input["subnet_name"] = state.Azure.SubnetName
+        input["vnet_name"] = state.Azure.VnetName
+    }
+
 	if state.LB.Cert != "" && state.LB.Key != "" {
 		input["pfx_cert_base64"] = state.LB.Cert
 		input["pfx_password"] = state.LB.Key

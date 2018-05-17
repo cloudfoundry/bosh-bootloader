@@ -22,6 +22,10 @@ it can interact with Azure.
     export BBL_AZURE_REGION=
     export BBL_AZURE_SUBSCRIPTION_ID=
     export BBL_AZURE_TENANT_ID=
+    export BBL_RESOURCE_GROUP_NAME=
+    export BBL_VNET_RESOURCE_GROUP_NAME=
+    export BBL_VNET_NAME=
+    export BBL_SUBNET_NAME=
     ```
 1. Create infrastructure, jumpbox, and bosh director.
     ```
