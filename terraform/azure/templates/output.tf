@@ -7,7 +7,7 @@ output "subnet_name" {
 }
 
 output "resource_group_name" {
-  value = "${var.resource_group_name}"
+  value = "${azurerm_resource_group.bosh.name}"
 }
 
 output "storage_account_name" {
