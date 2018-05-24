@@ -62,10 +62,6 @@ var _ = Describe("up", func() {
 		session := bbl.Up(args...)
 		Eventually(session, 60*time.Minute).Should(gexec.Exit(0))
 
-		By("checking to see if we can ssh to the jumpbox", func() {
-			bbl.JumpboxSSH(GinkgoWriter)
-		})
-
 		By("exporting bosh environment variables", func() {
 			bbl.ExportBoshAllProxy()
 		})
@@ -84,10 +80,6 @@ var _ = Describe("up", func() {
 				return exists
 			}
 			Eventually(directorExists, "1m", "10s").Should(BeTrue())
-		})
-
-		By("verifying we can ssh to the director", func() {
-			bbl.DirectorSSH(GinkgoWriter)
 		})
 
 		By("verifying that vm extensions were added to the cloud config", func() {

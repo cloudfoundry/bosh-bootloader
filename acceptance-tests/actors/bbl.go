@@ -78,8 +78,9 @@ func (b BBL) Rotate() *gexec.Session {
 }
 
 func (b BBL) VerifySSH(session *gexec.Session, ptmx *os.File) {
-	fmt.Fprintln(ptmx, "whoami")
-	Eventually(session.Out, 5).Should(gbytes.Say("jumpbox"))
+	time.Sleep(5 * time.Second)
+	fmt.Fprintln(ptmx, "whoami | rev")
+	Eventually(session.Out, 10).Should(gbytes.Say("xobpmuj")) // jumpbox in reverse
 	fmt.Fprintln(ptmx, "exit 0")
 	Eventually(session, 5).Should(gexec.Exit(0))
 }

@@ -97,7 +97,6 @@ func (s SSH) Execute(args []string, state storage.State) error {
 	if jumpbox {
 		return s.cli.Run([]string{
 			"-tt",
-			"-o", "StrictHostKeyChecking=no",
 			"-o", "ServerAliveInterval=300",
 			fmt.Sprintf("jumpbox@%s", jumpboxURL),
 			"-i", jumpboxKeyPath,
@@ -121,7 +120,18 @@ func (s SSH) Execute(args []string, state storage.State) error {
 		return fmt.Errorf("Open proxy port: %s", err)
 	}
 
-	fmt.Println("opening a tunnel through your jumpbox...")
+	fmt.Println("checking host key")
+	err = s.cli.Run([]string{
+		"-T",
+		fmt.Sprintf("jumpbox@%s", jumpboxURL),
+		"-i", jumpboxKeyPath,
+		"echo", "host key confirmed",
+	})
+	if err != nil {
+		return fmt.Errorf("unable to verify host key fingerprint: %s", err)
+	}
+
+	fmt.Println("opening a tunnel through your jumpbox")
 	backgroundTunnel, err := s.cli.Start([]string{
 		"-4",
 		"-D", port,

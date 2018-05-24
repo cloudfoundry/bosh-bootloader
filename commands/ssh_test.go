@@ -77,20 +77,44 @@ var _ = Describe("SSH", func() {
 				randomPort.GetPortCall.Returns.Port = "60000"
 			})
 
-			It("calls ssh with appropriate arguments", func() {
+			It("preemptively sshes to confirm host keys", func() {
+				err := ssh.Execute([]string{"--director"}, state)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(sshCLI.RunCall.Receives[0]).To(ConsistOf(
+					"-T",
+					"jumpbox@jumpboxURL",
+					"-i",
+					"some-temp-dir/jumpbox-private-key",
+					"echo",
+					"host key confirmed",
+				))
+			})
+
+			It("opens a tunnel through the jumpbox", func() {
 				err := ssh.Execute([]string{"--director"}, state)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(sshKeyGetter.JumpboxGetCall.CallCount).To(Equal(1))
-				Expect(sshKeyGetter.DirectorGetCall.CallCount).To(Equal(1))
-
-				Expect(fileIO.WriteFileCall.CallCount).To(Equal(2))
-				Expect(fileIO.WriteFileCall.Receives).To(ConsistOf(
+				Expect(fileIO.WriteFileCall.Receives).To(ContainElement(
 					fakes.WriteFileReceive{
 						Filename: jumpboxPrivateKeyPath,
 						Contents: []byte("jumpbox-private-key"),
 						Mode:     os.FileMode(0600),
 					},
+				))
+				Expect(sshCLI.StartCall.Receives[0]).To(ConsistOf(
+					"-4", "-D", "60000", "-nNC", "jumpbox@jumpboxURL", "-i", jumpboxPrivateKeyPath,
+				))
+			})
+
+			It("sshes through the tunnel", func() {
+				err := ssh.Execute([]string{"--director"}, state)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(sshKeyGetter.DirectorGetCall.CallCount).To(Equal(1))
+
+				Expect(fileIO.WriteFileCall.Receives).To(ContainElement(
 					fakes.WriteFileReceive{
 						Filename: directorPrivateKeyPath,
 						Contents: []byte("director-private-key"),
@@ -98,11 +122,7 @@ var _ = Describe("SSH", func() {
 					},
 				))
 
-				Expect(sshCLI.StartCall.Receives[0]).To(ConsistOf(
-					"-4", "-D", "60000", "-nNC", "jumpbox@jumpboxURL", "-i", jumpboxPrivateKeyPath,
-				))
-
-				Expect(sshCLI.RunCall.Receives[0]).To(ConsistOf(
+				Expect(sshCLI.RunCall.Receives[1]).To(ConsistOf(
 					"-tt",
 					"-o", "StrictHostKeyChecking=no",
 					"-o", "ServerAliveInterval=300",
@@ -123,11 +143,7 @@ var _ = Describe("SSH", func() {
 
 					Expect(pathFinder.CommandExistsCall.Receives.Command).To(Equal("connect-proxy"))
 
-					Expect(sshCLI.StartCall.Receives[0]).To(ConsistOf(
-						"-4", "-D", "60000", "-nNC", "jumpbox@jumpboxURL", "-i", jumpboxPrivateKeyPath,
-					))
-
-					Expect(sshCLI.RunCall.Receives[0]).To(ConsistOf(
+					Expect(sshCLI.RunCall.Receives[1]).To(ConsistOf(
 						"-tt",
 						"-o", "StrictHostKeyChecking=no",
 						"-o", "ServerAliveInterval=300",
@@ -204,7 +220,10 @@ var _ = Describe("SSH", func() {
 				Expect(fileIO.WriteFileCall.Receives[0].Mode).To(Equal(os.FileMode(0600)))
 
 				Expect(sshCLI.RunCall.Receives[0]).To(ConsistOf(
-					"-tt", "-o", "StrictHostKeyChecking=no", "-o", "ServerAliveInterval=300", "jumpbox@jumpboxURL", "-i", jumpboxPrivateKeyPath,
+					"-tt",
+					"-o", "ServerAliveInterval=300",
+					"jumpbox@jumpboxURL",
+					"-i", jumpboxPrivateKeyPath,
 				))
 			})
 
