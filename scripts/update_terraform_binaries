@@ -6,8 +6,10 @@ TF_VERSION='0.11.7'
 URL_BASE="https://releases.hashicorp.com/terraform/${TF_VERSION}"
 
 download_terraform () {
+  tmpfile=$(mktemp)
   ZIP_URL="${URL_BASE}/terraform_${TF_VERSION}_${1}.zip"
-  wget -qO- ${ZIP_URL} | tar -xvz
+  wget ${ZIP_URL} -qO ${tmpfile}
+  unzip -o ${tmpfile}
 }
 
 pushd ${root_dir}/../terraform/binary_dist
