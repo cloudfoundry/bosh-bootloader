@@ -1,0 +1,10 @@
+---
+- type: replace
+  path: /vm_extensions/-
+  value:
+    name: prometheus-nginx-network-properties
+    cloud_properties:
+      lb_target_groups: ((prometheus_lb_target_groups))
+      security_groups:
+      - ((prometheus_lb_internal_security_group))
+      - ((internal_security_group))

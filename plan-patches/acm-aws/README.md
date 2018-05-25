@@ -11,10 +11,11 @@ that it's going to produce certs for. This must be done prior to bbl'ing up.
 
 1. Follow the normal steps for a plan patch: Invoke 
    ```
+   export BBL_SOURCE=${GOPATH}/src/github.com/cloudfoundry/bosh-bootloader/
 	 mkdir berry-env && cd berry-env
    bbl plan --lb-type cf  --lb-domain the.route53.zone.you.just.made.com \
             --lb-cert ../certs/fake.crt --lb-key ../certs/fake.key
-   cp -r bosh-bootloader/plan-patches/acm-aws/. .
+   cp -r ${BBL_SOURCE}/plan-patches/acm-aws/. .
 	 bbl up
    ```
    you'll need to provide certs to bbl, but they won't end up used, so you should be fine with empty or garbage files.	
