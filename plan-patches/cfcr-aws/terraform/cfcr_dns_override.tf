@@ -12,7 +12,7 @@ resource "aws_route53_zone" "cfcr_dns_zone" {
 
 resource "aws_route53_record" "cfcr_api" {
   zone_id = "${aws_route53_zone.cfcr_dns_zone.id}"
-  name    = "${var.kubernetes_master_host}"
+  name    = "api.${var.kubernetes_master_host}"
   type    = "CNAME"
   ttl     = 300
 
