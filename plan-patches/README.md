@@ -28,6 +28,7 @@ Many of these have additional prep steps or specific downstream bosh deployments
 | [tf-backend-gcp](tf-backend-gcp/) | Store your terraform state in GCS |
 | [restricted-instance-groups-gcp](restricted-instance-groups-gcp/) | Create two seperate instance groups |
 | [colocate-gorouter-ssh-proxy-gcp](colocate-gorouter-ssh-proxy-gcp/) | Helpful if you're trying to colocate everything |
+| [prometheus-lb-gcp](prometheus-lb-gcp/) | Deploy a dedicated GCP load balancer for your prometheus cluster |
 | **VSPHERE** |     |
 | [cfcr-vsphere](cfcr-vsphere/) | Deploy a CFCR with a single master static IP and the vsphere cloud-provider |
 | **OPENSTACK** |     |

@@ -1,0 +1,7 @@
+---
+- type: replace
+  path: /vm_extensions/-
+  value:
+    name: prometheus-nginx-network-properties
+    cloud_properties:
+      target_pool: ((prometheus_target_pool))
