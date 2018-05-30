@@ -44,8 +44,12 @@ resource "google_compute_firewall" "bosh-director-lite-tcp-routing" {
   target_tags = ["${local.short_env_id}-bosh-director"]
 }
 
-output "external_ip" {
+output "director__external_ip" {
   value = "${google_compute_address.bosh-director-ip.address}"
+}
+
+output "external_ip" {
+  value = "${google_compute_address.jumpbox-ip.address}"
 }
 
 output "jumpbox__external_ip" {
