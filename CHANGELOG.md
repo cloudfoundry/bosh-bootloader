@@ -6,6 +6,14 @@
 
 **BUG FIXES:**
 
+## v6.7.0
+
+**FEATURES / IMPROVEMENTS:**
+* Terraform is no longer required because terraform is included in the BBL binary.
+
+**BUG FIXES:**
+* In previous versions `bbl ssh --director` only succeeded if `bbl ssh --jumpbox` had been run in the past.
+
 ## v6.6.0
 **FEATURES / IMPROVEMENTS:**
 * We have added bbl ssh --director and bbl ssh --jumpbox to assist you in this tedious and common step taken during debugging your environment.
