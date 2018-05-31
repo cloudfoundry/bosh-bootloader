@@ -20,6 +20,7 @@ var _ = Describe("garbage collector", func() {
 
 	BeforeEach(func() {
 		fileIO = &fakes.FileIO{}
+		fileIO.StatCall.Returns.FileInfo = &fakes.FileInfo{}
 		gc = storage.NewGarbageCollector(fileIO)
 	})
 
@@ -29,6 +30,19 @@ var _ = Describe("garbage collector", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(fileIO.RemoveCall.Receives[0].Name).To(Equal(filepath.Join("some-dir", "bbl-state.json")))
+			Expect(fileIO.RemoveCall.Receives[0].Name).To(Equal(filepath.Join("some-dir", "bbl-state.json")))
+		})
+
+		It("doesn't remove user managed files", func() {
+			err := gc.Remove("some-dir")
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(fileIO.RemoveCall.Receives).NotTo(ContainElement(
+				fakes.RemoveReceive{Name: filepath.Join("some-dir", "create-jumpbox-override.sh")},
+			))
+			Expect(fileIO.RemoveAllCall.Receives).NotTo(ContainElement(
+				fakes.RemoveAllReceive{Path: filepath.Join("some-dir", "create-jumpbox-override.sh")},
+			))
 		})
 
 		It("removes bosh *-env scripts", func() {
@@ -40,10 +54,10 @@ var _ = Describe("garbage collector", func() {
 			err := gc.Remove("some-dir")
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(fileIO.RemoveCall.Receives).To(ContainElement(fakes.RemoveReceive{Name: createDirector}))
-			Expect(fileIO.RemoveCall.Receives).To(ContainElement(fakes.RemoveReceive{Name: deleteDirector}))
-			Expect(fileIO.RemoveCall.Receives).To(ContainElement(fakes.RemoveReceive{Name: deleteJumpbox}))
-			Expect(fileIO.RemoveCall.Receives).To(ContainElement(fakes.RemoveReceive{Name: createJumpbox}))
+			Expect(fileIO.RemoveAllCall.Receives).To(ContainElement(fakes.RemoveAllReceive{Path: createDirector}))
+			Expect(fileIO.RemoveAllCall.Receives).To(ContainElement(fakes.RemoveAllReceive{Path: deleteDirector}))
+			Expect(fileIO.RemoveAllCall.Receives).To(ContainElement(fakes.RemoveAllReceive{Path: deleteJumpbox}))
+			Expect(fileIO.RemoveAllCall.Receives).To(ContainElement(fakes.RemoveAllReceive{Path: createJumpbox}))
 		})
 
 		DescribeTable("removing bbl-created directories",
@@ -76,14 +90,16 @@ var _ = Describe("garbage collector", func() {
 			BeforeEach(func() {
 				cloudConfigBase = filepath.Join("some-dir", "cloud-config", "cloud-config.yml")
 				cloudConfigOps = filepath.Join("some-dir", "cloud-config", "ops.yml")
+				fileIO.StatCall.Returns.FileInfo = &fakes.DirFileInfo{}
 			})
 
 			It("removes the ops file, base file, and directory", func() {
 				err := gc.Remove("some-dir")
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(fileIO.RemoveCall.Receives).To(ContainElement(fakes.RemoveReceive{Name: cloudConfigBase}))
-				Expect(fileIO.RemoveCall.Receives).To(ContainElement(fakes.RemoveReceive{Name: cloudConfigOps}))
+				Expect(fileIO.RemoveAllCall.Receives).To(ContainElement(fakes.RemoveAllReceive{Path: cloudConfigBase}))
+				Expect(fileIO.RemoveAllCall.Receives).To(ContainElement(fakes.RemoveAllReceive{Path: cloudConfigOps}))
+				// don't remove populated, relevant dirs
 				Expect(fileIO.RemoveCall.Receives).To(ContainElement(fakes.RemoveReceive{
 					Name: filepath.Join("some-dir", "cloud-config"),
 				}))
@@ -105,41 +121,42 @@ var _ = Describe("garbage collector", func() {
 						fakes.FileInfo{FileName: "terraform.tfstate"},
 						fakes.FileInfo{FileName: "terraform.tfstate.backup"},
 					}
+					fileIO.StatCall.Returns.FileInfo = &fakes.DirFileInfo{}
 				})
 
 				It("removes the directory and its contents", func() {
 					err := gc.Remove("some-dir")
 					Expect(err).NotTo(HaveOccurred())
 
-					Expect(fileIO.RemoveCall.Receives).To(ContainElement(
-						fakes.RemoveReceive{Name: filepath.Join("some-dir", "vars", "bbl.tfvars")},
+					Expect(fileIO.RemoveAllCall.Receives).To(ContainElement(
+						fakes.RemoveAllReceive{Path: filepath.Join("some-dir", "vars", "bbl.tfvars")},
 					))
-					Expect(fileIO.RemoveCall.Receives).To(ContainElement(
-						fakes.RemoveReceive{Name: filepath.Join("some-dir", "vars", "bosh-state.json")},
+					Expect(fileIO.RemoveAllCall.Receives).To(ContainElement(
+						fakes.RemoveAllReceive{Path: filepath.Join("some-dir", "vars", "bosh-state.json")},
 					))
-					Expect(fileIO.RemoveCall.Receives).To(ContainElement(
-						fakes.RemoveReceive{Name: filepath.Join("some-dir", "vars", "cloud-config-vars.yml")},
+					Expect(fileIO.RemoveAllCall.Receives).To(ContainElement(
+						fakes.RemoveAllReceive{Path: filepath.Join("some-dir", "vars", "cloud-config-vars.yml")},
 					))
-					Expect(fileIO.RemoveCall.Receives).To(ContainElement(
-						fakes.RemoveReceive{Name: filepath.Join("some-dir", "vars", "director-vars-file.yml")},
+					Expect(fileIO.RemoveAllCall.Receives).To(ContainElement(
+						fakes.RemoveAllReceive{Path: filepath.Join("some-dir", "vars", "director-vars-file.yml")},
 					))
-					Expect(fileIO.RemoveCall.Receives).To(ContainElement(
-						fakes.RemoveReceive{Name: filepath.Join("some-dir", "vars", "director-vars-store.yml")},
+					Expect(fileIO.RemoveAllCall.Receives).To(ContainElement(
+						fakes.RemoveAllReceive{Path: filepath.Join("some-dir", "vars", "director-vars-store.yml")},
 					))
-					Expect(fileIO.RemoveCall.Receives).To(ContainElement(
-						fakes.RemoveReceive{Name: filepath.Join("some-dir", "vars", "jumpbox-state.json")},
+					Expect(fileIO.RemoveAllCall.Receives).To(ContainElement(
+						fakes.RemoveAllReceive{Path: filepath.Join("some-dir", "vars", "jumpbox-state.json")},
 					))
-					Expect(fileIO.RemoveCall.Receives).To(ContainElement(
-						fakes.RemoveReceive{Name: filepath.Join("some-dir", "vars", "jumpbox-vars-file.yml")},
+					Expect(fileIO.RemoveAllCall.Receives).To(ContainElement(
+						fakes.RemoveAllReceive{Path: filepath.Join("some-dir", "vars", "jumpbox-vars-file.yml")},
 					))
-					Expect(fileIO.RemoveCall.Receives).To(ContainElement(
-						fakes.RemoveReceive{Name: filepath.Join("some-dir", "vars", "jumpbox-vars-store.yml")},
+					Expect(fileIO.RemoveAllCall.Receives).To(ContainElement(
+						fakes.RemoveAllReceive{Path: filepath.Join("some-dir", "vars", "jumpbox-vars-store.yml")},
 					))
-					Expect(fileIO.RemoveCall.Receives).To(ContainElement(
-						fakes.RemoveReceive{Name: filepath.Join("some-dir", "vars", "terraform.tfstate")},
+					Expect(fileIO.RemoveAllCall.Receives).To(ContainElement(
+						fakes.RemoveAllReceive{Path: filepath.Join("some-dir", "vars", "terraform.tfstate")},
 					))
-					Expect(fileIO.RemoveCall.Receives).To(ContainElement(
-						fakes.RemoveReceive{Name: filepath.Join("some-dir", "vars", "terraform.tfstate.backup")},
+					Expect(fileIO.RemoveAllCall.Receives).To(ContainElement(
+						fakes.RemoveAllReceive{Path: filepath.Join("some-dir", "vars", "terraform.tfstate.backup")},
 					))
 					Expect(fileIO.RemoveCall.Receives).To(ContainElement(fakes.RemoveReceive{
 						Name: filepath.Join("some-dir", "vars"),
@@ -167,13 +184,17 @@ var _ = Describe("garbage collector", func() {
 		})
 
 		Describe("terraform", func() {
+			BeforeEach(func() {
+				fileIO.StatCall.Returns.FileInfo = &fakes.DirFileInfo{}
+			})
+
 			It("removes the bbl template and directory", func() {
 				bblTerraformTemplate := filepath.Join("some-dir", "terraform", "bbl-template.tf")
 
 				err := gc.Remove("some-dir")
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(fileIO.RemoveCall.Receives).To(ContainElement(fakes.RemoveReceive{Name: bblTerraformTemplate}))
+				Expect(fileIO.RemoveAllCall.Receives).To(ContainElement(fakes.RemoveAllReceive{Path: bblTerraformTemplate}))
 				Expect(fileIO.RemoveCall.Receives).To(ContainElement(fakes.RemoveReceive{
 					Name: filepath.Join("some-dir", "terraform"),
 				}))

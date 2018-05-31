@@ -31,3 +31,11 @@ func (f FileInfo) IsDir() bool {
 func (f FileInfo) Sys() interface{} {
 	return nil
 }
+
+type DirFileInfo struct {
+	FileInfo
+}
+
+func (d DirFileInfo) IsDir() bool {
+	return true
+}
