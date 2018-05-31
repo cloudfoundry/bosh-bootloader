@@ -1,0 +1,6 @@
+- type: remove
+  path: /instance_groups/name=jumpbox/networks/name=public
+
+- type: replace
+  path: /cloud_provider/mbus
+  value: https://mbus:((mbus_bootstrap_password))@((internal_ip)):6868

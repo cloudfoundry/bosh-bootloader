@@ -1,0 +1,47 @@
+---
+- type: replace
+  path: /releases/-
+  value:
+    name: bosh-google-cpi
+    url: https://bosh.io/d/github.com/cloudfoundry-incubator/bosh-google-cpi-release?v=25.9.0
+    sha1: 3fbda22fde33878b54dec77f4182f8044be72687
+
+- type: replace
+  path: /resource_pools/name=vms/stemcell?
+  value:
+    url: https://bosh.io/d/stemcells/bosh-google-kvm-ubuntu-trusty-go_agent?v=3468.17
+    sha1: 742b92355e9b81d9d071dbdc76f058e6e3e97753
+
+# Configure sizes
+- type: replace
+  path: /resource_pools/name=vms/cloud_properties?
+  value:
+    zone: ((zone))
+    machine_type: n1-standard-1
+    root_disk_size_gb: 20
+    root_disk_type: pd-standard
+
+- type: replace
+  path: /networks/name=private/subnets/0/cloud_properties?
+  value:
+    network_name: ((network))
+    subnetwork_name: ((subnetwork))
+    tags: ((tags))
+
+# Add CPI job
+- type: replace
+  path: /cloud_provider/template?
+  value:
+    name: google_cpi
+    release: bosh-google-cpi
+
+- type: replace
+  path: /cloud_provider/properties/google?
+  value:
+    project: ((project_id))
+    json_key: ((gcp_credentials_json))
+
+# Use GCP NTP
+- type: replace
+  path: /cloud_provider/properties/ntp
+  value: [169.254.169.254]

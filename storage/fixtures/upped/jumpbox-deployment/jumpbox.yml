@@ -1,0 +1,64 @@
+---
+name: jumpbox
+
+releases:
+- name: os-conf
+  version: 13
+  url: https://bosh.io/d/github.com/cloudfoundry/os-conf-release?v=13
+  sha1: 338732af10f00aa0a49327a3f7cbb4c90f93c09c
+
+resource_pools:
+- name: vms
+  network: private
+  env:
+    bosh:
+      password: "*"
+
+networks:
+- name: private
+  type: manual
+  subnets:
+  - range: ((internal_cidr))
+    gateway: ((internal_gw))
+    static: [((internal_ip))]
+    dns: [8.8.8.8]
+- name: public
+  type: vip
+
+instance_groups:
+- name: jumpbox
+  instances: 1
+  jobs:
+  - name: disable_agent
+    release: os-conf
+    properties: {}
+  - name: user_add
+    release: os-conf
+    properties:
+      users:
+      - name: jumpbox
+        public_key: ((jumpbox_ssh.public_key))
+  resource_pool: vms
+  networks:
+  - name: private
+    static_ips: [((internal_ip))]
+    default: [dns, gateway]
+  - name: public
+    static_ips: [((external_ip))]
+
+cloud_provider:
+  mbus: https://mbus:((mbus_bootstrap_password))@((external_ip)):6868
+  properties:
+    agent: {mbus: "https://mbus:((mbus_bootstrap_password))@0.0.0.0:6868"}
+    blobstore: {provider: local, path: /var/vcap/micro_bosh/data/cache}
+    ntp:
+    - time1.google.com
+    - time2.google.com
+    - time3.google.com
+    - time4.google.com
+
+variables:
+- name: mbus_bootstrap_password
+  type: password
+- name: jumpbox_ssh
+  type: ssh

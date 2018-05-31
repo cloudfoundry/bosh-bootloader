@@ -67,6 +67,7 @@ func main() {
 	// bbl Configuration
 	garbageCollector := storage.NewGarbageCollector(afs)
 	stateStore := storage.NewStore(globals.StateDir, afs, garbageCollector)
+	patchDetector := storage.NewPatchDetector(globals.StateDir, logger)
 	stateMigrator := storage.NewMigrator(stateStore, afs)
 	newConfig := config.NewConfig(stateBootstrap, stateMigrator, stderrLogger, afs)
 
@@ -250,7 +251,7 @@ func main() {
 	if appConfig.State.IAAS != "" {
 		envIDManager = helpers.NewEnvIDManager(envIDGenerator, networkClient)
 	}
-	plan := commands.NewPlan(boshManager, cloudConfigManager, stateStore, envIDManager, terraformManager, lbArgsHandler, stderrLogger, Version)
+	plan := commands.NewPlan(boshManager, cloudConfigManager, stateStore, patchDetector, envIDManager, terraformManager, lbArgsHandler, stderrLogger, Version)
 	up := commands.NewUp(plan, boshManager, cloudConfigManager, stateStore, terraformManager)
 	usage := commands.NewUsage(logger)
 

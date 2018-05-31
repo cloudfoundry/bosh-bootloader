@@ -24,6 +24,7 @@ var _ = Describe("Plan", func() {
 		logger             *fakes.Logger
 		stateStore         *fakes.StateStore
 		terraformManager   *fakes.TerraformManager
+		patchDetector      *fakes.PatchDetector
 		bblVersion         string
 	)
 
@@ -35,6 +36,7 @@ var _ = Describe("Plan", func() {
 		logger = &fakes.Logger{}
 		stateStore = &fakes.StateStore{}
 		terraformManager = &fakes.TerraformManager{}
+		patchDetector = &fakes.PatchDetector{}
 		bblVersion = "42.0.0"
 
 		boshManager.VersionCall.Returns.Version = "2.0.48"
@@ -43,6 +45,7 @@ var _ = Describe("Plan", func() {
 			boshManager,
 			cloudConfigManager,
 			stateStore,
+			patchDetector,
 			envIDManager,
 			terraformManager,
 			lbArgsHandler,
@@ -89,6 +92,8 @@ var _ = Describe("Plan", func() {
 
 			Expect(cloudConfigManager.InitializeCall.CallCount).To(Equal(1))
 			Expect(cloudConfigManager.InitializeCall.Receives.State).To(Equal(syncedState))
+
+			Expect(patchDetector.FindCall.CallCount).To(Equal(1))
 		})
 
 		Context("when lb flags are passed", func() {
@@ -161,6 +166,14 @@ var _ = Describe("Plan", func() {
 
 				err := command.Execute([]string{}, storage.State{})
 				Expect(err).To(MatchError("Cloud config manager initialize: potato"))
+			})
+
+			It("prints the error but continues if patch detector fails", func() {
+				patchDetector.FindCall.Returns.Error = errors.New("iceburg lettuce")
+
+				err := command.Execute([]string{}, storage.State{})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(logger.PrintfCall.Messages).To(ContainElement(ContainSubstring("Failed to detect patch files: iceburg lettuce\n")))
 			})
 		})
 	})

@@ -12,6 +12,7 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
 )
 
@@ -74,8 +75,17 @@ var _ = Describe("plan", func() {
 			}
 		})
 
+		var patchFileHandle *os.File
+		patchFile := filepath.Join(stateDir, "terraform", "patch.tf")
+		By("adding a patch file", func() {
+			var err error
+			patchFileHandle, err = os.Create(patchFile)
+			Expect(err).NotTo(HaveOccurred())
+		})
+		defer patchFileHandle.Close()
+
 		By("rerunning bbl plan", func() {
-			session := bbl.Plan("--name", bbl.PredefinedEnvID())
+			session = bbl.Plan("--name", bbl.PredefinedEnvID())
 			Eventually(session, 5*time.Minute).Should(gexec.Exit(0))
 		})
 
@@ -87,8 +97,14 @@ var _ = Describe("plan", func() {
 			}
 		})
 
+		By("verifying that we warn users about patch files", func() {
+			Expect(session.Out).To(gbytes.Say("\nyou've supplied the following files to bbl:\n"))
+			Expect(session.Out).To(gbytes.Say("\tterraform/patch.tf\n"))
+			Expect(session.Out).To(gbytes.Say("\nthey will be used by \"bbl up\".\n"))
+		})
+
 		By("running bbl down", func() {
-			session := bbl.Down()
+			session = bbl.Down()
 			Eventually(session, 5*time.Minute).Should(gexec.Exit(0))
 		})
 
@@ -97,6 +113,11 @@ var _ = Describe("plan", func() {
 				_, err := os.Stat(f)
 				Expect(err).To(HaveOccurred())
 			}
+		})
+
+		By("verifying that patch files were not deleted", func() {
+			_, err := os.Stat(patchFile)
+			Expect(err).NotTo(HaveOccurred())
 		})
 	})
 })

@@ -1,0 +1,60 @@
+{
+    "director_id": "f0ea1cd6-2681-41c5-51fa-b6df46096745",
+    "installation_id": "e54b9cec-0ad2-4176-64bd-2b4feede8fd2",
+    "current_vm_cid": "vm-0dcf0eaa-d13e-4618-68b0-6112f9705a2a",
+    "current_stemcell_id": "28277428-92c3-45d8-4828-4edb334f178c",
+    "current_disk_id": "04aced30-4a03-42a4-7802-fbcfeb92f260",
+    "current_release_ids": [
+        "a4122f2a-7c6d-43d9-4e8e-7bc4cb5a03e1",
+        "d33fec2e-de7e-4e3e-6f07-72a2460a8aea",
+        "a9234983-0d57-4199-5774-9004c79eb998",
+        "5cc2a2b9-9e93-49f5-4020-1f5ae60d0590",
+        "d9dd45ae-92f1-43e9-638c-a9ce7f2a8c97"
+    ],
+    "current_manifest_sha": "dc3118c64eaebf2758c3a623b7091f986b1425048989a1c82060ce174d79a470ad52d468675e06a1086512b8e4c3862269b98b3b57a1e056c0b620468173f33f",
+    "disks": [
+        {
+            "id": "04aced30-4a03-42a4-7802-fbcfeb92f260",
+            "cid": "disk-90913b5f-5c0f-4546-464f-dddde49b48a0",
+            "size": 65536,
+            "cloud_properties": {
+                "type": "pd-standard"
+            }
+        }
+    ],
+    "stemcells": [
+        {
+            "id": "28277428-92c3-45d8-4828-4edb334f178c",
+            "name": "bosh-google-kvm-ubuntu-trusty-go_agent",
+            "version": "3541.10",
+            "cid": "stemcell-a5454318-024b-4fcd-72f4-c652b745b304"
+        }
+    ],
+    "releases": [
+        {
+            "id": "a4122f2a-7c6d-43d9-4e8e-7bc4cb5a03e1",
+            "name": "bosh",
+            "version": "265.2.0"
+        },
+        {
+            "id": "d33fec2e-de7e-4e3e-6f07-72a2460a8aea",
+            "name": "bosh-google-cpi",
+            "version": "27.0.0"
+        },
+        {
+            "id": "a9234983-0d57-4199-5774-9004c79eb998",
+            "name": "os-conf",
+            "version": "18"
+        },
+        {
+            "id": "5cc2a2b9-9e93-49f5-4020-1f5ae60d0590",
+            "name": "uaa",
+            "version": "52.8"
+        },
+        {
+            "id": "d9dd45ae-92f1-43e9-638c-a9ce7f2a8c97",
+            "name": "credhub",
+            "version": "1.6.5"
+        }
+    ]
+}

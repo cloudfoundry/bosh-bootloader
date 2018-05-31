@@ -8,10 +8,15 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
+type patchDetector interface {
+	Find() error
+}
+
 type Plan struct {
 	boshManager        boshManager
 	cloudConfigManager cloudConfigManager
 	stateStore         stateStore
+	patchDetector      patchDetector
 	envIDManager       envIDManager
 	terraformManager   terraformManager
 	lbArgsHandler      lbArgsHandler
@@ -27,6 +32,7 @@ type PlanConfig struct {
 func NewPlan(boshManager boshManager,
 	cloudConfigManager cloudConfigManager,
 	stateStore stateStore,
+	patchDetector patchDetector,
 	envIDManager envIDManager,
 	terraformManager terraformManager,
 	lbArgsHandler lbArgsHandler,
@@ -37,6 +43,7 @@ func NewPlan(boshManager boshManager,
 		boshManager:        boshManager,
 		cloudConfigManager: cloudConfigManager,
 		stateStore:         stateStore,
+		patchDetector:      patchDetector,
 		envIDManager:       envIDManager,
 		terraformManager:   terraformManager,
 		lbArgsHandler:      lbArgsHandler,
@@ -137,6 +144,10 @@ func (p Plan) InitializePlan(config PlanConfig, state storage.State) (storage.St
 
 	if err := p.boshManager.InitializeDirector(state); err != nil {
 		return storage.State{}, fmt.Errorf("Bosh manager initialize director: %s", err)
+	}
+
+	if err := p.patchDetector.Find(); err != nil {
+		p.logger.Printf("Failed to detect patch files: %s\n", err)
 	}
 
 	return state, nil

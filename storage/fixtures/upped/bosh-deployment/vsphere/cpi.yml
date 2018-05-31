@@ -1,0 +1,61 @@
+---
+- type: replace
+  path: /releases/-
+  value:
+    name: bosh-vsphere-cpi
+    version: "47"
+    url: https://bosh.io/d/github.com/cloudfoundry-incubator/bosh-vsphere-cpi-release?v=47
+    sha1: e17bac89169b158e3f8a45244624c635ecadd955
+
+- type: replace
+  path: /resource_pools/name=vms/stemcell?
+  value:
+    url: https://bosh.io/d/stemcells/bosh-vsphere-esxi-ubuntu-trusty-go_agent?v=3541.10
+    sha1: 6c32b606c02d9732ab3540c4b74c9cd527328951
+
+# Configure sizes
+- type: replace
+  path: /resource_pools/name=vms/cloud_properties?
+  value:
+    cpu: 2
+    ram: 4_096
+    disk: 40_000
+
+- type: replace
+  path: /networks/name=default/subnets/0/cloud_properties?
+  value: {name: ((network_name))}
+
+# Add CPI job
+- type: replace
+  path: /instance_groups/name=bosh/jobs/-
+  value: &cpi_job
+    name: vsphere_cpi
+    release: bosh-vsphere-cpi
+
+- type: replace
+  path: /instance_groups/name=bosh/properties/director/cpi_job?
+  value: vsphere_cpi
+
+- type: replace
+  path: /cloud_provider/template?
+  value: *cpi_job
+
+- type: replace
+  path: /instance_groups/name=bosh/properties/vcenter?
+  value: &vcenter
+    address: ((vcenter_ip))
+    user: ((vcenter_user))
+    password: ((vcenter_password))
+    datacenters:
+    - name: ((vcenter_dc))
+      vm_folder: ((vcenter_vms))
+      template_folder: ((vcenter_templates))
+      datastore_pattern: ((vcenter_ds))
+      persistent_datastore_pattern: ((vcenter_ds))
+      disk_path: ((vcenter_disks))
+      clusters:
+      - ((vcenter_cluster)): {}
+
+- type: replace
+  path: /cloud_provider/properties/vcenter?
+  value: *vcenter

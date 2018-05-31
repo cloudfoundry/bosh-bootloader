@@ -9,19 +9,19 @@ import (
 	"reflect"
 )
 
-type logger interface {
+type bootstrapLogger interface {
 	Println(message string)
 }
 
 type StateBootstrap struct {
-	logger     logger
-	bblVersion string
+	bootstrapLogger bootstrapLogger
+	bblVersion      string
 }
 
-func NewStateBootstrap(logger logger, bblVersion string) StateBootstrap {
+func NewStateBootstrap(bootstrapLogger bootstrapLogger, bblVersion string) StateBootstrap {
 	return StateBootstrap{
-		logger:     logger,
-		bblVersion: bblVersion,
+		bootstrapLogger: bootstrapLogger,
+		bblVersion:      bblVersion,
 	}
 }
 

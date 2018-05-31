@@ -107,13 +107,40 @@ var _ = Describe("garbage collector", func() {
 					}
 				})
 
-				It("removes the directory", func() {
+				It("removes the directory and its contents", func() {
 					err := gc.Remove("some-dir")
 					Expect(err).NotTo(HaveOccurred())
 
-					Expect(fileIO.RemoveCall.Receives).To(ContainElement(fakes.RemoveReceive{
-						Name: filepath.Join("some-dir", "vars", "bbl.tfvars"),
-					}))
+					Expect(fileIO.RemoveCall.Receives).To(ContainElement(
+						fakes.RemoveReceive{Name: filepath.Join("some-dir", "vars", "bbl.tfvars")},
+					))
+					Expect(fileIO.RemoveCall.Receives).To(ContainElement(
+						fakes.RemoveReceive{Name: filepath.Join("some-dir", "vars", "bosh-state.json")},
+					))
+					Expect(fileIO.RemoveCall.Receives).To(ContainElement(
+						fakes.RemoveReceive{Name: filepath.Join("some-dir", "vars", "cloud-config-vars.yml")},
+					))
+					Expect(fileIO.RemoveCall.Receives).To(ContainElement(
+						fakes.RemoveReceive{Name: filepath.Join("some-dir", "vars", "director-vars-file.yml")},
+					))
+					Expect(fileIO.RemoveCall.Receives).To(ContainElement(
+						fakes.RemoveReceive{Name: filepath.Join("some-dir", "vars", "director-vars-store.yml")},
+					))
+					Expect(fileIO.RemoveCall.Receives).To(ContainElement(
+						fakes.RemoveReceive{Name: filepath.Join("some-dir", "vars", "jumpbox-state.json")},
+					))
+					Expect(fileIO.RemoveCall.Receives).To(ContainElement(
+						fakes.RemoveReceive{Name: filepath.Join("some-dir", "vars", "jumpbox-vars-file.yml")},
+					))
+					Expect(fileIO.RemoveCall.Receives).To(ContainElement(
+						fakes.RemoveReceive{Name: filepath.Join("some-dir", "vars", "jumpbox-vars-store.yml")},
+					))
+					Expect(fileIO.RemoveCall.Receives).To(ContainElement(
+						fakes.RemoveReceive{Name: filepath.Join("some-dir", "vars", "terraform.tfstate")},
+					))
+					Expect(fileIO.RemoveCall.Receives).To(ContainElement(
+						fakes.RemoveReceive{Name: filepath.Join("some-dir", "vars", "terraform.tfstate.backup")},
+					))
 					Expect(fileIO.RemoveCall.Receives).To(ContainElement(fakes.RemoveReceive{
 						Name: filepath.Join("some-dir", "vars"),
 					}))

@@ -1,0 +1,49 @@
+---
+- type: replace
+  path: /releases/-
+  value:
+    name: bosh-aws-cpi
+    url: https://bosh.io/d/github.com/cloudfoundry-incubator/bosh-aws-cpi-release?v=69
+    sha1: 8abe70219244896ea6f7208fc01f2eac56179170
+
+- type: replace
+  path: /resource_pools/name=vms/stemcell?
+  value:
+    url: https://bosh.io/d/stemcells/bosh-aws-xen-hvm-ubuntu-trusty-go_agent?v=3468.17
+    sha1: c09040e9e0fcef6dffaece68f8d4173066e4f458
+
+# Configure AWS sizes
+- type: replace
+  path: /resource_pools/name=vms/cloud_properties?
+  value:
+    instance_type: t2.micro
+    ephemeral_disk: {size: 20_000, type: gp2}
+    availability_zone: ((az))
+
+- type: replace
+  path: /networks/name=private/subnets/0/cloud_properties?
+  value: {subnet: ((subnet_id))}
+
+# Add CPI job
+- type: replace
+  path: /cloud_provider/template?
+  value:
+    name: aws_cpi
+    release: bosh-aws-cpi
+
+- type: replace
+  path: /cloud_provider/ssh_tunnel?
+  value:
+    host: ((external_ip))
+    port: 22
+    user: vcap
+    private_key: ((private_key))
+
+- type: replace
+  path: /cloud_provider/properties/aws?
+  value:
+    access_key_id: ((access_key_id))
+    secret_access_key: ((secret_access_key))
+    default_key_name: ((default_key_name))
+    default_security_groups: ((default_security_groups))
+    region: ((region))

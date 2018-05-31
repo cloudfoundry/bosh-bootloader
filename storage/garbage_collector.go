@@ -6,19 +6,6 @@ import (
 	"path/filepath"
 )
 
-var bblManaged = map[string]struct{}{
-	"bbl.tfvars":               struct{}{},
-	"bosh-state.json":          struct{}{},
-	"cloud-config-vars.yml":    struct{}{},
-	"director-vars-file.yml":   struct{}{},
-	"director-vars-store.yml":  struct{}{},
-	"jumpbox-state.json":       struct{}{},
-	"jumpbox-vars-file.yml":    struct{}{},
-	"jumpbox-vars-store.yml":   struct{}{},
-	"terraform.tfstate":        struct{}{},
-	"terraform.tfstate.backup": struct{}{},
-}
-
 type GarbageCollector struct {
 	fs fs
 }
@@ -41,7 +28,7 @@ func (g GarbageCollector) Remove(dir string) error {
 	g.fs.RemoveAll(filepath.Join(dir, "bbl-ops-files"))
 
 	tfDir := filepath.Join(dir, "terraform")
-	g.fs.Remove(filepath.Join(tfDir, "bbl-template.tf"))
+	g.fs.Remove(filepath.Join(tfDir, "bbl-template.tf")) // terraform/bbl-template
 	g.fs.RemoveAll(filepath.Join(tfDir, ".terraform"))
 	g.fs.Remove(tfDir)
 
@@ -50,11 +37,11 @@ func (g GarbageCollector) Remove(dir string) error {
 	g.fs.Remove(filepath.Join(ccDir, "ops.yml"))
 	g.fs.Remove(ccDir)
 
-	vDir := filepath.Join(dir, "vars")
-	vFiles, _ := g.fs.ReadDir(vDir)
+	vFiles, _ := g.fs.ReadDir(filepath.Join(dir, "vars"))
 	for _, f := range vFiles {
-		if _, ok := bblManaged[f.Name()]; ok {
-			_ = g.fs.Remove(filepath.Join(vDir, f.Name()))
+		varPath := filepath.Join("vars", f.Name())
+		if isBBLManaged(varPath) {
+			_ = g.fs.Remove(filepath.Join(dir, varPath))
 		}
 	}
 	g.fs.Remove(filepath.Join(dir, "vars"))
