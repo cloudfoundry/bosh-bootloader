@@ -36,7 +36,7 @@
     
     
       
-        <title>Getting started aws - BBL</title>
+        <title>Customizing your infrastructure and director - BBL</title>
       
     
     
@@ -74,7 +74,7 @@
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="search" autocomplete="off">
     <label class="md-overlay" data-md-component="overlay" for="drawer"></label>
     
-      <a href="#getting-started-aws" tabindex="1" class="md-skip">
+      <a href="#customizing-your-infrastructure-and-director" tabindex="1" class="md-skip">
         Skip to content
       </a>
     
@@ -100,7 +100,7 @@
                 BBL
               </span>
               <span class="md-header-nav__topic">
-                Getting started aws
+                Customizing your infrastructure and director
               </span>
             
           
@@ -253,18 +253,6 @@
       
       
 
-
-  <li class="md-nav__item">
-    <a href="../customization/" title="Customizing your infrastructure and director" class="md-nav__link">
-      Customizing your infrastructure and director
-    </a>
-  </li>
-
-    
-      
-      
-      
-
   
 
 
@@ -272,55 +260,100 @@
     
     <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="toc">
     
+      
+    
     
       <label class="md-nav__link md-nav__link--active" for="toc">
-        Getting started aws
+        Customizing your infrastructure and director
       </label>
     
-    <a href="./" title="Getting started aws" class="md-nav__link md-nav__link--active">
-      Getting started aws
+    <a href="./" title="Customizing your infrastructure and director" class="md-nav__link md-nav__link--active">
+      Customizing your infrastructure and director
     </a>
     
       
 <nav class="md-nav md-nav--secondary">
   
   
+    
+  
   
     <label class="md-nav__title" for="toc">Table of contents</label>
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#getting-started-aws" title="Getting started: AWS" class="md-nav__link">
-    Getting started: AWS
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#creating-an-iam-user" title="Creating an IAM user" class="md-nav__link">
-    Creating an IAM user
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#bbl-up" title="bbl up" class="md-nav__link">
-    bbl up
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#connecting-to-the-bosh-director" title="Connecting to the BOSH director" class="md-nav__link">
-    Connecting to the BOSH director
+  <a href="#files-and-directories-that-cannot-be-overridden-or-customized" title="Files and directories that cannot be overridden or customized" class="md-nav__link">
+    Files and directories that cannot be overridden or customized
   </a>
   
     <nav class="md-nav">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#alternatives-to-bbl-print-env" title="Alternatives to bbl print-env" class="md-nav__link">
-    Alternatives to bbl print-env
+  <a href="#bbl-ops-files" title="bbl-ops-files" class="md-nav__link">
+    bbl-ops-files
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bbl-statejson" title="bbl-state.json" class="md-nav__link">
+    bbl-state.json
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bosh-deployment" title="bosh-deployment" class="md-nav__link">
+    bosh-deployment
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jumpbox-deployment" title="jumpbox-deployment" class="md-nav__link">
+    jumpbox-deployment
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#override-scripts" title="Override scripts" class="md-nav__link">
+    Override scripts
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#directories-where-the-user-can-add-files" title="Directories where the user can add files" class="md-nav__link">
+    Directories where the user can add files
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cloud-config" title="cloud-config" class="md-nav__link">
+    cloud-config
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#terraform" title="terraform" class="md-nav__link">
+    terraform
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vars" title="vars" class="md-nav__link">
+    vars
   </a>
   
 </li>
@@ -338,6 +371,18 @@
   
 </nav>
     
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../getting-started-aws/" title="Getting started aws" class="md-nav__link">
+      Getting started aws
+    </a>
   </li>
 
     
@@ -439,42 +484,85 @@
 <nav class="md-nav md-nav--secondary">
   
   
+    
+  
   
     <label class="md-nav__title" for="toc">Table of contents</label>
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#getting-started-aws" title="Getting started: AWS" class="md-nav__link">
-    Getting started: AWS
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#creating-an-iam-user" title="Creating an IAM user" class="md-nav__link">
-    Creating an IAM user
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#bbl-up" title="bbl up" class="md-nav__link">
-    bbl up
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#connecting-to-the-bosh-director" title="Connecting to the BOSH director" class="md-nav__link">
-    Connecting to the BOSH director
+  <a href="#files-and-directories-that-cannot-be-overridden-or-customized" title="Files and directories that cannot be overridden or customized" class="md-nav__link">
+    Files and directories that cannot be overridden or customized
   </a>
   
     <nav class="md-nav">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#alternatives-to-bbl-print-env" title="Alternatives to bbl print-env" class="md-nav__link">
-    Alternatives to bbl print-env
+  <a href="#bbl-ops-files" title="bbl-ops-files" class="md-nav__link">
+    bbl-ops-files
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bbl-statejson" title="bbl-state.json" class="md-nav__link">
+    bbl-state.json
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bosh-deployment" title="bosh-deployment" class="md-nav__link">
+    bosh-deployment
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jumpbox-deployment" title="jumpbox-deployment" class="md-nav__link">
+    jumpbox-deployment
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#override-scripts" title="Override scripts" class="md-nav__link">
+    Override scripts
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#directories-where-the-user-can-add-files" title="Directories where the user can add files" class="md-nav__link">
+    Directories where the user can add files
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cloud-config" title="cloud-config" class="md-nav__link">
+    cloud-config
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#terraform" title="terraform" class="md-nav__link">
+    terraform
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vars" title="vars" class="md-nav__link">
+    vars
   </a>
   
 </li>
@@ -501,117 +589,80 @@
               
                 
                 
-                  <h1>Getting started aws</h1>
-                
-                <h3 id="getting-started-aws">Getting started: AWS</h3>
-<p>This guide is a walkthrough for deploying a BOSH director with <code>bbl</code>
-on AWS. Upon completion, you will have the following:</p>
-<ol>
-<li>A BOSH director</li>
-<li>A jumpbox</li>
-<li>A set of randomly generated BOSH director credentials</li>
-<li>A generated keypair allowing you to SSH into the BOSH director and
-any instances BOSH deploys</li>
-<li>A copy of the manifest the BOSH director was deployed with</li>
-<li>A basic cloud config</li>
-</ol>
-<h3 id="creating-an-iam-user">Creating an IAM user</h3>
-<p>In order for <code>bbl</code> to interact with AWS, an <code>IAM</code> user must be created.</p>
-<p>This user will be issuing API requests to create the infrastructure such
-as EC2 instances, load balancers, subnets, etc.</p>
-<p>The user must have the following <code>policy</code>:</p>
-<pre><code>{
-    &quot;Version&quot;: &quot;2012-10-17&quot;,
-    &quot;Statement&quot;: [
-        {
-            &quot;Sid&quot;: &quot;VisualEditor0&quot;,
-            &quot;Effect&quot;: &quot;Allow&quot;,
-            &quot;Action&quot;: [
-                &quot;logs:*&quot;,
-                &quot;elasticloadbalancing:*&quot;,
-                &quot;cloudformation:*&quot;,
-                &quot;iam:*&quot;,
-                &quot;kms:*&quot;,
-                &quot;route53:*&quot;,
-                &quot;ec2:*&quot;
-            ],
-            &quot;Resource&quot;: &quot;*&quot;
-        }
-    ]
+                <h1 id="customizing-your-infrastructure-and-director">Customizing your infrastructure and director</h1>
+<p>Since version 5.2.0, <code>bbl</code> has allowed customizing the infrastructure and director by editing files within the bbl state dir. This is a guide to which files can and can't
+be customized.</p>
+<p><img alt="annotated list of files and directories within a bbl state dir" src="../theme/bbl-plan-layout.png" /></p>
+<h2 id="files-and-directories-that-cannot-be-overridden-or-customized">Files and directories that cannot be overridden or customized</h2>
+<p>There are 3 directories and one file in the <code>bbl</code> state directory which should not be modified by the user.</p>
+<h3 id="bbl-ops-files"><code>bbl-ops-files</code></h3>
+<p>The <code>bbl-ops-files</code> directory contains ops files for <code>bosh-deployment</code> and <code>jumpbox-deployment</code> which are used by <code>bbl</code> but not part of the main <code>bosh-deployment</code> or
+<code>jumpbox-deployment</code> repositories.</p>
+<h3 id="bbl-statejson"><code>bbl-state.json</code></h3>
+<p>The <code>bbl-state.json</code> file is used to keep track of several different aspects of state that aren't captured by the rest of the state dir:
+- load balancer type, cert, and key
+- most recent output from Terraform (useful when running without <code>--debug</code>; this will be printed when running <code>bbl latest-error</code>)
+- BOSH director information, including:
+  - username and password
+  - address
+  - SSL certificate, private key, and CA
+- jumpbox URL
+- environment name
+- IAAS
+- <code>bbl</code> version used to create the state</p>
+<h3 id="bosh-deployment"><code>bosh-deployment</code></h3>
+<p>This is a copy of the <a href="https://github.com/cloudfoundry/bosh-deployment">cloudfoundry/bosh-deployment</a> Git repository. It contains the base BOSH director manifest, as well
+as ops files that configure the CPI, add UAA and Credhub to the director, and allow SSH access to the director. The entire repository is provided, not just the files that
+<code>bbl</code> uses in its default director <code>create-env</code> script.</p>
+<h3 id="jumpbox-deployment"><code>jumpbox-deployment</code></h3>
+<p>This is a copy of the <a href="https://github.com/cppforlife/jumpbox-deployment">cppforlife/jumpbox-deployment</a> Git repository. It contains the base jumpbox manifest, as well
+as ops files that configure the CPI. As with the <code>bosh-deployment</code> directory, the entire Git repository is provided, not just the files <code>bbl</code> uses.</p>
+<h2 id="override-scripts">Override scripts</h2>
+<p>To create and destroy the jumpbox and director deployments, <code>bbl</code> does not shell out directly to the BOSH CLI. Instead, it uses four wrapper scripts, which are emitted into
+the root of the state directory as <code>create-jumpbox.sh</code>, <code>create-director.sh</code>, <code>delete-jumpbox.sh</code>, and <code>delete-director.sh</code>. These files will be rewritten when running
+<code>bbl plan</code>, so editing them directly is not recommended. However, if a file with the name <code>create-jumpbox-override.sh</code> is present in the root of the state directory,
+<code>bbl</code> will run that script <em>instead</em> of <code>create-jumpbox.sh</code> when creating a jumpbox. The same goes for the other counterparts: <code>create-director-override.sh</code>, <code>delete-
+jumpbox-override.sh</code>, and <code>delete-director-override.sh</code>.</p>
+<h2 id="directories-where-the-user-can-add-files">Directories where the user can add files</h2>
+<h3 id="cloud-config"><code>cloud-config</code></h3>
+<p>Any ops file with a name of the form <code>*.yml</code> that is added to the <code>cloud-config</code> directory will be used as an ops file argument by <code>bbl</code> when it runs <code>update-cloud-config</code>.
+The ops files will be applied in alphabetical order.</p>
+<p>Modifying the <code>cloud-config.yml</code> and <code>ops.yml</code> files directly is not recommended if you can avoid it, as these files will be rewritten on <code>bbl plan</code>, while other files in
+the directory will be preserved even if you re-run <code>bbl plan</code>.</p>
+<h3 id="terraform"><code>terraform</code></h3>
+<p>Adding an HCL file with a <code>*.tf</code> filename to the <code>terraform</code> directory will effectively <em>append</em> that file to the <code>bbl</code> terraform template. Adding an HCL file with a
+<code>*_override.tf</code> filename will <em>merge</em> that file with the <code>bbl</code> terraform template when <code>bbl</code> runs <code>terraform apply</code> or <code>terraform destroy</code>. If you are modifying any <code>bbl</code>-
+provided Terraform resources using a custom Terraform file, we recommend that you end your filename in <code>_override.tf</code> in order for Terraform to properly process those
+modifications.</p>
+<p>Changes to the <code>bbl.tf</code> file will be lost on re-running <code>bbl plan</code>, but all other files in the directory will not be modified.</p>
+<h3 id="vars"><code>vars</code></h3>
+<p>Adding a file with a <code>*.tfvars</code> filename to the <code>vars</code> directory will allow custom variables to be picked up by Terraform when <code>bbl</code> runs <code>terraform apply</code>. The general
+format of a <code>tfvars</code> file is <code>key="value"</code>. Values longer than one line can be provided using heredoc syntax, for instance:</p>
+<pre><code>aws_iam_access_policy = &lt;&lt;EOF
+{
+  &quot;Version&quot;: &quot;2012-10-17&quot;,
+  &quot;Statement&quot;: [
+    {
+      ...
+    }
+  ]
 }
+EOF
 </code></pre>
 
-<p>To create a user and associated policy with the AWS CLI run the 
-following commands (policy text must be in your clipboard):</p>
-<pre><code>$ aws iam create-user --user-name &quot;bbl-user&quot;
-$ aws iam put-user-policy --user-name &quot;bbl-user&quot; \
-    --policy-name &quot;bbl-policy&quot; \
-    --policy-document &quot;$(pbpaste)&quot;
-$ aws iam create-access-key --user-name &quot;bbl-user&quot;
-</code></pre>
-
-<p>The <code>create-access-key</code> command will write an "access key id" and "secret 
-access key" to the terminal. These values are important and should
-be kept secret. In the next section <code>bbl</code> will use these commands to
-create infrastructure on AWS.</p>
-<h3 id="bbl-up">bbl up</h3>
-<p><code>bbl</code> will create infrastructure and deploy a BOSH director with the
-following command:</p>
-<pre><code>bbl up \
-    --aws-access-key-id &lt;INSERT ACCESS KEY ID&gt; \
-    --aws-secret-access-key &lt;INSERT SECRET ACCESS KEY&gt; \
-    --aws-region us-west-1 \
-    --iaas aws
-</code></pre>
-
-<p>The process takes around 5-8 minutes.</p>
-<p>The bbl state directory contains all of the files that were used to
-create your bosh director. This should be checked in to version control,
-so that you have all the information necessary to later destroy or
-update this environment at a later date.</p>
-<h3 id="connecting-to-the-bosh-director">Connecting to the BOSH director</h3>
-<p>To setup your BOSH CLI with the director you'll need the following
-command to set the credentials:</p>
-<pre><code>eval &quot;$(bbl print-env)&quot;
-</code></pre>
-
-<h4 id="alternatives-to-bbl-print-env">Alternatives to <code>bbl print-env</code></h4>
-<p>Separate commands are available for the <code>bbl print-env</code> fields:</p>
-<pre><code>$ bbl director-address
-https://10.0.0.6:25555
-
-$ bbl director-username
-user-d3783rk
-
-$ bbl director-password
-p-23dah71skl
-
-$ bbl director-ca-cert
------BEGIN CERTIFICATE-----
-MIIDtzCCAp+gAwIBAgIJAIPgaUgWRCE8MA0GCSqGSIb3DQEBBQUAMEUxCzAJBgNV
-...
------END CERTIFICATE-----
-</code></pre>
-
-<p>You might save the CA certificate to a file:</p>
-<pre><code>$ bbl director-ca-cert &gt; bosh.crt
-$ export BOSH_CA_CERT=bosh.crt
-</code></pre>
-
-<p>To login:</p>
-<pre><code>$ export BOSH_ENVIRONMENT=$(bbl director-address)
-$ bosh alias-env &lt;INSERT TARGET NAME&gt;
-$ bosh log-in
-Username: user-d3783rk
-Password: p-23dah71sk1
-</code></pre>
-
-<p>Display cloud config to test setup and show configuration mapping:</p>
-<pre><code>$ bosh cloud-config
-...
-</code></pre>
-
-<p>Now you're ready to deploy software with BOSH.</p>
+<p>Modifying the <code>bbl.tfvars</code> file directly can change the variables used in the base Terraform template; however, this is not recommended since these variables are
+generated by <code>bbl</code> from credentials and other user-provided settings and may be overwritten by subsequent <code>bbl</code> runs. Instead, you should alter the input to <code>bbl plan</code>.</p>
+<p><code>bbl</code> provides several files within the <code>vars</code> directory, and will edit them on subsequent runs. These files include:
+- <code>bbl.tfvars</code> - used by <code>bbl</code> to provide credentials and other user-provided settings to Terraform
+- <code>bosh-state.json</code> - used by the BOSH CLI to store state for the BOSH director deployment
+- <code>cloud-config-vars.yml</code> - used by <code>bbl</code> to provide Terraform outputs to the BOSH cloud-config
+- <code>director-vars-file.yml</code> - used by <code>bbl</code> to provide Terraform outputs to the BOSH create-env call for the director
+- <code>director-vars-store.yml</code> - used by the BOSH CLI to store generated variables for the BOSH director deployment
+- <code>jumpbox-state.json</code> - used by the BOSH CLI to store state for the jumpbox deployment
+- <code>jumpbox-vars-file.yml</code> - used by <code>bbl</code> to provide Terraform outputs to the BOSH create-env call for the jumpbox
+- <code>jumpbox-vars-store.yml</code> - used by the BOSH CLI to store generated variables for the BOSH jumpbox deployment
+- <code>terraform.tfstate</code> and <code>terraform.tfstate.backup</code> - used by the Terraform CLI to store state</p>
+<p>These files should not be edited by the user. All other files placed in the <code>vars</code> directory are safe and will not be modified by <code>bbl</code>.</p>
                 
                   
                 
@@ -632,7 +683,7 @@ Password: p-23dah71sk1
     <div class="md-footer-nav">
       <nav class="md-footer-nav__inner md-grid">
         
-          <a href="../customization/" title="Customizing your infrastructure and director" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+          <a href="../credhub/" title="Accessing the BOSH director credhub" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
             <div class="md-flex__cell md-flex__cell--shrink">
               <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
             </div>
@@ -641,19 +692,19 @@ Password: p-23dah71sk1
                 <span class="md-footer-nav__direction">
                   Previous
                 </span>
-                Customizing your infrastructure and director
+                Accessing the BOSH director credhub
               </span>
             </div>
           </a>
         
         
-          <a href="../getting-started-azure/" title="Getting started azure" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+          <a href="../getting-started-aws/" title="Getting started aws" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
             <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
               <span class="md-flex__ellipsis">
                 <span class="md-footer-nav__direction">
                   Next
                 </span>
-                Getting started azure
+                Getting started aws
               </span>
             </div>
             <div class="md-flex__cell md-flex__cell--shrink">

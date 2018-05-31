@@ -254,8 +254,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../cf-load-balancers/" title="Cf load balancers" class="md-nav__link">
-      Cf load balancers
+    <a href="../cf-lbs/" title="Cf lbs" class="md-nav__link">
+      Cf lbs
     </a>
   </li>
 
@@ -268,6 +268,18 @@
   <li class="md-nav__item">
     <a href="../cleaning-up/" title="Cleaning up" class="md-nav__link">
       Cleaning up
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../cloudfoundry/" title="Cloudfoundry" class="md-nav__link">
+      Cloudfoundry
     </a>
   </li>
 
@@ -292,6 +304,18 @@
   <li class="md-nav__item">
     <a href="../credhub/" title="Credhub" class="md-nav__link">
       Credhub
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../customization/" title="Customization" class="md-nav__link">
+      Customization
     </a>
   </li>
 
@@ -386,8 +410,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../migration-guide/" title="Migration guide" class="md-nav__link">
-      Migration guide
+    <a href="../upgrade/" title="Upgrade" class="md-nav__link">
+      Upgrade
     </a>
   </li>
 
@@ -462,8 +486,7 @@
 <ul>
 <li><a href='#opsfile'>Using a BOSH ops-file with bbl</a></li>
 <li><a href='#terraform'>Customizing IaaS Paving with Terraform</a></li>
-<li><a href='#boshlite'>Deploying BOSH lite on GCP</a></li>
-<li><a href='#isoseg'>Deploying an isolation segment</a></li>
+<li><a href='#plan-patches'>Applying and authoring plan patches, bundled modifications to default bbl configurations.</a></li>
 </ul>
 <h2 id="using-a-bosh-ops-file-with-bbl"><a name='opsfile'></a>Using a BOSH ops-file with bbl</h2>
 <h3 id="about-bosh-ops-files">About BOSH ops-files</h3>
@@ -500,7 +523,6 @@ bosh create-env \
   --vars-file  ${BBL_STATE_DIR}/vars/director-vars-file.yml \
 +  -o ${BBL_STATE_DIR}/../../bbl-envs/shared/increase-workers-threads-and-flush-arp.yml
   -o  ${BBL_STATE_DIR}/bosh-deployment/cpi.yml \
-  -o  ${BBL_STATE_DIR}/bosh-deployment/cpi.yml \
   -o  ${BBL_STATE_DIR}/bosh-deployment/jumpbox-user.yml \
   -o  ${BBL_STATE_DIR}/bosh-deployment/uaa.yml \
   -o  ${BBL_STATE_DIR}/../shared/bosh-deployment/credhub.yml
@@ -512,42 +534,20 @@ bosh create-env \
 <ol>
 <li>Plan the environment:
     <code>mkdir some-env &amp;&amp; cd some-env
-    echo BBL_AWS_ACCESS_KEY_ID=MYKEY
-    echo BBL_AWS_SECRET_ACCESS_KEY=MYSECRET
-    bbl plan --iaas aws --aws-region us-west-1
+    export BBL_IAAS=aws
+    export BBL_AWS_REGION=us-west-1
+    export BBL_AWS_ACCESS_KEY_ID=12345678
+    export BBL_AWS_SECRET_ACCESS_KEY=12345678
+    bbl plan
     echo -e "\nvpc_cidr=\"192.168.0.0/20\"" &gt;&gt; vars/terraform.tfvars</code></li>
 <li>Create the environment:
     <code>bbl up</code>
     That's it. Your director is now at <code>192.168.0.6</code>.</li>
 </ol>
-<h2 id="deploying-bosh-lite-on-gcp"><a name='boshlite'></a>Deploying BOSH lite on GCP</h2>
-<ol>
-<li>Plan the environment:
-    <code>git clone https://github.com/cloudfoundry/bosh-bootloader.git
-    mkdir some-env &amp;&amp; cd some-env
-    BBL_GCP_SERVICE_ACCOUNT_KEY=&lt;MYSERVICEACCOUNTKEY&gt;
-    bbl plan --name some-env --iaas gcp --gcp-region us-west-1
-    cp -r ../bosh-bootloader/plan-patches/bosh-lite-gcp/* .</code></li>
-<li>Create the environment:
-    <code>bbl up</code></li>
-<li>Determine your external IP:
-    <code>bosh int vars/director-vars-file.yml --path /external_ip</code></li>
-<li>Add it to your DNS:
-    <code>bosh-lite.infrastructure.cf-app.com.    A   300 ${bosh_lite_external_ip}
-    *.bosh-lite.infrastructure.cf-app.com.  CNAME   300 bosh-lite.infrastructure.cf-app.com.</code></li>
-<li>Deploy cf-deployment:
-    <code>$ bosh upload-stemcell https://bosh.io/d/stemcells/bosh-warden-boshlite-ubuntu-trusty-go_agent?v=3468.5
-    $ bosh deploy -d cf -v 'system_domain=cf.evanfarrar.com' -o operations/bosh-lite.yml cf-deployment.yml -o operations/use-compiled-releases.yml</code></li>
-</ol>
-<h2 id="deploying-an-isolation-segment"><a name='isoseg'></a>Deploying an isolation segment</h2>
-<p>You can use this process on AWS to create an isolation segment with </p>
-<pre><code>mkdir some-env &amp;&amp; cd some-env
-bbl plan --name some-env --lb-type cf --lb-cert /path/to/lb.crt --lb-key /path/to/lb.key
-cp /path/to/patch-dir/cloud-config/iso-segs-ops.yml cloudconfig/
-TF_VAR_isolation_segments=&quot;1&quot; bbl up
-</code></pre>
-
-<p>To se the TF_VAR it is also possible to add <code>isolation_segments="1"</code> to <code>terraform.tfvars</code> before running up.</p>
+<h2 id="plan-patches"><a name='plan-patches'> <a href="https://github.com/cloudfoundry/bosh-bootloader/tree/master/plan-patches">Plan Patches</a></h2>
+<p>Through operations files and terraform overrides, all sorts of wild modifications can be done to the vanilla bosh environments that bbl creates. The basic principal of a plan patch is to make several modifications to a bbl plan in override files that bbl finds under <code>terraform/</code>, <code>cloud-config/</code>, and <code>{create,delete}-{jumpbox,director}.sh</code> . BBL will read and merge those into it's plan when you run <code>bbl up</code>.</p>
+<p>We've used plan patches to <a href="https://github.com/cloudfoundry/bosh-bootloader/tree/master/plan-patches/bosh-lite-gcp">deploy bosh-lite directors on gcp</a>, to deploy CF Isolation Segments on <a href="https://github.com/cloudfoundry/bosh-bootloader/tree/master/plan-patches/iso-segs-gcp">public</a> <a href="https://github.com/cloudfoundry/bosh-bootloader/tree/master/plan-patches/iso-segs-aws">clouds</a>, and to deploy bosh managed k8s clusters with working cloud-providers using <a href="https://github.com/cloudfoundry-incubator/kubo-deployment/tree/master/manifests">cfcr</a>.</p>
+<p>Our plan patches are experimental. They were tested a bit when we wrote them, but we don't continuously integrate against their dependencies or even check if they still work with recent versions of terraform. They should be used with caution. Operators should make sure they understand each modification and its implications before using our patches in their own environments. Regardless, the plan-patches in this repo are great examples of the different ways you can configure bbl to deploy whatever you might need. To see all the plan patches, visit the <a href="https://github.com/cloudfoundry/bosh-bootloader/tree/master/plan-patches">Plan Patches README.md</a>. If you write your own plan patch that gets you what you need, please consider upstreaming it in a PR.</p>
                 
                   
                 
@@ -583,13 +583,13 @@ TF_VAR_isolation_segments=&quot;1&quot; bbl up
           </a>
         
         
-          <a href="../cf-load-balancers/" title="Cf load balancers" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+          <a href="../cf-lbs/" title="Cf lbs" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
             <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
               <span class="md-flex__ellipsis">
                 <span class="md-footer-nav__direction">
                   Next
                 </span>
-                Cf load balancers
+                Cf lbs
               </span>
             </div>
             <div class="md-flex__cell md-flex__cell--shrink">

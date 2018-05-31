@@ -195,8 +195,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../cf-load-balancers/" title="CF Load Balancers" class="md-nav__link">
-      CF Load Balancers
+    <a href="../cf-lbs/" title="Cloud Foundry Load Balancers" class="md-nav__link">
+      Cloud Foundry Load Balancers
     </a>
   </li>
 
@@ -207,8 +207,20 @@
 
 
   <li class="md-nav__item">
-    <a href="../cleaning-up/" title="Cleaning up" class="md-nav__link">
-      Cleaning up
+    <a href="../cleaning-up/" title="Cleaning Up" class="md-nav__link">
+      Cleaning Up
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../cloudfoundry/" title="Cloudfoundry" class="md-nav__link">
+      Cloudfoundry
     </a>
   </li>
 
@@ -253,8 +265,8 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#steps-for-gcp" title="Steps (for GCP)" class="md-nav__link">
-    Steps (for GCP)
+  <a href="#steps" title="Steps" class="md-nav__link">
+    Steps
   </a>
   
 </li>
@@ -285,6 +297,18 @@
   <li class="md-nav__item">
     <a href="../credhub/" title="Credhub" class="md-nav__link">
       Credhub
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../customization/" title="Customization" class="md-nav__link">
+      Customization
     </a>
   </li>
 
@@ -379,8 +403,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../migration-guide/" title="Migration guide" class="md-nav__link">
-      Migration guide
+    <a href="../upgrade/" title="Upgrade" class="md-nav__link">
+      Upgrade
     </a>
   </li>
 
@@ -413,8 +437,8 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#steps-for-gcp" title="Steps (for GCP)" class="md-nav__link">
-    Steps (for GCP)
+  <a href="#steps" title="Steps" class="md-nav__link">
+    Steps
   </a>
   
 </li>
@@ -445,51 +469,27 @@
                 
                 <h1 id="concourse">Concourse</h1>
 <p>This document will walk through deploying a concourse clustered
-install to AWS, GCP and Azure using <code>bbl</code> and <code>bosh</code>.</p>
+install using <code>bbl</code> and <code>bosh</code>.</p>
 <h2 id="prerequisites">Prerequisites</h2>
 <ul>
 <li><code>bbl</code></li>
 <li><a href="https://bosh.io/docs/cli-v2.html">bosh v2</a></li>
-<li><a href="https://github.com/concourse/concourse-deployment">concourse/concourse-deployment</a></li>
+<li><a href="https://github.com/concourse/concourse-bosh-deployment">concourse/concourse-bosh-deployment</a></li>
 </ul>
-<h2 id="steps-for-gcp">Steps (for GCP)</h2>
+<h2 id="steps">Steps</h2>
 <ol>
 <li>Create an environment and upload a stemcell.</li>
 </ol>
 <p>```bash
   bbl up --lb-type concourse</p>
-<p>export external_url="https://$(bbl lbs |awk -F':' '{print $2}' |sed 's/ //')"</p>
+<p>export external_url="https://$(bbl lbs | awk -F':' '{print $2}' | awk -F'[' '{print $2}' | awk -F']' '{print $1}')"</p>
 <p>eval "$(bbl print-env)"</p>
 <p>bosh upload-stemcell https://bosh.io/d/stemcells/bosh-google-kvm-ubuntu-trusty-go_agent</p>
-<p>cd $GOPATH/src/github.com/concourse/concourse-deployment/cluster
+<p>cd $GOPATH/src/github.com/concourse/concourse-bosh-deployment/cluster
   ```</p>
 <ol>
-<li>Create an ops-file in your current directory called <code>tls-vars.yml</code>:</li>
+<li>Deploy concourse.</li>
 </ol>
-<p>```yml
-  - type: replace
-    path: /variables/-
-    value:
-      name: atc_ca
-      type: certificate
-      options:
-        is_ca: true
-        common_name: atcCA</p>
-<ul>
-<li>
-<p>type: replace
-    path: /variables/-
-    value:
-      name: atc_tls
-      type: certificate
-      options:
-        ca: atc_ca
-  ```</p>
-</li>
-<li>
-<p>Deploy concourse.</p>
-</li>
-</ul>
 <p><code>bash
   bosh deploy -d concourse concourse.yml \
     -l ../versions.yml \
@@ -498,7 +498,7 @@ install to AWS, GCP and Azure using <code>bbl</code> and <code>bosh</code>.</p>
     -o operations/privileged-http.yml \
     -o operations/privileged-https.yml \
     -o operations/tls.yml \
-    -o tls-vars.yml \
+    -o operations/tls-vars.yml \
     -o operations/web-network-extension.yml \
     --var network_name=default \
     --var external_url=$external_url \
@@ -531,7 +531,7 @@ install to AWS, GCP and Azure using <code>bbl</code> and <code>bosh</code>.</p>
     <div class="md-footer-nav">
       <nav class="md-footer-nav__inner md-grid">
         
-          <a href="../cleaning-up/" title="Cleaning up" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+          <a href="../cloudfoundry/" title="Cloudfoundry" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
             <div class="md-flex__cell md-flex__cell--shrink">
               <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
             </div>
@@ -540,7 +540,7 @@ install to AWS, GCP and Azure using <code>bbl</code> and <code>bosh</code>.</p>
                 <span class="md-footer-nav__direction">
                   Previous
                 </span>
-                Cleaning up
+                Cloudfoundry
               </span>
             </div>
           </a>

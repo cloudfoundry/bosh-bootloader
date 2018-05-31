@@ -36,7 +36,7 @@
     
     
       
-        <title>Getting Started: Microsoft Azure - BBL</title>
+        <title>Cloud Foundry Load Balancers - BBL</title>
       
     
     
@@ -74,7 +74,7 @@
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="search" autocomplete="off">
     <label class="md-overlay" data-md-component="overlay" for="drawer"></label>
     
-      <a href="#getting-started-microsoft-azure" tabindex="1" class="md-skip">
+      <a href="#cloud-foundry-load-balancers" tabindex="1" class="md-skip">
         Skip to content
       </a>
     
@@ -100,7 +100,7 @@
                 BBL
               </span>
               <span class="md-header-nav__topic">
-                Getting Started: Microsoft Azure
+                Cloud Foundry Load Balancers
               </span>
             
           
@@ -193,11 +193,77 @@
       
       
 
+  
 
-  <li class="md-nav__item">
-    <a href="../cf-lbs/" title="Cloud Foundry Load Balancers" class="md-nav__link">
+
+  <li class="md-nav__item md-nav__item--active">
+    
+    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="toc">
+    
+      
+    
+    
+      <label class="md-nav__link md-nav__link--active" for="toc">
+        Cloud Foundry Load Balancers
+      </label>
+    
+    <a href="./" title="Cloud Foundry Load Balancers" class="md-nav__link md-nav__link--active">
       Cloud Foundry Load Balancers
     </a>
+    
+      
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#aws" title="AWS" class="md-nav__link">
+    AWS
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#gcp" title="GCP" class="md-nav__link">
+    GCP
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#microsoft-azure" title="Microsoft Azure" class="md-nav__link">
+    Microsoft Azure
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#vsphere" title="vSphere" class="md-nav__link">
+    vSphere
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#openstack" title="OpenStack" class="md-nav__link">
+    OpenStack
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+    
   </li>
 
     
@@ -207,8 +273,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../cleaning-up/" title="Cleaning Up" class="md-nav__link">
-      Cleaning Up
+    <a href="../cleaning-up/" title="Cleaning up" class="md-nav__link">
+      Cleaning up
     </a>
   </li>
 
@@ -243,8 +309,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../credhub/" title="Accessing the BOSH director credhub" class="md-nav__link">
-      Accessing the BOSH director credhub
+    <a href="../credhub/" title="Credhub" class="md-nav__link">
+      Credhub
     </a>
   </li>
 
@@ -255,8 +321,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../customization/" title="Customizing your infrastructure and director" class="md-nav__link">
-      Customizing your infrastructure and director
+    <a href="../customization/" title="Customization" class="md-nav__link">
+      Customization
     </a>
   </li>
 
@@ -277,63 +343,11 @@
       
       
 
-  
 
-
-  <li class="md-nav__item md-nav__item--active">
-    
-    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="toc">
-    
-      
-    
-    
-      <label class="md-nav__link md-nav__link--active" for="toc">
-        Getting Started: Microsoft Azure
-      </label>
-    
-    <a href="./" title="Getting Started: Microsoft Azure" class="md-nav__link md-nav__link--active">
-      Getting Started: Microsoft Azure
+  <li class="md-nav__item">
+    <a href="../getting-started-azure/" title="Getting started azure" class="md-nav__link">
+      Getting started azure
     </a>
-    
-      
-<nav class="md-nav md-nav--secondary">
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="toc">Table of contents</label>
-    <ul class="md-nav__list" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#create-a-service-principal-account" title="Create a Service Principal Account" class="md-nav__link">
-    Create a Service Principal Account
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#infrastructure-jumpbox-director" title="Infrastructure, Jumpbox, Director" class="md-nav__link">
-    Infrastructure, Jumpbox, Director
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#cloud-foundry-load-balancers" title="+ Cloud Foundry Load Balancers" class="md-nav__link">
-    + Cloud Foundry Load Balancers
-  </a>
-  
-</li>
-      
-      
-      
-      
-      
-    </ul>
-  
-</nav>
-    
   </li>
 
     
@@ -430,22 +444,36 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#create-a-service-principal-account" title="Create a Service Principal Account" class="md-nav__link">
-    Create a Service Principal Account
+  <a href="#aws" title="AWS" class="md-nav__link">
+    AWS
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#infrastructure-jumpbox-director" title="Infrastructure, Jumpbox, Director" class="md-nav__link">
-    Infrastructure, Jumpbox, Director
+  <a href="#gcp" title="GCP" class="md-nav__link">
+    GCP
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#cloud-foundry-load-balancers" title="+ Cloud Foundry Load Balancers" class="md-nav__link">
-    + Cloud Foundry Load Balancers
+  <a href="#microsoft-azure" title="Microsoft Azure" class="md-nav__link">
+    Microsoft Azure
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#vsphere" title="vSphere" class="md-nav__link">
+    vSphere
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#openstack" title="OpenStack" class="md-nav__link">
+    OpenStack
   </a>
   
 </li>
@@ -467,45 +495,121 @@
               
                 
                 
-                <h1 id="getting-started-microsoft-azure">Getting Started: Microsoft Azure</h1>
-<h2 id="create-a-service-principal-account">Create a Service Principal Account</h2>
-<p>You can use the cli utility <a href="https://github.com/genevieve/az-automation">az-automation</a>
-for creating a service principal account given you
-have authenticated with the <code>az</code> cli.</p>
-<p>The output will include your subscription id,
-your tenant id, the client id, and the client secret.</p>
-<p>These credentials will be passed to <code>bbl</code> so that
-it can interact with Azure.</p>
-<h2 id="infrastructure-jumpbox-director">Infrastructure, Jumpbox, Director</h2>
-<ol>
-<li>Export environment variables.
-    <code>export BBL_IAAS=azure
-    export BBL_AZURE_CLIENT_ID=
-    export BBL_AZURE_CLIENT_SECRET=
-    export BBL_AZURE_REGION=
-    export BBL_AZURE_SUBSCRIPTION_ID=
-    export BBL_AZURE_TENANT_ID=</code></li>
-<li>Create infrastructure, jumpbox, and bosh director.
-    <code>bbl up</code></li>
-</ol>
-<h2 id="cloud-foundry-load-balancers">+ Cloud Foundry Load Balancers</h2>
-<p>To get all of the above plus load balancers for Cloud Foundry:</p>
+                <h1 id="cloud-foundry-load-balancers">Cloud Foundry Load Balancers</h1>
+<h2 id="aws">AWS</h2>
+<p><code>bbl</code> creates 3 load balancers on AWS.</p>
 <ol>
 <li>
-<p>To create cf load balancers for azure you must provide a certificate
-in the <code>.pfx</code> format:
-    <code>openssl genrsa -out DOMAIN_NAME.key 2048
-    openssl req -new -x509 -days 365 -key DOMAIN_NAME.key -out DOMAIN_NAME.crt
-    openssl pkcs12 -export -out PFX_FILE -inkey DOMAIN_NAME.key -in DOMAIN_NAME.crt</code></p>
+<p><strong>cf-ssh-lb</strong></p>
+<ul>
+<li>In the cloud-config, this lb is referenced with the vm extension <code>diego-ssh-proxy-network-properties</code>.</li>
+<li>In cf-deployment, this vm extension will be associated with the <code>scheduler</code> vm.</li>
+<li>It forwards <code>TCP:2222</code> to <code>TCP:2222</code>.</li>
+</ul>
 </li>
 <li>
-<p>Save the password you entered when prompted by <code>openssl</code> to a file.
-    <code>echo SuperSecretPassword &gt; PFX_FILE_PASSWORD</code></p>
+<p><strong>cf-tcp-lb</strong></p>
+<ul>
+<li>In the cloud-config, this lb is referenced with the vm extension <code>cf-tcp-router-network-properties</code>.</li>
+<li>In cf-deployment, this vm extension will be associated with the <code>tcp-router</code> vm.</li>
+<li>It forwards <code>TCP:1024-1123</code> to <code>TCP:1024-1123</code>.</li>
+</ul>
 </li>
-<li>To <code>bbl  plan</code> or <code>bbl up</code> you can provide the pfx file and password:
-    <code>bbl plan --lb-type cf --lb-cert PFX_FILE --lb-key PFX_FILE_PASSWORD
-    bbl up</code></li>
+<li>
+<p><strong>cf-router-lb</strong></p>
+<ul>
+<li>In the cloud-config, this lb is referenced with the vm extension <code>cf-router-network-properties</code>.</li>
+<li>In cf-deployment, this vm extension will be associated with the <code>router</code> vm.</li>
+<li>It forwards:<ul>
+<li><code>HTTP:80</code>   to <code>HTTP:80</code></li>
+<li><code>HTTPS:443</code> to <code>HTTP:80</code></li>
+<li><code>TLS:4443</code>  to <code>TCP:80</code></li>
+</ul>
+</li>
+</ul>
+</li>
 </ol>
+<h2 id="gcp">GCP</h2>
+<p><code>bbl</code> creates 4 load balancers on GCP.</p>
+<ol>
+<li>
+<p><strong>cf-router-lb</strong></p>
+<ul>
+<li>In the cloud-config, this lb is referenced with the vm extension <code>cf-router-network-properties</code>.</li>
+<li>In cf-deployment, this vm extension will be associated with the <code>router</code> vm.</li>
+<li>Configuration:<ul>
+<li>Compute address</li>
+<li>Backend service with an instance group per availability zone</li>
+<li>Instance group per availability zone allowing <code>https:443</code></li>
+<li>Firewall rule allowing <code>tcp:80</code> &amp; <code>tcp:443</code> to the backend service</li>
+<li>Health check for <code>tcp:8080</code> &amp; <code>tcp:80</code></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>cf-ws-lb</strong></p>
+<ul>
+<li>In the cloud-config, this lb is referenced with the vm extension <code>cf-router-network-properties</code>.</li>
+<li>In cf-deployment, this vm extension will be associated with the <code>router</code> vm.</li>
+<li>Configuration:<ul>
+<li>Compute address</li>
+<li>Target pool</li>
+<li>Forwarding rule allowing <code>tcp:443</code> to the target pool</li>
+<li>Forwarding rule allowing <code>tcp:80</code> to the target pool</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>cf-tcp-router-lb</strong></p>
+<ul>
+<li>In the cloud-config, this lb is referenced with the vm extension <code>cf-tcp-router-network-properties</code>.</li>
+<li>In cf-deployment, this vm extension will be associated with the <code>tcp-router</code> vm.</li>
+<li>Configuration:<ul>
+<li>Compute address</li>
+<li>Target pool</li>
+<li>Firewall rule allowing <code>tcp:1024-32768</code> to the target pool</li>
+<li>Forwarding rule for <code>tcp:1024-32768</code> to the target pool</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>cf-ssh-proxy-lb</strong></p>
+<ul>
+<li>In the cloud-config, this lb is referenced with the vm extension <code>diego-ssh-proxy-network-properties</code>.</li>
+<li>In cf-deployment, this vm extension will be associated with the <code>scheduler</code> vm.</li>
+<li>Configuration:<ul>
+<li>Compute address</li>
+<li>Target pool</li>
+<li>Firewall rule allowing <code>tcp:2222</code> to the target pool</li>
+<li>Forwarding rule for <code>tcp:2222</code> to the target pool</li>
+</ul>
+</li>
+</ul>
+</li>
+</ol>
+<h2 id="microsoft-azure">Microsoft Azure</h2>
+<p>There is an application gateway.</p>
+<ol>
+<li><strong>cf-app-gateway</strong><ul>
+<li>In the cloud-config, this lb is referenced with the vm extension <code>cf-router-network-properties</code>.</li>
+<li>In cf-deployment, this vm extension will be associated with the <code>router</code> vm.</li>
+<li>Configuration:<ul>
+<li>Public IP</li>
+<li>Application Gateway</li>
+<li>Network Security Rules</li>
+<li>Network Security Group</li>
+</ul>
+</li>
+</ul>
+</li>
+</ol>
+<h2 id="vsphere">vSphere</h2>
+<p>N/A.</p>
+<h2 id="openstack">OpenStack</h2>
+<p>N/A.</p>
                 
                   
                 
@@ -526,7 +630,7 @@ in the <code>.pfx</code> format:
     <div class="md-footer-nav">
       <nav class="md-footer-nav__inner md-grid">
         
-          <a href="../getting-started-aws/" title="Getting started aws" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+          <a href="../advanced-configuration/" title="Advanced configuration" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
             <div class="md-flex__cell md-flex__cell--shrink">
               <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
             </div>
@@ -535,19 +639,19 @@ in the <code>.pfx</code> format:
                 <span class="md-footer-nav__direction">
                   Previous
                 </span>
-                Getting started aws
+                Advanced configuration
               </span>
             </div>
           </a>
         
         
-          <a href="../getting-started-gcp/" title="Getting started gcp" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+          <a href="../cleaning-up/" title="Cleaning up" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
             <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
               <span class="md-flex__ellipsis">
                 <span class="md-footer-nav__direction">
                   Next
                 </span>
-                Getting started gcp
+                Cleaning up
               </span>
             </div>
             <div class="md-flex__cell md-flex__cell--shrink">

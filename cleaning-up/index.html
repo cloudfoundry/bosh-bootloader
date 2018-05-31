@@ -36,7 +36,7 @@
     
     
       
-        <title>Cleaning up - BBL</title>
+        <title>Cleaning Up - BBL</title>
       
     
     
@@ -74,6 +74,10 @@
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="search" autocomplete="off">
     <label class="md-overlay" data-md-component="overlay" for="drawer"></label>
     
+      <a href="#cleaning-up" tabindex="1" class="md-skip">
+        Skip to content
+      </a>
+    
     
       <header class="md-header" data-md-component="header">
   <nav class="md-header-nav md-grid">
@@ -96,7 +100,7 @@
                 BBL
               </span>
               <span class="md-header-nav__topic">
-                Cleaning up
+                Cleaning Up
               </span>
             
           
@@ -191,8 +195,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../cf-load-balancers/" title="CF Load Balancers" class="md-nav__link">
-      CF Load Balancers
+    <a href="../cf-lbs/" title="Cloud Foundry Load Balancers" class="md-nav__link">
+      Cloud Foundry Load Balancers
     </a>
   </li>
 
@@ -208,11 +212,61 @@
     
     <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="toc">
     
+      
     
-    <a href="./" title="Cleaning up" class="md-nav__link md-nav__link--active">
-      Cleaning up
+    
+      <label class="md-nav__link md-nav__link--active" for="toc">
+        Cleaning Up
+      </label>
+    
+    <a href="./" title="Cleaning Up" class="md-nav__link md-nav__link--active">
+      Cleaning Up
     </a>
     
+      
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#bbl-down" title="bbl down" class="md-nav__link">
+    bbl down
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#bbl-cleanup-leftovers" title="bbl cleanup-leftovers" class="md-nav__link">
+    bbl cleanup-leftovers
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+    
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../cloudfoundry/" title="Cloudfoundry" class="md-nav__link">
+      Cloudfoundry
+    </a>
   </li>
 
     
@@ -236,6 +290,18 @@
   <li class="md-nav__item">
     <a href="../credhub/" title="Credhub" class="md-nav__link">
       Credhub
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../customization/" title="Customization" class="md-nav__link">
+      Customization
     </a>
   </li>
 
@@ -330,8 +396,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../migration-guide/" title="Migration guide" class="md-nav__link">
-      Migration guide
+    <a href="../upgrade/" title="Upgrade" class="md-nav__link">
+      Upgrade
     </a>
   </li>
 
@@ -343,39 +409,98 @@
               </div>
             
             
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#bbl-down" title="bbl down" class="md-nav__link">
+    bbl down
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#bbl-cleanup-leftovers" title="bbl cleanup-leftovers" class="md-nav__link">
+    bbl cleanup-leftovers
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
           
           <div class="md-content">
             <article class="md-content__inner md-typeset">
               
                 
                 
-                  <h1>Cleaning up</h1>
-                
-                <p>= Cleaning up</p>
-<p>In addition to creating resources for deploying BOSH, bbl has two subcommands for assisting you in cleaning up an environment after you are done with it: <code>bbl down</code> and <code>bbl cleanup-leftovers</code></p>
-<p>== bbl down
-If you have the state file for a working environment, then bbl will destroy everything it has created. As a safety precaution, BBL will not delete the environment if there are running VMs deployed by the BOSH director</p>
-<pre><code>
+                <h1 id="cleaning-up">Cleaning Up</h1>
+<p>In addition to creating resources for deploying BOSH, bbl has two subcommands
+for assisting you in cleaning up an environment after you are done with it:
+<code>bbl down</code> and <code>bbl cleanup-leftovers</code>.</p>
+<h2 id="bbl-down">bbl down</h2>
+<p>If you have the state file for a working environment, then bbl will destroy
+everything it has created.</p>
+<p>As a safety precaution, bbl will not delete the
+environment if there are running VMs deployed by the BOSH director.</p>
+<pre><code>bbl down
 </code></pre>
 
-<p>== bbl cleanup-leftovers
-Sometimes, <code>bbl down</code> isn't enough to do the job. Perhaps you are in one of these situations:
-<em> bbl down failed during deletion and lost enough information to 
-</em> The statefile is on a computer that you no longer have access to
-<em> You created some resources outside outside of BBL but are sure you want to nuke them
-</em> You are running BBL's integration tests and they failed, leaving a half-created environment</p>
-<p>To assist with these situations, we have incorporated the CLI utility <a href="https://github.com/genevieve/leftovers">leftovers</a> as a subcommand in bbl. You can think of <code>bbl cleanup-leftovers</code> as kind of like <code>bbl down --force</code>, however, <code>cleanup-leftovers</code> doesn't care if you have a state file at all, it will delete resources according to a filter. The filter is very important! If <code>--filter</code> is omitted, BBL will begin to delete <em>ALL</em> of your IaaS account's resources.</p>
-<p>For example, if you had a bbl environment with a name autogenerated by bbl you could supply part of the name to delete it:</p>
-<pre><code>export BBL_AWS_SECRET_ACCESS_KEY=foo
+<h2 id="bbl-cleanup-leftovers">bbl cleanup-leftovers</h2>
+<p>Sometimes, <code>bbl down</code> isn't enough to do the job.
+Perhaps you are in one of these situations:</p>
+<ul>
+<li><code>bbl down</code> failed during deletion and lost information.</li>
+<li>The <code>bbl-state-dir</code> is on a computer that you no longer have access to.</li>
+<li>You created resources outside of bbl that you want to nuke.</li>
+<li>You are running bbl's acceptance tests and they failed, orphaning IaaS resources.</li>
+</ul>
+<p>To assist with these situations, we have incorporated the
+cli utility <a href="https://github.com/genevieve/leftovers">leftovers</a> as a
+subcommand in bbl.</p>
+<p>You can think of <code>bbl cleanup-leftovers</code> as kind of like
+<code>bbl down --force</code>, but without the need for a <code>bbl-state-dir</code>.</p>
+<p><strong>The filter is very important!</strong></p>
+<p>If <code>--filter</code> is omitted, bbl will begin to delete <em>ALL</em> of your IaaS account's resources.</p>
+<p>For example, if you had a bbl environment with a name autogenerated by bbl
+you could supply part of the name to delete it:</p>
+<pre><code>export BBL_IAAS=aws
+export BBL_AWS_SECRET_ACCESS_KEY=foo
 export BBL_AWS_ACCESS_KEY_ID=bar
-bbl cleanup-leftovers --filter malawi --iaas aws
+
+bbl cleanup-leftovers --filter malawi
 </code></pre>
 
-<p>This will begin to delete each resource with a name or tag matching "malawi", confirming each one before deletion. Use caution with your filters, because you may have more than one environment with the same "Lake Name". To delete all resources with that name without needing to confirming each one individually use <code>--no-confim</code>:</p>
-<pre><code>bbl cleanup-leftovers --filter malawi --iaas aws --no-confirm
+<p>This will begin to delete each resource with a name or tag matching "malawi",
+confirming each one before deletion.</p>
+<p>Use caution with your filters, because you may have more than one environment
+with the same "Lake Name". To delete all resources with that name without
+needing to confirming each one individually use <code>--no-confim</code>:</p>
+<pre><code>bbl cleanup-leftovers --filter malawi --no-confirm
 </code></pre>
 
-<p><code>bbl cleanup-leftovers</code> will do the best it can to delete in an order such that all resources can be deleted without dependency errors. However, running cleanup-leftovers repeatedly may be enough to resolve dependency errors.</p>
+<p><code>bbl cleanup-leftovers</code> will do the best it can to delete in an order
+such that all resources can be deleted without dependency errors.</p>
+<p>However, <strong>running cleanup-leftovers repeatedly</strong> may be enough to resolve dependency errors.</p>
                 
                   
                 
@@ -396,7 +521,7 @@ bbl cleanup-leftovers --filter malawi --iaas aws
     <div class="md-footer-nav">
       <nav class="md-footer-nav__inner md-grid">
         
-          <a href="../cf-load-balancers/" title="CF Load Balancers" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+          <a href="../cf-lbs/" title="Cloud Foundry Load Balancers" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
             <div class="md-flex__cell md-flex__cell--shrink">
               <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
             </div>
@@ -405,19 +530,19 @@ bbl cleanup-leftovers --filter malawi --iaas aws
                 <span class="md-footer-nav__direction">
                   Previous
                 </span>
-                CF Load Balancers
+                Cloud Foundry Load Balancers
               </span>
             </div>
           </a>
         
         
-          <a href="../concourse/" title="Concourse" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+          <a href="../cloudfoundry/" title="Cloudfoundry" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
             <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
               <span class="md-flex__ellipsis">
                 <span class="md-footer-nav__direction">
                   Next
                 </span>
-                Concourse
+                Cloudfoundry
               </span>
             </div>
             <div class="md-flex__cell md-flex__cell--shrink">

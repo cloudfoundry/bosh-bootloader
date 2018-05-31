@@ -36,7 +36,7 @@
     
     
       
-        <title>Getting started gcp - BBL</title>
+        <title>Getting Started: GCP - BBL</title>
       
     
     
@@ -100,7 +100,7 @@
                 BBL
               </span>
               <span class="md-header-nav__topic">
-                Getting started gcp
+                Getting Started: GCP
               </span>
             
           
@@ -195,8 +195,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../cf-load-balancers/" title="CF Load Balancers" class="md-nav__link">
-      CF Load Balancers
+    <a href="../cf-lbs/" title="Cloud Foundry Load Balancers" class="md-nav__link">
+      Cloud Foundry Load Balancers
     </a>
   </li>
 
@@ -207,8 +207,20 @@
 
 
   <li class="md-nav__item">
-    <a href="../cleaning-up/" title="Cleaning up" class="md-nav__link">
-      Cleaning up
+    <a href="../cleaning-up/" title="Cleaning Up" class="md-nav__link">
+      Cleaning Up
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../cloudfoundry/" title="Cloudfoundry" class="md-nav__link">
+      Cloudfoundry
     </a>
   </li>
 
@@ -243,6 +255,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../customization/" title="Customizing your infrastructure and director" class="md-nav__link">
+      Customizing your infrastructure and director
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
     <a href="../getting-started-aws/" title="Getting started aws" class="md-nav__link">
       Getting started aws
     </a>
@@ -255,8 +279,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../getting-started-azure/" title="Getting started azure" class="md-nav__link">
-      Getting started azure
+    <a href="../getting-started-azure/" title="Getting Started: Microsoft Azure" class="md-nav__link">
+      Getting Started: Microsoft Azure
     </a>
   </li>
 
@@ -276,11 +300,11 @@
     
     
       <label class="md-nav__link md-nav__link--active" for="toc">
-        Getting started gcp
+        Getting Started: GCP
       </label>
     
-    <a href="./" title="Getting started gcp" class="md-nav__link md-nav__link--active">
-      Getting started gcp
+    <a href="./" title="Getting Started: GCP" class="md-nav__link md-nav__link--active">
+      Getting Started: GCP
     </a>
     
       
@@ -294,8 +318,22 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#creating-a-service-account" title="Creating a service account" class="md-nav__link">
-    Creating a service account
+  <a href="#create-a-service-account" title="Create a Service Account" class="md-nav__link">
+    Create a Service Account
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#infrastructure-jumpbox-director" title="Infrastructure, Jumpbox, Director" class="md-nav__link">
+    Infrastructure, Jumpbox, Director
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cloud-foundry-load-balancers" title="+ Cloud Foundry Load Balancers" class="md-nav__link">
+    + Cloud Foundry Load Balancers
   </a>
   
 </li>
@@ -365,8 +403,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../migration-guide/" title="Migration guide" class="md-nav__link">
-      Migration guide
+    <a href="../upgrade/" title="Upgrade" class="md-nav__link">
+      Upgrade
     </a>
   </li>
 
@@ -392,8 +430,22 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#creating-a-service-account" title="Creating a service account" class="md-nav__link">
-    Creating a service account
+  <a href="#create-a-service-account" title="Create a Service Account" class="md-nav__link">
+    Create a Service Account
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#infrastructure-jumpbox-director" title="Infrastructure, Jumpbox, Director" class="md-nav__link">
+    Infrastructure, Jumpbox, Director
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cloud-foundry-load-balancers" title="+ Cloud Foundry Load Balancers" class="md-nav__link">
+    + Cloud Foundry Load Balancers
   </a>
   
 </li>
@@ -415,8 +467,8 @@
               
                 
                 
-                <h1 id="getting-started-gcp">Getting started gcp</h1>
-<h2 id="creating-a-service-account">Creating a service account</h2>
+                <h1 id="getting-started-gcp">Getting Started: GCP</h1>
+<h2 id="create-a-service-account">Create a Service Account</h2>
 <p>In order for <code>bbl</code> to interact with GCP, a service account must be created.</p>
 <pre><code>gcloud iam service-accounts create &lt;service account name&gt;
 
@@ -424,6 +476,23 @@ gcloud iam service-accounts keys create --iam-account='&lt;service account name&
 
 gcloud projects add-iam-policy-binding &lt;project id&gt; --member='serviceAccount:&lt;service account name&gt;@&lt;project id&gt;.iam.gserviceaccount.com' --role='roles/editor'
 </code></pre>
+
+<h2 id="infrastructure-jumpbox-director">Infrastructure, Jumpbox, Director</h2>
+<ol>
+<li>Export environment variables.
+    <code>export BBL_IAAS=gcp
+    export BBL_GCP_REGION=
+    export BBL_GCP_SERVICE_ACCOUNT_KEY=</code></li>
+<li>Create infrastructure, jumpbox, and bosh director.
+    <code>bbl up</code></li>
+</ol>
+<h2 id="cloud-foundry-load-balancers">+ Cloud Foundry Load Balancers</h2>
+<p>To get all of the above plus load balancers for Cloud Foundry:</p>
+<ol>
+<li>To <code>bbl  plan</code> or <code>bbl up</code> you can provide a cert, key, and (optionally) a domain:
+    <code>bbl plan --lb-type cf --lb-cert $CERT --lb-key $KEY --lb-domain $DOMAIN
+    bbl up</code></li>
+</ol>
                 
                   
                 
@@ -444,7 +513,7 @@ gcloud projects add-iam-policy-binding &lt;project id&gt; --member='serviceAccou
     <div class="md-footer-nav">
       <nav class="md-footer-nav__inner md-grid">
         
-          <a href="../getting-started-azure/" title="Getting started azure" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+          <a href="../getting-started-azure/" title="Getting Started: Microsoft Azure" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
             <div class="md-flex__cell md-flex__cell--shrink">
               <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
             </div>
@@ -453,7 +522,7 @@ gcloud projects add-iam-policy-binding &lt;project id&gt; --member='serviceAccou
                 <span class="md-footer-nav__direction">
                   Previous
                 </span>
-                Getting started azure
+                Getting Started: Microsoft Azure
               </span>
             </div>
           </a>

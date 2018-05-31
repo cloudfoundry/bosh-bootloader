@@ -36,7 +36,7 @@
     
     
       
-        <title>Migration Guide - BBL</title>
+        <title>Cloudfoundry - BBL</title>
       
     
     
@@ -74,7 +74,7 @@
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="search" autocomplete="off">
     <label class="md-overlay" data-md-component="overlay" for="drawer"></label>
     
-      <a href="#migration-guide" tabindex="1" class="md-skip">
+      <a href="#generic-steps-for-cloud-foundry-deployment" tabindex="1" class="md-skip">
         Skip to content
       </a>
     
@@ -100,7 +100,7 @@
                 BBL
               </span>
               <span class="md-header-nav__topic">
-                Migration Guide
+                Cloudfoundry
               </span>
             
           
@@ -195,8 +195,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../cf-load-balancers/" title="CF Load Balancers" class="md-nav__link">
-      CF Load Balancers
+    <a href="../cf-lbs/" title="Cloud Foundry Load Balancers" class="md-nav__link">
+      Cloud Foundry Load Balancers
     </a>
   </li>
 
@@ -207,9 +207,55 @@
 
 
   <li class="md-nav__item">
-    <a href="../cleaning-up/" title="Cleaning up" class="md-nav__link">
-      Cleaning up
+    <a href="../cleaning-up/" title="Cleaning Up" class="md-nav__link">
+      Cleaning Up
     </a>
+  </li>
+
+    
+      
+      
+      
+
+  
+
+
+  <li class="md-nav__item md-nav__item--active">
+    
+    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="toc">
+    
+    
+      <label class="md-nav__link md-nav__link--active" for="toc">
+        Cloudfoundry
+      </label>
+    
+    <a href="./" title="Cloudfoundry" class="md-nav__link md-nav__link--active">
+      Cloudfoundry
+    </a>
+    
+      
+<nav class="md-nav md-nav--secondary">
+  
+  
+  
+    <label class="md-nav__title" for="toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#generic-steps-for-cloud-foundry-deployment" title="Generic Steps for Cloud Foundry Deployment" class="md-nav__link">
+    Generic Steps for Cloud Foundry Deployment
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+    
   </li>
 
     
@@ -231,8 +277,20 @@
 
 
   <li class="md-nav__item">
-    <a href="../credhub/" title="Accessing the BOSH director credhub" class="md-nav__link">
-      Accessing the BOSH director credhub
+    <a href="../credhub/" title="Credhub" class="md-nav__link">
+      Credhub
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../customization/" title="Customization" class="md-nav__link">
+      Customization
     </a>
   </li>
 
@@ -325,49 +383,11 @@
       
       
 
-  
 
-
-  <li class="md-nav__item md-nav__item--active">
-    
-    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="toc">
-    
-      
-    
-    
-      <label class="md-nav__link md-nav__link--active" for="toc">
-        Migration Guide
-      </label>
-    
-    <a href="./" title="Migration Guide" class="md-nav__link md-nav__link--active">
-      Migration Guide
+  <li class="md-nav__item">
+    <a href="../upgrade/" title="Upgrade" class="md-nav__link">
+      Upgrade
     </a>
-    
-      
-<nav class="md-nav md-nav--secondary">
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="toc">Table of contents</label>
-    <ul class="md-nav__list" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#bbl-v5-bbl-v6" title="bbl v5 -&gt; bbl v6" class="md-nav__link">
-    bbl v5 -&gt; bbl v6
-  </a>
-  
-</li>
-      
-      
-      
-      
-      
-    </ul>
-  
-</nav>
-    
   </li>
 
     
@@ -385,15 +405,13 @@
 <nav class="md-nav md-nav--secondary">
   
   
-    
-  
   
     <label class="md-nav__title" for="toc">Table of contents</label>
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#bbl-v5-bbl-v6" title="bbl v5 -&gt; bbl v6" class="md-nav__link">
-    bbl v5 -&gt; bbl v6
+  <a href="#generic-steps-for-cloud-foundry-deployment" title="Generic Steps for Cloud Foundry Deployment" class="md-nav__link">
+    Generic Steps for Cloud Foundry Deployment
   </a>
   
 </li>
@@ -415,23 +433,21 @@
               
                 
                 
-                <h1 id="migration-guide">Migration Guide</h1>
-<h2 id="bbl-v5-bbl-v6">bbl v5 -&gt; bbl v6</h2>
-<p>Known issue: trying to destroy a <code>bbl5</code> environment with <code>bbl6</code> requires you to
-<code>bbl6 plan &amp;&amp; bbl6 up</code> against that state directory.</p>
-<p>This is due to a PR released in <code>bbl6</code> that forwarded terraform outputs directly
-through to the bosh deployment vars files for <code>create-env</code> and <code>delete-env</code>.</p>
-<p>By running <code>bbl6 up</code>, the terraform outputs are updated and so too are the
-bosh deployment vars files.</p>
-<pre><code>bbl5 up
-
-# some time passes
-
-bbl6 plan
-bbl6 up
-
-bbl6 destroy
-</code></pre>
+                  <h1>Cloudfoundry</h1>
+                
+                <h2 id="generic-steps-for-cloud-foundry-deployment">Generic Steps for Cloud Foundry Deployment</h2>
+<ol>
+<li>
+<p>Create an environment and target the BOSH director with <code>eval "$(bbl print-env)"</code></p>
+</li>
+<li>
+<p><code>bbl plan --lb-type cf --lb-cert cert --lb-key key &amp;&amp; bbl up</code> with a certificate and key as flags or environment variables.
+(Continue to provide the IaaS credentials as flags or environment variables.)</p>
+</li>
+<li>
+<p><code>bosh deploy cf-deployment.yml -o operations/&lt;MY IaaS&gt;</code> using the <a href="https://github.com/cloudfoundry/cf-deployment">CF deployment manifest!</a></p>
+</li>
+</ol>
                 
                   
                 
@@ -452,7 +468,7 @@ bbl6 destroy
     <div class="md-footer-nav">
       <nav class="md-footer-nav__inner md-grid">
         
-          <a href="../known-issues/" title="Known issues" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+          <a href="../cleaning-up/" title="Cleaning Up" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
             <div class="md-flex__cell md-flex__cell--shrink">
               <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
             </div>
@@ -461,11 +477,25 @@ bbl6 destroy
                 <span class="md-footer-nav__direction">
                   Previous
                 </span>
-                Known issues
+                Cleaning Up
               </span>
             </div>
           </a>
         
+        
+          <a href="../concourse/" title="Concourse" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Next
+                </span>
+                Concourse
+              </span>
+            </div>
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-forward md-footer-nav__button"></i>
+            </div>
+          </a>
         
       </nav>
     </div>
