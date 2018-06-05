@@ -189,6 +189,14 @@ func copyFlagToState(source string, sink *string) {
 	}
 }
 
+func copyFlagToStateWithDefault(source string, sink *string, def string) {
+	if source == "" {
+		*sink = def
+	} else {
+		*sink = source
+	}
+}
+
 func (c Config) updateOpenStackState(globalFlags globalFlags, state storage.State) (storage.State, error) {
 	copyFlagToState(globalFlags.OpenStackInternalCidr, &state.OpenStack.InternalCidr)
 	copyFlagToState(globalFlags.OpenStackExternalIP, &state.OpenStack.ExternalIP)
@@ -236,9 +244,9 @@ func (c Config) updateVSphereState(globalFlags globalFlags, state storage.State)
 	copyFlagToState(globalFlags.VSphereNetwork, &state.VSphere.Network)
 	copyFlagToState(globalFlags.VSphereVCenterDS, &state.VSphere.VCenterDS)
 	copyFlagToState(globalFlags.VSphereSubnet, &state.VSphere.Subnet)
-	copyFlagToState(globalFlags.VSphereVCenterDisks, &state.VSphere.VCenterDisks)
-	copyFlagToState(globalFlags.VSphereVCenterTemplates, &state.VSphere.VCenterTemplates)
-	copyFlagToState(globalFlags.VSphereVCenterVMs, &state.VSphere.VCenterVMs)
+	copyFlagToStateWithDefault(globalFlags.VSphereVCenterDisks, &state.VSphere.VCenterDisks, globalFlags.VSphereNetwork)
+	copyFlagToStateWithDefault(globalFlags.VSphereVCenterTemplates, &state.VSphere.VCenterTemplates, fmt.Sprintf("%s_templates", globalFlags.VSphereNetwork))
+	copyFlagToStateWithDefault(globalFlags.VSphereVCenterVMs, &state.VSphere.VCenterVMs, fmt.Sprintf("%s_vms", globalFlags.VSphereNetwork))
 
 	return state, nil
 }
