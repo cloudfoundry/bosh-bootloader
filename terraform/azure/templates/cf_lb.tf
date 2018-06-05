@@ -7,14 +7,14 @@ variable "pfx_password" {}
 resource "azurerm_subnet" "cf-sn" {
   name                 = "${var.env_id}-cf-sn"
   address_prefix       = "${cidrsubnet(var.network_cidr, 8, 1)}"
-  resource_group_name  = "${var.resource_group_name == "" ? azurerm_resource_group.bosh.*.name[0] : var.resource_group_name}"
-  virtual_network_name = "${var.vnet_name == "" ? azurerm_virtual_network.bosh.*.name[0] : var.vnet_name}"
+  resource_group_name  = "${var.resource_group_name == "" ? join("", azurerm_resource_group.bosh.*.name) : var.resource_group_name}"
+  virtual_network_name = "${var.vnet_name == "" ? join("", azurerm_virtual_network.bosh.*.name) : var.vnet_name}"
 }
 
 resource "azurerm_network_security_group" "cf" {
   name                = "${var.env_id}-cf"
   location            = "${var.region}"
-  resource_group_name = "${var.resource_group_name == "" ? azurerm_resource_group.bosh.*.name[0] : var.resource_group_name}"
+  resource_group_name = "${var.resource_group_name == "" ? join("", azurerm_resource_group.bosh.*.name) : var.resource_group_name}"
 
   tags {
     environment = "${var.env_id}"
@@ -31,7 +31,7 @@ resource "azurerm_network_security_rule" "cf-http" {
   destination_port_range      = "80"
   source_address_prefix       = "*"
   destination_address_prefix  = "*"
-  resource_group_name         = "${var.resource_group_name == "" ? azurerm_resource_group.bosh.*.name[0] : var.resource_group_name}"
+  resource_group_name         = "${var.resource_group_name == "" ? join("", azurerm_resource_group.bosh.*.name) : var.resource_group_name}"
   network_security_group_name = "${azurerm_network_security_group.cf.name}"
 }
 
@@ -45,7 +45,7 @@ resource "azurerm_network_security_rule" "cf-https" {
   destination_port_range      = "443"
   source_address_prefix       = "*"
   destination_address_prefix  = "*"
-  resource_group_name         = "${var.resource_group_name == "" ? azurerm_resource_group.bosh.*.name[0] : var.resource_group_name}"
+  resource_group_name         = "${var.resource_group_name == "" ? join("", azurerm_resource_group.bosh.*.name) : var.resource_group_name}"
   network_security_group_name = "${azurerm_network_security_group.cf.name}"
 }
 
@@ -59,20 +59,20 @@ resource "azurerm_network_security_rule" "cf-log" {
   destination_port_range      = "4443"
   source_address_prefix       = "*"
   destination_address_prefix  = "*"
-  resource_group_name         = "${var.resource_group_name == "" ? azurerm_resource_group.bosh.*.name[0] : var.resource_group_name}"
+  resource_group_name         = "${var.resource_group_name == "" ? join("", azurerm_resource_group.bosh.*.name) : var.resource_group_name}"
   network_security_group_name = "${azurerm_network_security_group.cf.name}"
 }
 
 resource "azurerm_public_ip" "cf" {
   name                         = "${var.env_id}-cf-lb-ip"
   location                     = "${var.region}"
-  resource_group_name          = "${var.resource_group_name == "" ? azurerm_resource_group.bosh.*.name[0] : var.resource_group_name}"
+  resource_group_name          = "${var.resource_group_name == "" ? join("", azurerm_resource_group.bosh.*.name) : var.resource_group_name}"
   public_ip_address_allocation = "dynamic"
 }
 
 resource "azurerm_application_gateway" "cf" {
   name                = "${var.env_id}-app-gateway"
-  resource_group_name = "${var.resource_group_name == "" ? azurerm_resource_group.bosh.*.name[0] : var.resource_group_name}"
+  resource_group_name = "${var.resource_group_name == "" ? join("", azurerm_resource_group.bosh.*.name) : var.resource_group_name}"
   location            = "${var.region}"
 
   sku {
@@ -122,7 +122,7 @@ resource "azurerm_application_gateway" "cf" {
   }
 
   backend_http_settings {
-    name                  = "${var.vnet_name == "" ? azurerm_virtual_network.bosh.*.name[0] : var.vnet_name}-be-htst"
+    name                  = "${var.vnet_name == "" ? join("", azurerm_virtual_network.bosh.*.name) : var.vnet_name}-be-htst"
     cookie_based_affinity = "Disabled"
     port                  = 80
     protocol              = "Http"
@@ -137,14 +137,14 @@ resource "azurerm_application_gateway" "cf" {
   }
 
   http_listener {
-    name                           = "${var.vnet_name == "" ? azurerm_virtual_network.bosh.*.name[0] : var.vnet_name}-http-lstn"
+    name                           = "${var.vnet_name == "" ? join("", azurerm_virtual_network.bosh.*.name) : var.vnet_name}-http-lstn"
     frontend_ip_configuration_name = "${var.env_id}-cf-frontend-ip-configuration"
     frontend_port_name             = "frontendporthttp"
     protocol                       = "Http"
   }
 
   http_listener {
-    name                           = "${var.vnet_name == "" ? azurerm_virtual_network.bosh.*.name[0] : var.vnet_name}-https-lstn"
+    name                           = "${var.vnet_name == "" ? join("", azurerm_virtual_network.bosh.*.name) : var.vnet_name}-https-lstn"
     frontend_ip_configuration_name = "${var.env_id}-cf-frontend-ip-configuration"
     frontend_port_name             = "frontendporthttps"
     protocol                       = "Https"
@@ -152,7 +152,7 @@ resource "azurerm_application_gateway" "cf" {
   }
 
   http_listener {
-    name                           = "${var.vnet_name == "" ? azurerm_virtual_network.bosh.*.name[0] : var.vnet_name}-logs-lstn"
+    name                           = "${var.vnet_name == "" ? join("", azurerm_virtual_network.bosh.*.name) : var.vnet_name}-logs-lstn"
     frontend_ip_configuration_name = "${var.env_id}-cf-frontend-ip-configuration"
     frontend_port_name             = "frontendportlogs"
     protocol                       = "Https"
@@ -160,27 +160,27 @@ resource "azurerm_application_gateway" "cf" {
   }
 
   request_routing_rule {
-    name                       = "${var.vnet_name == "" ? azurerm_virtual_network.bosh.*.name[0] : var.vnet_name}-http-rule"
+    name                       = "${var.vnet_name == "" ? join("", azurerm_virtual_network.bosh.*.name) : var.vnet_name}-http-rule"
     rule_type                  = "Basic"
-    http_listener_name         = "${var.vnet_name == "" ? azurerm_virtual_network.bosh.*.name[0] : var.vnet_name}-http-lstn"
+    http_listener_name         = "${var.vnet_name == "" ? join("", azurerm_virtual_network.bosh.*.name) : var.vnet_name}-http-lstn"
     backend_address_pool_name  = "${var.env_id}-cf-backend-address-pool"
-    backend_http_settings_name = "${var.vnet_name == "" ? azurerm_virtual_network.bosh.*.name[0] : var.vnet_name}-be-htst"
+    backend_http_settings_name = "${var.vnet_name == "" ? join("", azurerm_virtual_network.bosh.*.name) : var.vnet_name}-be-htst"
   }
 
   request_routing_rule {
-    name                       = "${var.vnet_name == "" ? azurerm_virtual_network.bosh.*.name[0] : var.vnet_name}-https-rule"
+    name                       = "${var.vnet_name == "" ? join("", azurerm_virtual_network.bosh.*.name) : var.vnet_name}-https-rule"
     rule_type                  = "Basic"
-    http_listener_name         = "${var.vnet_name == "" ? azurerm_virtual_network.bosh.*.name[0] : var.vnet_name}-https-lstn"
+    http_listener_name         = "${var.vnet_name == "" ? join("", azurerm_virtual_network.bosh.*.name) : var.vnet_name}-https-lstn"
     backend_address_pool_name  = "${var.env_id}-cf-backend-address-pool"
-    backend_http_settings_name = "${var.vnet_name == "" ? azurerm_virtual_network.bosh.*.name[0] : var.vnet_name}-be-htst"
+    backend_http_settings_name = "${var.vnet_name == "" ? join("", azurerm_virtual_network.bosh.*.name) : var.vnet_name}-be-htst"
   }
 
   request_routing_rule {
-    name                       = "${var.vnet_name == "" ? azurerm_virtual_network.bosh.*.name[0] : var.vnet_name}-logs-rule"
+    name                       = "${var.vnet_name == "" ? join("", azurerm_virtual_network.bosh.*.name) : var.vnet_name}-logs-rule"
     rule_type                  = "Basic"
-    http_listener_name         = "${var.vnet_name == "" ? azurerm_virtual_network.bosh.*.name[0] : var.vnet_name}-logs-lstn"
+    http_listener_name         = "${var.vnet_name == "" ? join("", azurerm_virtual_network.bosh.*.name) : var.vnet_name}-logs-lstn"
     backend_address_pool_name  = "${var.env_id}-cf-backend-address-pool"
-    backend_http_settings_name = "${var.vnet_name == "" ? azurerm_virtual_network.bosh.*.name[0] : var.vnet_name}-be-htst"
+    backend_http_settings_name = "${var.vnet_name == "" ? join("", azurerm_virtual_network.bosh.*.name) : var.vnet_name}-be-htst"
   }
 }
 

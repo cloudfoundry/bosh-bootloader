@@ -11,7 +11,7 @@ resource "azurerm_resource_group" "bosh" {
 resource "azurerm_public_ip" "bosh" {
   name                         = "${var.env_id}-bosh"
   location                     = "${var.region}"
-  resource_group_name          = "${var.resource_group_name == "" ? azurerm_resource_group.bosh.*.name[0] : var.resource_group_name}"
+  resource_group_name          = "${var.resource_group_name == "" ? join("", azurerm_resource_group.bosh.*.name) : var.resource_group_name}"
   public_ip_address_allocation = "static"
 
   tags {

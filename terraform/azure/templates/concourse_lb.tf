@@ -1,7 +1,7 @@
 resource "azurerm_public_ip" "concourse" {
   name                         = "${var.env_id}-concourse-lb"
   location                     = "${var.region}"
-  resource_group_name          = "${var.resource_group_name == "" ? azurerm_resource_group.bosh.*.name[0] : var.resource_group_name}"
+  resource_group_name          = "${var.resource_group_name == "" ? join("", azurerm_resource_group.bosh.*.name) : var.resource_group_name}"
   public_ip_address_allocation = "static"
   sku                          = "Standard"
 
@@ -12,7 +12,7 @@ resource "azurerm_public_ip" "concourse" {
 
 resource "azurerm_lb" "concourse" {
   name                = "${var.env_id}-concourse-lb"
-  resource_group_name = "${var.resource_group_name == "" ? azurerm_resource_group.bosh.*.name[0] : var.resource_group_name}"
+  resource_group_name = "${var.resource_group_name == "" ? join("", azurerm_resource_group.bosh.*.name) : var.resource_group_name}"
   location            = "${var.region}"
   sku                 = "Standard"
 
@@ -24,7 +24,7 @@ resource "azurerm_lb" "concourse" {
 
 resource "azurerm_lb_rule" "concourse-https" {
   name                = "${var.env_id}-concourse-https"
-  resource_group_name = "${var.resource_group_name == "" ? azurerm_resource_group.bosh.*.name[0] : var.resource_group_name}"
+  resource_group_name = "${var.resource_group_name == "" ? join("", azurerm_resource_group.bosh.*.name) : var.resource_group_name}"
   loadbalancer_id     = "${azurerm_lb.concourse.id}"
 
   frontend_ip_configuration_name = "${var.env_id}-concourse-frontend-ip-configuration"
@@ -38,7 +38,7 @@ resource "azurerm_lb_rule" "concourse-https" {
 
 resource "azurerm_lb_probe" "concourse-https" {
   name                = "${var.env_id}-concourse-https"
-  resource_group_name = "${var.resource_group_name == "" ? azurerm_resource_group.bosh.*.name[0] : var.resource_group_name}"
+  resource_group_name = "${var.resource_group_name == "" ? join("", azurerm_resource_group.bosh.*.name) : var.resource_group_name}"
   loadbalancer_id     = "${azurerm_lb.concourse.id}"
   protocol            = "TCP"
   port                = 443
@@ -46,7 +46,7 @@ resource "azurerm_lb_probe" "concourse-https" {
 
 resource "azurerm_lb_rule" "concourse-http" {
   name                = "${var.env_id}-concourse-http"
-  resource_group_name = "${var.resource_group_name == "" ? azurerm_resource_group.bosh.*.name[0] : var.resource_group_name}"
+  resource_group_name = "${var.resource_group_name == "" ? join("", azurerm_resource_group.bosh.*.name) : var.resource_group_name}"
   loadbalancer_id     = "${azurerm_lb.concourse.id}"
 
   frontend_ip_configuration_name = "${var.env_id}-concourse-frontend-ip-configuration"
@@ -60,7 +60,7 @@ resource "azurerm_lb_rule" "concourse-http" {
 
 resource "azurerm_lb_probe" "concourse-http" {
   name                = "${var.env_id}-concourse-http"
-  resource_group_name = "${var.resource_group_name == "" ? azurerm_resource_group.bosh.*.name[0] : var.resource_group_name}"
+  resource_group_name = "${var.resource_group_name == "" ? join("", azurerm_resource_group.bosh.*.name) : var.resource_group_name}"
   loadbalancer_id     = "${azurerm_lb.concourse.id}"
   protocol            = "TCP"
   port                = 80
@@ -76,7 +76,7 @@ resource "azurerm_network_security_rule" "concourse-http" {
   destination_port_range      = "80"
   source_address_prefix       = "*"
   destination_address_prefix  = "*"
-  resource_group_name         = "${var.resource_group_name == "" ? azurerm_resource_group.bosh.*.name[0] : var.resource_group_name}"
+  resource_group_name         = "${var.resource_group_name == "" ? join("", azurerm_resource_group.bosh.*.name) : var.resource_group_name}"
   network_security_group_name = "${azurerm_network_security_group.bosh.name}"
 }
 
@@ -90,13 +90,13 @@ resource "azurerm_network_security_rule" "concourse-https" {
   destination_port_range      = "443"
   source_address_prefix       = "*"
   destination_address_prefix  = "*"
-  resource_group_name         = "${var.resource_group_name == "" ? azurerm_resource_group.bosh.*.name[0] : var.resource_group_name}"
+  resource_group_name         = "${var.resource_group_name == "" ? join("", azurerm_resource_group.bosh.*.name) : var.resource_group_name}"
   network_security_group_name = "${azurerm_network_security_group.bosh.name}"
 }
 
 resource "azurerm_lb_backend_address_pool" "concourse" {
   name                = "${var.env_id}-concourse-backend-pool"
-  resource_group_name = "${var.resource_group_name == "" ? azurerm_resource_group.bosh.*.name[0] : var.resource_group_name}"
+  resource_group_name = "${var.resource_group_name == "" ? join("", azurerm_resource_group.bosh.*.name) : var.resource_group_name}"
   loadbalancer_id     = "${azurerm_lb.concourse.id}"
 }
 
