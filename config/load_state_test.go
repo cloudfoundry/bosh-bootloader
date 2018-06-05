@@ -618,6 +618,36 @@ var _ = Describe("LoadState", func() {
 						Expect(appConfig.Command).To(Equal("up"))
 					})
 				})
+
+				Context("when configuration is passsed in by flags missing templates, disks and vms folders", func() {
+					var args []string
+					BeforeEach(func() {
+						args = []string{
+							"bbl",
+							"--iaas", "vsphere",
+							"--vsphere-vcenter-user", "user",
+							"--vsphere-vcenter-password", "password",
+							"--vsphere-vcenter-ip", "ip",
+							"--vsphere-vcenter-dc", "dc",
+							"--vsphere-vcenter-cluster", "cluster",
+							"--vsphere-vcenter-rp", "rp",
+							"--vsphere-network", "network",
+							"--vsphere-vcenter-ds", "ds",
+							"--vsphere-subnet", "subnet",
+							"up",
+							"--name", "some-env-id",
+						}
+					})
+					It("generates vm, templates and disks folder names", func() {
+						appConfig, err := c.Bootstrap(args)
+						Expect(err).NotTo(HaveOccurred())
+
+						state := appConfig.State
+						Expect(state.VSphere.VCenterDisks).To(Equal("network"))
+						Expect(state.VSphere.VCenterTemplates).To(Equal("network_templates"))
+						Expect(state.VSphere.VCenterVMs).To(Equal("network_vms"))
+					})
+				})
 			})
 
 			Context("when a previous state exists", func() {
