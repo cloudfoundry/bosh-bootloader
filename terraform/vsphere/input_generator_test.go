@@ -18,15 +18,18 @@ var _ = Describe("InputGenerator", func() {
 			inputs, err := inputGenerator.Generate(storage.State{
 				EnvID: "banana",
 				VSphere: storage.VSphere{
-					Subnet:          "10.0.0.0/24",
-					Network:         "the-network",
-					VCenterCluster:  "the-cluster",
-					VCenterUser:     "the-user",
-					VCenterPassword: "the-password",
-					VCenterIP:       "the-ip",
-					VCenterDC:       "the-datacenter",
-					VCenterRP:       "the-resource-pool",
-					VCenterDS:       "the-datastore",
+					Subnet:           "10.0.0.0/24",
+					Network:          "the-network",
+					VCenterCluster:   "the-cluster",
+					VCenterUser:      "the-user",
+					VCenterPassword:  "the-password",
+					VCenterIP:        "the-ip",
+					VCenterDC:        "the-datacenter",
+					VCenterRP:        "the-resource-pool",
+					VCenterDS:        "the-datastore",
+					VCenterDisks:     "the-disks",
+					VCenterTemplates: "the-templates",
+					VCenterVMs:       "the-vms",
 				},
 			})
 			Expect(err).NotTo(HaveOccurred())
@@ -43,6 +46,9 @@ var _ = Describe("InputGenerator", func() {
 				"vcenter_dc":           "the-datacenter",
 				"vcenter_rp":           "the-resource-pool",
 				"vcenter_ds":           "the-datastore",
+				"vcenter_disks":        "the-disks",
+				"vcenter_templates":    "the-templates",
+				"vcenter_vms":          "the-vms",
 			}))
 		})
 	})
