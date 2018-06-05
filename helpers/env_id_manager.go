@@ -20,7 +20,7 @@ type envIDGenerator interface {
 }
 
 type NetworkClient interface {
-	CheckExists(networkName string) (bool, error)
+	CheckExists(networkName string, manual bool) (bool, error)
 }
 
 func NewEnvIDManager(envIDGenerator envIDGenerator, networkClient NetworkClient) EnvIDManager {
@@ -35,7 +35,7 @@ func (e EnvIDManager) Sync(state storage.State, envID string) (storage.State, er
 		return state, nil
 	}
 
-	err := e.checkFastFail(state.IAAS, envID)
+	err := e.checkFastFail(state, envID)
 	if err != nil {
 		return storage.State{}, err
 	}
@@ -57,14 +57,20 @@ func (e EnvIDManager) Sync(state storage.State, envID string) (storage.State, er
 	return state, nil
 }
 
-func (e EnvIDManager) checkFastFail(iaas, envID string) error {
+func (e EnvIDManager) checkFastFail(state storage.State, envID string) error {
 	var networkName string
+	var manual = false
 
-	switch iaas {
+	switch state.IAAS {
 	case "aws":
 		networkName = envID + "-vpc"
 	case "azure":
-		networkName = envID
+		if state.Azure.VnetName == "" {
+			networkName = envID
+		} else {
+			networkName = state.Azure.ResourceGroupName
+			manual = true
+		}
 	case "gcp":
 		networkName = envID + "-network"
 	case "vsphere":
@@ -73,7 +79,7 @@ func (e EnvIDManager) checkFastFail(iaas, envID string) error {
 		return nil
 	}
 
-	exists, err := e.networkClient.CheckExists(networkName)
+	exists, err := e.networkClient.CheckExists(networkName, manual)
 	if err != nil {
 		return err
 	}

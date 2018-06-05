@@ -47,7 +47,7 @@ func (c Client) GetNetworks(name string) (*compute.NetworkList, error) {
 
 // Methods added to conform to IAAS-agnostic interfaces
 
-func (c Client) CheckExists(networkName string) (bool, error) {
+func (c Client) CheckExists(networkName string, manul bool) (bool, error) {
 	networkList, err := c.GetNetworks(networkName)
 	if err != nil {
 		return false, err
