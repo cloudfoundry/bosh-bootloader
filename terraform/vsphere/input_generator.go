@@ -27,6 +27,9 @@ func (i InputGenerator) Generate(state storage.State) (map[string]interface{}, e
 		"vcenter_dc":           state.VSphere.VCenterDC,
 		"vcenter_rp":           state.VSphere.VCenterRP,
 		"vcenter_ds":           state.VSphere.VCenterDS,
+		"vcenter_templates":    state.VSphere.VCenterTemplates,
+		"vcenter_disks":        state.VSphere.VCenterDisks,
+		"vcenter_vms":          state.VSphere.VCenterVMs,
 	}, nil
 }
 

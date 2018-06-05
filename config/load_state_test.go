@@ -531,6 +531,9 @@ var _ = Describe("LoadState", func() {
 							"--vsphere-network", "network",
 							"--vsphere-vcenter-ds", "ds",
 							"--vsphere-subnet", "subnet",
+							"--vsphere-vcenter-disks", "disks",
+							"--vsphere-vcenter-templates", "templates",
+							"--vsphere-vcenter-vms", "vms",
 							"up",
 							"--name", "some-env-id",
 						}
@@ -552,6 +555,10 @@ var _ = Describe("LoadState", func() {
 						Expect(state.VSphere.VCenterDS).To(Equal("ds"))
 						Expect(state.VSphere.Network).To(Equal("network"))
 						Expect(state.VSphere.Subnet).To(Equal("subnet"))
+						Expect(state.VSphere.VCenterDisks).To(Equal("disks"))
+						Expect(state.VSphere.VCenterTemplates).To(Equal("templates"))
+						Expect(state.VSphere.VCenterVMs).To(Equal("vms"))
+
 					})
 
 					It("returns the remaining arguments", func() {
@@ -579,6 +586,9 @@ var _ = Describe("LoadState", func() {
 						os.Setenv("BBL_VSPHERE_NETWORK", "network")
 						os.Setenv("BBL_VSPHERE_VCENTER_DS", "ds")
 						os.Setenv("BBL_VSPHERE_SUBNET", "subnet")
+						os.Setenv("BBL_VSPHERE_VCENTER_DISKS", "disks")
+						os.Setenv("BBL_VSPHERE_VCENTER_TEMPLATES", "templates")
+						os.Setenv("BBL_VSPHERE_VCENTER_VMS", "vms")
 					})
 
 					It("returns a state object containing configuration flags", func() {
@@ -596,6 +606,9 @@ var _ = Describe("LoadState", func() {
 						Expect(state.VSphere.Network).To(Equal("network"))
 						Expect(state.VSphere.VCenterDS).To(Equal("ds"))
 						Expect(state.VSphere.Subnet).To(Equal("subnet"))
+						Expect(state.VSphere.VCenterDisks).To(Equal("disks"))
+						Expect(state.VSphere.VCenterTemplates).To(Equal("templates"))
+						Expect(state.VSphere.VCenterVMs).To(Equal("vms"))
 					})
 
 					It("returns the command", func() {
@@ -612,15 +625,18 @@ var _ = Describe("LoadState", func() {
 					fakeStateMigrator.MigrateCall.Returns.State = storage.State{
 						IAAS: "vsphere",
 						VSphere: storage.VSphere{
-							VCenterUser:     "user",
-							VCenterPassword: "password",
-							VCenterIP:       "ip",
-							VCenterDC:       "dc",
-							VCenterCluster:  "cluster",
-							VCenterRP:       "rp",
-							Network:         "network",
-							VCenterDS:       "ds",
-							Subnet:          "subnet",
+							VCenterUser:      "user",
+							VCenterPassword:  "password",
+							VCenterIP:        "ip",
+							VCenterDC:        "dc",
+							VCenterCluster:   "cluster",
+							VCenterRP:        "rp",
+							Network:          "network",
+							VCenterDS:        "ds",
+							Subnet:           "subnet",
+							VCenterDisks:     "disks",
+							VCenterTemplates: "templates",
+							VCenterVMs:       "vms",
 						},
 						EnvID: "some-env-id",
 					}
@@ -640,6 +656,9 @@ var _ = Describe("LoadState", func() {
 							"--vsphere-network", "network",
 							"--vsphere-vcenter-ds", "ds",
 							"--vsphere-subnet", "subnet",
+							"--vsphere-vcenter-vms", "vms",
+							"--vsphere-vcenter-templates", "templates",
+							"--vsphere-vcenter-disks", "disks",
 						})
 						Expect(err).NotTo(HaveOccurred())
 

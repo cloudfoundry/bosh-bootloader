@@ -21,15 +21,18 @@ type globalFlags struct {
 	GCPServiceAccountKey string `long:"gcp-service-account-key" env:"BBL_GCP_SERVICE_ACCOUNT_KEY"`
 	GCPRegion            string `long:"gcp-region"              env:"BBL_GCP_REGION"`
 
-	VSphereNetwork         string `long:"vsphere-network"          env:"BBL_VSPHERE_NETWORK"`
-	VSphereSubnet          string `long:"vsphere-subnet"           env:"BBL_VSPHERE_SUBNET"`
-	VSphereVCenterCluster  string `long:"vsphere-vcenter-cluster"  env:"BBL_VSPHERE_VCENTER_CLUSTER"`
-	VSphereVCenterDC       string `long:"vsphere-vcenter-dc"       env:"BBL_VSPHERE_VCENTER_DC"`
-	VSphereVCenterDS       string `long:"vsphere-vcenter-ds"       env:"BBL_VSPHERE_VCENTER_DS"`
-	VSphereVCenterIP       string `long:"vsphere-vcenter-ip"       env:"BBL_VSPHERE_VCENTER_IP"`
-	VSphereVCenterPassword string `long:"vsphere-vcenter-password" env:"BBL_VSPHERE_VCENTER_PASSWORD"`
-	VSphereVCenterRP       string `long:"vsphere-vcenter-rp"       env:"BBL_VSPHERE_VCENTER_RP"`
-	VSphereVCenterUser     string `long:"vsphere-vcenter-user"     env:"BBL_VSPHERE_VCENTER_USER"`
+	VSphereNetwork          string `long:"vsphere-network"            env:"BBL_VSPHERE_NETWORK"`
+	VSphereSubnet           string `long:"vsphere-subnet"             env:"BBL_VSPHERE_SUBNET"`
+	VSphereVCenterCluster   string `long:"vsphere-vcenter-cluster"    env:"BBL_VSPHERE_VCENTER_CLUSTER"`
+	VSphereVCenterDC        string `long:"vsphere-vcenter-dc"         env:"BBL_VSPHERE_VCENTER_DC"`
+	VSphereVCenterDS        string `long:"vsphere-vcenter-ds"         env:"BBL_VSPHERE_VCENTER_DS"`
+	VSphereVCenterIP        string `long:"vsphere-vcenter-ip"         env:"BBL_VSPHERE_VCENTER_IP"`
+	VSphereVCenterPassword  string `long:"vsphere-vcenter-password"   env:"BBL_VSPHERE_VCENTER_PASSWORD"`
+	VSphereVCenterRP        string `long:"vsphere-vcenter-rp"         env:"BBL_VSPHERE_VCENTER_RP"`
+	VSphereVCenterUser      string `long:"vsphere-vcenter-user"       env:"BBL_VSPHERE_VCENTER_USER"`
+	VSphereVCenterDisks     string `long:"vsphere-vcenter-disks"      env:"BBL_VSPHERE_VCENTER_DISKS"`
+	VSphereVCenterVMs       string `long:"vsphere-vcenter-vms"        env:"BBL_VSPHERE_VCENTER_VMS"`
+	VSphereVCenterTemplates string `long:"vsphere-vcenter-templates"  env:"BBL_VSPHERE_VCENTER_TEMPLATES"`
 
 	OpenStackInternalCidr         string `long:"openstack-internal-cidr"          env:"BBL_OPENSTACK_INTERNAL_CIDR"`
 	OpenStackExternalIP           string `long:"openstack-external-ip"            env:"BBL_OPENSTACK_EXTERNAL_IP"`

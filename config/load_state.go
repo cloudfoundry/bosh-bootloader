@@ -236,6 +236,9 @@ func (c Config) updateVSphereState(globalFlags globalFlags, state storage.State)
 	copyFlagToState(globalFlags.VSphereNetwork, &state.VSphere.Network)
 	copyFlagToState(globalFlags.VSphereVCenterDS, &state.VSphere.VCenterDS)
 	copyFlagToState(globalFlags.VSphereSubnet, &state.VSphere.Subnet)
+	copyFlagToState(globalFlags.VSphereVCenterDisks, &state.VSphere.VCenterDisks)
+	copyFlagToState(globalFlags.VSphereVCenterTemplates, &state.VSphere.VCenterTemplates)
+	copyFlagToState(globalFlags.VSphereVCenterVMs, &state.VSphere.VCenterVMs)
 
 	return state, nil
 }
