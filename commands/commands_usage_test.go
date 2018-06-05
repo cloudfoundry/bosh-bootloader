@@ -43,6 +43,9 @@ var _ = Describe("Commands Usage", func() {
   --vsphere-network                  vSphere Network                  env: $BBL_VSPHERE_NETWORK
   --vsphere-vcenter-ds               vSphere vCenter Datastore        env: $BBL_VSPHERE_VCENTER_DS
   --vsphere-subnet                   vSphere Subnet                   env: $BBL_VSPHERE_SUBNET
+  --vsphere-vcenter-disks            vSphere vCenter Disks            env: $BBL_VSPHERE_VCENTER_DISKS
+  --vsphere-vcenter-templates        vSphere vCenter Templates        env: $BBL_VSPHERE_VCENTER_TEMPLATES
+  --vsphere-vcenter-vms              vSphere vCenter VMs              env: $BBL_VSPHERE_VCENTER_VMS
 
   --openstack-internal-cidr          OpenStack Internal CIDR          env: $BBL_OPENSTACK_INTERNAL_CIDR
   --openstack-external-ip            OpenStack External IP            env: $BBL_OPENSTACK_EXTERNAL_IP
