@@ -18,6 +18,9 @@ It does not create any networks, security groups, or load balancers on vSphere.
     export BBL_VSPHERE_NETWORK
     export BBL_VSPHERE_VCENTER_DS
     export BBL_VSPHERE_SUBNET
+    export BBL_VSPHERE_VCENTER_DISKS
+    export BBL_VSPHERE_VCENTER_TEMPLATES
+    export BBL_VSPHERE_VCENTER_VMS
     ```
 
 1. Create jumpbox and bosh director.
