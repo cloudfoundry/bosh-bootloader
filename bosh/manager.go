@@ -41,7 +41,7 @@ type directorVars struct {
 
 type executor interface {
 	PlanDirector(DirInput, string, string) error
-	PlanJumpbox(DirInput, string, string) error
+	PlanJumpbox(DirInput, string, storage.State) error
 	CreateEnv(DirInput, storage.State) (string, error)
 	DeleteEnv(DirInput, storage.State) error
 	WriteDeploymentVars(DirInput, string) error
@@ -106,7 +106,7 @@ func (m *Manager) InitializeJumpbox(state storage.State) error {
 		VarsDir:  varsDir,
 	}
 
-	err = m.executor.PlanJumpbox(iaasInputs, deploymentDir, state.IAAS)
+	err = m.executor.PlanJumpbox(iaasInputs, deploymentDir, state)
 	if err != nil {
 		return fmt.Errorf("Jumpbox interpolate: %s", err)
 	}

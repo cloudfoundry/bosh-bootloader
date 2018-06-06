@@ -71,11 +71,17 @@ func (e Executor) getSetupFiles(sourcePath, destPath string) []setupFile {
 	return files
 }
 
-func (e Executor) PlanJumpbox(input DirInput, deploymentDir, iaas string) error {
+func (e Executor) PlanJumpbox(input DirInput, deploymentDir string, state storage.State) error {
+	iaas := state.IAAS
 	setupFiles := e.getSetupFiles(jumpboxDeploymentRepo, deploymentDir)
 
 	for _, f := range setupFiles {
 		os.MkdirAll(filepath.Dir(f.dest), os.ModePerm)
+		if strings.HasSuffix(f.dest, "jumpbox-deployment/azure/cpi.yml") && state.Azure.VnetName != "" && iaas == "azure" {
+			s := string(f.contents)
+			s = strings.Replace(s, "    resource_group_name: ((resource_group_name))\n    virtual_network_name: ((vnet_name))", "    resource_group_name: ((vnet_resource_group_name))\n    virtual_network_name: ((vnet_name))", 1)
+			f.contents = []byte(s)
+		}
 		err := e.fs.WriteFile(f.dest, f.contents, storage.StateMode)
 		if err != nil {
 			return fmt.Errorf("Jumpbox write setup file: %s", err) //not tested
