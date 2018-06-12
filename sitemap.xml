@@ -1,132 +1,83 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-
-    
     <url>
      <loc>/</loc>
-     <lastmod>2018-06-11</lastmod>
+     <lastmod>2018-06-12</lastmod>
      <changefreq>daily</changefreq>
     </url>
-    
-
-    
     <url>
      <loc>/advanced-configuration/</loc>
-     <lastmod>2018-06-11</lastmod>
+     <lastmod>2018-06-12</lastmod>
      <changefreq>daily</changefreq>
     </url>
-    
-
-    
     <url>
      <loc>/cf-lbs/</loc>
-     <lastmod>2018-06-11</lastmod>
+     <lastmod>2018-06-12</lastmod>
      <changefreq>daily</changefreq>
     </url>
-    
-
-    
     <url>
      <loc>/cleaning-up/</loc>
-     <lastmod>2018-06-11</lastmod>
+     <lastmod>2018-06-12</lastmod>
      <changefreq>daily</changefreq>
     </url>
-    
-
-    
     <url>
      <loc>/cloudfoundry/</loc>
-     <lastmod>2018-06-11</lastmod>
+     <lastmod>2018-06-12</lastmod>
      <changefreq>daily</changefreq>
     </url>
-    
-
-    
     <url>
      <loc>/concourse/</loc>
-     <lastmod>2018-06-11</lastmod>
+     <lastmod>2018-06-12</lastmod>
      <changefreq>daily</changefreq>
     </url>
-    
-
-    
     <url>
      <loc>/credhub/</loc>
-     <lastmod>2018-06-11</lastmod>
+     <lastmod>2018-06-12</lastmod>
      <changefreq>daily</changefreq>
     </url>
-    
-
-    
     <url>
      <loc>/customization/</loc>
-     <lastmod>2018-06-11</lastmod>
+     <lastmod>2018-06-12</lastmod>
      <changefreq>daily</changefreq>
     </url>
-    
-
-    
     <url>
      <loc>/getting-started-aws/</loc>
-     <lastmod>2018-06-11</lastmod>
+     <lastmod>2018-06-12</lastmod>
      <changefreq>daily</changefreq>
     </url>
-    
-
-    
     <url>
      <loc>/getting-started-azure/</loc>
-     <lastmod>2018-06-11</lastmod>
+     <lastmod>2018-06-12</lastmod>
      <changefreq>daily</changefreq>
     </url>
-    
-
-    
     <url>
      <loc>/getting-started-gcp/</loc>
-     <lastmod>2018-06-11</lastmod>
+     <lastmod>2018-06-12</lastmod>
      <changefreq>daily</changefreq>
     </url>
-    
-
-    
     <url>
      <loc>/getting-started-openstack/</loc>
-     <lastmod>2018-06-11</lastmod>
+     <lastmod>2018-06-12</lastmod>
      <changefreq>daily</changefreq>
     </url>
-    
-
-    
     <url>
      <loc>/getting-started-vsphere/</loc>
-     <lastmod>2018-06-11</lastmod>
+     <lastmod>2018-06-12</lastmod>
      <changefreq>daily</changefreq>
     </url>
-    
-
-    
     <url>
      <loc>/howto-ssh/</loc>
-     <lastmod>2018-06-11</lastmod>
+     <lastmod>2018-06-12</lastmod>
      <changefreq>daily</changefreq>
     </url>
-    
-
-    
     <url>
      <loc>/known-issues/</loc>
-     <lastmod>2018-06-11</lastmod>
+     <lastmod>2018-06-12</lastmod>
      <changefreq>daily</changefreq>
     </url>
-    
-
-    
     <url>
      <loc>/upgrade/</loc>
-     <lastmod>2018-06-11</lastmod>
+     <lastmod>2018-06-12</lastmod>
      <changefreq>daily</changefreq>
     </url>
-    
-
 </urlset>
