@@ -74,7 +74,7 @@ var _ = Describe("Policy", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(logger.PrintfCall.Messages).To(Equal([]string{
-						"[IAM Policy: banana] Delete policy version v1: some error",
+						"[IAM Policy: banana] Delete policy version v1: some error \n",
 					}))
 				})
 			})

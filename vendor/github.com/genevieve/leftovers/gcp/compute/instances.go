@@ -56,3 +56,7 @@ func (i Instances) List(filter string) ([]common.Deletable, error) {
 
 	return resources, nil
 }
+
+func (i Instances) Type() string {
+	return "compute-instance"
+}

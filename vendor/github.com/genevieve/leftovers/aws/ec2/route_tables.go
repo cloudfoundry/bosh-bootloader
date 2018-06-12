@@ -51,9 +51,9 @@ func (u RouteTables) Delete(vpcId string) error {
 		for _, a := range r.Associations {
 			_, err = u.client.DisassociateRouteTable(&awsec2.DisassociateRouteTableInput{AssociationId: a.RouteTableAssociationId})
 			if err == nil {
-				u.logger.Printf("[EC2 VPC: %s] Disassociated route table %s", vpcId, n)
+				u.logger.Printf("[EC2 VPC: %s] Disassociated route table %s \n", vpcId, n)
 			} else {
-				u.logger.Printf("[EC2 VPC: %s] Disassociate route table %s: %s", vpcId, n, err)
+				u.logger.Printf("[EC2 VPC: %s] Disassociate route table %s: %s \n", vpcId, n, err)
 			}
 		}
 
@@ -61,14 +61,14 @@ func (u RouteTables) Delete(vpcId string) error {
 		if err != nil {
 			return fmt.Errorf("Delete %s: %s", n, err)
 		} else {
-			u.logger.Printf("[EC2 VPC: %s] Deleted route table %s", vpcId, n)
+			u.logger.Printf("[EC2 VPC: %s] Deleted route table %s \n", vpcId, n)
 		}
 
 		err = u.resourceTags.Delete("route-table", n)
 		if err != nil {
-			u.logger.Printf("[EC2 VPC: %s] Delete route table %s tags: %s", vpcId, n, err)
+			u.logger.Printf("[EC2 VPC: %s] Delete route table %s tags: %s \n", vpcId, n, err)
 		} else {
-			u.logger.Printf("[EC2 VPC: %s] Deleted route table %s tags", vpcId, n)
+			u.logger.Printf("[EC2 VPC: %s] Deleted route table %s tags \n", vpcId, n)
 		}
 	}
 

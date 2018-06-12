@@ -49,3 +49,7 @@ func (g GlobalForwardingRules) List(filter string) ([]common.Deletable, error) {
 
 	return resources, nil
 }
+
+func (g GlobalForwardingRules) Type() string {
+	return "global-forwarding-rule"
+}

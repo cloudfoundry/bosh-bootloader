@@ -25,21 +25,21 @@ func NewImages(client imagesClient, logger logger) Images {
 	}
 }
 
-func (d Images) List(filter string) ([]common.Deletable, error) {
-	images, err := d.client.ListImages()
+func (i Images) List(filter string) ([]common.Deletable, error) {
+	images, err := i.client.ListImages()
 	if err != nil {
 		return nil, fmt.Errorf("List Images: %s", err)
 	}
 
 	var resources []common.Deletable
 	for _, image := range images.Items {
-		resource := NewImage(d.client, image.Name)
+		resource := NewImage(i.client, image.Name)
 
 		if !strings.Contains(image.Name, filter) {
 			continue
 		}
 
-		proceed := d.logger.PromptWithDetails(resource.Type(), resource.Name())
+		proceed := i.logger.PromptWithDetails(resource.Type(), resource.Name())
 		if !proceed {
 			continue
 		}
@@ -48,4 +48,8 @@ func (d Images) List(filter string) ([]common.Deletable, error) {
 	}
 
 	return resources, nil
+}
+
+func (i Images) Type() string {
+	return "image"
 }

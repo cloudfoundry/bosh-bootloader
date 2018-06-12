@@ -40,11 +40,22 @@ func (c Clusters) List(filter string) ([]common.Deletable, error) {
 	deletables := []common.Deletable{}
 	for _, cluster := range clusters {
 		resource := NewCluster(c.client, cluster.Zone, cluster.Name)
-		if strings.Contains(resource.Name(), filter) &&
-			c.logger.PromptWithDetails(resource.Type(), resource.Name()) {
-			deletables = append(deletables, resource)
+
+		if !strings.Contains(resource.Name(), filter) {
+			continue
 		}
+
+		proceed := c.logger.PromptWithDetails(resource.Type(), resource.Name())
+		if !proceed {
+			continue
+		}
+
+		deletables = append(deletables, resource)
 	}
 
 	return deletables, nil
+}
+
+func (c Clusters) Type() string {
+	return "cluster"
 }

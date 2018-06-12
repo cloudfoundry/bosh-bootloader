@@ -49,3 +49,7 @@ func (t TargetHttpsProxies) List(filter string) ([]common.Deletable, error) {
 
 	return resources, nil
 }
+
+func (t TargetHttpsProxies) Type() string {
+	return "target-https-proxy"
+}

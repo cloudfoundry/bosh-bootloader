@@ -54,7 +54,7 @@ var _ = Describe("Subnets", func() {
 			Expect(resourceTags.DeleteCall.Receives.ResourceId).To(Equal("the-subnet-id"))
 
 			Expect(logger.PrintfCall.Messages).To(Equal([]string{
-				"[EC2 VPC: the-vpc-id] Deleted subnet the-subnet-id tags",
+				"[EC2 VPC: the-vpc-id] Deleted subnet the-subnet-id tags \n",
 			}))
 		})
 
@@ -92,7 +92,7 @@ var _ = Describe("Subnets", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(logger.PrintfCall.Messages).To(Equal([]string{
-					"[EC2 VPC: banana] Delete subnet the-subnet-id tags: some error",
+					"[EC2 VPC: banana] Delete subnet the-subnet-id tags: some error \n",
 				}))
 			})
 		})

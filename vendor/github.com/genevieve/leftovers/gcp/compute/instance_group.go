@@ -6,7 +6,6 @@ type InstanceGroup struct {
 	client instanceGroupsClient
 	name   string
 	zone   string
-	kind   string
 }
 
 func NewInstanceGroup(client instanceGroupsClient, name, zone string) InstanceGroup {
@@ -14,7 +13,6 @@ func NewInstanceGroup(client instanceGroupsClient, name, zone string) InstanceGr
 		client: client,
 		name:   name,
 		zone:   zone,
-		kind:   "instance-group",
 	}
 }
 
@@ -34,8 +32,4 @@ func (i InstanceGroup) Name() string {
 
 func (i InstanceGroup) Type() string {
 	return "Instance Group"
-}
-
-func (i InstanceGroup) Kind() string {
-	return i.kind
 }

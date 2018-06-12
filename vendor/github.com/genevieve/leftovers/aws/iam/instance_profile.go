@@ -47,9 +47,9 @@ func (i InstanceProfile) Delete() error {
 			RoleName:            r.RoleName,
 		})
 		if err == nil {
-			i.logger.Printf("[%s: %s] Removed role %s", i.rtype, i.identifier, role)
+			i.logger.Printf("[%s: %s] Removed role %s \n", i.rtype, i.identifier, role)
 		} else {
-			i.logger.Printf("[%s: %s] Remove role %s: %s", i.rtype, i.identifier, role, err)
+			i.logger.Printf("[%s: %s] Remove role %s: %s \n", i.rtype, i.identifier, role, err)
 		}
 	}
 

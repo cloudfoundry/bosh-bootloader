@@ -13,41 +13,37 @@ import (
 
 type resource interface {
 	List(filter string) ([]Deletable, error)
+	Type() string
 }
 
 type Leftovers struct {
-	logger    logger
-	resources []resource
+	logger   logger
+	resource resource
 }
 
 func (l Leftovers) List(filter string) {
 	l.logger.NoConfirm()
 
-	var all []Deletable
-	for _, r := range l.resources {
-		list, err := r.List(filter)
-		if err != nil {
-			l.logger.Println(color.YellowString(err.Error()))
-		}
-
-		all = append(all, list...)
+	list, err := l.resource.List(filter)
+	if err != nil {
+		l.logger.Println(color.YellowString(err.Error()))
 	}
 
-	for _, r := range all {
+	for _, r := range list {
 		l.logger.Println(fmt.Sprintf("[%s: %s]", r.Type(), r.Name()))
 	}
+}
+
+func (l Leftovers) Types() {
+	l.logger.Println(l.resource.Type())
 }
 
 func (l Leftovers) Delete(filter string) error {
 	var deletables []Deletable
 
-	for _, r := range l.resources {
-		list, err := r.List(filter)
-		if err != nil {
-			l.logger.Println(color.YellowString(err.Error()))
-		}
-
-		deletables = append(deletables, list...)
+	deletables, err := l.resource.List(filter)
+	if err != nil {
+		l.logger.Println(color.YellowString(err.Error()))
 	}
 
 	for _, d := range deletables {
@@ -62,6 +58,10 @@ func (l Leftovers) Delete(filter string) error {
 	}
 
 	return nil
+}
+
+func (l Leftovers) DeleteType(filter, rType string) error {
+	return l.Delete(filter)
 }
 
 func NewLeftovers(logger logger, clientId, clientSecret, subscriptionId, tenantId string) (Leftovers, error) {
@@ -95,7 +95,7 @@ func NewLeftovers(logger logger, clientId, clientSecret, subscriptionId, tenantI
 	gc.ManagementClient.Authorizer = autorest.NewBearerAuthorizer(servicePrincipalToken)
 
 	return Leftovers{
-		logger:    logger,
-		resources: []resource{NewGroups(gc, logger)},
+		logger:   logger,
+		resource: NewGroups(gc, logger),
 	}, nil
 }

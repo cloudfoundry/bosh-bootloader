@@ -49,3 +49,7 @@ func (i Buckets) List(filter string) ([]common.Deletable, error) {
 
 	return resources, nil
 }
+
+func (b Buckets) Type() string {
+	return "bucket"
+}

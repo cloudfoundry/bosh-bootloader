@@ -6,7 +6,6 @@ type InstanceGroupManager struct {
 	client instanceGroupManagersClient
 	name   string
 	zone   string
-	kind   string
 }
 
 func NewInstanceGroupManager(client instanceGroupManagersClient, name, zone string) InstanceGroupManager {
@@ -14,7 +13,6 @@ func NewInstanceGroupManager(client instanceGroupManagersClient, name, zone stri
 		client: client,
 		name:   name,
 		zone:   zone,
-		kind:   "instance-group-manager",
 	}
 }
 
@@ -34,8 +32,4 @@ func (i InstanceGroupManager) Name() string {
 
 func (i InstanceGroupManager) Type() string {
 	return "Instance Group Manager"
-}
-
-func (i InstanceGroupManager) Kind() string {
-	return i.kind
 }

@@ -43,9 +43,9 @@ func (o UserPolicies) Delete(userName string) error {
 			PolicyArn: p.PolicyArn,
 		})
 		if err == nil {
-			o.logger.Printf("[IAM User: %s] Detached policy %s", userName, n)
+			o.logger.Printf("[IAM User: %s] Detached policy %s \n", userName, n)
 		} else {
-			o.logger.Printf("[IAM User: %s] Detach policy %s: %s", userName, n, err)
+			o.logger.Printf("[IAM User: %s] Detach policy %s: %s \n", userName, n, err)
 		}
 
 		_, err = o.client.DeleteUserPolicy(&awsiam.DeleteUserPolicyInput{
@@ -53,9 +53,9 @@ func (o UserPolicies) Delete(userName string) error {
 			PolicyName: p.PolicyName,
 		})
 		if err == nil {
-			o.logger.Printf("[IAM User: %s] Deleted policy %s", userName, n)
+			o.logger.Printf("[IAM User: %s] Deleted policy %s \n", userName, n)
 		} else {
-			o.logger.Printf("[IAM User: %s] Delete policy %s: %s", userName, n, err)
+			o.logger.Printf("[IAM User: %s] Delete policy %s: %s \n", userName, n, err)
 		}
 	}
 

@@ -13,6 +13,7 @@ import (
 
 type resource interface {
 	List(filter string) ([]Deletable, error)
+	Type() string
 }
 
 type Leftovers struct {
@@ -34,6 +35,12 @@ func (l Leftovers) List(filter string) {
 
 	for _, r := range all {
 		l.logger.Println(fmt.Sprintf("[%s: %s]", r.Type(), r.Name()))
+	}
+}
+
+func (l Leftovers) Types() {
+	for _, r := range l.resources {
+		l.logger.Println(r.Type())
 	}
 }
 
@@ -61,6 +68,10 @@ func (l Leftovers) Delete(filter string) error {
 	}
 
 	return nil
+}
+
+func (l Leftovers) DeleteType(filter, rType string) error {
+	return l.Delete(filter)
 }
 
 func NewLeftovers(logger logger, vCenterIP, vCenterUser, vCenterPassword, vCenterDC string) (Leftovers, error) {

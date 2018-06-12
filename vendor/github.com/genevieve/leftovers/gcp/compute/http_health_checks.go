@@ -49,3 +49,7 @@ func (h HttpHealthChecks) List(filter string) ([]common.Deletable, error) {
 
 	return resources, nil
 }
+
+func (h HttpHealthChecks) Type() string {
+	return "http-health-check"
+}

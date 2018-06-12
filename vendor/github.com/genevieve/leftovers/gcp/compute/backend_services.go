@@ -49,3 +49,7 @@ func (b BackendServices) List(filter string) ([]common.Deletable, error) {
 
 	return resources, nil
 }
+
+func (b BackendServices) Type() string {
+	return "backend-service"
+}

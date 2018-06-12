@@ -56,3 +56,7 @@ func (a Addresses) List(filter string) ([]common.Deletable, error) {
 
 	return resources, nil
 }
+
+func (a Addresses) Type() string {
+	return "address"
+}

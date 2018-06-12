@@ -5,14 +5,12 @@ import "fmt"
 type SslCertificate struct {
 	client sslCertificatesClient
 	name   string
-	kind   string
 }
 
 func NewSslCertificate(client sslCertificatesClient, name string) SslCertificate {
 	return SslCertificate{
 		client: client,
 		name:   name,
-		kind:   "compute-ssl-certificate",
 	}
 }
 
@@ -31,8 +29,4 @@ func (s SslCertificate) Name() string {
 
 func (s SslCertificate) Type() string {
 	return "Compute Ssl Certificate"
-}
-
-func (s SslCertificate) Kind() string {
-	return s.kind
 }

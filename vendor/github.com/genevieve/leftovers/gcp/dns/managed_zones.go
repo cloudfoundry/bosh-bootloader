@@ -55,3 +55,7 @@ func (m ManagedZones) List(filter string) ([]common.Deletable, error) {
 
 	return resources, nil
 }
+
+func (m ManagedZones) Type() string {
+	return "managed-zone"
+}

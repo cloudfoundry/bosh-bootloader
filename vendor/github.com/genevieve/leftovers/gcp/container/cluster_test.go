@@ -53,7 +53,7 @@ var _ = Describe("Cluster", func() {
 
 	Describe("Type", func() {
 		It("returns the type", func() {
-			Expect(cluster.Type()).To(Equal("Kubernetes Cluster"))
+			Expect(cluster.Type()).To(Equal("Container Cluster"))
 		})
 	})
 })

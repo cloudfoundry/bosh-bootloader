@@ -51,9 +51,9 @@ func (u Subnets) Delete(vpcId string) error {
 
 		err = u.resourceTags.Delete("subnet", n)
 		if err != nil {
-			u.logger.Printf("[EC2 VPC: %s] Delete subnet %s tags: %s", vpcId, n, err)
+			u.logger.Printf("[EC2 VPC: %s] Delete subnet %s tags: %s \n", vpcId, n, err)
 		} else {
-			u.logger.Printf("[EC2 VPC: %s] Deleted subnet %s tags", vpcId, n)
+			u.logger.Printf("[EC2 VPC: %s] Deleted subnet %s tags \n", vpcId, n)
 		}
 	}
 

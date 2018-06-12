@@ -6,7 +6,6 @@ type TargetPool struct {
 	client targetPoolsClient
 	name   string
 	region string
-	kind   string
 }
 
 func NewTargetPool(client targetPoolsClient, name, region string) TargetPool {
@@ -14,7 +13,6 @@ func NewTargetPool(client targetPoolsClient, name, region string) TargetPool {
 		client: client,
 		name:   name,
 		region: region,
-		kind:   "target-pool",
 	}
 }
 
@@ -34,8 +32,4 @@ func (t TargetPool) Name() string {
 
 func (t TargetPool) Type() string {
 	return "Target Pool"
-}
-
-func (t TargetPool) Kind() string {
-	return t.kind
 }
