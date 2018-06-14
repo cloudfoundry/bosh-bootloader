@@ -15,7 +15,7 @@
 that need to be exported to target the director credhub using the credhub-cli.
 
 ```
-eval "$(bbl print-env)"
+bbl print-env | eval
 
 credhub find -n 'cf_admin_password'
 ```
@@ -38,7 +38,7 @@ that it should proxy throuhg a jumpbox via a tunnel of its own making.
 1. Set your CredHub client/secret
 
     ```
-    eval "$(bbl print-env)"
+    bbl print-env | eval
     ```
 
 1. Make an SSH tunnel to the jumpbox

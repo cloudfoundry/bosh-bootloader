@@ -25,7 +25,7 @@ that need to be exported to `bosh ssh` to a job vm using the bosh-cli.
 Evaluating the command output sets those variables in your environment.
 
 ```
-eval "$(bbl print-env)"
+bbl print-env | eval
 bosh ssh web/0
 ```
 

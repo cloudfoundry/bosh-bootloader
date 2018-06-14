@@ -18,7 +18,7 @@ install using `bbl` and `bosh`.
 
   export external_url="https://$(bbl lbs | awk -F':' '{print $2}' | awk -F'[' '{print $2}' | awk -F']' '{print $1}')"
 
-  eval "$(bbl print-env)"
+  bbl print-env | eval
 
   bosh upload-stemcell https://bosh.io/d/stemcells/bosh-google-kvm-ubuntu-trusty-go_agent
 

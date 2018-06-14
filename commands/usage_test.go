@@ -47,7 +47,7 @@ Global Options:
 
 Basic Commands: A good place to start
   up                      Deploys BOSH director on an IAAS, creates CF/Concourse load balancers. Updates existing director.
-  print-env               All environment variables needed for targeting BOSH. Use with: eval "$(bbl print-env)"
+  print-env               Prints a script that sets environment variables needed to target BOSH. To use: "bbl print-env | eval"
 
 Maintenance Lifecycle Commands:
   destroy                 Tears down BOSH director infrastructure. Cleans up state directory

@@ -27,7 +27,7 @@ Steps to deploy cfcr with bbl:
     bbl plan --name banana-env
     cp -r bosh-bootloader/plan-patches/cfcr-openstack/. .
     bbl up
-    eval "$(bbl print-env)"
+    bbl print-env | eval
     ```
 
 1. `bosh upload-release https://storage.googleapis.com/kubo-public/kubo-release-latest.tgz`
