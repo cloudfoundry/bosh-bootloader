@@ -11,4 +11,5 @@ type Azure struct {
 	VnetName              string `json:"vnet_name,omitempty"`
 	SubnetName            string `json:"subnet_name,omitempty"`
 	DisablePublicIP       string `json:"disable_publicip,omitempty"`
+	CIDR                  string `json:"cidr,omitempty"`
 }

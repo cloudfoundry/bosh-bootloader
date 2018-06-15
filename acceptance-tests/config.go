@@ -26,6 +26,7 @@ type Config struct {
 	AzureVNetName              string
 	AzureSubnetName            string
 	AzureDisablePublicIP       string
+	AzureCIDR                  string
 
 	GCPServiceAccountKey string
 	GCPRegion            string
@@ -217,6 +218,7 @@ func loadConfigFromEnvVars() Config {
 		AzureVNetName:              os.Getenv("BBL_AZURE_VNET_NAME"),
 		AzureSubnetName:            os.Getenv("BBL_AZURE_SUBNET_NAME"),
 		AzureDisablePublicIP:       os.Getenv("BBL_AZURE_DISABLE_PUBLICIP"),
+		AzureCIDR:                  os.Getenv("BBL_AZURE_CIDR"),
 
 		GCPServiceAccountKey: os.Getenv("BBL_GCP_SERVICE_ACCOUNT_KEY"),
 		GCPRegion:            os.Getenv("BBL_GCP_REGION"),

@@ -22,6 +22,7 @@ type globalFlags struct {
 	AzureVnetName              string `long:"azure-vnet-name"                  env:"BBL_AZURE_VNET_NAME"`
 	AzureSubnetName            string `long:"azure-subnet-name"                env:"BBL_AZURE_SUBNET_NAME"`
 	AzureDisablePublicIP       string `long:"azure-disable-publicip"           env:"BBL_AZURE_DISABLE_PUBLICIP"`
+	AzureCIDR                  string `long:"azure-cidr"                       env:"BBL_AZURE_CIDR"`
 
 	GCPServiceAccountKey string `long:"gcp-service-account-key" env:"BBL_GCP_SERVICE_ACCOUNT_KEY"`
 	GCPRegion            string `long:"gcp-region"              env:"BBL_GCP_REGION"`
