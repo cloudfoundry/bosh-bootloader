@@ -26,6 +26,7 @@ it can interact with Azure.
     export BBL_VNET_RESOURCE_GROUP_NAME=
     export BBL_VNET_NAME=
     export BBL_SUBNET_NAME=
+    export BBL_DISABLE_PUBLICIP=
     ```
 1. Create infrastructure, jumpbox, and bosh director.
     ```

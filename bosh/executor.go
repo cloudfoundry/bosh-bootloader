@@ -77,9 +77,20 @@ func (e Executor) PlanJumpbox(input DirInput, deploymentDir string, state storag
 
 	for _, f := range setupFiles {
 		os.MkdirAll(filepath.Dir(f.dest), os.ModePerm)
-		if strings.HasSuffix(f.dest, "jumpbox-deployment/azure/cpi.yml") && state.Azure.VnetName != "" && iaas == "azure" {
+		if strings.HasSuffix(f.dest, "jumpbox-deployment/azure/cpi.yml") && iaas == "azure" && state.Azure.VnetName != "" {
 			s := string(f.contents)
 			s = strings.Replace(s, "    resource_group_name: ((resource_group_name))\n    virtual_network_name: ((vnet_name))", "    resource_group_name: ((vnet_resource_group_name))\n    virtual_network_name: ((vnet_name))", 1)
+			f.contents = []byte(s)
+		}
+		if strings.HasSuffix(f.dest, "jumpbox-deployment/azure/cpi.yml") && iaas == "azure" && state.Azure.DisablePublicIP == "true" {
+			s := string(f.contents)
+			s = strings.Replace(s, "\n- type: replace\n  path: /networks/name=public/subnets?/-\n  value:\n    cloud_properties:\n      resource_group_name: ((resource_group_name))\n", "", 1)
+			f.contents = []byte(s)
+		}
+		if strings.HasSuffix(f.dest, "jumpbox-deployment/jumpbox.yml") && iaas == "azure" && state.Azure.DisablePublicIP == "true" {
+			s := string(f.contents)
+			s = strings.Replace(s, "- name: public\n  type: vip", "", 1)
+			s = strings.Replace(s, "  - name: public\n    static_ips: [((external_ip))]", "", 1)
 			f.contents = []byte(s)
 		}
 		err := e.fs.WriteFile(f.dest, f.contents, storage.StateMode)
@@ -208,7 +219,7 @@ func (e Executor) getDirectorOpsFiles(stateDir, deploymentDir, iaas string) []st
 }
 
 func (e Executor) PlanDirector(input DirInput, deploymentDir string, state storage.State) error {
-    iaas := state.IAAS
+	iaas := state.IAAS
 	setupFiles := e.getDirectorSetupFiles(input.StateDir, deploymentDir, iaas)
 
 	for _, f := range setupFiles {

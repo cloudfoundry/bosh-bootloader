@@ -1082,6 +1082,7 @@ var _ = Describe("LoadState", func() {
 						os.Setenv("BBL_AZURE_VNET_RESOURCE_GROUP_NAME", "azure-vnet-resource-group-name")
 						os.Setenv("BBL_AZURE_VNET_NAME", "azure-vnet-name")
 						os.Setenv("BBL_AZURE_SUBNET_NAME", "azure-subnet-name")
+						os.Setenv("BBL_AZURE_DISABLE_PUBLICIP", "azure-disable-publicip")
 					})
 
 					It("returns a state containing configuration", func() {

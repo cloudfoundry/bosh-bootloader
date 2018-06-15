@@ -16,11 +16,16 @@ type Config struct {
 	AWSSecretAccessKey string
 	AWSRegion          string
 
-	AzureClientID       string
-	AzureClientSecret   string
-	AzureRegion         string
-	AzureSubscriptionID string
-	AzureTenantID       string
+	AzureClientID              string
+	AzureClientSecret          string
+	AzureRegion                string
+	AzureSubscriptionID        string
+	AzureTenantID              string
+	AzureResourceGroupName     string
+	AzureVNetResourceGroupName string
+	AzureVNetName              string
+	AzureSubnetName            string
+	AzureDisablePublicIP       string
 
 	GCPServiceAccountKey string
 	GCPRegion            string
@@ -211,6 +216,7 @@ func loadConfigFromEnvVars() Config {
 		AzureVNetResourceGroupName: os.Getenv("BBL_AZURE_VNET_RESOURCE_GROUP_NAME"),
 		AzureVNetName:              os.Getenv("BBL_AZURE_VNET_NAME"),
 		AzureSubnetName:            os.Getenv("BBL_AZURE_SUBNET_NAME"),
+		AzureDisablePublicIP:       os.Getenv("BBL_AZURE_DISABLE_PUBLICIP"),
 
 		GCPServiceAccountKey: os.Getenv("BBL_GCP_SERVICE_ACCOUNT_KEY"),
 		GCPRegion:            os.Getenv("BBL_GCP_REGION"),

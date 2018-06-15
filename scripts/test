@@ -19,6 +19,7 @@ function unset_env_vars() {
   unset BBL_AZURE_VNET_RESOURCE_GROUP_NAME
   unset BBL_AZURE_VNET_NAME
   unset BBL_AZURE_SUBNET_NAME
+  unset BBL_AZURE_DISABLE_PUBLICIP
   unset BBL_DEBUG
 }
 

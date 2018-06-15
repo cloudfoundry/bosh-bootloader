@@ -20,6 +20,7 @@ const (
   --azure-vnet-resource-group-name   Azure Vnet Resource Group Name   env: $BBL_AZURE_VNET_RESOURCE_GROUP_NAME
   --azure-vnet-name                  Azure Vnet Name                  env: $BBL_AZURE_VNET_NAME
   --azure-subnet-name                Azure Subnet Name                env: $BBL_AZURE_SUBNET_NAME
+  --azure-disable-publicip           Azure Do not use public IP       env: $BBL_AZURE_DISABLE_PUBLICIP
 
   --vsphere-vcenter-user             vSphere vCenter User             env: $BBL_VSPHERE_VCENTER_USER
   --vsphere-vcenter-password         vSphere vCenter Password         env: $BBL_VSPHERE_VCENTER_PASSWORD

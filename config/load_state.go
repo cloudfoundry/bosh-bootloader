@@ -264,6 +264,7 @@ func (c Config) updateAzureState(globalFlags globalFlags, state storage.State) (
 	copyFlagToState(globalFlags.AzureVnetResourceGroupName, &state.Azure.VnetResourceGroupName)
 	copyFlagToState(globalFlags.AzureVnetName, &state.Azure.VnetName)
 	copyFlagToState(globalFlags.AzureSubnetName, &state.Azure.SubnetName)
+	copyFlagToState(globalFlags.AzureDisablePublicIP, &state.Azure.DisablePublicIP)
 
 	return state, nil
 }
