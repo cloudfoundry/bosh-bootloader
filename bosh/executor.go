@@ -304,6 +304,7 @@ func (e Executor) CreateEnv(input DirInput, state storage.State) (string, error)
 		createEnvScript = strings.Replace(createEnvScript, "-override", "", -1)
 	}
 
+	os.Setenv("BBL_IAAS", state.IAAS)
 	switch state.IAAS {
 	case "aws":
 		os.Setenv("BBL_AWS_ACCESS_KEY_ID", state.AWS.AccessKeyID)
