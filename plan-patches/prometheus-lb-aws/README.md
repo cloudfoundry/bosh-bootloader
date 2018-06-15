@@ -16,7 +16,7 @@ You'll be able to reach grafana, alertmanager, and prometheus on the load balanc
    ```bash
    git clone https://github.com/bosh-prometheus/prometheus-boshrelease.git
    bosh deploy -d prometheus prometheus-boshrelease/manifests/prometheus.yml \
-     -o add-nginx-network-properties.yml
+     -o nginx-vm-extension.yml
    ```
 
 1. Wait a hot minute for your load balancers to find their targets, then log in to grafana via a web browser:
