@@ -1,6 +1,6 @@
 ## Generic Steps for Cloud Foundry Deployment
 
-1. Create an environment and target the BOSH director with `bbl print-env | eval`
+1. Create an environment and target the BOSH director with `eval "$(bbl print-env)"`
 
 1. `bbl plan --lb-type cf --lb-cert cert --lb-key key && bbl up` with a certificate and key as flags or environment variables.
 (Continue to provide the IaaS credentials as flags or environment variables.)

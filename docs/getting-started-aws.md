@@ -84,7 +84,7 @@ To setup your BOSH CLI with the director you'll need the following
 command to set the credentials:
 
 ```
-bbl print-env | eval
+eval "$(bbl print-env)"
 ```
 
 #### Alternatives to `bbl print-env`

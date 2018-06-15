@@ -19,7 +19,7 @@ Steps to deploy cfcr with bbl:
     bbl up
     echo kubernetes_master_host=\"${kubernetes_master_host}\" > vars/cfcr.tfvars
 
-    bbl print-env | eval
+    eval "$(bbl print-env)"
     ```
 
 1. `bosh upload-release https://storage.googleapis.com/kubo-public/kubo-release-latest.tgz`
