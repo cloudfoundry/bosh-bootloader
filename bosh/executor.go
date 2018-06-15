@@ -207,13 +207,20 @@ func (e Executor) getDirectorOpsFiles(stateDir, deploymentDir, iaas string) []st
 	return files
 }
 
-func (e Executor) PlanDirector(input DirInput, deploymentDir, iaas string) error {
+func (e Executor) PlanDirector(input DirInput, deploymentDir string, state storage.State) error {
+    iaas := state.IAAS
 	setupFiles := e.getDirectorSetupFiles(input.StateDir, deploymentDir, iaas)
 
 	for _, f := range setupFiles {
 		if f.source != "" {
 			os.MkdirAll(filepath.Dir(f.dest), storage.StateMode)
 		}
+		if strings.HasSuffix(f.dest, "bosh-deployment/azure/cpi.yml") && state.Azure.VnetName != "" && iaas == "azure" {
+			s := string(f.contents)
+			s = strings.Replace(s, "    virtual_network_name: ((vnet_name))\n    subnet_name: ((subnet_name))", "    resource_group_name: ((vnet_resource_group_name))\n    virtual_network_name: ((vnet_name))\n    subnet_name: ((subnet_name))", 1)
+			f.contents = []byte(s)
+		}
+
 		if err := e.fs.WriteFile(f.dest, f.contents, storage.StateMode); err != nil {
 			return fmt.Errorf("Director write setup file: %s", err) //not tested
 		}

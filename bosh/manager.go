@@ -40,7 +40,7 @@ type directorVars struct {
 }
 
 type executor interface {
-	PlanDirector(DirInput, string, string) error
+	PlanDirector(DirInput, string, storage.State) error
 	PlanJumpbox(DirInput, string, storage.State) error
 	CreateEnv(DirInput, storage.State) (string, error)
 	DeleteEnv(DirInput, storage.State) error
@@ -185,7 +185,7 @@ func (m *Manager) InitializeDirector(state storage.State) error {
 		VarsDir:  varsDir,
 	}
 
-	err = m.executor.PlanDirector(iaasInputs, directorDeploymentDir, state.IAAS)
+	err = m.executor.PlanDirector(iaasInputs, directorDeploymentDir, state)
 	if err != nil {
 		return err
 	}
