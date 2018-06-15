@@ -34,7 +34,7 @@ func (t TemplateGenerator) Generate(state storage.State) string {
 	if state.IAAS == "azure" && state.Azure.CIDR != "" {
 		tmpls.vars = strings.Replace(tmpls.vars, "10.0.0.0/16", state.Azure.CIDR, -1)
 	}
-	if state.IAAS == "azure" && state.Azure.CIDR == "true" {
+	if state.IAAS == "azure" && state.Azure.CIDR != "" {
 		tmpls.output = strings.Replace(tmpls.output, "${cidrsubnet(var.network_cidr, 8, 0)}", state.Azure.CIDR, -1)
 	}
 
