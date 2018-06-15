@@ -26,8 +26,11 @@ func NewTemplateGenerator() TemplateGenerator {
 }
 
 func (t TemplateGenerator) Generate(state storage.State) string {
-	tmpls := readTemplates(state)
+	tmpls := readTemplates()
 
+	if state.IAAS == "azure" && state.Azure.DisablePublicIP == "true" {
+		tmpls.output = strings.Replace(tmpls.output, "azurerm_public_ip.bosh.ip_address", "cidrhost(var.internal_cidr, 5)", -1)
+	}
 	template := strings.Join([]string{tmpls.vars, tmpls.resourceGroup, tmpls.network, tmpls.storage, tmpls.networkSecurityGroup, tmpls.output, tmpls.tls}, "\n")
 
 	switch state.LB.Type {
@@ -44,7 +47,7 @@ func (t TemplateGenerator) Generate(state storage.State) string {
 	return template
 }
 
-func readTemplates(state storage.State) templates {
+func readTemplates() templates {
 	tmpls := templates{}
 	tmpls.vars = string(MustAsset("templates/vars.tf"))
 	tmpls.resourceGroup = string(MustAsset("templates/resource_group.tf"))
