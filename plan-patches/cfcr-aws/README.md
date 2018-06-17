@@ -19,7 +19,7 @@ Steps to deploy cfcr with bbl:
 
 1. `bosh upload-release https://storage.googleapis.com/kubo-public/kubo-release-latest.tgz`
 
-1. `bosh upload-stemcell https://bosh.io/d/stemcells/bosh-aws-xen-hvm-ubuntu-trusty-go_agent\?v\=3541.9`
+1. `bosh upload-stemcell https://bosh.io/d/stemcells/bosh-aws-xen-hvm-ubuntu-trusty-go_agent\?v\=3586.23`
 
 1. export KD as your path to kubo-deployment so you can copy-paste from below if you so desire
    ```
@@ -40,7 +40,7 @@ Steps to deploy cfcr with bbl:
    Then run the following to mix them together into kubectl-appropriate forms:
    ```
    export director_name=$(bosh int <(bbl outputs) --path=/director_name)
-   export address="https://${kubernetes_master_host}:8443"
+   export address="https://api.${kubernetes_master_host}:8443"
    export cluster_name="kubo:${director_name}:cfcr"
    export user_name="kubo:${director_name}:cfcr-admin"
    export context_name="kubo:${director_name}:cfcr"
