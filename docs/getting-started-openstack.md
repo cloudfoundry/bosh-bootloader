@@ -1,10 +1,21 @@
 # Getting Started: OpenStack
 
+This guide is a walkthrough for deploying a BOSH director with `bbl`
+on OpenStack. Upon completion, you will have the following:
+
+1. A BOSH director
+1. A jumpbox
+1. A set of randomly generated BOSH director credentials
+1. A generated keypair allowing you to SSH into the BOSH director and
+any instances BOSH deploys
+1. A copy of the manifest the BOSH director was deployed with
+1. A basic cloud config
+
 `bbl` creates and maintains the lifecycle of the jumpbox and BOSH director.
 
 It does not create any networks, security groups, or load balancers on OpenStack.
 
-## Jumpbox, Director
+## Create a Jumpbox and a BOSH Director
 
 1. Export environment variables.
     ```
@@ -27,3 +38,7 @@ It does not create any networks, security groups, or load balancers on OpenStack
     ```
     bbl up
     ```
+
+## Next Steps
+
+* [Target the BOSH Director](howto-target-bosh-director.md)

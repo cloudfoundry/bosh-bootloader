@@ -24,8 +24,6 @@
         - `HTTPS:443` to `HTTP:80`
         - `TLS:4443`  to `TCP:80`
 
-
-
 ## GCP
 `bbl` creates 4 load balancers on GCP.
 
@@ -67,9 +65,8 @@
         - Firewall rule allowing `tcp:2222` to the target pool
         - Forwarding rule for `tcp:2222` to the target pool
 
-
 ## Microsoft Azure
-There is an application gateway.
+`bbl` creates an application gateway on Microsoft Azure.
 
 1. **cf-app-gateway**
     * In the cloud-config, this lb is referenced with the vm extension `cf-router-network-properties`.
@@ -79,7 +76,6 @@ There is an application gateway.
         - Application Gateway
         - Network Security Rules
         - Network Security Group
-
 
 ## vSphere
 N/A.
