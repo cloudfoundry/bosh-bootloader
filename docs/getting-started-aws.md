@@ -1,4 +1,4 @@
-### Getting started: AWS
+# Getting Started: AWS
 
 This guide is a walkthrough for deploying a BOSH director with `bbl`
 on AWS. Upon completion, you will have the following:
@@ -11,7 +11,7 @@ any instances BOSH deploys
 1. A copy of the manifest the BOSH director was deployed with
 1. A basic cloud config
 
-### Creating an IAM user
+## Creating an IAM user
 
 In order for `bbl` to interact with AWS, an `IAM` user must be created.
 
@@ -58,7 +58,7 @@ access key" to the terminal. These values are important and should
 be kept secret. In the next section `bbl` will use these commands to
 create infrastructure on AWS.
 
-### bbl up
+## Pave Infrastructure, Create a Jumpbox, and Create a BOSH Director
 
 `bbl` will create infrastructure and deploy a BOSH director with the
 following command:
@@ -78,58 +78,9 @@ create your bosh director. This should be checked in to version control,
 so that you have all the information necessary to later destroy or
 update this environment at a later date.
 
-### Connecting to the BOSH director
 
-To setup your BOSH CLI with the director you'll need the following
-command to set the credentials:
+## Next Steps
 
-```
-eval "$(bbl print-env)"
-```
-
-#### Alternatives to `bbl print-env`
-
-Separate commands are available for the `bbl print-env` fields:
-
-```
-$ bbl director-address
-https://10.0.0.6:25555
-
-$ bbl director-username
-user-d3783rk
-
-$ bbl director-password
-p-23dah71skl
-
-$ bbl director-ca-cert
------BEGIN CERTIFICATE-----
-MIIDtzCCAp+gAwIBAgIJAIPgaUgWRCE8MA0GCSqGSIb3DQEBBQUAMEUxCzAJBgNV
-...
------END CERTIFICATE-----
-```
-
-You might save the CA certificate to a file:
-
-```
-$ bbl director-ca-cert > bosh.crt
-$ export BOSH_CA_CERT=bosh.crt
-```
-
-To login:
-
-```
-$ export BOSH_ENVIRONMENT=$(bbl director-address)
-$ bosh alias-env <INSERT TARGET NAME>
-$ bosh log-in
-Username: user-d3783rk
-Password: p-23dah71sk1
-```
-
-Display cloud config to test setup and show configuration mapping:
-
-```
-$ bosh cloud-config
-...
-```
-
-Now you're ready to deploy software with BOSH.
+* [Target the BOSH Director](howto-target-bosh-director.md)
+* [Deploy Cloud Foundry](cloudfoundry.md)
+* [Deploy Concourse](concourse.md)

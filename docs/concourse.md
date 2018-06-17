@@ -1,4 +1,4 @@
-# Concourse
+# Generic Steps for Concourse Deployment
 
 This document will walk through deploying a concourse clustered
 install using `bbl` and `bosh`.

@@ -1,5 +1,16 @@
 # Getting Started: Microsoft Azure
 
+This guide is a walkthrough for deploying a BOSH director with `bbl`
+on Microsoft Azure. Upon completion, you will have the following:
+
+1. A BOSH director
+1. A jumpbox
+1. A set of randomly generated BOSH director credentials
+1. A generated keypair allowing you to SSH into the BOSH director and
+any instances BOSH deploys
+1. A copy of the manifest the BOSH director was deployed with
+1. A basic cloud config
+
 ## Create a Service Principal Account
 
 You can use the cli utility [az-automation](https://github.com/genevieve/az-automation)
@@ -12,7 +23,7 @@ your tenant id, the client id, and the client secret.
 These credentials will be passed to `bbl` so that
 it can interact with Azure.
 
-## Infrastructure, Jumpbox, Director
+## Pave Infrastructure, Create a Jumpbox, and Create a BOSH Director
 
 1. Export environment variables.
     ```
@@ -28,24 +39,8 @@ it can interact with Azure.
     bbl up
     ```
 
-## + Cloud Foundry Load Balancers
+## Next Steps
 
-To get all of the above plus load balancers for Cloud Foundry:
-
-1. To create cf load balancers for azure you must provide a certificate
-in the `.pfx` format:
-    ```
-    openssl genrsa -out DOMAIN_NAME.key 2048
-    openssl req -new -x509 -days 365 -key DOMAIN_NAME.key -out DOMAIN_NAME.crt
-    openssl pkcs12 -export -out PFX_FILE -inkey DOMAIN_NAME.key -in DOMAIN_NAME.crt
-    ```
-
-1. Save the password you entered when prompted by `openssl` to a file.
-    ```
-    echo SuperSecretPassword > PFX_FILE_PASSWORD
-    ```
-1. To `bbl  plan` or `bbl up` you can provide the pfx file and password:
-    ```
-    bbl plan --lb-type cf --lb-cert PFX_FILE --lb-key PFX_FILE_PASSWORD
-    bbl up
-    ```
+* [Target the BOSH Director](howto-target-bosh-director.md)
+* [Deploy Cloud Foundry](cloudfoundry.md)
+* [Deploy Concourse](concourse.md)
