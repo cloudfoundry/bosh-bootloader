@@ -23,5 +23,3 @@ You'll be able to reach grafana, alertmanager, and prometheus on the load balanc
    ```bash
    open "http://$(bbl outputs | bosh int --path=/prometheus_lb_url -):3000"
    ```
-
-1. check out this PR to upstream the add-nginx-network-properties opsfile: https://github.com/bosh-prometheus/prometheus-boshrelease/pull/203
