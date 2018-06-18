@@ -137,7 +137,7 @@
     "gcp/storage",
     "vsphere"
   ]
-  revision = "4a72e03b76411b1813d2a44ce73413397479997f"
+  revision = "df14bd6a44f01964af99e1bb55a58f4b73b0971f"
 
 [[projects]]
   name = "github.com/go-ini/ini"

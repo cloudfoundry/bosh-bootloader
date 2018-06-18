@@ -53,3 +53,7 @@ func (n Networks) List(filter string) ([]common.Deletable, error) {
 
 	return resources, nil
 }
+
+func (n Networks) Type() string {
+	return "compute-network"
+}

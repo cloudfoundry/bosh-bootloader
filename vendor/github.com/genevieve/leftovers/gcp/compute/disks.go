@@ -56,3 +56,7 @@ func (d Disks) List(filter string) ([]common.Deletable, error) {
 
 	return resources, nil
 }
+
+func (d Disks) Type() string {
+	return "disk"
+}

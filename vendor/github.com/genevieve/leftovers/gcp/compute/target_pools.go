@@ -56,3 +56,7 @@ func (t TargetPools) List(filter string) ([]common.Deletable, error) {
 
 	return resources, nil
 }
+
+func (t TargetPools) Type() string {
+	return "target-pool"
+}

@@ -6,7 +6,6 @@ type ManagedZone struct {
 	client     managedZonesClient
 	recordSets recordSets
 	name       string
-	kind       string
 }
 
 func NewManagedZone(client managedZonesClient, recordSets recordSets, name string) ManagedZone {
@@ -14,7 +13,6 @@ func NewManagedZone(client managedZonesClient, recordSets recordSets, name strin
 		client:     client,
 		recordSets: recordSets,
 		name:       name,
-		kind:       "managed-zone",
 	}
 }
 
@@ -40,8 +38,4 @@ func (m ManagedZone) Name() string {
 
 func (m ManagedZone) Type() string {
 	return "DNS Managed Zone"
-}
-
-func (m ManagedZone) Kind() string {
-	return m.kind
 }

@@ -56,3 +56,7 @@ func (i InstanceGroupManagers) List(filter string) ([]common.Deletable, error) {
 
 	return resources, nil
 }
+
+func (i InstanceGroupManagers) Type() string {
+	return "instance-group-manager"
+}

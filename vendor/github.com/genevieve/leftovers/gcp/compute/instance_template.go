@@ -5,14 +5,12 @@ import "fmt"
 type InstanceTemplate struct {
 	client instanceTemplatesClient
 	name   string
-	kind   string
 }
 
 func NewInstanceTemplate(client instanceTemplatesClient, name string) InstanceTemplate {
 	return InstanceTemplate{
 		client: client,
 		name:   name,
-		kind:   "instance-template",
 	}
 }
 
@@ -32,8 +30,4 @@ func (i InstanceTemplate) Name() string {
 
 func (i InstanceTemplate) Type() string {
 	return "Instance Template"
-}
-
-func (i InstanceTemplate) Kind() string {
-	return i.kind
 }

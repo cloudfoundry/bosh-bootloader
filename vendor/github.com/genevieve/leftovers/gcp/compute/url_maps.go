@@ -50,3 +50,7 @@ func (u UrlMaps) List(filter string) ([]common.Deletable, error) {
 
 	return resources, nil
 }
+
+func (u UrlMaps) Type() string {
+	return "url-map"
+}

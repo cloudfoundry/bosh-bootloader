@@ -53,3 +53,7 @@ func (f Firewalls) List(filter string) ([]common.Deletable, error) {
 
 	return resources, nil
 }
+
+func (f Firewalls) Type() string {
+	return "firewall"
+}

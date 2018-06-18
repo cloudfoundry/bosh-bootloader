@@ -5,14 +5,12 @@ import "fmt"
 type Bucket struct {
 	client bucketsClient
 	name   string
-	kind   string
 }
 
 func NewBucket(client bucketsClient, name string) Bucket {
 	return Bucket{
 		client: client,
 		name:   name,
-		kind:   "bucket",
 	}
 }
 
@@ -31,8 +29,4 @@ func (b Bucket) Name() string {
 
 func (b Bucket) Type() string {
 	return "Storage Bucket"
-}
-
-func (b Bucket) Kind() string {
-	return b.kind
 }

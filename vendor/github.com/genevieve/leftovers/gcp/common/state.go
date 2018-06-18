@@ -132,7 +132,7 @@ func (s *State) Wait() (interface{}, error) {
 				wait = 10 * time.Second
 			}
 
-			s.logger.Printf("Waiting %s before next try.", wait)
+			s.logger.Printf("Waiting %s before next try.\n", wait)
 		}
 	}()
 
@@ -182,7 +182,7 @@ func (s *State) Wait() (interface{}, error) {
 					// TimeoutError and wait for the channel to close
 					lastResult = r
 				case <-timeout:
-					s.logger.Printf("Waiting for state DONE exceeded refresh grace period.")
+					s.logger.Printf("Waiting for state DONE exceeded refresh grace period.\n")
 					break forSelect
 				}
 			}

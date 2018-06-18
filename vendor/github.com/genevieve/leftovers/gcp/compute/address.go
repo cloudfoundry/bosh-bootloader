@@ -7,7 +7,6 @@ type Address struct {
 	name        string
 	clearerName string
 	region      string
-	kind        string
 }
 
 func NewAddress(client addressesClient, name, region string, users int) Address {
@@ -21,7 +20,6 @@ func NewAddress(client addressesClient, name, region string, users int) Address 
 		name:        name,
 		clearerName: clearerName,
 		region:      region,
-		kind:        "address",
 	}
 }
 
@@ -40,8 +38,4 @@ func (a Address) Name() string {
 
 func (a Address) Type() string {
 	return "Address"
-}
-
-func (a Address) Kind() string {
-	return a.kind
 }

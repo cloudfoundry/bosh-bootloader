@@ -49,3 +49,7 @@ func (i InstanceTemplates) List(filter string) ([]common.Deletable, error) {
 
 	return resources, nil
 }
+
+func (i InstanceTemplates) Type() string {
+	return "instance-template"
+}

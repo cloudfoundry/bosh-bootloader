@@ -43,7 +43,7 @@ var _ = Describe("Clusters", func() {
 			list, err := clusters.List(filter)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(logger.PromptWithDetailsCall.Receives.Type).To(Equal("Kubernetes Cluster"))
+			Expect(logger.PromptWithDetailsCall.Receives.Type).To(Equal("Container Cluster"))
 			Expect(logger.PromptWithDetailsCall.Receives.Name).To(Equal("banana-cluster"))
 
 			Expect(list).To(HaveLen(1))

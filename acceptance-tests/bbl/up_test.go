@@ -45,7 +45,7 @@ var _ = Describe("up", func() {
 	AfterEach(func() {
 		By("destroying the director and the jumpbox", func() {
 			session := bbl.Down()
-			Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
+			Eventually(session, 20*time.Minute).Should(gexec.Exit(0))
 		})
 	})
 

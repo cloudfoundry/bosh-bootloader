@@ -54,8 +54,8 @@ var _ = Describe("InternetGateways", func() {
 			Expect(client.DeleteInternetGatewayCall.Receives.Input.InternetGatewayId).To(Equal(aws.String("the-gateway-id")))
 
 			Expect(logger.PrintfCall.Messages).To(Equal([]string{
-				"[EC2 VPC: the-vpc-id] Detached internet gateway the-gateway-id",
-				"[EC2 VPC: the-vpc-id] Deleted internet gateway the-gateway-id",
+				"[EC2 VPC: the-vpc-id] Detached internet gateway the-gateway-id \n",
+				"[EC2 VPC: the-vpc-id] Deleted internet gateway the-gateway-id \n",
 			}))
 		})
 
@@ -84,8 +84,8 @@ var _ = Describe("InternetGateways", func() {
 
 				Expect(client.DeleteInternetGatewayCall.CallCount).To(Equal(1))
 				Expect(logger.PrintfCall.Messages).To(Equal([]string{
-					"[EC2 VPC: banana] Detach internet gateway the-gateway-id: some error",
-					"[EC2 VPC: banana] Deleted internet gateway the-gateway-id",
+					"[EC2 VPC: banana] Detach internet gateway the-gateway-id: some error \n",
+					"[EC2 VPC: banana] Deleted internet gateway the-gateway-id \n",
 				}))
 			})
 		})
@@ -100,7 +100,7 @@ var _ = Describe("InternetGateways", func() {
 				Expect(err).To(MatchError("Delete the-gateway-id: some error"))
 
 				Expect(logger.PrintfCall.Messages).To(Equal([]string{
-					"[EC2 VPC: banana] Detached internet gateway the-gateway-id",
+					"[EC2 VPC: banana] Detached internet gateway the-gateway-id \n",
 				}))
 			})
 		})

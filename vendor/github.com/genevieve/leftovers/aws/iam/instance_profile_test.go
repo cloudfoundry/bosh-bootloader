@@ -64,7 +64,7 @@ var _ = Describe("InstanceProfile", func() {
 				Expect(client.RemoveRoleFromInstanceProfileCall.Receives.Input.RoleName).To(Equal(aws.String("the-role")))
 
 				Expect(logger.PrintfCall.Messages).To(Equal([]string{
-					"[IAM Instance Profile: the-name (Role:the-role)] Removed role the-role",
+					"[IAM Instance Profile: the-name (Role:the-role)] Removed role the-role \n",
 				}))
 			})
 
@@ -78,7 +78,7 @@ var _ = Describe("InstanceProfile", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(logger.PrintfCall.Messages).To(Equal([]string{
-						"[IAM Instance Profile: the-name (Role:the-role)] Remove role the-role: some error",
+						"[IAM Instance Profile: the-name (Role:the-role)] Remove role the-role: some error \n",
 					}))
 				})
 			})

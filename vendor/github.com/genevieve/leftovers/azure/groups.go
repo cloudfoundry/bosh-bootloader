@@ -49,3 +49,7 @@ func (g Groups) List(filter string) ([]Deletable, error) {
 
 	return resources, nil
 }
+
+func (g Groups) Type() string {
+	return "resource-group"
+}

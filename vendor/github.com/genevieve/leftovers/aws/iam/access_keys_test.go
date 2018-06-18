@@ -47,7 +47,7 @@ var _ = Describe("AccessKeys", func() {
 			Expect(client.DeleteAccessKeyCall.Receives.Input.AccessKeyId).To(Equal(aws.String("banana")))
 
 			Expect(logger.PrintfCall.Messages).To(Equal([]string{
-				"[IAM User: the-user] Deleted access key banana",
+				"[IAM User: the-user] Deleted access key banana \n",
 			}))
 		})
 
@@ -72,7 +72,7 @@ var _ = Describe("AccessKeys", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(logger.PrintfCall.Messages).To(Equal([]string{
-					"[IAM User: the-user] Delete access key banana: some error",
+					"[IAM User: the-user] Delete access key banana: some error \n",
 				}))
 			})
 		})

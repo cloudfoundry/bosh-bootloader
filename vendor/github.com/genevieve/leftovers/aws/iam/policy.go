@@ -39,7 +39,7 @@ func (p Policy) Delete() error {
 				VersionId: v.VersionId,
 			})
 			if err != nil {
-				p.logger.Printf("[%s: %s] Delete policy version %s: %s", p.rtype, p.identifier, *v.VersionId, err)
+				p.logger.Printf("[%s: %s] Delete policy version %s: %s \n", p.rtype, p.identifier, *v.VersionId, err)
 			}
 		}
 	}

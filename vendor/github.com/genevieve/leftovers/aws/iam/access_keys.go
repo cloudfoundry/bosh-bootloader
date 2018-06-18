@@ -42,9 +42,9 @@ func (k AccessKeys) Delete(userName string) error {
 			AccessKeyId: a.AccessKeyId,
 		})
 		if err == nil {
-			k.logger.Printf("[IAM User: %s] Deleted access key %s", userName, n)
+			k.logger.Printf("[IAM User: %s] Deleted access key %s \n", userName, n)
 		} else {
-			k.logger.Printf("[IAM User: %s] Delete access key %s: %s", userName, n, err)
+			k.logger.Printf("[IAM User: %s] Delete access key %s: %s \n", userName, n, err)
 		}
 	}
 

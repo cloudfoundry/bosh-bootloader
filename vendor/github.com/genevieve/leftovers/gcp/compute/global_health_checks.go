@@ -49,3 +49,7 @@ func (h GlobalHealthChecks) List(filter string) ([]common.Deletable, error) {
 
 	return resources, nil
 }
+
+func (h GlobalHealthChecks) Type() string {
+	return "global-health-check"
+}

@@ -2,7 +2,6 @@ package ec2
 
 import (
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -105,7 +104,6 @@ func instanceRefresh(client instancesClient, id *string) common.StateRefreshFunc
 			if ec2err, ok := err.(awserr.Error); ok && ec2err.Code() == "InvalidInstanceID.NotFound" {
 				resp = nil
 			} else {
-				log.Printf("Error on InstanceStateRefresh: %s", err)
 				return nil, "", err
 			}
 		}

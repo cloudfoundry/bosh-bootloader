@@ -56,3 +56,7 @@ func (f ForwardingRules) List(filter string) ([]common.Deletable, error) {
 
 	return resources, nil
 }
+
+func (f ForwardingRules) Type() string {
+	return "forwarding-rule"
+}

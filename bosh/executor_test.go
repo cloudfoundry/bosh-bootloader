@@ -504,6 +504,26 @@ var _ = Describe("Executor", func() {
 			})
 		})
 
+		Context("when the user provides a create-env override with flag-provided environment variable", func() {
+			BeforeEach(func() {
+				err := os.Unsetenv("BBL_IAAS")
+				Expect(err).NotTo(HaveOccurred())
+
+				state.IAAS = "some-fictional-iaas"
+				overrideContents := fmt.Sprintf("#!/bin/bash\n [ \"${BBL_IAAS}\" = \"some-fictional-iaas\" ]")
+
+				overridePath := filepath.Join(stateDir, "create-some-deployment-override.sh")
+				fs.WriteFile(overridePath, []byte(overrideContents), storage.ScriptMode)
+			})
+
+			It("runs the create-env-override.sh script", func() {
+				_, err := executor.CreateEnv(dirInput, state)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(cli.RunCallCount()).To(Equal(0))
+			})
+		})
+
 		It("runs the create-env script and returns the resulting vars-store contents", func() {
 			vars, err := executor.CreateEnv(dirInput, state)
 			Expect(err).NotTo(HaveOccurred())

@@ -49,3 +49,7 @@ func (s ServiceAccounts) List(filter string) ([]common.Deletable, error) {
 
 	return resources, nil
 }
+
+func (s ServiceAccounts) Type() string {
+	return "service-account"
+}

@@ -44,9 +44,9 @@ func (o RolePolicies) Delete(roleName string) error {
 			PolicyArn: p.PolicyArn,
 		})
 		if err == nil {
-			o.logger.Printf("[IAM Role: %s] Detached policy %s", roleName, n)
+			o.logger.Printf("[IAM Role: %s] Detached policy %s \n", roleName, n)
 		} else {
-			o.logger.Printf("[IAM Role: %s] Detach policy %s: %s", roleName, n, err)
+			o.logger.Printf("[IAM Role: %s] Detach policy %s: %s \n", roleName, n, err)
 		}
 
 		_, err = o.client.DeleteRolePolicy(&awsiam.DeleteRolePolicyInput{
@@ -54,9 +54,9 @@ func (o RolePolicies) Delete(roleName string) error {
 			PolicyName: p.PolicyName,
 		})
 		if err == nil {
-			o.logger.Printf("[IAM Role: %s] Deleted policy %s", roleName, n)
+			o.logger.Printf("[IAM Role: %s] Deleted policy %s \n", roleName, n)
 		} else {
-			o.logger.Printf("[IAM Role: %s] Delete policy %s: %s", roleName, n, err)
+			o.logger.Printf("[IAM Role: %s] Delete policy %s: %s \n", roleName, n, err)
 		}
 	}
 
@@ -73,9 +73,9 @@ func (o RolePolicies) Delete(roleName string) error {
 			PolicyName: p,
 		})
 		if err == nil {
-			o.logger.Printf("[IAM Role: %s] Deleted policy %s", roleName, n)
+			o.logger.Printf("[IAM Role: %s] Deleted policy %s \n", roleName, n)
 		} else {
-			o.logger.Printf("[IAM Role: %s] Delete policy %s: %s", roleName, n, err)
+			o.logger.Printf("[IAM Role: %s] Delete policy %s: %s \n", roleName, n, err)
 		}
 	}
 

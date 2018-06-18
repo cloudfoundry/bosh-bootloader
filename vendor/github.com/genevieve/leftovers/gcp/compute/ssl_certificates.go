@@ -49,3 +49,7 @@ func (s SslCertificates) List(filter string) ([]common.Deletable, error) {
 
 	return resources, nil
 }
+
+func (s SslCertificates) Type() string {
+	return "compute-ssl-certificate"
+}

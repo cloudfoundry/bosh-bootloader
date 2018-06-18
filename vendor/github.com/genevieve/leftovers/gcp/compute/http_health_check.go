@@ -5,14 +5,12 @@ import "fmt"
 type HttpHealthCheck struct {
 	client httpHealthChecksClient
 	name   string
-	kind   string
 }
 
 func NewHttpHealthCheck(client httpHealthChecksClient, name string) HttpHealthCheck {
 	return HttpHealthCheck{
 		client: client,
 		name:   name,
-		kind:   "http-health-check",
 	}
 }
 
@@ -32,8 +30,4 @@ func (h HttpHealthCheck) Name() string {
 
 func (h HttpHealthCheck) Type() string {
 	return "Http Health Check"
-}
-
-func (h HttpHealthCheck) Kind() string {
-	return h.kind
 }

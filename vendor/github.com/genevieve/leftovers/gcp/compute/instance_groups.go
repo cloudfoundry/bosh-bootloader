@@ -56,3 +56,7 @@ func (i InstanceGroups) List(filter string) ([]common.Deletable, error) {
 
 	return resources, nil
 }
+
+func (i InstanceGroups) Type() string {
+	return "instance-group"
+}

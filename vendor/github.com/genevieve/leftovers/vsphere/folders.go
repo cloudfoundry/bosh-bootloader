@@ -84,3 +84,7 @@ func (v Folders) List(filter string) ([]Deletable, error) {
 
 	return deletable, nil
 }
+
+func (f Folders) Type() string {
+	return "folder"
+}

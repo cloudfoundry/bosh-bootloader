@@ -5,14 +5,12 @@ import "fmt"
 type GlobalAddress struct {
 	client globalAddressesClient
 	name   string
-	kind   string
 }
 
 func NewGlobalAddress(client globalAddressesClient, name string) GlobalAddress {
 	return GlobalAddress{
 		client: client,
 		name:   name,
-		kind:   "global-address",
 	}
 }
 
@@ -32,8 +30,4 @@ func (g GlobalAddress) Name() string {
 
 func (g GlobalAddress) Type() string {
 	return "Global Address"
-}
-
-func (g GlobalAddress) Kind() string {
-	return g.kind
 }

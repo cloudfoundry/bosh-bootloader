@@ -49,3 +49,7 @@ func (a GlobalAddresses) List(filter string) ([]common.Deletable, error) {
 
 	return resources, nil
 }
+
+func (a GlobalAddresses) Type() string {
+	return "global-address"
+}
