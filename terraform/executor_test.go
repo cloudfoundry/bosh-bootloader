@@ -72,7 +72,7 @@ var _ = Describe("Executor", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(cli.RunCall.CallCount).To(Equal(1))
-			Expect(cli.RunCall.Receives.Args).To(Equal([]string{"init"}))
+			Expect(cli.RunCall.Receives.Args).To(Equal([]string{"init", "--upgrade"}))
 
 			Expect(bufferingCLI.RunCall.CallCount).To(Equal(0))
 		})
@@ -95,7 +95,7 @@ var _ = Describe("Executor", func() {
 
 			It("returns an error", func() {
 				err := executor.Init()
-				Expect(err).To(MatchError("Run terraform init: guava"))
+				Expect(err).To(MatchError("Run terraform init --upgrade: guava"))
 			})
 		})
 	})

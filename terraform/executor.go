@@ -170,9 +170,9 @@ func (e Executor) Init() error {
 		return err
 	}
 
-	err = e.cli.Run(e.out, terraformDir, []string{"init"})
+	err = e.cli.Run(e.out, terraformDir, []string{"init", "--upgrade"})
 	if err != nil {
-		return fmt.Errorf("Run terraform init: %s", err)
+		return fmt.Errorf("Run terraform init --upgrade: %s", err)
 	}
 
 	return nil
