@@ -16,8 +16,8 @@ Steps to deploy cfcr with bbl:
     mkdir banana-env && cd banana-env
     bbl plan --name banana-env
     cp -r bosh-bootloader/plan-patches/cfcr-gcp/. .
-    bbl up
     echo kubernetes_master_host=\"${kubernetes_master_host}\" > vars/cfcr.tfvars
+    bbl up
 
     eval "$(bbl print-env)"
     ```
