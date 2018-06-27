@@ -22,7 +22,8 @@ Steps to deploy cfcr with bbl:
     eval "$(bbl print-env)"
     ```
 
-1. `bosh upload-release https://storage.googleapis.com/kubo-public/kubo-release-latest.tgz`
+1. Upload the appropriate kubo-release. These instructions should be expanded, but we don't have time right now. At the time of this edit, the following does not get you a version that matches kubo-deployment:
+~~`bosh upload-release https://storage.googleapis.com/kubo-public/kubo-release-latest.tgz`~~
 
 1. `bosh upload-stemcell https://bosh.io/d/stemcells/bosh-google-kvm-ubuntu-trusty-go_agent`
 
