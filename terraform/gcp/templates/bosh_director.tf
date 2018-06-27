@@ -3,6 +3,11 @@ variable "subnet_cidr" {
   default = "10.0.0.0/16"
 }
 
+variable "cidr_newbits" {
+  type    = "string"
+  default = "8"
+}
+
 resource "google_compute_network" "bbl-network" {
   name                    = "${var.env_id}-network"
   auto_create_subnetworks = false
@@ -105,7 +110,7 @@ resource "google_compute_firewall" "internal" {
 }
 
 locals {
-  internal_cidr = "${cidrsubnet(var.subnet_cidr, 8, 0)}"
+  internal_cidr = "${cidrsubnet(var.subnet_cidr, var.cidr_newbits, 0)}"
 }
 
 output "network" {
