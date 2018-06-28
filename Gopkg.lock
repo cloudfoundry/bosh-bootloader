@@ -113,7 +113,6 @@
   revision = "54f73bdb8a8e85a6611d3d29ab9bbf98c2a060d7"
 
 [[projects]]
-  branch = "master"
   name = "github.com/genevieve/leftovers"
   packages = [
     "aws",
@@ -137,7 +136,8 @@
     "gcp/storage",
     "vsphere"
   ]
-  revision = "df14bd6a44f01964af99e1bb55a58f4b73b0971f"
+  revision = "2bde4a252e77174ec24d9c1f9e492b927cc9e0d5"
+  version = "v0.34.0"
 
 [[projects]]
   name = "github.com/go-ini/ini"

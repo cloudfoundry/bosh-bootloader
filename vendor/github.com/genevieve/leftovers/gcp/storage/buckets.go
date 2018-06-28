@@ -10,7 +10,10 @@ import (
 
 type bucketsClient interface {
 	ListBuckets() (*gcpstorage.Buckets, error)
-	DeleteBucket(user string) error
+	DeleteBucket(bucket string) error
+
+	ListObjects(bucket string) (*gcpstorage.Objects, error)
+	DeleteObject(bucket, object string, generation int64) error
 }
 
 type Buckets struct {

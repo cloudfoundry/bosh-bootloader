@@ -36,75 +36,6 @@ type Leftovers struct {
 	resources []resource
 }
 
-func (l Leftovers) List(filter string) {
-	l.logger.NoConfirm()
-
-	var deletables []common.Deletable
-
-	for _, r := range l.resources {
-		list, err := r.List(filter)
-		if err != nil {
-			l.logger.Println(color.YellowString(err.Error()))
-		}
-
-		deletables = append(deletables, list...)
-	}
-
-	for _, d := range deletables {
-		l.logger.Println(fmt.Sprintf("[%s: %s]", d.Type(), d.Name()))
-	}
-}
-
-// Types will print all of the resource types that can be deleted.
-func (l Leftovers) Types() {
-	l.logger.NoConfirm()
-
-	for _, r := range l.resources {
-		l.logger.Println(r.Type())
-	}
-}
-
-func (l Leftovers) Delete(filter string) error {
-	deletables := [][]common.Deletable{}
-
-	for _, r := range l.resources {
-		list, err := r.List(filter)
-		if err != nil {
-			l.logger.Println(color.YellowString(err.Error()))
-		}
-
-		deletables = append(deletables, list)
-	}
-
-	var wg sync.WaitGroup
-
-	for _, list := range deletables {
-		for _, d := range list {
-			wg.Add(1)
-
-			go func(d common.Deletable) {
-				defer wg.Done()
-
-				l.logger.Println(fmt.Sprintf("[%s: %s] Deleting...", d.Type(), d.Name()))
-
-				if err := d.Delete(); err != nil {
-					l.logger.Println(fmt.Sprintf("[%s: %s] %s", d.Type(), d.Name(), color.YellowString(err.Error())))
-				} else {
-					l.logger.Println(fmt.Sprintf("[%s: %s] %s", d.Type(), d.Name(), color.GreenString("Deleted!")))
-				}
-			}(d)
-		}
-
-		wg.Wait()
-	}
-
-	return nil
-}
-
-func (l Leftovers) DeleteType(filter, rType string) error {
-	return l.Delete(filter)
-}
-
 func NewLeftovers(logger logger, keyPath string) (Leftovers, error) {
 	if keyPath == "" {
 		return Leftovers{}, errors.New("Missing service account key path.")
@@ -141,7 +72,7 @@ func NewLeftovers(logger logger, keyPath string) (Leftovers, error) {
 	if err != nil {
 		return Leftovers{}, err
 	}
-	dnsClient := dns.NewClient(p.ProjectId, dnsService, logger)
+	dnsClient := dns.NewClient(p.ProjectId, dnsService)
 
 	sqlService, err := gcpsql.New(httpClient)
 	if err != nil {
@@ -153,13 +84,13 @@ func NewLeftovers(logger logger, keyPath string) (Leftovers, error) {
 	if err != nil {
 		return Leftovers{}, err
 	}
-	storageClient := storage.NewClient(p.ProjectId, storageService, logger)
+	storageClient := storage.NewClient(p.ProjectId, storageService)
 
 	iamService, err := gcpiam.New(httpClient)
 	if err != nil {
 		return Leftovers{}, err
 	}
-	iamClient := iam.NewClient(p.ProjectId, iamService, logger)
+	iamClient := iam.NewClient(p.ProjectId, iamService)
 
 	containerService, err := gcpcontainer.New(httpClient)
 	if err != nil {
@@ -209,4 +140,93 @@ func NewLeftovers(logger logger, keyPath string) (Leftovers, error) {
 			container.NewClusters(containerClient, zones, logger),
 		},
 	}, nil
+}
+
+// List will print all of the resources that match the provided filter.
+func (l Leftovers) List(filter string) {
+	l.logger.NoConfirm()
+
+	var deletables []common.Deletable
+
+	for _, r := range l.resources {
+		list, err := r.List(filter)
+		if err != nil {
+			l.logger.Println(color.YellowString(err.Error()))
+		}
+
+		deletables = append(deletables, list...)
+	}
+
+	for _, d := range deletables {
+		l.logger.Println(fmt.Sprintf("[%s: %s]", d.Type(), d.Name()))
+	}
+}
+
+// Types will print all of the resource types that can be deleted.
+func (l Leftovers) Types() {
+	l.logger.NoConfirm()
+
+	for _, r := range l.resources {
+		l.logger.Println(r.Type())
+	}
+}
+
+func (l Leftovers) Delete(filter string) error {
+	deletables := [][]common.Deletable{}
+
+	for _, r := range l.resources {
+		list, err := r.List(filter)
+		if err != nil {
+			l.logger.Println(color.YellowString(err.Error()))
+		}
+
+		deletables = append(deletables, list)
+	}
+
+	l.asyncDelete(deletables)
+
+	return nil
+}
+
+func (l Leftovers) DeleteType(filter, rType string) error {
+	deletables := [][]common.Deletable{}
+
+	for _, r := range l.resources {
+		if r.Type() == rType {
+			list, err := r.List(filter)
+			if err != nil {
+				l.logger.Println(color.YellowString(err.Error()))
+			}
+
+			deletables = append(deletables, list)
+		}
+	}
+
+	l.asyncDelete(deletables)
+
+	return nil
+}
+
+func (l Leftovers) asyncDelete(deletables [][]common.Deletable) {
+	var wg sync.WaitGroup
+
+	for _, list := range deletables {
+		for _, d := range list {
+			wg.Add(1)
+
+			go func(d common.Deletable) {
+				defer wg.Done()
+
+				l.logger.Println(fmt.Sprintf("[%s: %s] Deleting...", d.Type(), d.Name()))
+
+				if err := d.Delete(); err != nil {
+					l.logger.Println(fmt.Sprintf("[%s: %s] %s", d.Type(), d.Name(), color.YellowString(err.Error())))
+				} else {
+					l.logger.Println(fmt.Sprintf("[%s: %s] %s", d.Type(), d.Name(), color.GreenString("Deleted!")))
+				}
+			}(d)
+		}
+
+		wg.Wait()
+	}
 }

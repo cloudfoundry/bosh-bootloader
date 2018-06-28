@@ -28,7 +28,7 @@ var _ = Describe("Folders", func() {
 	Describe("List", func() {
 		// The folder requires a valid client for Children()
 		PIt("gets the root folder", func() {
-			_, err := folders.List("banana")
+			_, err := folders.List("banana", "")
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(client.GetRootFolderCall.CallCount).To(Equal(1))
@@ -40,7 +40,7 @@ var _ = Describe("Folders", func() {
 			})
 
 			It("returns a helpful error", func() {
-				_, err := folders.List("banana")
+				_, err := folders.List("banana", "")
 				Expect(err).To(MatchError("Getting root folder: ruhroh"))
 			})
 		})

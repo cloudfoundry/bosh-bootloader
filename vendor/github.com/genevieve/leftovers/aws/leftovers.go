@@ -146,39 +146,60 @@ func (l Leftovers) List(filter string) {
 
 func (l Leftovers) Delete(filter string) error {
 	deletables := [][]common.Deletable{}
+
 	for _, r := range l.resources {
 		list, err := r.List(filter)
 		if err != nil {
-			l.logger.Println(err.Error())
+			l.logger.Println(color.YellowString(err.Error()))
 		}
 
 		deletables = append(deletables, list)
 	}
 
-	var wg sync.WaitGroup
-	for _, resources := range deletables {
-		for _, r := range resources {
-			wg.Add(1)
+	l.asyncDelete(deletables)
 
-			go func(r common.Deletable) {
-				defer wg.Done()
-
-				l.logger.Println(fmt.Sprintf("[%s: %s] Deleting...", r.Type(), r.Name()))
-
-				err := r.Delete()
-				if err != nil {
-					l.logger.Println(fmt.Sprintf("[%s: %s] %s", r.Type(), r.Name(), color.YellowString(err.Error())))
-				} else {
-					l.logger.Println(fmt.Sprintf("[%s: %s] %s", r.Type(), r.Name(), color.GreenString("Deleted!")))
-				}
-			}(r)
-		}
-
-		wg.Wait()
-	}
 	return nil
 }
 
 func (l Leftovers) DeleteType(filter, rType string) error {
-	return l.Delete(filter)
+	deletables := [][]common.Deletable{}
+
+	for _, r := range l.resources {
+		if r.Type() == rType {
+			list, err := r.List(filter)
+			if err != nil {
+				l.logger.Println(color.YellowString(err.Error()))
+			}
+
+			deletables = append(deletables, list)
+		}
+	}
+
+	l.asyncDelete(deletables)
+
+	return nil
+}
+
+func (l Leftovers) asyncDelete(deletables [][]common.Deletable) {
+	var wg sync.WaitGroup
+
+	for _, list := range deletables {
+		for _, d := range list {
+			wg.Add(1)
+
+			go func(d common.Deletable) {
+				defer wg.Done()
+
+				l.logger.Println(fmt.Sprintf("[%s: %s] Deleting...", d.Type(), d.Name()))
+
+				if err := d.Delete(); err != nil {
+					l.logger.Println(fmt.Sprintf("[%s: %s] %s", d.Type(), d.Name(), color.YellowString(err.Error())))
+				} else {
+					l.logger.Println(fmt.Sprintf("[%s: %s] %s", d.Type(), d.Name(), color.GreenString("Deleted!")))
+				}
+			}(d)
+		}
+
+		wg.Wait()
+	}
 }

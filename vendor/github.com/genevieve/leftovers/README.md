@@ -2,11 +2,21 @@
 
 Go cli & library for cleaning up **orphaned IaaS resources**.
 
+* <a href='#why'>Why might you use this?</a>
 * <a href='#what'>What's it look like?</a>
-* <a href='#why'>Why you might be here.</a>
 * <a href='#how'>Installation</a>
 * <a href='#usage'>Usage</a>
 * [Resources you can delete by IaaS.](RESOURCES.md)
+
+
+
+## <a name='why'></a> Why might you use this?
+- You `terraform apply`'d way back when and lost your `terraform.tfstate`
+- You used the console or cli to create some infrastructure and want to clean up
+- Your acceptance tests in CI failed, the container disappeared, and
+infrastructure resources were tragically orphaned
+
+
 
 ## <a name='what'></a>What's it look like?
 
@@ -36,12 +46,15 @@ Or maybe you want to **see all of the resources** in your IaaS, ie:
 ```
 
 
+Finally, you might want to delete a single resource type::
+```css
+> leftovers types
+service-account
 
-## <a name='why'></a> Why you might be here.
-- You `terraform apply`'d way back when and lost your `terraform.tfstate`
-- You used the console or cli to create some infrastructure and want to clean up
-- Your acceptance tests in CI failed, the container disappeared, and
-infrastructure resources were tragically orphaned
+> leftovers --filter banana --type service-account --no-confirm
+[Service Account: banana@pivotal.io] Deleting...
+[Service Account: banana@pivotal.io] Deleted!
+```
 
 
 

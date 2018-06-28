@@ -3,6 +3,7 @@ package vsphere
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/vmware/govmomi/object"
 )
@@ -23,7 +24,7 @@ func NewFolders(client client, logger logger) Folders {
 	}
 }
 
-func (v Folders) List(filter string) ([]Deletable, error) {
+func (v Folders) List(filter string, rType string) ([]Deletable, error) {
 	root, err := v.client.GetRootFolder(filter)
 	if err != nil {
 		return nil, fmt.Errorf("Getting root folder: %s", err)
@@ -57,8 +58,12 @@ func (v Folders) List(filter string) ([]Deletable, error) {
 
 			folder := NewFolder(childFolder, name)
 
-			proceed := v.logger.PromptWithDetails(folder.Type(), folder.Name())
-			if !proceed {
+			if strings.Contains(strings.ToLower(folder.Type()), strings.ToLower(rType)) {
+				proceed := v.logger.PromptWithDetails(folder.Type(), folder.Name())
+				if !proceed {
+					continue
+				}
+			} else {
 				continue
 			}
 
@@ -72,8 +77,12 @@ func (v Folders) List(filter string) ([]Deletable, error) {
 
 				vm := NewVirtualMachine(g)
 
-				proceed := v.logger.PromptWithDetails(vm.Type(), vm.Name())
-				if !proceed {
+				if strings.Contains(strings.ToLower(vm.Type()), strings.ToLower(rType)) {
+					proceed := v.logger.PromptWithDetails(vm.Type(), vm.Name())
+					if !proceed {
+						continue
+					}
+				} else {
 					continue
 				}
 

@@ -6,17 +6,15 @@ import (
 
 type client struct {
 	project string
-	logger  logger
 
 	managedZones *gcpdns.ManagedZonesService
 	changes      *gcpdns.ChangesService
 	recordSets   *gcpdns.ResourceRecordSetsService
 }
 
-func NewClient(project string, service *gcpdns.Service, logger logger) client {
+func NewClient(project string, service *gcpdns.Service) client {
 	return client{
 		project:      project,
-		logger:       logger,
 		managedZones: service.ManagedZones,
 		changes:      service.Changes,
 		recordSets:   service.ResourceRecordSets,

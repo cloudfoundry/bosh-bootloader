@@ -6,18 +6,18 @@ import (
 
 type client struct {
 	project string
-	logger  logger
 
 	service *gcpstorage.Service
 	buckets *gcpstorage.BucketsService
+	objects *gcpstorage.ObjectsService
 }
 
-func NewClient(project string, service *gcpstorage.Service, logger logger) client {
+func NewClient(project string, service *gcpstorage.Service) client {
 	return client{
 		project: project,
-		logger:  logger,
 		service: service,
 		buckets: service.Buckets,
+		objects: service.Objects,
 	}
 }
 
@@ -27,4 +27,12 @@ func (c client) ListBuckets() (*gcpstorage.Buckets, error) {
 
 func (c client) DeleteBucket(bucket string) error {
 	return c.buckets.Delete(bucket).Do()
+}
+
+func (c client) ListObjects(bucket string) (*gcpstorage.Objects, error) {
+	return c.objects.List(bucket).Versions(true).Do()
+}
+
+func (c client) DeleteObject(bucket, object string, generation int64) error {
+	return c.objects.Delete(bucket, object).Generation(generation).Do()
 }

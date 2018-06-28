@@ -9,7 +9,7 @@ import (
 )
 
 type serviceAccountsClient interface {
-	ListServiceAccounts() (*gcpiam.ListServiceAccountsResponse, error)
+	ListServiceAccounts() ([]*gcpiam.ServiceAccount, error)
 	DeleteServiceAccount(account string) (*gcpiam.Empty, error)
 }
 
@@ -32,7 +32,7 @@ func (s ServiceAccounts) List(filter string) ([]common.Deletable, error) {
 	}
 
 	var resources []common.Deletable
-	for _, account := range accounts.Accounts {
+	for _, account := range accounts {
 		resource := NewServiceAccount(s.client, account.Name)
 
 		if !strings.Contains(resource.Name(), filter) {

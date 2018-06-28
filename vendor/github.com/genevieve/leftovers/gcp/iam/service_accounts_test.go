@@ -32,11 +32,9 @@ var _ = Describe("ServiceAccounts", func() {
 		var filter string
 
 		BeforeEach(func() {
-			client.ListServiceAccountsCall.Returns.Output = &gcpiam.ListServiceAccountsResponse{
-				Accounts: []*gcpiam.ServiceAccount{{
-					Name: "banana-service-account",
-				}},
-			}
+			client.ListServiceAccountsCall.Returns.Output = []*gcpiam.ServiceAccount{{
+				Name: "banana-service-account",
+			}}
 			filter = "banana"
 		})
 

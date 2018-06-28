@@ -12,7 +12,7 @@ import (
 )
 
 type resource interface {
-	List(filter string) ([]Deletable, error)
+	List(filter string, rType string) ([]Deletable, error)
 	Type() string
 }
 
@@ -25,7 +25,7 @@ func (l Leftovers) List(filter string) {
 	var all []Deletable
 
 	for _, r := range l.resources {
-		list, err := r.List(filter)
+		list, err := r.List(filter, "")
 		if err != nil {
 			l.logger.Println(color.YellowString(err.Error()))
 		}
@@ -45,10 +45,14 @@ func (l Leftovers) Types() {
 }
 
 func (l Leftovers) Delete(filter string) error {
+	return l.DeleteType(filter, "")
+}
+
+func (l Leftovers) DeleteType(filter, rType string) error {
 	var deletables []Deletable
 
 	for _, r := range l.resources {
-		list, err := r.List(filter)
+		list, err := r.List(filter, rType)
 		if err != nil {
 			return err
 		}
@@ -68,10 +72,6 @@ func (l Leftovers) Delete(filter string) error {
 	}
 
 	return nil
-}
-
-func (l Leftovers) DeleteType(filter, rType string) error {
-	return l.Delete(filter)
 }
 
 func NewLeftovers(logger logger, vCenterIP, vCenterUser, vCenterPassword, vCenterDC string) (Leftovers, error) {

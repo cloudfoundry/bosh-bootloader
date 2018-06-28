@@ -15,7 +15,19 @@ func NewBucket(client bucketsClient, name string) Bucket {
 }
 
 func (b Bucket) Delete() error {
-	err := b.client.DeleteBucket(b.name)
+	objects, err := b.client.ListObjects(b.name)
+	if err != nil {
+		return fmt.Errorf("List Objects: %s", err)
+	}
+
+	for _, object := range objects.Items {
+		err = b.client.DeleteObject(b.name, object.Name, object.Generation)
+		if err != nil {
+			return fmt.Errorf("Delete Object: %s", err)
+		}
+	}
+
+	err = b.client.DeleteBucket(b.name)
 	if err != nil {
 		return fmt.Errorf("Delete: %s", err)
 	}
