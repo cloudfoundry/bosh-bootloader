@@ -45,7 +45,7 @@ var _ = Describe("ssh", func() {
 		iaasHelper = actors.NewIAASLBHelper(iaas, configuration)
 		stateDir = configuration.StateFileDir
 
-		bbl = actors.NewBBL(stateDir, pathToBBL, configuration, "ssh-env")
+		bbl = actors.NewBBL(stateDir, pathToBBL, configuration, "ssh-env", false)
 	})
 
 	AfterEach(func() {

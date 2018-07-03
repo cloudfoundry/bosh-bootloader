@@ -3,9 +3,17 @@
 
 [[projects]]
   name = "cloud.google.com/go"
-  packages = ["compute/metadata"]
-  revision = "5a9e19d4e1e41a734154e44a2132b358afb49a03"
-  version = "v0.13.0"
+  packages = [
+    "compute/metadata",
+    "iam",
+    "internal",
+    "internal/optional",
+    "internal/trace",
+    "internal/version",
+    "storage"
+  ]
+  revision = "777200caa7fb8936aed0f12b1fd79af64cc83ec9"
+  version = "v0.24.0"
 
 [[projects]]
   name = "github.com/Azure/azure-sdk-for-go"
@@ -15,8 +23,8 @@
     "arm/resources/resources",
     "arm/storage"
   ]
-  revision = "df4dd90d076ebbf6e87d08d3f00bfac8ff4bde1a"
-  version = "v10.3.1-beta"
+  revision = "2d1d76c9013c4feb6695a2346f0e66ea0ef77aa6"
+  version = "v11.3.0-beta"
 
 [[projects]]
   name = "github.com/Azure/go-autorest"
@@ -29,8 +37,14 @@
     "autorest/to",
     "autorest/validation"
   ]
-  revision = "f6be1abbb5abd0517522f850dd785990d373da7e"
-  version = "v8.4.0"
+  revision = "1f7cd6cfe0adea687ad44a512dfe76140f804318"
+  version = "v10.12.0"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/araddon/gou"
+  packages = ["."]
+  revision = "7db4be5742aecc82f99aa44d27ce25a3600a7a80"
 
 [[projects]]
   name = "github.com/aws/aws-sdk-go"
@@ -45,15 +59,20 @@
     "aws/credentials/ec2rolecreds",
     "aws/credentials/endpointcreds",
     "aws/credentials/stscreds",
+    "aws/csm",
     "aws/defaults",
     "aws/ec2metadata",
     "aws/endpoints",
     "aws/request",
     "aws/session",
     "aws/signer/v4",
+    "internal/sdkio",
+    "internal/sdkrand",
     "internal/shareddefaults",
     "private/protocol",
     "private/protocol/ec2query",
+    "private/protocol/eventstream",
+    "private/protocol/eventstream/eventstreamapi",
     "private/protocol/json/jsonutil",
     "private/protocol/jsonrpc",
     "private/protocol/query",
@@ -73,8 +92,14 @@
     "service/s3/s3manager",
     "service/sts"
   ]
-  revision = "80bf27afd5602f55c398d43621b9900583df3661"
-  version = "v1.12.35"
+  revision = "8f7d1442888a1f96115869cec4af9855018ece98"
+  version = "v1.14.18"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/cloudfoundry/go-socks5"
+  packages = ["."]
+  revision = "54f73bdb8a8e85a6611d3d29ab9bbf98c2a060d7"
 
 [[projects]]
   branch = "master"
@@ -86,7 +111,7 @@
   branch = "master"
   name = "github.com/cloudfoundry/socks5-proxy"
   packages = ["."]
-  revision = "2b969c3ac9ea253dae3edb1bb36794ab6c6daf18"
+  revision = "3659db090cb23a57807b53e2f8580b2427dc2659"
 
 [[projects]]
   name = "github.com/coreos/go-semver"
@@ -97,22 +122,17 @@
 [[projects]]
   name = "github.com/dgrijalva/jwt-go"
   packages = ["."]
-  revision = "d2709f9f1f31ebcda9651b03077758c1f3a0018c"
-  version = "v3.0.0"
+  revision = "06ea1031745cb8b3dab3f6a236daf2b0aa468b7e"
+  version = "v3.2.0"
 
 [[projects]]
   name = "github.com/fatih/color"
   packages = ["."]
-  revision = "507f6050b8568533fb3f5504de8e5205fa62a114"
-  version = "v1.6.0"
+  revision = "5b77d2a35fb0ede96d138fc9a99f5c9b6aef11b4"
+  version = "v1.7.0"
 
 [[projects]]
   branch = "master"
-  name = "github.com/genevieve/go-socks5"
-  packages = ["."]
-  revision = "54f73bdb8a8e85a6611d3d29ab9bbf98c2a060d7"
-
-[[projects]]
   name = "github.com/genevieve/leftovers"
   packages = [
     "aws",
@@ -137,25 +157,37 @@
     "vsphere"
   ]
   revision = "2bde4a252e77174ec24d9c1f9e492b927cc9e0d5"
-  version = "v0.34.0"
 
 [[projects]]
   name = "github.com/go-ini/ini"
   packages = ["."]
-  revision = "20b96f641a5ea98f2f8619ff4f3e061cff4833bd"
-  version = "v1.28.2"
+  revision = "06f5f3d67269ccec1fe5fe4134ba6e982984f7f5"
+  version = "v1.37.0"
 
 [[projects]]
-  branch = "master"
   name = "github.com/golang/protobuf"
-  packages = ["proto"]
-  revision = "130e6b02ab059e7b717a096f397c5b60111cae74"
+  packages = [
+    "proto",
+    "protoc-gen-go/descriptor",
+    "ptypes",
+    "ptypes/any",
+    "ptypes/duration",
+    "ptypes/timestamp"
+  ]
+  revision = "b4deda0973fb4c70b50d226b1af49f3da59f5265"
+  version = "v1.1.0"
+
+[[projects]]
+  name = "github.com/googleapis/gax-go"
+  packages = ["."]
+  revision = "317e0006254c44a0ac427cc52a0e083ff0b9622f"
+  version = "v2.0.0"
 
 [[projects]]
   name = "github.com/jessevdk/go-flags"
   packages = ["."]
-  revision = "96dc06278ce32a0e9d957d590bb987c81ee66407"
-  version = "v1.3.0"
+  revision = "c6ca198ec95c841fdb89fc0de7496fed11ab854e"
+  version = "v1.4.0"
 
 [[projects]]
   name = "github.com/jmespath/go-jmespath"
@@ -165,8 +197,19 @@
 [[projects]]
   name = "github.com/kr/pty"
   packages = ["."]
-  revision = "282ce0e5322c82529687d609ee670fac7c7d917c"
-  version = "v1.1.1"
+  revision = "fa756f09eeb418bf1cc6268c66ceaad9bb98f598"
+  version = "v1.1.2"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/lytics/cloudstorage"
+  packages = [
+    ".",
+    "awss3",
+    "csbufio",
+    "google"
+  ]
+  revision = "27319609bc1c8b4108e8cbc652c5dcbcf6747145"
 
 [[projects]]
   name = "github.com/mattn/go-colorable"
@@ -209,8 +252,8 @@
     "reporters/stenographer/support/go-isatty",
     "types"
   ]
-  revision = "9eda700730cba42af70d53180f9dcce9266bc2bc"
-  version = "v1.4.0"
+  revision = "fa5fabab2a1bfbd924faf4c067d07ae414e2aedf"
+  version = "v1.5.0"
 
 [[projects]]
   name = "github.com/onsi/gomega"
@@ -230,8 +273,14 @@
     "matchers/support/goraph/util",
     "types"
   ]
-  revision = "c893efa28eb45626cdaa76c9f653b62488858837"
-  version = "v1.2.0"
+  revision = "62bff4df71bdbc266561a0caee19f0594b17c240"
+  version = "v1.4.0"
+
+[[projects]]
+  name = "github.com/pborman/uuid"
+  packages = ["."]
+  revision = "e790cca94e6cc75c7064b1332e63811d4aae1a53"
+  version = "v1.1"
 
 [[projects]]
   branch = "master"
@@ -242,7 +291,7 @@
     "internal/diff",
     "internal/prettyprint"
   ]
-  revision = "760f4795167808cf328330c2765e97973a4e8fdd"
+  revision = "e36bfcc98c3a999f8f602e4937b2edb3e2f972bc"
 
 [[projects]]
   name = "github.com/pmezard/go-difflib"
@@ -256,8 +305,8 @@
     ".",
     "mem"
   ]
-  revision = "bb8f1927f2a9d3ab41c9340aa034f6b803f4359c"
-  version = "v1.0.2"
+  revision = "787d034dfe70e44075ccc060d346146ef53270ad"
+  version = "v1.1.1"
 
 [[projects]]
   name = "github.com/vmware/govmomi"
@@ -279,8 +328,28 @@
     "vim25/types",
     "vim25/xml"
   ]
-  revision = "58d927a6c3241af7f51cff7915920a616b7af3ee"
-  version = "v0.17.0"
+  revision = "e3a01f9611c32b2362366434bcd671516e78955d"
+  version = "v0.18.0"
+
+[[projects]]
+  name = "go.opencensus.io"
+  packages = [
+    ".",
+    "exporter/stackdriver/propagation",
+    "internal",
+    "internal/tagencoding",
+    "plugin/ochttp",
+    "plugin/ochttp/propagation/b3",
+    "stats",
+    "stats/internal",
+    "stats/view",
+    "tag",
+    "trace",
+    "trace/internal",
+    "trace/propagation"
+  ]
+  revision = "e262766cd0d230a1bb7c37281e345e465f19b41b"
+  version = "v0.14.0"
 
 [[projects]]
   branch = "master"
@@ -289,11 +358,14 @@
     "curve25519",
     "ed25519",
     "ed25519/internal/edwards25519",
+    "internal/chacha20",
+    "internal/subtle",
     "pkcs12",
     "pkcs12/internal/rc2",
+    "poly1305",
     "ssh"
   ]
-  revision = "847319b7fc94cab682988f93da778204da164588"
+  revision = "a49355c7e3f8fe157a85be2f77e6e269a0f89602"
 
 [[projects]]
   branch = "master"
@@ -304,9 +376,16 @@
     "html",
     "html/atom",
     "html/charset",
-    "proxy"
+    "http/httpguts",
+    "http2",
+    "http2/hpack",
+    "idna",
+    "internal/socks",
+    "internal/timeseries",
+    "proxy",
+    "trace"
   ]
-  revision = "0744d001aa8470aaa53df28d32e5ceeb8af9bd70"
+  revision = "ed29d75add3d7c4bf7ca65aac0c6df3d1420216f"
 
 [[projects]]
   branch = "master"
@@ -319,18 +398,19 @@
     "jws",
     "jwt"
   ]
-  revision = "13449ad91cb26cb47661c1b080790392170385fd"
+  revision = "ef147856a6ddbb60760db74283d2424e98c87bff"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix"]
-  revision = "429f518978ab01db8bb6f44b66785088e7fba58b"
+  revision = "7138fd3d9dc8335c567ca206f4333fb75eb05d56"
 
 [[projects]]
-  branch = "master"
   name = "golang.org/x/text"
   packages = [
+    "collate",
+    "collate/build",
     "encoding",
     "encoding/charmap",
     "encoding/htmlindex",
@@ -341,6 +421,7 @@
     "encoding/simplifiedchinese",
     "encoding/traditionalchinese",
     "encoding/unicode",
+    "internal/colltab",
     "internal/gen",
     "internal/tag",
     "internal/triegen",
@@ -348,11 +429,15 @@
     "internal/utf8internal",
     "language",
     "runes",
+    "secure/bidirule",
     "transform",
+    "unicode/bidi",
     "unicode/cldr",
-    "unicode/norm"
+    "unicode/norm",
+    "unicode/rangetable"
   ]
-  revision = "1cbadb444a806fd9430d14ad08967ed91da4fa0a"
+  revision = "f21a4dfb5e38f5895301dc265a8def02365cc3d0"
+  version = "v0.3.0"
 
 [[projects]]
   branch = "master"
@@ -364,11 +449,16 @@
     "gensupport",
     "googleapi",
     "googleapi/internal/uritemplates",
+    "googleapi/transport",
     "iam/v1",
+    "internal",
+    "iterator",
+    "option",
     "sqladmin/v1beta4",
-    "storage/v1"
+    "storage/v1",
+    "transport/http"
   ]
-  revision = "cec5cc05d57604ba2d2eaaf5381d3248fac4814d"
+  revision = "e0f3bfad25321f7b0777b3ab35a0503dcb221744"
 
 [[projects]]
   name = "google.golang.org/appengine"
@@ -384,18 +474,61 @@
     "internal/urlfetch",
     "urlfetch"
   ]
-  revision = "150dc57a1b433e64154302bdc40b6bb8aefa313a"
-  version = "v1.0.0"
+  revision = "b1f26356af11148e710935ed1ac8a7f5702c7612"
+  version = "v1.1.0"
+
+[[projects]]
+  branch = "master"
+  name = "google.golang.org/genproto"
+  packages = [
+    "googleapis/api/annotations",
+    "googleapis/iam/v1",
+    "googleapis/rpc/code",
+    "googleapis/rpc/status"
+  ]
+  revision = "ff3583edef7de132f219f0efc00e097cabcc0ec0"
+
+[[projects]]
+  name = "google.golang.org/grpc"
+  packages = [
+    ".",
+    "balancer",
+    "balancer/base",
+    "balancer/roundrobin",
+    "codes",
+    "connectivity",
+    "credentials",
+    "encoding",
+    "encoding/proto",
+    "grpclog",
+    "internal",
+    "internal/backoff",
+    "internal/channelz",
+    "internal/grpcrand",
+    "keepalive",
+    "metadata",
+    "naming",
+    "peer",
+    "resolver",
+    "resolver/dns",
+    "resolver/passthrough",
+    "stats",
+    "status",
+    "tap",
+    "transport"
+  ]
+  revision = "168a6198bcb0ef175f7dacec0b8691fc141dc9b8"
+  version = "v1.13.0"
 
 [[projects]]
   branch = "v2"
   name = "gopkg.in/yaml.v2"
   packages = ["."]
-  revision = "eb3733d160e74a9c7e442f435eb3bea458e1d19f"
+  revision = "5420a8b6744d3b0345ab293f6fcba19c978f1183"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "fb285d3e900b79981d9dfd01f95910d3ba9be76c8753f2632d6d0ab2a9bfed92"
+  inputs-digest = "6e0908a05abdb6ccecd2e2aadec269c06861498e9588950e83a73bc0ec54ca8c"
   solver-name = "gps-cdcl"
   solver-version = 1

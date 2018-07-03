@@ -43,3 +43,6 @@
 [[constraint]]
   name = "github.com/genevieve/leftovers"
   branch = "master"
+
+[prune]
+  unused-packages = true

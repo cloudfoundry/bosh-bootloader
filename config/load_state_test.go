@@ -1,6 +1,7 @@
 package config_test
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -22,6 +23,7 @@ var _ = Describe("LoadState", func() {
 		fakeStateBootstrap *fakes.StateBootstrap
 		fakeStateMigrator  *fakes.StateMigrator
 		fakeFileIO         *fakes.FileIO
+		fakeDownloader     *fakes.Downloader
 		c                  config.Config
 	)
 
@@ -30,9 +32,10 @@ var _ = Describe("LoadState", func() {
 		fakeStateBootstrap = &fakes.StateBootstrap{}
 		fakeStateMigrator = &fakes.StateMigrator{}
 		fakeFileIO = &fakes.FileIO{}
+		fakeDownloader = &fakes.Downloader{}
 		os.Clearenv()
 
-		c = config.NewConfig(fakeStateBootstrap, fakeStateMigrator, fakeLogger, fakeFileIO)
+		c = config.NewConfig(fakeStateBootstrap, fakeStateMigrator, config.NewMerger(fakeFileIO), fakeDownloader, fakeLogger, fakeFileIO)
 	})
 
 	AfterEach(func() {
@@ -102,7 +105,7 @@ var _ = Describe("LoadState", func() {
 
 			It("returns global flags", func() {
 				args := []string{
-					"bbl", "up",
+					"bbl", "print-env",
 					"--debug",
 					"--state-dir", "some-state-dir",
 				}
@@ -110,7 +113,7 @@ var _ = Describe("LoadState", func() {
 				appConfig, err := c.Bootstrap(args)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(appConfig.Command).To(Equal("up"))
+				Expect(appConfig.Command).To(Equal("print-env"))
 				Expect(appConfig.Global.Debug).To(BeTrue())
 				Expect(appConfig.Global.StateDir).To(Equal(fullStateDirPath))
 			})
@@ -118,26 +121,26 @@ var _ = Describe("LoadState", func() {
 			Context("when --help is passed in after a command", func() {
 				It("returns command help", func() {
 					args := []string{
-						"bbl", "up",
+						"bbl", "print-env",
 						"--help",
 					}
 
 					appConfig, err := c.Bootstrap(args)
 					Expect(err).NotTo(HaveOccurred())
 
-					Expect(appConfig.Command).To(Equal("up"))
+					Expect(appConfig.Command).To(Equal("print-env"))
 					Expect(appConfig.ShowCommandHelp).To(BeTrue())
 				})
 			})
 
 			Context("when help is passed in before a command", func() {
 				It("returns command help", func() {
-					args := []string{"bbl", "help", "up"}
+					args := []string{"bbl", "help", "print-env"}
 
 					appConfig, err := c.Bootstrap(args)
 					Expect(err).NotTo(HaveOccurred())
 
-					Expect(appConfig.Command).To(Equal("up"))
+					Expect(appConfig.Command).To(Equal("print-env"))
 					Expect(appConfig.ShowCommandHelp).To(BeTrue())
 				})
 			})
@@ -148,7 +151,7 @@ var _ = Describe("LoadState", func() {
 				})
 
 				It("returns global flags", func() {
-					appConfig, err := c.Bootstrap([]string{"bbl", "up"})
+					appConfig, err := c.Bootstrap([]string{"bbl", "print-env"})
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(appConfig.Global.Debug).To(BeTrue())
@@ -161,10 +164,34 @@ var _ = Describe("LoadState", func() {
 				})
 
 				It("returns global flags", func() {
-					appConfig, err := c.Bootstrap([]string{"bbl", "up"})
+					appConfig, err := c.Bootstrap([]string{"bbl", "print-env"})
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(appConfig.Global.StateDir).To(Equal("/path/to/state"))
+				})
+			})
+
+			Context("when an external bbl-state is specified", func() {
+				BeforeEach(func() {
+					fakeDownloader.DownloadCall.Returns.State = ioutil.NopCloser(bytes.NewReader([]byte("some-remote-state")))
+				})
+
+				It("downloads the bbl state", func() {
+					_, err := c.Bootstrap([]string{
+						"bbl", "print-env",
+						"--state-bucket", "some-state-bucket",
+						"--name", "some-name",
+						"--aws-access-key-id", "some-aws-access-key",
+						"--aws-secret-access-key", "some-aws-secret-access-key",
+					})
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(fakeDownloader.DownloadCall.CallCount).To(Equal(1))
+					flags := fakeDownloader.DownloadCall.Receives.GlobalFlags
+					Expect(flags.StateBucket).To(Equal("some-state-bucket"))
+					Expect(flags.EnvID).To(Equal("some-name"))
+					Expect(flags.AWSAccessKeyID).To(Equal("some-aws-access-key"))
+					Expect(flags.AWSSecretAccessKey).To(Equal("some-aws-secret-access-key"))
 				})
 			})
 		})
@@ -191,7 +218,7 @@ var _ = Describe("LoadState", func() {
 			It("returns the existing state", func() {
 				appConfig, err := c.Bootstrap([]string{
 					"bbl",
-					"rotate",
+					"print-env",
 				})
 				Expect(err).NotTo(HaveOccurred())
 
@@ -207,7 +234,7 @@ var _ = Describe("LoadState", func() {
 			It("uses the working directory", func() {
 				appConfig, err := c.Bootstrap([]string{
 					"bbl",
-					"rotate",
+					"print-env",
 				})
 				Expect(err).NotTo(HaveOccurred())
 
@@ -230,7 +257,7 @@ var _ = Describe("LoadState", func() {
 				It("uses the absolute path of the state dir", func() {
 					appConfig, err := c.Bootstrap([]string{
 						"bbl",
-						"rotate",
+						"print-env",
 						"--state-dir", "some-state-dir",
 					})
 					Expect(err).NotTo(HaveOccurred())
@@ -256,7 +283,7 @@ var _ = Describe("LoadState", func() {
 				It("does not modify the path of the state dir", func() {
 					appConfig, err := c.Bootstrap([]string{
 						"bbl",
-						"rotate",
+						"print-env",
 						"--state-dir", stateDir,
 					})
 					Expect(err).NotTo(HaveOccurred())
@@ -277,7 +304,7 @@ var _ = Describe("LoadState", func() {
 				})
 
 				It("returns an error", func() {
-					_, err := c.Bootstrap([]string{"bbl", "rotate", "--state-dir", "/this/will/not/work"})
+					_, err := c.Bootstrap([]string{"bbl", "print-env", "--state-dir", "/this/will/not/work"})
 
 					Expect(err).To(MatchError("some state dir error"))
 				})
@@ -288,14 +315,14 @@ var _ = Describe("LoadState", func() {
 					fakeStateMigrator.MigrateCall.Returns.Error = errors.New("coconut")
 				})
 				It("returns an error", func() {
-					_, err := c.Bootstrap([]string{"bbl", "rotate", "--state-dir", "some-state-dir"})
+					_, err := c.Bootstrap([]string{"bbl", "print-env", "--state-dir", "some-state-dir"})
 					Expect(err).To(MatchError("coconut"))
 				})
 			})
 
 			Context("when state-dir flag is passed without an argument", func() {
 				It("returns an error", func() {
-					_, err := c.Bootstrap([]string{"bbl", "rotate", "--state-dir", "--help"})
+					_, err := c.Bootstrap([]string{"bbl", "print-env", "--state-dir", "--help"})
 
 					Expect(err).To(MatchError("expected argument for flag `-s, --state-dir', but got option `--help'"))
 				})
@@ -358,7 +385,7 @@ var _ = Describe("LoadState", func() {
 						Expect(err).NotTo(HaveOccurred())
 
 						Expect(appConfig.Command).To(Equal("up"))
-						Expect(appConfig.SubcommandFlags).To(Equal(application.StringSlice{"--name", "some-env-id"}))
+						Expect(appConfig.Global.Name).To(Equal("some-env-id"))
 					})
 				})
 
@@ -455,7 +482,7 @@ var _ = Describe("LoadState", func() {
 			Context("when a previous state exists", func() {
 				BeforeEach(func() {
 					fakeStateMigrator.MigrateCall.Returns.State = storage.State{
-						IAAS: "vsphere",
+						IAAS: "openstack",
 						OpenStack: storage.OpenStack{
 							InternalCidr:         "internal-cidr",
 							ExternalIP:           "external-ip",
@@ -473,13 +500,14 @@ var _ = Describe("LoadState", func() {
 						},
 						EnvID: "some-env-id",
 					}
+					fakeFileIO.ReadFileCall.Returns.Contents = []byte("some-private-key")
 				})
 
 				Context("when valid matching configuration is passed in", func() {
 					It("returns state with existing configuration", func() {
 						appConfig, err := c.Bootstrap([]string{
 							"bbl", "up",
-							"--iaas", "vsphere",
+							"--iaas", "openstack",
 							"--openstack-internal-cidr", "internal-cidr",
 							"--openstack-external-ip", "external-ip",
 							"--openstack-auth-url", "auth-url",
@@ -493,7 +521,6 @@ var _ = Describe("LoadState", func() {
 							"--openstack-domain", "domain",
 							"--openstack-region", "region",
 							"--openstack-private-key", "private-key",
-							"--", "subnet",
 						})
 						Expect(err).NotTo(HaveOccurred())
 
@@ -508,7 +535,7 @@ var _ = Describe("LoadState", func() {
 						Expect(err).To(MatchError(expected))
 					},
 					Entry("returns an error for non-matching IAAS", []string{"bbl", "up", "--iaas", "gcp"},
-						"The iaas type cannot be changed for an existing environment. The current iaas type is vsphere."),
+						"The iaas type cannot be changed for an existing environment. The current iaas type is openstack."),
 				)
 			})
 		})
@@ -566,7 +593,7 @@ var _ = Describe("LoadState", func() {
 						Expect(err).NotTo(HaveOccurred())
 
 						Expect(appConfig.Command).To(Equal("up"))
-						Expect(appConfig.SubcommandFlags).To(Equal(application.StringSlice{"--name", "some-env-id"}))
+						Expect(appConfig.Global.Name).To(Equal("some-env-id"))
 					})
 				})
 
@@ -742,7 +769,7 @@ var _ = Describe("LoadState", func() {
 						Expect(err).NotTo(HaveOccurred())
 
 						Expect(appConfig.Command).To(Equal("up"))
-						Expect(appConfig.SubcommandFlags).To(Equal(application.StringSlice{"--name", "some-env-id"}))
+						Expect(appConfig.Global.Name).To(Equal("some-env-id"))
 					})
 				})
 
@@ -869,7 +896,7 @@ var _ = Describe("LoadState", func() {
 						Expect(err).NotTo(HaveOccurred())
 
 						Expect(appConfig.Command).To(Equal("up"))
-						Expect(appConfig.SubcommandFlags).To(Equal(application.StringSlice{"--name", "some-env-id"}))
+						Expect(appConfig.Global.Name).To(Equal("some-env-id"))
 					})
 
 					Context("when service account key is passed inline", func() {
@@ -1111,7 +1138,7 @@ var _ = Describe("LoadState", func() {
 						Expect(err).NotTo(HaveOccurred())
 
 						Expect(appConfig.Command).To(Equal("up"))
-						Expect(appConfig.SubcommandFlags).To(Equal(application.StringSlice{"--name", "some-env-id"}))
+						Expect(appConfig.Global.Name).To(Equal("some-env-id"))
 					})
 				})
 
@@ -1212,6 +1239,38 @@ var _ = Describe("LoadState", func() {
 					Entry("returns an error for non-matching IAAS", []string{"bbl", "up", "--iaas", "aws"},
 						"The iaas type cannot be changed for an existing environment. The current iaas type is azure."),
 				)
+			})
+		})
+
+		Context("when the updated, migrated configuration is invalid", func() {
+			var fakeMerger *fakes.Merger
+			BeforeEach(func() {
+				fakeMerger = &fakes.Merger{}
+				c = config.NewConfig(fakeStateBootstrap, fakeStateMigrator, fakeMerger, fakeDownloader, fakeLogger, fakeFileIO)
+
+				fakeMerger.MergeCall.Returns.State = storage.State{
+					IAAS:  "gcp",
+					GCP:   storage.GCP{}, // not enough config, validate should error
+					EnvID: "some-env-id",
+				}
+			})
+			Context("and the command modifies state", func() {
+				It("errors", func() {
+					_, err := c.Bootstrap([]string{
+						"bbl", "up",
+						"--iaas", "gcp",
+					})
+					Expect(err.Error()).To(ContainSubstring("gcp-service-account-key"))
+				})
+			})
+
+			Context("and the command doesn't modify state", func() {
+				It("does not error", func() {
+					_, err := c.Bootstrap([]string{
+						"bbl", "print-env",
+					})
+					Expect(err).NotTo(HaveOccurred())
+				})
 			})
 		})
 	})

@@ -16,7 +16,7 @@ func (a animalStringer) String() string {
 	return a.Data
 }
 
-var _ = Describe("MatchYAMLMatcher", func() {
+var _ = Describe("HelpfullyMatchYAMLMatcher", func() {
 	var animals, plants string
 
 	BeforeEach(func() {
@@ -29,20 +29,20 @@ var _ = Describe("MatchYAMLMatcher", func() {
 			yaml, err := ioutil.ReadFile("fixtures/santa_monica_correct.yml")
 			Expect(err).NotTo(HaveOccurred())
 
-			isMatch, err := gomegamatchers.MatchYAML(yaml).Match(yaml)
+			isMatch, err := gomegamatchers.HelpfullyMatchYAML(yaml).Match(yaml)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(isMatch).To(BeTrue())
 		})
 
 		Context("when arguments are strings", func() {
 			It("returns true when the YAML matches", func() {
-				isMatch, err := gomegamatchers.MatchYAML(animals).Match(animals)
+				isMatch, err := gomegamatchers.HelpfullyMatchYAML(animals).Match(animals)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(isMatch).To(BeTrue())
 			})
 
 			It("returns false when the YAML does not match", func() {
-				isMatch, err := gomegamatchers.MatchYAML(animals).Match(plants)
+				isMatch, err := gomegamatchers.HelpfullyMatchYAML(animals).Match(plants)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(isMatch).To(BeFalse())
 			})
@@ -56,13 +56,13 @@ var _ = Describe("MatchYAMLMatcher", func() {
 			})
 
 			It("returns true when the YAML matches", func() {
-				isMatch, err := gomegamatchers.MatchYAML(animalBytes).Match(animals)
+				isMatch, err := gomegamatchers.HelpfullyMatchYAML(animalBytes).Match(animals)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(isMatch).To(BeTrue())
 			})
 
 			It("returns false when the YAML does not match", func() {
-				isMatch, err := gomegamatchers.MatchYAML(animalBytes).Match(plants)
+				isMatch, err := gomegamatchers.HelpfullyMatchYAML(animalBytes).Match(plants)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(isMatch).To(BeFalse())
 			})
@@ -78,13 +78,13 @@ var _ = Describe("MatchYAMLMatcher", func() {
 			})
 
 			It("returns true when the YAML matches", func() {
-				isMatch, err := gomegamatchers.MatchYAML(stringer).Match(animals)
+				isMatch, err := gomegamatchers.HelpfullyMatchYAML(stringer).Match(animals)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(isMatch).To(BeTrue())
 			})
 
 			It("returns false when the YAML does not match", func() {
-				isMatch, err := gomegamatchers.MatchYAML(stringer).Match(plants)
+				isMatch, err := gomegamatchers.HelpfullyMatchYAML(stringer).Match(plants)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(isMatch).To(BeFalse())
 			})
@@ -92,13 +92,13 @@ var _ = Describe("MatchYAMLMatcher", func() {
 
 		Describe("errors", func() {
 			It("returns an error when one of the inputs is not a string, byte slice, or Stringer", func() {
-				_, err := gomegamatchers.MatchYAML(animals).Match(123213)
-				Expect(err.Error()).To(ContainSubstring("MatchYAMLMatcher matcher requires a string or stringer."))
+				_, err := gomegamatchers.HelpfullyMatchYAML(animals).Match(123213)
+				Expect(err.Error()).To(ContainSubstring("HelpfullyMatchYAMLMatcher matcher requires a string or stringer."))
 				Expect(err.Error()).To(ContainSubstring("Got:\n    <int>: 123213"))
 			})
 
 			It("returns an error when the YAML is invalid", func() {
-				_, err := gomegamatchers.MatchYAML(animals).Match("some: invalid: yaml")
+				_, err := gomegamatchers.HelpfullyMatchYAML(animals).Match("some: invalid: yaml")
 				Expect(err.Error()).To(ContainSubstring("mapping values are not allowed in this context"))
 			})
 		})
@@ -106,7 +106,7 @@ var _ = Describe("MatchYAMLMatcher", func() {
 
 	Describe("FailureMessage", func() {
 		It("returns a failure message", func() {
-			message := gomegamatchers.MatchYAML("a: 1").FailureMessage("b: 2")
+			message := gomegamatchers.HelpfullyMatchYAML("a: 1").FailureMessage("b: 2")
 			Expect(message).To(ContainSubstring("error at :"))
 			Expect(message).To(ContainSubstring("  extra key found:"))
 			Expect(message).To(ContainSubstring("    Expected"))
@@ -122,7 +122,7 @@ var _ = Describe("MatchYAMLMatcher", func() {
 			incorrectYAML, err := ioutil.ReadFile("fixtures/santa_monica_incorrect.yml")
 			Expect(err).NotTo(HaveOccurred())
 
-			message := gomegamatchers.MatchYAML(string(correctYAML)).FailureMessage(string(incorrectYAML))
+			message := gomegamatchers.HelpfullyMatchYAML(string(correctYAML)).FailureMessage(string(incorrectYAML))
 			Expect(message).To(
 				SatisfyAny(
 					SatisfyAll(
@@ -162,7 +162,7 @@ var _ = Describe("MatchYAMLMatcher", func() {
 
 		Describe("errors", func() {
 			It("returns the error as the message", func() {
-				message := gomegamatchers.MatchYAML(animals).FailureMessage("some: invalid: yaml")
+				message := gomegamatchers.HelpfullyMatchYAML(animals).FailureMessage("some: invalid: yaml")
 				Expect(message).To(ContainSubstring("mapping values are not allowed in this context"))
 			})
 		})
@@ -170,7 +170,7 @@ var _ = Describe("MatchYAMLMatcher", func() {
 
 	Describe("NegatedFailureMessage", func() {
 		It("returns a negated failure message", func() {
-			message := gomegamatchers.MatchYAML("a: 1").NegatedFailureMessage("b: 2")
+			message := gomegamatchers.HelpfullyMatchYAML("a: 1").NegatedFailureMessage("b: 2")
 			Expect(message).To(ContainSubstring("Expected"))
 			Expect(message).To(ContainSubstring("<string>: b: 2"))
 			Expect(message).To(ContainSubstring("not to match YAML of"))

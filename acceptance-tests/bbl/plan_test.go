@@ -32,7 +32,7 @@ var _ = Describe("plan", func() {
 		iaas = configuration.IAAS
 		stateDir = configuration.StateFileDir
 
-		bbl = actors.NewBBL(stateDir, pathToBBL, configuration, "plan-env")
+		bbl = actors.NewBBL(stateDir, pathToBBL, configuration, "plan-env", false)
 	})
 
 	It("sets up the bbl state directory", func() {

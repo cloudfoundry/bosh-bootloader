@@ -11,17 +11,17 @@ import (
 	"github.com/pivotal-cf-experimental/gomegamatchers/internal/prettyprint"
 )
 
-func MatchYAML(expected interface{}) types.GomegaMatcher {
-	return &MatchYAMLMatcher{
+func HelpfullyMatchYAML(expected interface{}) types.GomegaMatcher {
+	return &HelpfullyMatchYAMLMatcher{
 		YAMLToMatch: expected,
 	}
 }
 
-type MatchYAMLMatcher struct {
+type HelpfullyMatchYAMLMatcher struct {
 	YAMLToMatch interface{}
 }
 
-func (matcher *MatchYAMLMatcher) Match(actual interface{}) (success bool, err error) {
+func (matcher *HelpfullyMatchYAMLMatcher) Match(actual interface{}) (success bool, err error) {
 	equal, _, err := matcher.equal(matcher.YAMLToMatch, actual)
 	if err != nil {
 		return false, err
@@ -30,7 +30,7 @@ func (matcher *MatchYAMLMatcher) Match(actual interface{}) (success bool, err er
 	return equal, nil
 }
 
-func (matcher *MatchYAMLMatcher) FailureMessage(actual interface{}) (message string) {
+func (matcher *HelpfullyMatchYAMLMatcher) FailureMessage(actual interface{}) (message string) {
 	_, message, err := matcher.equal(matcher.YAMLToMatch, actual)
 	if err != nil {
 		return err.Error()
@@ -39,13 +39,13 @@ func (matcher *MatchYAMLMatcher) FailureMessage(actual interface{}) (message str
 	return message
 }
 
-func (matcher *MatchYAMLMatcher) NegatedFailureMessage(actual interface{}) (message string) {
+func (matcher *HelpfullyMatchYAMLMatcher) NegatedFailureMessage(actual interface{}) (message string) {
 	actualString, _ := matcher.prettyPrint(actual)
 	expectedString, _ := matcher.prettyPrint(matcher.YAMLToMatch)
 	return format.Message(actualString, "not to match YAML of", expectedString)
 }
 
-func (matcher *MatchYAMLMatcher) equal(expected interface{}, actual interface{}) (bool, string, error) {
+func (matcher *HelpfullyMatchYAMLMatcher) equal(expected interface{}, actual interface{}) (bool, string, error) {
 	actualString, err := matcher.prettyPrint(actual)
 	if err != nil {
 		return false, "", err
@@ -68,10 +68,10 @@ func (matcher *MatchYAMLMatcher) equal(expected interface{}, actual interface{})
 	return equal, prettyprint.ExpectationFailure(difference), nil
 }
 
-func (matcher *MatchYAMLMatcher) prettyPrint(input interface{}) (formatted string, err error) {
+func (matcher *HelpfullyMatchYAMLMatcher) prettyPrint(input interface{}) (formatted string, err error) {
 	inputString, ok := toString(input)
 	if !ok {
-		return "", fmt.Errorf("MatchYAMLMatcher matcher requires a string or stringer.  Got:\n%s", format.Object(input, 1))
+		return "", fmt.Errorf("HelpfullyMatchYAMLMatcher matcher requires a string or stringer.  Got:\n%s", format.Object(input, 1))
 	}
 
 	var data interface{}

@@ -52,7 +52,9 @@ type Config struct {
 	OpenStackRegion               string
 	OpenStackPrivateKey           string
 
-	StateFileDir string
+	// if bucket is set, statefiledir should be ignored
+	StateFileDir   string
+	BBLStateBucket string
 }
 
 // Loads all of the credentials from environment variables
@@ -238,7 +240,8 @@ func loadConfigFromEnvVars() Config {
 		OpenStackRegion:               os.Getenv("BBL_OPENSTACK_REGION"),
 		OpenStackPrivateKey:           os.Getenv("BBL_OPENSTACK_PRIVATE_KEY"),
 
-		StateFileDir: os.Getenv("BBL_STATE_DIR"),
+		StateFileDir:   os.Getenv("BBL_STATE_DIR"),
+		BBLStateBucket: os.Getenv("BBL_STATE_BUCKET"),
 	}
 }
 
