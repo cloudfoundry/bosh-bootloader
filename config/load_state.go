@@ -25,6 +25,10 @@ type migrator interface {
 	Migrate(storage.State) (storage.State, error)
 }
 
+type merger interface {
+	MergeGlobalFlagsToState(globalflags GlobalFlags, state storage.State) (storage.State, error)
+}
+
 type fs interface {
 	fileio.Stater
 	fileio.TempFiler
@@ -32,35 +36,38 @@ type fs interface {
 	fileio.FileWriter
 }
 
-func NewConfig(bootstrap StateBootstrap, migrator migrator, logger logger, fs fs) Config {
+func NewConfig(bootstrap StateBootstrap, migrator migrator, merger merger, logger logger, fs fs) Config {
 	return Config{
 		stateBootstrap: bootstrap,
 		migrator:       migrator,
+		merger:         merger,
 		logger:         logger,
 		fs:             fs,
+		//backend: GCS,
 	}
 }
 
 type Config struct {
 	stateBootstrap StateBootstrap
 	migrator       migrator
+	merger         merger
 	logger         logger
 	fs             fs
 }
 
-func ParseArgs(args []string) (globalFlags, []string, error) {
-	var globals globalFlags
+func ParseArgs(args []string) (GlobalFlags, []string, error) {
+	var globals GlobalFlags
 	parser := flags.NewParser(&globals, flags.IgnoreUnknown)
 
 	remainingArgs, err := parser.ParseArgs(args[1:])
 	if err != nil {
-		return globalFlags{}, remainingArgs, err
+		return GlobalFlags{}, remainingArgs, err
 	}
 
 	if !filepath.IsAbs(globals.StateDir) {
 		workingDir, err := os.Getwd()
 		if err != nil {
-			return globalFlags{}, remainingArgs, err // not tested
+			return GlobalFlags{}, remainingArgs, err // not tested
 		}
 		globals.StateDir = filepath.Join(workingDir, globals.StateDir)
 	}
@@ -119,6 +126,10 @@ func (c Config) Bootstrap(args []string) (application.Configuration, error) {
 		}, nil
 	}
 
+	// if !modifiesState && stateIsRemote {
+	// DOWNLOAD()
+	// }
+
 	state, err := c.stateBootstrap.GetState(globalFlags.StateDir)
 	if err != nil {
 		return application.Configuration{}, err
@@ -129,9 +140,16 @@ func (c Config) Bootstrap(args []string) (application.Configuration, error) {
 		return application.Configuration{}, err
 	}
 
-	state, err = c.updateIAASState(globalFlags, state)
+	state, err = c.merger.MergeGlobalFlagsToState(globalFlags, state)
 	if err != nil {
 		return application.Configuration{}, err
+	}
+
+	if modifiesState(command) {
+		err = ValidateIAAS(state)
+		if err != nil {
+			return application.Configuration{}, err
+		}
 	}
 
 	return application.Configuration{
@@ -139,15 +157,16 @@ func (c Config) Bootstrap(args []string) (application.Configuration, error) {
 			Debug:    globalFlags.Debug,
 			StateDir: globalFlags.StateDir,
 		},
-		State:           state,
-		Command:         command,
-		SubcommandFlags: remainingArgs[1:],
-		ShowCommandHelp: globalFlags.Help,
+		State:                state,
+		Command:              command,
+		SubcommandFlags:      remainingArgs[1:],
+		ShowCommandHelp:      false,
+		CommandModifiesState: modifiesState(command),
 	}, nil
 }
 
-func NeedsIAASCreds(command string) bool {
-	_, ok := map[string]struct{}{
+func modifiesState(command string) bool {
+	_, ok := map[string]struct{}{ // membership in this is untested
 		"up":                {},
 		"down":              {},
 		"plan":              {},
@@ -159,7 +178,15 @@ func NeedsIAASCreds(command string) bool {
 	return ok
 }
 
-func (c Config) updateIAASState(globalFlags globalFlags, state storage.State) (storage.State, error) {
+type Merger struct {
+	fs fs
+}
+
+func NewMerger(fs fs) Merger {
+	return Merger{fs: fs}
+}
+
+func (m Merger) MergeGlobalFlagsToState(globalFlags GlobalFlags, state storage.State) (storage.State, error) {
 	if globalFlags.IAAS != "" {
 		if state.IAAS != "" && globalFlags.IAAS != state.IAAS {
 			return storage.State{}, fmt.Errorf("The iaas type cannot be changed for an existing environment. The current iaas type is %s.", state.IAAS)
@@ -169,15 +196,15 @@ func (c Config) updateIAASState(globalFlags globalFlags, state storage.State) (s
 
 	switch state.IAAS {
 	case "aws":
-		return c.updateAWSState(globalFlags, state)
+		return m.updateAWSState(globalFlags, state)
 	case "azure":
-		return c.updateAzureState(globalFlags, state)
+		return m.updateAzureState(globalFlags, state)
 	case "gcp":
-		return c.updateGCPState(globalFlags, state)
+		return m.updateGCPState(globalFlags, state)
 	case "vsphere":
-		return c.updateVSphereState(globalFlags, state)
+		return m.updateVSphereState(globalFlags, state)
 	case "openstack":
-		return c.updateOpenStackState(globalFlags, state)
+		return m.updateOpenStackState(globalFlags, state)
 	}
 
 	return state, nil
@@ -189,7 +216,7 @@ func copyFlagToState(source string, sink *string) {
 	}
 }
 
-func (c Config) updateOpenStackState(globalFlags globalFlags, state storage.State) (storage.State, error) {
+func (m Merger) updateOpenStackState(globalFlags GlobalFlags, state storage.State) (storage.State, error) {
 	copyFlagToState(globalFlags.OpenStackInternalCidr, &state.OpenStack.InternalCidr)
 	copyFlagToState(globalFlags.OpenStackExternalIP, &state.OpenStack.ExternalIP)
 	copyFlagToState(globalFlags.OpenStackAuthURL, &state.OpenStack.AuthURL)
@@ -206,7 +233,7 @@ func (c Config) updateOpenStackState(globalFlags globalFlags, state storage.Stat
 
 	if globalFlags.OpenStackPrivateKey != "" {
 		keyFlag := globalFlags.OpenStackPrivateKey
-		if _, err := c.fs.Stat(keyFlag); err != nil {
+		if _, err := m.fs.Stat(keyFlag); err != nil {
 			state.OpenStack.PrivateKey = keyFlag
 		} else {
 			absKeyPath, err := filepath.Abs(keyFlag)
@@ -214,7 +241,7 @@ func (c Config) updateOpenStackState(globalFlags globalFlags, state storage.Stat
 				return storage.State{}, err
 			}
 
-			_, key, err := c.readKey(absKeyPath)
+			_, key, err := m.readKey(absKeyPath)
 			if err != nil {
 				return storage.State{}, err
 			}
@@ -226,7 +253,7 @@ func (c Config) updateOpenStackState(globalFlags globalFlags, state storage.Stat
 	return state, nil
 }
 
-func (c Config) updateVSphereState(globalFlags globalFlags, state storage.State) (storage.State, error) {
+func (m Merger) updateVSphereState(globalFlags GlobalFlags, state storage.State) (storage.State, error) {
 	copyFlagToState(globalFlags.VSphereVCenterUser, &state.VSphere.VCenterUser)
 	copyFlagToState(globalFlags.VSphereVCenterPassword, &state.VSphere.VCenterPassword)
 	copyFlagToState(globalFlags.VSphereVCenterIP, &state.VSphere.VCenterIP)
@@ -240,7 +267,7 @@ func (c Config) updateVSphereState(globalFlags globalFlags, state storage.State)
 	return state, nil
 }
 
-func (c Config) updateAWSState(globalFlags globalFlags, state storage.State) (storage.State, error) {
+func (m Merger) updateAWSState(globalFlags GlobalFlags, state storage.State) (storage.State, error) {
 	copyFlagToState(globalFlags.AWSAccessKeyID, &state.AWS.AccessKeyID)
 	copyFlagToState(globalFlags.AWSSecretAccessKey, &state.AWS.SecretAccessKey)
 
@@ -254,7 +281,7 @@ func (c Config) updateAWSState(globalFlags globalFlags, state storage.State) (st
 	return state, nil
 }
 
-func (c Config) updateAzureState(globalFlags globalFlags, state storage.State) (storage.State, error) {
+func (m Merger) updateAzureState(globalFlags GlobalFlags, state storage.State) (storage.State, error) {
 	copyFlagToState(globalFlags.AzureClientID, &state.Azure.ClientID)
 	copyFlagToState(globalFlags.AzureClientSecret, &state.Azure.ClientSecret)
 	copyFlagToState(globalFlags.AzureRegion, &state.Azure.Region)
@@ -264,16 +291,16 @@ func (c Config) updateAzureState(globalFlags globalFlags, state storage.State) (
 	return state, nil
 }
 
-func (c Config) updateGCPState(globalFlags globalFlags, state storage.State) (storage.State, error) {
+func (m Merger) updateGCPState(globalFlags GlobalFlags, state storage.State) (storage.State, error) {
 	if globalFlags.GCPServiceAccountKey != "" {
-		path, key, err := c.getGCPServiceAccountKey(globalFlags.GCPServiceAccountKey)
+		path, key, err := m.getGCPServiceAccountKey(globalFlags.GCPServiceAccountKey)
 		if err != nil {
 			return storage.State{}, err
 		}
 		state.GCP.ServiceAccountKey = key
 		state.GCP.ServiceAccountKeyPath = path
 
-		id, err := c.getGCPProjectID(key)
+		id, err := getGCPProjectID(key)
 		if err != nil {
 			return storage.State{}, err
 		}
@@ -293,27 +320,27 @@ func (c Config) updateGCPState(globalFlags globalFlags, state storage.State) (st
 	return state, nil
 }
 
-func (c Config) getGCPServiceAccountKey(key string) (string, string, error) {
-	if _, err := c.fs.Stat(key); err != nil {
-		return c.writeGCPServiceAccountKey(key)
+func (m Merger) getGCPServiceAccountKey(key string) (string, string, error) {
+	if _, err := m.fs.Stat(key); err != nil {
+		return m.writeGCPServiceAccountKey(key)
 	}
-	return c.readKey(key)
+	return m.readKey(key)
 }
 
-func (c Config) writeGCPServiceAccountKey(contents string) (string, string, error) {
-	tempFile, err := c.fs.TempFile("", "gcpServiceAccountKey.json")
+func (m Merger) writeGCPServiceAccountKey(contents string) (string, string, error) {
+	tempFile, err := m.fs.TempFile("", "gcpServiceAccountKey.json")
 	if err != nil {
 		return "", "", fmt.Errorf("Creating temp file for credentials: %s", err)
 	}
-	err = c.fs.WriteFile(tempFile.Name(), []byte(contents), storage.StateMode)
+	err = m.fs.WriteFile(tempFile.Name(), []byte(contents), storage.StateMode)
 	if err != nil {
 		return "", "", fmt.Errorf("Writing credentials to temp file: %s", err)
 	}
 	return tempFile.Name(), contents, nil
 }
 
-func (c Config) readKey(path string) (string, string, error) {
-	keyBytes, err := c.fs.ReadFile(path)
+func (m Merger) readKey(path string) (string, string, error) {
+	keyBytes, err := m.fs.ReadFile(path)
 	if err != nil {
 		return "", "", fmt.Errorf("Reading key: %v", err)
 	}
@@ -324,7 +351,7 @@ func (c Config) readKey(path string) (string, string, error) {
 	return absPath, string(keyBytes), nil
 }
 
-func (c Config) getGCPProjectID(key string) (string, error) {
+func getGCPProjectID(key string) (string, error) {
 	p := struct {
 		ProjectID string `json:"project_id"`
 	}{}

@@ -1,6 +1,6 @@
 package config
 
-type globalFlags struct {
+type GlobalFlags struct {
 	Help      bool   `short:"h" long:"help"`
 	Debug     bool   `short:"d" long:"debug"     env:"BBL_DEBUG"`
 	Version   bool   `short:"v" long:"version"`

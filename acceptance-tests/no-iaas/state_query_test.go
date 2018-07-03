@@ -19,7 +19,7 @@ var _ = Describe("state query against a bbl 5.1.0 state file", func() {
 		stateDir, err := ioutil.TempDir("", "")
 		ioutil.WriteFile(filepath.Join(stateDir, "bbl-state.json"), []byte(BBL_STATE_5_1_0), storage.StateMode)
 		Expect(err).NotTo(HaveOccurred())
-		bbl = actors.NewBBL(stateDir, pathToBBL, acceptance.Config{}, "no-env")
+		bbl = actors.NewBBL(stateDir, pathToBBL, acceptance.Config{}, "no-env", false)
 	})
 
 	It("bbl lbs", func() {

@@ -21,9 +21,10 @@ func (s StringSlice) ContainsAny(targets ...string) bool {
 }
 
 type Configuration struct {
-	Global          GlobalConfiguration
-	Command         string
-	SubcommandFlags StringSlice
-	State           storage.State
-	ShowCommandHelp bool
+	Global               GlobalConfiguration
+	Command              string
+	SubcommandFlags      StringSlice
+	State                storage.State
+	ShowCommandHelp      bool
+	CommandModifiesState bool
 }

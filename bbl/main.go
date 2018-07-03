@@ -60,6 +60,9 @@ func main() {
 		logger.NoConfirm()
 	}
 
+	// stateCloser, err = backends.Initialize(globals)
+	// defer stateCloser.Close()
+
 	// File IO
 	fs := afero.NewOsFs()
 	afs := &afero.Afero{Fs: fs}
@@ -74,14 +77,6 @@ func main() {
 	appConfig, err := newConfig.Bootstrap(os.Args)
 	if err != nil {
 		log.Fatalf("\n\n%s\n", err)
-	}
-
-	needsIAASCreds := config.NeedsIAASCreds(appConfig.Command) && !appConfig.ShowCommandHelp
-	if needsIAASCreds {
-		err = config.ValidateIAAS(appConfig.State)
-		if err != nil {
-			log.Fatal(err)
-		}
 	}
 
 	// Utilities
@@ -127,13 +122,17 @@ func main() {
 
 	// Clients that require IAAS credentials.
 	var (
+		// function extract InitializeNetworkClients
 		networkClient            helpers.NetworkClient
 		networkDeletionValidator commands.NetworkDeletionValidator
 
-		awsClient aws.Client
+		// function extract InitializeLeftovers
 		leftovers commands.FilteredDeleter
+
+		awsClient aws.Client
 	)
-	if needsIAASCreds {
+	// IF we could push this whole block down out of main somehow
+	if appConfig.CommandModifiesState {
 		switch appConfig.State.IAAS {
 		case "aws":
 			awsClient = aws.NewClient(appConfig.State.AWS, logger)
