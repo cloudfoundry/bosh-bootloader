@@ -38,7 +38,7 @@ var _ = Describe("up", func() {
 		iaasHelper = actors.NewIAASLBHelper(iaas, configuration)
 		stateDir = configuration.StateFileDir
 
-		bbl = actors.NewBBL(stateDir, pathToBBL, configuration, "up-env")
+		bbl = actors.NewBBL(stateDir, pathToBBL, configuration, "up-env", false)
 		boshcli = actors.NewBOSHCLI()
 	})
 

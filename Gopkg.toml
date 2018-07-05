@@ -43,3 +43,10 @@
 [[constraint]]
   name = "github.com/genevieve/leftovers"
   branch = "master"
+
+[[constraint]]
+  name = "github.com/mholt/archiver"
+  branch = "master"
+
+[prune]
+  unused-packages = true
