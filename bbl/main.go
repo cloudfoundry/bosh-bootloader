@@ -12,6 +12,7 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/application"
 	"github.com/cloudfoundry/bosh-bootloader/aws"
 	"github.com/cloudfoundry/bosh-bootloader/azure"
+	"github.com/cloudfoundry/bosh-bootloader/backends"
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/certs"
 	"github.com/cloudfoundry/bosh-bootloader/cloudconfig"
@@ -69,7 +70,10 @@ func main() {
 	stateStore := storage.NewStore(globals.StateDir, afs, garbageCollector)
 	patchDetector := storage.NewPatchDetector(globals.StateDir, logger)
 	stateMigrator := storage.NewMigrator(stateStore, afs)
-	newConfig := config.NewConfig(stateBootstrap, stateMigrator, stderrLogger, afs)
+	stateMerger := config.NewMerger(afs)
+	storageBackend := backends.NewBackend()
+	stateDownloader := config.NewDownloader(storageBackend)
+	newConfig := config.NewConfig(stateBootstrap, stateMigrator, stateMerger, stateDownloader, stderrLogger, afs)
 
 	appConfig, err := newConfig.Bootstrap(os.Args)
 	if err != nil {
