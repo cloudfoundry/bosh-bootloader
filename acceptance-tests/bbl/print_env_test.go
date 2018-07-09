@@ -1,6 +1,8 @@
 package acceptance_test
 
 import (
+	"fmt"
+
 	acceptance "github.com/cloudfoundry/bosh-bootloader/acceptance-tests"
 	"github.com/cloudfoundry/bosh-bootloader/acceptance-tests/actors"
 	. "github.com/onsi/ginkgo"
@@ -21,6 +23,10 @@ var _ = Describe("plan", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		iaas = configuration.IAAS
+		if iaas != "aws" && iaas != "gcp" {
+			Skip(fmt.Sprintf("won't run remote bbl state tests on IAAS %q ", iaas))
+		}
+
 		stateDir = configuration.StateFileDir
 
 		configuration.BBLStateBucket = "bbl-acceptance-test-states"
