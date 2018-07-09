@@ -1,3 +1,5 @@
+variable "nat_ami_map" {
+  type = "map"
 
   default = {
     ap-northeast-1 = "ami-10dfc877"
