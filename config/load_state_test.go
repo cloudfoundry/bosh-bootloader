@@ -1,7 +1,6 @@
 package config_test
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -180,10 +179,6 @@ var _ = Describe("LoadState", func() {
 			})
 
 			Context("when an external bbl-state is specified", func() {
-				BeforeEach(func() {
-					fakeDownloader.DownloadCall.Returns.State = ioutil.NopCloser(bytes.NewReader([]byte("some-remote-state")))
-				})
-
 				It("downloads the bbl state", func() {
 					_, err := c.Bootstrap(bootstrapArgs([]string{
 						"bbl", "print-env",

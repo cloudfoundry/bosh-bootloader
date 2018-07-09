@@ -18,8 +18,8 @@ type Downloader struct {
 }
 
 func (d *Downloader) DownloadAndPrepareState(flags config.GlobalFlags) error {
-	d.DownloadAndPrepareStateCall.CallCount++
-	d.DownloadAndPrepareStateCall.Receives.GlobalFlags = flags
+	d.DownloadCall.CallCount++
+	d.DownloadCall.Receives.GlobalFlags = flags
 
-	return d.DownloadAndPrepareStateCall.Returns.Error
+	return d.DownloadCall.Returns.Error
 }
