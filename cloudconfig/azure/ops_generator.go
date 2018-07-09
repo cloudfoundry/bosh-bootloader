@@ -51,6 +51,7 @@ type networkSubnet struct {
 }
 
 type subnetCloudProperties struct {
+	ResourceGroupName  string `yaml:"resource_group_name"`
 	VirtualNetworkName string `yaml:"virtual_network_name"`
 	SubnetName         string `yaml:"subnet_name"`
 	SecurityGroup      string `yaml:"security_group,omitempty"`
@@ -95,6 +96,9 @@ func (o OpsGenerator) Generate(state storage.State) (string, error) {
 			SubnetName:         "((subnet_name))",
 			SecurityGroup:      "((default_security_group))",
 		},
+	}
+	if state.Azure.ResourceGroupName != "" {
+		subnet.CloudProperties.ResourceGroupName = "((vnet_resource_group_name))"
 	}
 
 	cloudConfigOps := []op{
