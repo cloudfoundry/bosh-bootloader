@@ -21,23 +21,25 @@ import (
 )
 
 type BBL struct {
-	stateDirectory string
-	pathToBBL      string
-	configuration  acceptance.Config
-	envID          string
+	stateDirectory    string
+	pathToBBL         string
+	configuration     acceptance.Config
+	envID             string
+	useBBLStateBucket bool
 }
 
-func NewBBL(stateDirectory string, pathToBBL string, configuration acceptance.Config, envIDSuffix string) BBL {
+func NewBBL(stateDirectory string, pathToBBL string, configuration acceptance.Config, envIDSuffix string, useBBLStateBucket bool) BBL {
 	envIDPrefix := os.Getenv("BBL_TEST_ENV_ID_PREFIX")
 	if envIDPrefix == "" {
 		envIDPrefix = "bbl-test"
 	}
 
 	return BBL{
-		stateDirectory: stateDirectory,
-		pathToBBL:      pathToBBL,
-		configuration:  configuration,
-		envID:          fmt.Sprintf("%s-%s", envIDPrefix, envIDSuffix),
+		stateDirectory:    stateDirectory,
+		pathToBBL:         pathToBBL,
+		configuration:     configuration,
+		envID:             fmt.Sprintf("%s-%s", envIDPrefix, envIDSuffix),
+		useBBLStateBucket: useBBLStateBucket,
 	}
 }
 
@@ -232,6 +234,26 @@ func getExport(keyName string, lines []string) string {
 }
 
 func (b BBL) fetchValue(value string) string {
+	if b.useBBLStateBucket {
+		return b.fetchValueFromRemoteBBLState(value)
+	}
+	return b.fetchValueFromLocalBBLState(value)
+}
+
+func (b BBL) fetchValueFromRemoteBBLState(value string) string {
+	args := []string{
+		"--name", b.envID,
+		"--state-bucket", b.configuration.BBLStateBucket,
+		value,
+	}
+
+	stdout := bytes.NewBuffer([]byte{})
+	stderr := bytes.NewBuffer([]byte{})
+	b.execute(args, stdout, stderr).Wait(30 * time.Second)
+
+	return strings.TrimSpace(string(stdout.Bytes()))
+}
+func (b BBL) fetchValueFromLocalBBLState(value string) string {
 	args := []string{
 		"--state-dir", b.stateDirectory,
 		value,

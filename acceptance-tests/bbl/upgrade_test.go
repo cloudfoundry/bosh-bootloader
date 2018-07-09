@@ -59,8 +59,8 @@ var _ = Describe("Upgrade", func() {
 		if testName != "" {
 			envName = testName
 		}
-		oldBBL = actors.NewBBL(configuration.StateFileDir, f.Name(), configuration, envName)
-		newBBL = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, envName)
+		oldBBL = actors.NewBBL(configuration.StateFileDir, f.Name(), configuration, envName, false)
+		newBBL = actors.NewBBL(configuration.StateFileDir, pathToBBL, configuration, envName, false)
 		boshcli = actors.NewBOSHCLI()
 	})
 

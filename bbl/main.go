@@ -12,6 +12,7 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/application"
 	"github.com/cloudfoundry/bosh-bootloader/aws"
 	"github.com/cloudfoundry/bosh-bootloader/azure"
+	"github.com/cloudfoundry/bosh-bootloader/backends"
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/certs"
 	"github.com/cloudfoundry/bosh-bootloader/cloudconfig"
@@ -52,7 +53,7 @@ func main() {
 	stderrLogger := application.NewLogger(os.Stderr, os.Stdin)
 	stateBootstrap := storage.NewStateBootstrap(stderrLogger, Version)
 
-	globals, _, err := config.ParseArgs(os.Args)
+	globals, remainingArgs, err := config.ParseArgs(os.Args)
 	if err != nil {
 		log.Fatalf("\n\n%s\n", err)
 	}
@@ -69,19 +70,14 @@ func main() {
 	stateStore := storage.NewStore(globals.StateDir, afs, garbageCollector)
 	patchDetector := storage.NewPatchDetector(globals.StateDir, logger)
 	stateMigrator := storage.NewMigrator(stateStore, afs)
-	newConfig := config.NewConfig(stateBootstrap, stateMigrator, stderrLogger, afs)
+	stateMerger := config.NewMerger(afs)
+	storageProvider := backends.NewProvider()
+	stateDownloader := config.NewDownloader(storageProvider)
+	newConfig := config.NewConfig(stateBootstrap, stateMigrator, stateMerger, stateDownloader, stderrLogger, afs)
 
-	appConfig, err := newConfig.Bootstrap(os.Args)
+	appConfig, err := newConfig.Bootstrap(globals, remainingArgs, len(os.Args))
 	if err != nil {
 		log.Fatalf("\n\n%s\n", err)
-	}
-
-	needsIAASCreds := config.NeedsIAASCreds(appConfig.Command) && !appConfig.ShowCommandHelp
-	if needsIAASCreds {
-		err = config.ValidateIAAS(appConfig.State)
-		if err != nil {
-			log.Fatal(err)
-		}
 	}
 
 	// Utilities
@@ -127,13 +123,17 @@ func main() {
 
 	// Clients that require IAAS credentials.
 	var (
+		// function extract InitializeNetworkClients
 		networkClient            helpers.NetworkClient
 		networkDeletionValidator commands.NetworkDeletionValidator
 
-		awsClient aws.Client
+		// function extract InitializeLeftovers
 		leftovers commands.FilteredDeleter
+
+		awsClient aws.Client
 	)
-	if needsIAASCreds {
+	// IF we could push this whole block down out of main somehow
+	if appConfig.CommandModifiesState {
 		switch appConfig.State.IAAS {
 		case "aws":
 			awsClient = aws.NewClient(appConfig.State.AWS, logger)

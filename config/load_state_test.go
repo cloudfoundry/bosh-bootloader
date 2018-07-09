@@ -1,6 +1,7 @@
 package config_test
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -16,12 +17,20 @@ import (
 	. "github.com/onsi/gomega"
 )
 
+func bootstrapArgs(args []string) (config.GlobalFlags, []string, int) {
+	globals, remaining, err := config.ParseArgs(args)
+	Expect(err).NotTo(HaveOccurred())
+
+	return globals, remaining, len(args)
+}
+
 var _ = Describe("LoadState", func() {
 	var (
 		fakeLogger         *fakes.Logger
 		fakeStateBootstrap *fakes.StateBootstrap
 		fakeStateMigrator  *fakes.StateMigrator
 		fakeFileIO         *fakes.FileIO
+		fakeDownloader     *fakes.Downloader
 		c                  config.Config
 	)
 
@@ -30,9 +39,10 @@ var _ = Describe("LoadState", func() {
 		fakeStateBootstrap = &fakes.StateBootstrap{}
 		fakeStateMigrator = &fakes.StateMigrator{}
 		fakeFileIO = &fakes.FileIO{}
+		fakeDownloader = &fakes.Downloader{}
 		os.Clearenv()
 
-		c = config.NewConfig(fakeStateBootstrap, fakeStateMigrator, fakeLogger, fakeFileIO)
+		c = config.NewConfig(fakeStateBootstrap, fakeStateMigrator, config.NewMerger(fakeFileIO), fakeDownloader, fakeLogger, fakeFileIO)
 	})
 
 	AfterEach(func() {
@@ -43,7 +53,8 @@ var _ = Describe("LoadState", func() {
 		Describe("help and version", func() {
 			Context("when no commands are passed", func() {
 				It("sets the help command", func() {
-					appConfig, err := c.Bootstrap([]string{"bbl"})
+					appConfig, err := c.Bootstrap(bootstrapArgs([]string{"bbl"}))
+					// appConfig, err := c.Bootstrap(bootstrapArgs([]string{"bbl"}))
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(appConfig.Command).To(Equal("help"))
@@ -54,7 +65,7 @@ var _ = Describe("LoadState", func() {
 
 			Context("when --help is passed as a flag", func() {
 				It("sets the help command", func() {
-					appConfig, err := c.Bootstrap([]string{"bbl", "--help"})
+					appConfig, err := c.Bootstrap(bootstrapArgs([]string{"bbl", "--help"}))
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(appConfig.Command).To(Equal("help"))
@@ -66,7 +77,7 @@ var _ = Describe("LoadState", func() {
 
 			Context("when version is passed as a flag", func() {
 				It("sets the version command", func() {
-					appConfig, err := c.Bootstrap([]string{"bbl", "--version"})
+					appConfig, err := c.Bootstrap(bootstrapArgs([]string{"bbl", "--version"}))
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(appConfig.Command).To(Equal("version"))
@@ -77,7 +88,7 @@ var _ = Describe("LoadState", func() {
 
 			DescribeTable("subcommand help for help and version",
 				func(args []string, expectedCommand string) {
-					appConfig, err := c.Bootstrap(args)
+					appConfig, err := c.Bootstrap(bootstrapArgs(args))
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(appConfig.Command).To(Equal(expectedCommand))
@@ -102,15 +113,15 @@ var _ = Describe("LoadState", func() {
 
 			It("returns global flags", func() {
 				args := []string{
-					"bbl", "up",
+					"bbl", "print-env",
 					"--debug",
 					"--state-dir", "some-state-dir",
 				}
 
-				appConfig, err := c.Bootstrap(args)
+				appConfig, err := c.Bootstrap(bootstrapArgs(args))
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(appConfig.Command).To(Equal("up"))
+				Expect(appConfig.Command).To(Equal("print-env"))
 				Expect(appConfig.Global.Debug).To(BeTrue())
 				Expect(appConfig.Global.StateDir).To(Equal(fullStateDirPath))
 			})
@@ -118,26 +129,26 @@ var _ = Describe("LoadState", func() {
 			Context("when --help is passed in after a command", func() {
 				It("returns command help", func() {
 					args := []string{
-						"bbl", "up",
+						"bbl", "print-env",
 						"--help",
 					}
 
-					appConfig, err := c.Bootstrap(args)
+					appConfig, err := c.Bootstrap(bootstrapArgs(args))
 					Expect(err).NotTo(HaveOccurred())
 
-					Expect(appConfig.Command).To(Equal("up"))
+					Expect(appConfig.Command).To(Equal("print-env"))
 					Expect(appConfig.ShowCommandHelp).To(BeTrue())
 				})
 			})
 
 			Context("when help is passed in before a command", func() {
 				It("returns command help", func() {
-					args := []string{"bbl", "help", "up"}
+					args := []string{"bbl", "help", "print-env"}
 
-					appConfig, err := c.Bootstrap(args)
+					appConfig, err := c.Bootstrap(bootstrapArgs(args))
 					Expect(err).NotTo(HaveOccurred())
 
-					Expect(appConfig.Command).To(Equal("up"))
+					Expect(appConfig.Command).To(Equal("print-env"))
 					Expect(appConfig.ShowCommandHelp).To(BeTrue())
 				})
 			})
@@ -148,7 +159,7 @@ var _ = Describe("LoadState", func() {
 				})
 
 				It("returns global flags", func() {
-					appConfig, err := c.Bootstrap([]string{"bbl", "up"})
+					appConfig, err := c.Bootstrap(bootstrapArgs([]string{"bbl", "print-env"}))
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(appConfig.Global.Debug).To(BeTrue())
@@ -161,10 +172,34 @@ var _ = Describe("LoadState", func() {
 				})
 
 				It("returns global flags", func() {
-					appConfig, err := c.Bootstrap([]string{"bbl", "up"})
+					appConfig, err := c.Bootstrap(bootstrapArgs([]string{"bbl", "print-env"}))
 					Expect(err).NotTo(HaveOccurred())
 
 					Expect(appConfig.Global.StateDir).To(Equal("/path/to/state"))
+				})
+			})
+
+			Context("when an external bbl-state is specified", func() {
+				BeforeEach(func() {
+					fakeDownloader.DownloadCall.Returns.State = ioutil.NopCloser(bytes.NewReader([]byte("some-remote-state")))
+				})
+
+				It("downloads the bbl state", func() {
+					_, err := c.Bootstrap(bootstrapArgs([]string{
+						"bbl", "print-env",
+						"--state-bucket", "some-state-bucket",
+						"--name", "some-name",
+						"--aws-access-key-id", "some-aws-access-key",
+						"--aws-secret-access-key", "some-aws-secret-access-key",
+					}))
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(fakeDownloader.DownloadCall.CallCount).To(Equal(1))
+					flags := fakeDownloader.DownloadCall.Receives.GlobalFlags
+					Expect(flags.StateBucket).To(Equal("some-state-bucket"))
+					Expect(flags.EnvID).To(Equal("some-name"))
+					Expect(flags.AWSAccessKeyID).To(Equal("some-aws-access-key"))
+					Expect(flags.AWSSecretAccessKey).To(Equal("some-aws-secret-access-key"))
 				})
 			})
 		})
@@ -189,10 +224,10 @@ var _ = Describe("LoadState", func() {
 			})
 
 			It("returns the existing state", func() {
-				appConfig, err := c.Bootstrap([]string{
+				appConfig, err := c.Bootstrap(bootstrapArgs([]string{
 					"bbl",
-					"rotate",
-				})
+					"print-env",
+				}))
 				Expect(err).NotTo(HaveOccurred())
 
 				By("migrating the existing state file", func() {
@@ -205,10 +240,10 @@ var _ = Describe("LoadState", func() {
 			})
 
 			It("uses the working directory", func() {
-				appConfig, err := c.Bootstrap([]string{
+				appConfig, err := c.Bootstrap(bootstrapArgs([]string{
 					"bbl",
-					"rotate",
-				})
+					"print-env",
+				}))
 				Expect(err).NotTo(HaveOccurred())
 
 				workingDir, err := os.Getwd()
@@ -228,11 +263,11 @@ var _ = Describe("LoadState", func() {
 				})
 
 				It("uses the absolute path of the state dir", func() {
-					appConfig, err := c.Bootstrap([]string{
+					appConfig, err := c.Bootstrap(bootstrapArgs([]string{
 						"bbl",
-						"rotate",
+						"print-env",
 						"--state-dir", "some-state-dir",
-					})
+					}))
 					Expect(err).NotTo(HaveOccurred())
 
 					By("loading state from the specified state dir", func() {
@@ -254,11 +289,11 @@ var _ = Describe("LoadState", func() {
 				})
 
 				It("does not modify the path of the state dir", func() {
-					appConfig, err := c.Bootstrap([]string{
+					appConfig, err := c.Bootstrap(bootstrapArgs([]string{
 						"bbl",
-						"rotate",
+						"print-env",
 						"--state-dir", stateDir,
-					})
+					}))
 					Expect(err).NotTo(HaveOccurred())
 
 					By("loading state from the specified state dir", func() {
@@ -277,7 +312,7 @@ var _ = Describe("LoadState", func() {
 				})
 
 				It("returns an error", func() {
-					_, err := c.Bootstrap([]string{"bbl", "rotate", "--state-dir", "/this/will/not/work"})
+					_, err := c.Bootstrap(bootstrapArgs([]string{"bbl", "print-env", "--state-dir", "/this/will/not/work"}))
 
 					Expect(err).To(MatchError("some state dir error"))
 				})
@@ -288,14 +323,14 @@ var _ = Describe("LoadState", func() {
 					fakeStateMigrator.MigrateCall.Returns.Error = errors.New("coconut")
 				})
 				It("returns an error", func() {
-					_, err := c.Bootstrap([]string{"bbl", "rotate", "--state-dir", "some-state-dir"})
+					_, err := c.Bootstrap(bootstrapArgs([]string{"bbl", "print-env", "--state-dir", "some-state-dir"}))
 					Expect(err).To(MatchError("coconut"))
 				})
 			})
 
 			Context("when state-dir flag is passed without an argument", func() {
 				It("returns an error", func() {
-					_, err := c.Bootstrap([]string{"bbl", "rotate", "--state-dir", "--help"})
+					_, _, err := config.ParseArgs([]string{"bbl", "print-env", "--state-dir", "--help"})
 
 					Expect(err).To(MatchError("expected argument for flag `-s, --state-dir', but got option `--help'"))
 				})
@@ -332,7 +367,7 @@ var _ = Describe("LoadState", func() {
 					})
 
 					It("returns a state object containing configuration flags", func() {
-						appConfig, err := c.Bootstrap(args)
+						appConfig, err := c.Bootstrap(bootstrapArgs(args))
 						Expect(err).NotTo(HaveOccurred())
 
 						state := appConfig.State
@@ -354,11 +389,11 @@ var _ = Describe("LoadState", func() {
 					})
 
 					It("returns the remaining arguments", func() {
-						appConfig, err := c.Bootstrap(args)
+						appConfig, err := c.Bootstrap(bootstrapArgs(args))
 						Expect(err).NotTo(HaveOccurred())
 
 						Expect(appConfig.Command).To(Equal("up"))
-						Expect(appConfig.SubcommandFlags).To(Equal(application.StringSlice{"--name", "some-env-id"}))
+						Expect(appConfig.Global.Name).To(Equal("some-env-id"))
 					})
 				})
 
@@ -390,7 +425,7 @@ var _ = Describe("LoadState", func() {
 					})
 
 					It("uses the raw key", func() {
-						appConfig, err := c.Bootstrap(args)
+						appConfig, err := c.Bootstrap(bootstrapArgs(args))
 
 						state := appConfig.State
 						Expect(err).NotTo(HaveOccurred())
@@ -423,7 +458,7 @@ var _ = Describe("LoadState", func() {
 					})
 
 					It("returns a state object containing configuration flags", func() {
-						appConfig, err := c.Bootstrap(args)
+						appConfig, err := c.Bootstrap(bootstrapArgs(args))
 						Expect(err).NotTo(HaveOccurred())
 
 						state := appConfig.State
@@ -444,7 +479,7 @@ var _ = Describe("LoadState", func() {
 					})
 
 					It("returns the command", func() {
-						appConfig, err := c.Bootstrap(args)
+						appConfig, err := c.Bootstrap(bootstrapArgs(args))
 						Expect(err).NotTo(HaveOccurred())
 
 						Expect(appConfig.Command).To(Equal("up"))
@@ -455,7 +490,7 @@ var _ = Describe("LoadState", func() {
 			Context("when a previous state exists", func() {
 				BeforeEach(func() {
 					fakeStateMigrator.MigrateCall.Returns.State = storage.State{
-						IAAS: "vsphere",
+						IAAS: "openstack",
 						OpenStack: storage.OpenStack{
 							InternalCidr:         "internal-cidr",
 							ExternalIP:           "external-ip",
@@ -473,13 +508,14 @@ var _ = Describe("LoadState", func() {
 						},
 						EnvID: "some-env-id",
 					}
+					fakeFileIO.ReadFileCall.Returns.Contents = []byte("some-private-key")
 				})
 
 				Context("when valid matching configuration is passed in", func() {
 					It("returns state with existing configuration", func() {
-						appConfig, err := c.Bootstrap([]string{
+						appConfig, err := c.Bootstrap(bootstrapArgs([]string{
 							"bbl", "up",
-							"--iaas", "vsphere",
+							"--iaas", "openstack",
 							"--openstack-internal-cidr", "internal-cidr",
 							"--openstack-external-ip", "external-ip",
 							"--openstack-auth-url", "auth-url",
@@ -493,8 +529,7 @@ var _ = Describe("LoadState", func() {
 							"--openstack-domain", "domain",
 							"--openstack-region", "region",
 							"--openstack-private-key", "private-key",
-							"--", "subnet",
-						})
+						}))
 						Expect(err).NotTo(HaveOccurred())
 
 						Expect(appConfig.State.EnvID).To(Equal("some-env-id"))
@@ -503,12 +538,12 @@ var _ = Describe("LoadState", func() {
 
 				DescribeTable("when non-matching configuration is passed in",
 					func(args []string, expected string) {
-						_, err := c.Bootstrap(args)
+						_, err := c.Bootstrap(bootstrapArgs(args))
 
 						Expect(err).To(MatchError(expected))
 					},
 					Entry("returns an error for non-matching IAAS", []string{"bbl", "up", "--iaas", "gcp"},
-						"The iaas type cannot be changed for an existing environment. The current iaas type is vsphere."),
+						"The iaas type cannot be changed for an existing environment. The current iaas type is openstack."),
 				)
 			})
 		})
@@ -540,7 +575,7 @@ var _ = Describe("LoadState", func() {
 					})
 
 					It("returns a state object containing configuration flags", func() {
-						appConfig, err := c.Bootstrap(args)
+						appConfig, err := c.Bootstrap(bootstrapArgs(args))
 						Expect(err).NotTo(HaveOccurred())
 
 						state := appConfig.State
@@ -562,11 +597,11 @@ var _ = Describe("LoadState", func() {
 					})
 
 					It("returns the remaining arguments", func() {
-						appConfig, err := c.Bootstrap(args)
+						appConfig, err := c.Bootstrap(bootstrapArgs(args))
 						Expect(err).NotTo(HaveOccurred())
 
 						Expect(appConfig.Command).To(Equal("up"))
-						Expect(appConfig.SubcommandFlags).To(Equal(application.StringSlice{"--name", "some-env-id"}))
+						Expect(appConfig.Global.Name).To(Equal("some-env-id"))
 					})
 				})
 
@@ -592,7 +627,7 @@ var _ = Describe("LoadState", func() {
 					})
 
 					It("returns a state object containing configuration flags", func() {
-						appConfig, err := c.Bootstrap(args)
+						appConfig, err := c.Bootstrap(bootstrapArgs(args))
 						Expect(err).NotTo(HaveOccurred())
 
 						state := appConfig.State
@@ -612,7 +647,7 @@ var _ = Describe("LoadState", func() {
 					})
 
 					It("returns the command", func() {
-						appConfig, err := c.Bootstrap(args)
+						appConfig, err := c.Bootstrap(bootstrapArgs(args))
 						Expect(err).NotTo(HaveOccurred())
 
 						Expect(appConfig.Command).To(Equal("up"))
@@ -639,7 +674,7 @@ var _ = Describe("LoadState", func() {
 						}
 					})
 					It("generates vm, templates and disks folder names", func() {
-						appConfig, err := c.Bootstrap(args)
+						appConfig, err := c.Bootstrap(bootstrapArgs(args))
 						Expect(err).NotTo(HaveOccurred())
 
 						state := appConfig.State
@@ -674,7 +709,7 @@ var _ = Describe("LoadState", func() {
 
 				Context("when valid matching configuration is passed in", func() {
 					It("returns state with existing configuration", func() {
-						appConfig, err := c.Bootstrap([]string{
+						appConfig, err := c.Bootstrap(bootstrapArgs([]string{
 							"bbl", "up",
 							"--iaas", "vsphere",
 							"--vsphere-vcenter-user", "user",
@@ -689,7 +724,7 @@ var _ = Describe("LoadState", func() {
 							"--vsphere-vcenter-vms", "vms",
 							"--vsphere-vcenter-templates", "templates",
 							"--vsphere-vcenter-disks", "disks",
-						})
+						}))
 						Expect(err).NotTo(HaveOccurred())
 
 						Expect(appConfig.State.EnvID).To(Equal("some-env-id"))
@@ -698,7 +733,7 @@ var _ = Describe("LoadState", func() {
 
 				DescribeTable("when non-matching configuration is passed in",
 					func(args []string, expected string) {
-						_, err := c.Bootstrap(args)
+						_, err := c.Bootstrap(bootstrapArgs(args))
 
 						Expect(err).To(MatchError(expected))
 					},
@@ -726,7 +761,7 @@ var _ = Describe("LoadState", func() {
 					})
 
 					It("returns a state object containing configuration flags", func() {
-						appConfig, err := c.Bootstrap(args)
+						appConfig, err := c.Bootstrap(bootstrapArgs(args))
 						Expect(err).NotTo(HaveOccurred())
 
 						state := appConfig.State
@@ -738,11 +773,11 @@ var _ = Describe("LoadState", func() {
 					})
 
 					It("returns the remaining arguments", func() {
-						appConfig, err := c.Bootstrap(args)
+						appConfig, err := c.Bootstrap(bootstrapArgs(args))
 						Expect(err).NotTo(HaveOccurred())
 
 						Expect(appConfig.Command).To(Equal("up"))
-						Expect(appConfig.SubcommandFlags).To(Equal(application.StringSlice{"--name", "some-env-id"}))
+						Expect(appConfig.Global.Name).To(Equal("some-env-id"))
 					})
 				})
 
@@ -761,7 +796,7 @@ var _ = Describe("LoadState", func() {
 					})
 
 					It("returns a state object containing configuration flags", func() {
-						appConfig, err := c.Bootstrap(args)
+						appConfig, err := c.Bootstrap(bootstrapArgs(args))
 						Expect(err).NotTo(HaveOccurred())
 
 						state := appConfig.State
@@ -772,7 +807,7 @@ var _ = Describe("LoadState", func() {
 					})
 
 					It("returns the command", func() {
-						appConfig, err := c.Bootstrap(args)
+						appConfig, err := c.Bootstrap(bootstrapArgs(args))
 						Expect(err).NotTo(HaveOccurred())
 
 						Expect(appConfig.Command).To(Equal("up"))
@@ -795,13 +830,13 @@ var _ = Describe("LoadState", func() {
 
 				Context("when valid matching configuration is passed in", func() {
 					It("returns state with existing configuration", func() {
-						appConfig, err := c.Bootstrap([]string{
+						appConfig, err := c.Bootstrap(bootstrapArgs([]string{
 							"bbl", "up",
 							"--iaas", "aws",
 							"--aws-access-key-id", "some-access-key-id",
 							"--aws-secret-access-key", "some-secret-access-key",
 							"--aws-region", "some-region",
-						})
+						}))
 						Expect(err).NotTo(HaveOccurred())
 
 						Expect(appConfig.State.EnvID).To(Equal("some-env-id"))
@@ -810,7 +845,7 @@ var _ = Describe("LoadState", func() {
 
 				DescribeTable("when non-matching configuration is passed in",
 					func(args []string, expected string) {
-						_, err := c.Bootstrap(args)
+						_, err := c.Bootstrap(bootstrapArgs(args))
 
 						Expect(err).To(MatchError(expected))
 					},
@@ -851,7 +886,7 @@ var _ = Describe("LoadState", func() {
 					})
 
 					It("returns a state object containing configuration flags", func() {
-						appConfig, err := c.Bootstrap(args)
+						appConfig, err := c.Bootstrap(bootstrapArgs(args))
 
 						Expect(err).NotTo(HaveOccurred())
 
@@ -864,12 +899,12 @@ var _ = Describe("LoadState", func() {
 					})
 
 					It("returns the command and its flags", func() {
-						appConfig, err := c.Bootstrap(args)
+						appConfig, err := c.Bootstrap(bootstrapArgs(args))
 
 						Expect(err).NotTo(HaveOccurred())
 
 						Expect(appConfig.Command).To(Equal("up"))
-						Expect(appConfig.SubcommandFlags).To(Equal(application.StringSlice{"--name", "some-env-id"}))
+						Expect(appConfig.Global.Name).To(Equal("some-env-id"))
 					})
 
 					Context("when service account key is passed inline", func() {
@@ -886,7 +921,7 @@ var _ = Describe("LoadState", func() {
 						})
 
 						It("returns a state object containing a path to the service account key", func() {
-							appConfig, err := c.Bootstrap(args)
+							appConfig, err := c.Bootstrap(bootstrapArgs(args))
 
 							Expect(err).NotTo(HaveOccurred())
 							Expect(appConfig.State.GCP.ProjectID).To(Equal("some-project-id"))
@@ -911,7 +946,7 @@ var _ = Describe("LoadState", func() {
 							})
 
 							It("returns an error", func() {
-								_, err := c.Bootstrap(args)
+								_, err := c.Bootstrap(bootstrapArgs(args))
 
 								Expect(err).To(MatchError("Unmarshalling service account key (must be valid json): invalid character '/' looking for beginning of value"))
 							})
@@ -929,7 +964,7 @@ var _ = Describe("LoadState", func() {
 							})
 
 							It("returns an error", func() {
-								_, err := c.Bootstrap(args)
+								_, err := c.Bootstrap(bootstrapArgs(args))
 								Expect(err).To(MatchError(ContainSubstring("Unmarshalling service account key (must be valid json):")))
 							})
 						})
@@ -947,7 +982,7 @@ var _ = Describe("LoadState", func() {
 						})
 
 						It("returns an error", func() {
-							_, err := c.Bootstrap(args)
+							_, err := c.Bootstrap(bootstrapArgs(args))
 							Expect(err).To(MatchError("Service account key is missing field `project_id`"))
 						})
 					})
@@ -965,7 +1000,7 @@ var _ = Describe("LoadState", func() {
 						})
 
 						It("returns an error", func() {
-							_, err := c.Bootstrap(args)
+							_, err := c.Bootstrap(bootstrapArgs(args))
 							Expect(err).To(MatchError("Creating temp file for credentials: banana"))
 						})
 					})
@@ -983,7 +1018,7 @@ var _ = Describe("LoadState", func() {
 						})
 
 						It("returns an error", func() {
-							_, err := c.Bootstrap(args)
+							_, err := c.Bootstrap(bootstrapArgs(args))
 							Expect(err).To(MatchError("Writing credentials to temp file: coconut"))
 						})
 					})
@@ -1003,7 +1038,7 @@ var _ = Describe("LoadState", func() {
 					})
 
 					It("returns a state containing configuration", func() {
-						appConfig, err := c.Bootstrap(args)
+						appConfig, err := c.Bootstrap(bootstrapArgs(args))
 
 						Expect(err).NotTo(HaveOccurred())
 
@@ -1017,7 +1052,7 @@ var _ = Describe("LoadState", func() {
 					})
 
 					It("returns the remaining arguments", func() {
-						appConfig, err := c.Bootstrap(args)
+						appConfig, err := c.Bootstrap(bootstrapArgs(args))
 						Expect(err).NotTo(HaveOccurred())
 
 						Expect(appConfig.Command).To(Equal("up"))
@@ -1044,12 +1079,12 @@ var _ = Describe("LoadState", func() {
 
 				Context("when valid matching configuration is passed in", func() {
 					It("returns state with existing configuration", func() {
-						appConfig, err := c.Bootstrap([]string{
+						appConfig, err := c.Bootstrap(bootstrapArgs([]string{
 							"bbl", "up",
 							"--iaas", "gcp",
 							"--gcp-service-account-key", serviceAccountKey,
 							"--gcp-region", "some-region",
-						})
+						}))
 						Expect(err).NotTo(HaveOccurred())
 
 						appConfig.State.GCP.ServiceAccountKey = ""     // this isn't written to disk
@@ -1060,7 +1095,7 @@ var _ = Describe("LoadState", func() {
 
 				DescribeTable("when non-matching configuration is passed in",
 					func(args []string, expected string) {
-						_, err := c.Bootstrap(args)
+						_, err := c.Bootstrap(bootstrapArgs(args))
 
 						Expect(err).To(MatchError(expected))
 					},
@@ -1092,7 +1127,7 @@ var _ = Describe("LoadState", func() {
 					})
 
 					It("returns a state object containing configuration flags", func() {
-						appConfig, err := c.Bootstrap(args)
+						appConfig, err := c.Bootstrap(bootstrapArgs(args))
 
 						Expect(err).NotTo(HaveOccurred())
 
@@ -1106,12 +1141,12 @@ var _ = Describe("LoadState", func() {
 					})
 
 					It("returns the command and its flags", func() {
-						appConfig, err := c.Bootstrap(args)
+						appConfig, err := c.Bootstrap(bootstrapArgs(args))
 
 						Expect(err).NotTo(HaveOccurred())
 
 						Expect(appConfig.Command).To(Equal("up"))
-						Expect(appConfig.SubcommandFlags).To(Equal(application.StringSlice{"--name", "some-env-id"}))
+						Expect(appConfig.Global.Name).To(Equal("some-env-id"))
 					})
 				})
 
@@ -1130,7 +1165,7 @@ var _ = Describe("LoadState", func() {
 					})
 
 					It("returns a state containing configuration", func() {
-						appConfig, err := c.Bootstrap(args)
+						appConfig, err := c.Bootstrap(bootstrapArgs(args))
 
 						Expect(err).NotTo(HaveOccurred())
 
@@ -1145,7 +1180,7 @@ var _ = Describe("LoadState", func() {
 					})
 
 					It("returns the command", func() {
-						appConfig, err := c.Bootstrap(args)
+						appConfig, err := c.Bootstrap(bootstrapArgs(args))
 
 						Expect(err).NotTo(HaveOccurred())
 
@@ -1172,9 +1207,9 @@ var _ = Describe("LoadState", func() {
 
 				Context("when no configuration is passed in", func() {
 					It("returns state with existing configuration", func() {
-						appConfig, err := c.Bootstrap([]string{
+						appConfig, err := c.Bootstrap(bootstrapArgs([]string{
 							"bbl", "up",
-						})
+						}))
 						Expect(err).NotTo(HaveOccurred())
 
 						Expect(appConfig.State.EnvID).To(Equal("some-env-id"))
@@ -1188,7 +1223,7 @@ var _ = Describe("LoadState", func() {
 
 				Context("when valid matching configuration is passed in", func() {
 					It("returns state with existing configuration", func() {
-						appConfig, err := c.Bootstrap([]string{
+						appConfig, err := c.Bootstrap(bootstrapArgs([]string{
 							"bbl", "up",
 							"--iaas", "azure",
 							"--azure-client-id", "client-id",
@@ -1196,7 +1231,7 @@ var _ = Describe("LoadState", func() {
 							"--azure-region", "region",
 							"--azure-subscription-id", "subscription-id",
 							"--azure-tenant-id", "tenant-id",
-						})
+						}))
 						Expect(err).NotTo(HaveOccurred())
 
 						Expect(appConfig.State.EnvID).To(Equal("some-env-id"))
@@ -1205,13 +1240,45 @@ var _ = Describe("LoadState", func() {
 
 				DescribeTable("when non-matching configuration is passed in",
 					func(args []string, expected string) {
-						_, err := c.Bootstrap(args)
+						_, err := c.Bootstrap(bootstrapArgs(args))
 
 						Expect(err).To(MatchError(expected))
 					},
 					Entry("returns an error for non-matching IAAS", []string{"bbl", "up", "--iaas", "aws"},
 						"The iaas type cannot be changed for an existing environment. The current iaas type is azure."),
 				)
+			})
+		})
+
+		Context("when the updated, migrated configuration is invalid", func() {
+			var fakeMerger *fakes.Merger
+			BeforeEach(func() {
+				fakeMerger = &fakes.Merger{}
+				c = config.NewConfig(fakeStateBootstrap, fakeStateMigrator, fakeMerger, fakeDownloader, fakeLogger, fakeFileIO)
+
+				fakeMerger.MergeCall.Returns.State = storage.State{
+					IAAS:  "gcp",
+					GCP:   storage.GCP{}, // not enough config, validate should error
+					EnvID: "some-env-id",
+				}
+			})
+			Context("and the command modifies state", func() {
+				It("errors", func() {
+					_, err := c.Bootstrap(bootstrapArgs([]string{
+						"bbl", "up",
+						"--iaas", "gcp",
+					}))
+					Expect(err.Error()).To(ContainSubstring("gcp-service-account-key"))
+				})
+			})
+
+			Context("and the command doesn't modify state", func() {
+				It("does not error", func() {
+					_, err := c.Bootstrap(bootstrapArgs([]string{
+						"bbl", "print-env",
+					}))
+					Expect(err).NotTo(HaveOccurred())
+				})
 			})
 		})
 	})

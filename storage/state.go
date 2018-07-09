@@ -17,4 +17,5 @@ type State struct {
 	TFState        string    `json:"tfState"`
 	LB             LB        `json:"lb"`
 	LatestTFOutput string    `json:"latestTFOutput"`
+	StorageBucket  string    `json:"storageBucket,omitempty"`
 }
