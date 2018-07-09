@@ -250,6 +250,7 @@ func (b BBL) fetchValueFromRemoteBBLState(value string) string {
 	stdout := bytes.NewBuffer([]byte{})
 	stderr := bytes.NewBuffer([]byte{})
 	b.execute(args, stdout, stderr).Wait(30 * time.Second)
+	fmt.Println(stderr)
 
 	return strings.TrimSpace(string(stdout.Bytes()))
 }
