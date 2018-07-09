@@ -271,6 +271,12 @@ func (c Config) updateAzureState(globalFlags globalFlags, state storage.State) (
 	copyFlagToState(globalFlags.AzureRegion, &state.Azure.Region)
 	copyFlagToState(globalFlags.AzureSubscriptionID, &state.Azure.SubscriptionID)
 	copyFlagToState(globalFlags.AzureTenantID, &state.Azure.TenantID)
+	copyFlagToState(globalFlags.AzureResourceGroupName, &state.Azure.ResourceGroupName)
+	copyFlagToState(globalFlags.AzureVnetResourceGroupName, &state.Azure.VnetResourceGroupName)
+	copyFlagToState(globalFlags.AzureVnetName, &state.Azure.VnetName)
+	copyFlagToState(globalFlags.AzureSubnetName, &state.Azure.SubnetName)
+	copyFlagToState(globalFlags.AzureDisablePublicIP, &state.Azure.DisablePublicIP)
+	copyFlagToState(globalFlags.AzureCIDR, &state.Azure.CIDR)
 
 	return state, nil
 }

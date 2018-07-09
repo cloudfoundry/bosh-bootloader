@@ -12,6 +12,22 @@ variable "client_id" {}
 
 variable "client_secret" {}
 
+variable "resource_group_name" {
+  default = ""
+}
+
+variable "vnet_resource_group_name" {
+  default = ""
+}
+
+variable "vnet_name" {
+  default = ""
+}
+
+variable "subnet_name" {
+  default = ""
+}
+
 variable "network_cidr" {
   default = "10.0.0.0/16"
 }

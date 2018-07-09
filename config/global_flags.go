@@ -12,11 +12,17 @@ type globalFlags struct {
 	AWSSecretAccessKey string `long:"aws-secret-access-key"   env:"BBL_AWS_SECRET_ACCESS_KEY"`
 	AWSRegion          string `long:"aws-region"              env:"BBL_AWS_REGION"`
 
-	AzureClientID       string `long:"azure-client-id"        env:"BBL_AZURE_CLIENT_ID"`
-	AzureClientSecret   string `long:"azure-client-secret"    env:"BBL_AZURE_CLIENT_SECRET"`
-	AzureRegion         string `long:"azure-region"           env:"BBL_AZURE_REGION"`
-	AzureSubscriptionID string `long:"azure-subscription-id"  env:"BBL_AZURE_SUBSCRIPTION_ID"`
-	AzureTenantID       string `long:"azure-tenant-id"        env:"BBL_AZURE_TENANT_ID"`
+	AzureClientID              string `long:"azure-client-id"                  env:"BBL_AZURE_CLIENT_ID"`
+	AzureClientSecret          string `long:"azure-client-secret"              env:"BBL_AZURE_CLIENT_SECRET"`
+	AzureRegion                string `long:"azure-region"                     env:"BBL_AZURE_REGION"`
+	AzureSubscriptionID        string `long:"azure-subscription-id"            env:"BBL_AZURE_SUBSCRIPTION_ID"`
+	AzureTenantID              string `long:"azure-tenant-id"                  env:"BBL_AZURE_TENANT_ID"`
+	AzureResourceGroupName     string `long:"azure-resource-group-name"        env:"BBL_AZURE_RESOURCE_GROUP_NAME"`
+	AzureVnetResourceGroupName string `long:"azure-vnet-resource-group-name"   env:"BBL_AZURE_VNET_RESOURCE_GROUP_NAME"`
+	AzureVnetName              string `long:"azure-vnet-name"                  env:"BBL_AZURE_VNET_NAME"`
+	AzureSubnetName            string `long:"azure-subnet-name"                env:"BBL_AZURE_SUBNET_NAME"`
+	AzureDisablePublicIP       string `long:"azure-disable-publicip"           env:"BBL_AZURE_DISABLE_PUBLICIP"`
+	AzureCIDR                  string `long:"azure-cidr"                       env:"BBL_AZURE_CIDR"`
 
 	GCPServiceAccountKey string `long:"gcp-service-account-key" env:"BBL_GCP_SERVICE_ACCOUNT_KEY"`
 	GCPRegion            string `long:"gcp-region"              env:"BBL_GCP_REGION"`

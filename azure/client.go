@@ -21,8 +21,14 @@ type AzureGroupsClient interface {
 	CheckExistence(resourceGroupName string) (autorest.Response, error)
 }
 
-func (c Client) CheckExists(envID string) (bool, error) {
-	resourceGroupName := fmt.Sprintf("%s-bosh", envID)
+func (c Client) CheckExists(envID string, manual bool) (bool, error) {
+	var resourceGroupName string
+
+	if manual {
+		resourceGroupName = fmt.Sprintf("%s", envID)
+	} else {
+		resourceGroupName = fmt.Sprintf("%s-bosh", envID)
+	}
 
 	response, err := c.azureGroupsClient.CheckExistence(resourceGroupName)
 	if err != nil {

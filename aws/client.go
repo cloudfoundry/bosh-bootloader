@@ -111,7 +111,7 @@ func (c Client) RetrieveAZs(region string) ([]string, error) {
 }
 
 // Return true if the network with the provided name exists.
-func (c Client) CheckExists(networkName string) (bool, error) {
+func (c Client) CheckExists(networkName string, manual bool) (bool, error) {
 	vpcs, err := c.ec2Client.DescribeVpcs(&awsec2.DescribeVpcsInput{
 		Filters: []*awsec2.Filter{{
 			Name: awslib.String("tag:Name"),

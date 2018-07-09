@@ -1127,6 +1127,12 @@ var _ = Describe("LoadState", func() {
 						os.Setenv("BBL_AZURE_REGION", "azure-region")
 						os.Setenv("BBL_AZURE_SUBSCRIPTION_ID", "azure-subscription-id")
 						os.Setenv("BBL_AZURE_TENANT_ID", "azure-tenant-id")
+						os.Setenv("BBL_AZURE_RESOURCE_GROUP_NAME", "azure-resource-group-name")
+						os.Setenv("BBL_AZURE_VNET_RESOURCE_GROUP_NAME", "azure-vnet-resource-group-name")
+						os.Setenv("BBL_AZURE_VNET_NAME", "azure-vnet-name")
+						os.Setenv("BBL_AZURE_SUBNET_NAME", "azure-subnet-name")
+						os.Setenv("BBL_AZURE_DISABLE_PUBLICIP", "azure-disable-publicip")
+						os.Setenv("BBL_AZURE_CIDR", "azure-cidr")
 					})
 
 					It("returns a state containing configuration", func() {
