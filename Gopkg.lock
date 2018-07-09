@@ -131,6 +131,19 @@
   version = "v3.2.0"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/dsnet/compress"
+  packages = [
+    ".",
+    "bzip2",
+    "bzip2/internal/sais",
+    "internal",
+    "internal/errors",
+    "internal/prefix"
+  ]
+  revision = "cc9eb1d7ad760af14e8f918698f745e80377af4f"
+
+[[projects]]
   name = "github.com/fatih/color"
   packages = ["."]
   revision = "5b77d2a35fb0ede96d138fc9a99f5c9b6aef11b4"
@@ -183,6 +196,12 @@
   version = "v1.1.0"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/golang/snappy"
+  packages = ["."]
+  revision = "2e65f85255dbc3072edf28d6b5b8efc472979f5a"
+
+[[projects]]
   name = "github.com/googleapis/gax-go"
   packages = ["."]
   revision = "317e0006254c44a0ac427cc52a0e083ff0b9622f"
@@ -211,8 +230,7 @@
   packages = [
     ".",
     "awss3",
-    "csbufio",
-    "google"
+    "csbufio"
   ]
   revision = "27319609bc1c8b4108e8cbc652c5dcbcf6747145"
 
@@ -230,9 +248,21 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/mholt/archiver"
+  packages = ["."]
+  revision = "e4ef56d48eb029648b0e895bb0b6a393ef0829c3"
+
+[[projects]]
+  branch = "master"
   name = "github.com/nu7hatch/gouuid"
   packages = ["."]
   revision = "179d4d0c4d8d407a32af483c2354df1d2c91e6c3"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/nwaples/rardecode"
+  packages = ["."]
+  revision = "e06696f847aeda6f39a8f0b7cdff193b7690aef6"
 
 [[projects]]
   name = "github.com/onsi/ginkgo"
@@ -288,6 +318,15 @@
   version = "v1.1"
 
 [[projects]]
+  name = "github.com/pierrec/lz4"
+  packages = [
+    ".",
+    "internal/xxh32"
+  ]
+  revision = "1958fd8fff7f115e79725b1288e0b878b3e06b00"
+  version = "v2.0.3"
+
+[[projects]]
   branch = "master"
   name = "github.com/pivotal-cf-experimental/gomegamatchers"
   packages = [
@@ -312,6 +351,17 @@
   ]
   revision = "787d034dfe70e44075ccc060d346146ef53270ad"
   version = "v1.1.1"
+
+[[projects]]
+  name = "github.com/ulikunitz/xz"
+  packages = [
+    ".",
+    "internal/hash",
+    "internal/xlog",
+    "lzma"
+  ]
+  revision = "0c6b41e72360850ca4f98dc341fd999726ea007f"
+  version = "v0.5.4"
 
 [[projects]]
   name = "github.com/vmware/govmomi"
@@ -533,6 +583,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "a61958bd51477955fe0d784a3c326f62fc48cde03c8343b168c626478c5e08f8"
+  inputs-digest = "979caa844596e92fd2b07686acd4ba03f614fc91958154b3f555c4d5b6396718"
   solver-name = "gps-cdcl"
   solver-version = 1
