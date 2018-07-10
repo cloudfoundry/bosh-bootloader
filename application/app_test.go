@@ -73,6 +73,42 @@ var _ = Describe("App", func() {
 			})
 		})
 
+		Context("when name is passed as a global flag", func() {
+			DescribeTable("propagates name to subcommand flags", func(command string) {
+				commandFake := &fakes.Command{}
+
+				app = application.New(
+					application.CommandSet{
+						command: commandFake,
+					},
+					application.Configuration{
+						Command: command,
+						SubcommandFlags: []string{
+							"--first-subcommand-flag", "first-value",
+							"--second-subcommand-flag", "second-value",
+						},
+						Global: application.GlobalConfiguration{
+							StateDir: "some/state/dir",
+							Name:     "some-env-name",
+						},
+						State: storage.State{},
+					},
+					usage)
+
+				Expect(app.Run()).To(Succeed())
+
+				Expect(commandFake.ExecuteCall.CallCount).To(Equal(1))
+				Expect(commandFake.ExecuteCall.Receives.SubcommandFlags).To(Equal([]string{
+					"--first-subcommand-flag", "first-value",
+					"--second-subcommand-flag", "second-value",
+					"--name", "some-env-name",
+				}))
+			},
+				Entry("when command is plan", "plan"),
+				Entry("when command is up", "up"),
+			)
+		})
+
 		Context("when subcommand flags contains help", func() {
 			DescribeTable("prints command specific usage when help subcommand flag is provided", func(helpFlag string) {
 				someCmd.UsageCall.Returns.Usage = "some usage message"

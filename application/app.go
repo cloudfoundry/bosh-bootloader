@@ -71,6 +71,10 @@ func (a App) execute() error {
 		return versionCommand.Execute([]string{}, storage.State{})
 	}
 
+	if (a.configuration.Command == "plan" || a.configuration.Command == "up") && a.configuration.Global.Name != "" {
+		a.configuration.SubcommandFlags = append(a.configuration.SubcommandFlags, "--name", a.configuration.Global.Name)
+	}
+
 	err = command.CheckFastFails(a.configuration.SubcommandFlags, a.configuration.State)
 	if err != nil {
 		return err
