@@ -22,10 +22,16 @@ Steps to deploy cfcr with bbl:
     eval "$(bbl print-env)"
     ```
 
-1. Upload the appropriate kubo-release. These instructions should be expanded, but we don't have time right now. At the time of this edit, the following does not get you a version that matches kubo-deployment:
-~~`bosh upload-release https://storage.googleapis.com/kubo-public/kubo-release-latest.tgz`~~
+1. Upload the appropriate BOSH stemcell, in GCP this will upload the latest stemcell:
+`bosh upload-stemcell https://bosh.io/d/stemcells/bosh-google-kvm-ubuntu-trusty-go_agent`
 
-1. `bosh upload-stemcell https://bosh.io/d/stemcells/bosh-google-kvm-ubuntu-trusty-go_agent`
+1. Upload the appropriate kubo-release. In our example we assume latest:
+   ```
+   bosh upload-release $( \
+   curl --silent "https://api.github.com/repos/cloudfoundry-incubator/kubo-release/releases/latest" \
+   | bosh int - --path=/assets/0/browser_download_url \
+   | grep http)
+   ```
 
 1. export KD as your path to kubo-deployment so you can copy-paste from below if you so desire.
    be careful to check out the manifest that matches the kubo-release you downloaded above.
