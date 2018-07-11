@@ -33,7 +33,6 @@ var _ = Describe("plan", func() {
 
 		stateFileName := fmt.Sprintf("fixture-state-%s", iaas)
 		bbl = actors.NewBBL(stateDir, pathToBBL, configuration, stateFileName, true)
-		fmt.Println(bbl.EnvID())
 
 		// TODO: always upload the same bbl state so we don't have fixture rot
 	})
