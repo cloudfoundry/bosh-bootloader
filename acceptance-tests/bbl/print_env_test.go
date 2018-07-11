@@ -31,10 +31,10 @@ var _ = Describe("plan", func() {
 
 		configuration.BBLStateBucket = "bbl-acceptance-test-states"
 
-		bbl = actors.NewBBL(stateDir, pathToBBL, configuration, "fixture-state", true)
+		stateFileName := fmt.Sprintf("fixture-state-%s", iaas)
+		bbl = actors.NewBBL(stateDir, pathToBBL, configuration, stateFileName, true)
+		fmt.Println(bbl.EnvID())
 
-		// 	session := bbl.Plan("--name", bbl.PredefinedEnvID())
-		// 	Eventually(session, 5*time.Minute).Should(gexec.Exit(0))
 		// TODO: always upload the same bbl state so we don't have fixture rot
 	})
 
