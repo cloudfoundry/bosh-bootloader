@@ -74,12 +74,12 @@ var _ = Describe("Upgrade", func() {
 
 		By("trying to destroy with the old bbl", func() {
 			session := oldBBL.Destroy()
-			Eventually(session, 10*time.Minute).Should(gexec.Exit())
+			Eventually(session, 15*time.Minute).Should(gexec.Exit())
 		})
 
 		By("trying to destroy with the latest bbl", func() {
 			session := newBBL.Destroy()
-			Eventually(session, 10*time.Minute).Should(gexec.Exit())
+			Eventually(session, 15*time.Minute).Should(gexec.Exit())
 		})
 
 		err := os.Remove(f.Name())
