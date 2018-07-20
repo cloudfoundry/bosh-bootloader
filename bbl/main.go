@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"runtime"
 
 	"github.com/cloudfoundry/bosh-bootloader/application"
 	"github.com/cloudfoundry/bosh-bootloader/aws"
@@ -20,6 +21,7 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/config"
 	"github.com/cloudfoundry/bosh-bootloader/gcp"
 	"github.com/cloudfoundry/bosh-bootloader/helpers"
+	"github.com/cloudfoundry/bosh-bootloader/renderers"
 	"github.com/cloudfoundry/bosh-bootloader/ssh"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/cloudfoundry/bosh-bootloader/terraform"
@@ -52,6 +54,7 @@ func main() {
 	logger := application.NewLogger(os.Stdout, os.Stdin)
 	stderrLogger := application.NewLogger(os.Stderr, os.Stdin)
 	stateBootstrap := storage.NewStateBootstrap(stderrLogger, Version)
+	envRendererFactory := renderers.NewFactory(runtime.GOOS)
 
 	globals, remainingArgs, err := config.ParseArgs(os.Args)
 	if err != nil {
@@ -278,7 +281,7 @@ func main() {
 	commandSet["director-ssh-key"] = commands.NewDirectorSSHKey(logger, stateValidator, sshKeyGetter)
 	commandSet["env-id"] = commands.NewStateQuery(logger, stateValidator, terraformManager, commands.EnvIDPropertyName)
 	commandSet["latest-error"] = commands.NewLatestError(logger, stateValidator)
-	commandSet["print-env"] = commands.NewPrintEnv(logger, stderrLogger, stateValidator, allProxyGetter, credhubGetter, terraformManager, afs)
+	commandSet["print-env"] = commands.NewPrintEnv(logger, stderrLogger, stateValidator, allProxyGetter, credhubGetter, terraformManager, afs, envRendererFactory)
 	commandSet["ssh"] = commands.NewSSH(sshCLI, sshKeyGetter, pathFinder, afs, ssh.RandomPort{})
 
 	app := application.New(commandSet, appConfig, usage)

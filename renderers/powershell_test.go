@@ -40,19 +40,6 @@ var _ = Describe("Powershell", func() {
 		})
 	})
 
-	Describe("RenderEnvironment", func() {
-		Context("WhenMultiple", func() {
-			It("prints each on a line", func() {
-				result := renderer.RenderEnvironment(
-					map[string]string{
-						"KEY":   "VALUE",
-						"OTHER": "OTHER",
-					})
-				Expect(result).To(Equal("$env:KEY=\"VALUE\"\r\n$env:OTHER=\"OTHER\"\r\n"))
-			})
-		})
-	})
-
 	Describe("Shell", func() {
 		It("is powershell", func() {
 			shell := renderer.Shell()

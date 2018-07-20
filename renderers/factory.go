@@ -1,27 +1,37 @@
 package renderers
 
-import "fmt"
+import (
+	"fmt"
+	"os"
+)
 
 type factory struct {
+	platform string
 }
 
 // Factory defines a new renderer factory
 type Factory interface {
-	Create(shell string, platform string) (Renderer, error)
+	Create(shell string) (Renderer, error)
 }
 
 // NewFactory creates a new factory
-func NewFactory() Factory {
-	return &factory{}
+func NewFactory(platform string) Factory {
+	return &factory{
+		platform: platform,
+	}
 }
 
 func (f *factory) createFromPlatform(platform string) (Renderer, error) {
+	shell := "bash"
 	switch platform {
 	case "windows":
-		return f.createFromShell("powershell")
+		shell = "powershell"
 	default:
-		return f.createFromShell("bash")
+		if _, ok := os.LookupEnv("PSModulePath"); ok {
+			shell = "powershell"
+		}
 	}
+	return f.createFromShell(shell)
 }
 
 func (f *factory) createFromShell(shell string) (Renderer, error) {
@@ -35,9 +45,9 @@ func (f *factory) createFromShell(shell string) (Renderer, error) {
 	}
 }
 
-func (f *factory) Create(shell string, platform string) (Renderer, error) {
+func (f *factory) Create(shell string) (Renderer, error) {
 	if shell == "" {
-		return f.createFromPlatform(platform)
+		return f.createFromPlatform(f.platform)
 	}
 	return f.createFromShell(shell)
 }
