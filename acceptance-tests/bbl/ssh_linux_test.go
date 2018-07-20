@@ -3,7 +3,6 @@ package acceptance_test
 import (
 	"fmt"
 	"os/exec"
-	"time"
 
 	acceptance "github.com/cloudfoundry/bosh-bootloader/acceptance-tests"
 	"github.com/cloudfoundry/bosh-bootloader/acceptance-tests/actors"
