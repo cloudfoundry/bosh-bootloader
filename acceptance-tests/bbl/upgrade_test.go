@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"os"
 	"runtime"
-	"time"
 
 	acceptance "github.com/cloudfoundry/bosh-bootloader/acceptance-tests"
 	"github.com/cloudfoundry/bosh-bootloader/acceptance-tests/actors"
@@ -74,12 +73,12 @@ var _ = Describe("Upgrade", func() {
 
 		By("trying to destroy with the old bbl", func() {
 			session := oldBBL.Destroy()
-			Eventually(session, 15*time.Minute).Should(gexec.Exit())
+			Eventually(session, bblDownTimeout).Should(gexec.Exit())
 		})
 
 		By("trying to destroy with the latest bbl", func() {
 			session := newBBL.Destroy()
-			Eventually(session, 15*time.Minute).Should(gexec.Exit())
+			Eventually(session, bblDownTimeout).Should(gexec.Exit())
 		})
 
 		err := os.Remove(f.Name())
@@ -89,12 +88,12 @@ var _ = Describe("Upgrade", func() {
 	It("is able to upgrade from an environment bbl'd up with an older version of bbl", func() {
 		By("cleaning up any leftovers", func() {
 			session := newBBL.CleanupLeftovers(newBBL.PredefinedEnvID())
-			Eventually(session, 10*time.Minute).Should(gexec.Exit())
+			Eventually(session, bblLeftoversTimeout).Should(gexec.Exit())
 		})
 
 		By("bbl'ing up with old bbl", func() {
 			session := oldBBL.Up("--name", oldBBL.PredefinedEnvID())
-			Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
+			Eventually(session, bblUpTimeout).Should(gexec.Exit(0))
 		})
 
 		By("verifying the director has a private ip", func() {
@@ -113,10 +112,10 @@ var _ = Describe("Upgrade", func() {
 
 		By("upgrading to the latest bbl", func() {
 			session := newBBL.Plan()
-			Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
+			Eventually(session, bblPlanTimeout).Should(gexec.Exit(0))
 
 			session = newBBL.Up()
-			Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
+			Eventually(session, bblUpTimeout).Should(gexec.Exit(0))
 		})
 
 		By("exporting BOSH_ALL_PROXY to talk to the director", func() {
