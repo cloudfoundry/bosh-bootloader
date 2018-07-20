@@ -109,8 +109,10 @@ const (
 
 	DirectorCACertCommandUsage = "Prints BOSH director CA certificate"
 
-	PrintEnvCommandUsage = "Prints required BOSH environment variables"
+	PrintEnvCommandUsage = `Prints required BOSH environment variables.
 
+  --shell                Prints for the given shell (bash|powershell)
+`
 	LatestErrorCommandUsage = "Prints the output from the latest call to terraform"
 )
 

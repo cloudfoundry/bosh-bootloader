@@ -40,19 +40,6 @@ var _ = Describe("Bash", func() {
 		})
 	})
 
-	Describe("RenderEnvironment", func() {
-		Context("WhenMultiple", func() {
-			It("prints each on a line", func() {
-				result := renderer.RenderEnvironment(
-					map[string]string{
-						"KEY":   "value",
-						"OTHER": "other",
-					})
-				Expect(result).To(Equal("export KEY=value\nexport OTHER=other\n"))
-			})
-		})
-	})
-
 	Describe("Shell", func() {
 		It("is bash", func() {
 			shell := renderer.Shell()
