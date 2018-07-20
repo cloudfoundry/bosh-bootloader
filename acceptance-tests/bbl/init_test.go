@@ -48,7 +48,7 @@ func getTimeout(envVar string, defaultTimeout time.Duration) time.Duration {
 	if envVal == "" {
 		return defaultTimeout
 	}
-	timeout, err := time.ParseDuration(os.Getenv(envVal))
+	timeout, err := time.ParseDuration(envVal)
 	Expect(err).NotTo(HaveOccurred())
 	return timeout
 }
