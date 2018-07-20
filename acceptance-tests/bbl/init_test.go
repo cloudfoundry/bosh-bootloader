@@ -33,7 +33,7 @@ var _ = BeforeSuite(func() {
 
 	bblPlanTimeout = getTimeout("BBL_PLAN_TIMEOUT", 5*time.Minute)
 	bblDownTimeout = getTimeout("BBL_DOWN_TIMEOUT", 10*time.Minute)
-	bblUpTimeout = getTimeout("BBL_UP_TIMEOUT", 10*time.Minute)
+	bblUpTimeout = getTimeout("BBL_UP_TIMEOUT", 40*time.Minute)
 	bblRotateTimeout = getTimeout("BBL_ROTATE_TIMEOUT", 40*time.Minute)
 	bblLatestErrorTimeout = getTimeout("BBL_LATEST_ERROR_TIMEOUT", 10*time.Second)
 	bblLeftoversTimeout = getTimeout("BBL_LEFTOVERS_TIMEOUT", 10*time.Minute)
