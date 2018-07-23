@@ -3,5 +3,5 @@ package renderers
 // Renderer defines a rendering interface
 type Renderer interface {
 	RenderEnvironmentVariable(variable string, value string) string
-	Shell() string
+	Type() string
 }

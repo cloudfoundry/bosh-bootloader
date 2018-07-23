@@ -6,13 +6,13 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Bash", func() {
+var _ = Describe(renderers.ShellTypePosix, func() {
 	var (
 		renderer renderers.Renderer
 	)
 
 	BeforeEach(func() {
-		renderer = renderers.NewBash()
+		renderer = renderers.NewPosix()
 	})
 
 	Describe("RenderEnvironmentVariable", func() {
@@ -40,10 +40,10 @@ var _ = Describe("Bash", func() {
 		})
 	})
 
-	Describe("Shell", func() {
-		It("is bash", func() {
-			shell := renderer.Shell()
-			Expect(shell).To(Equal("bash"))
+	Describe("Type", func() {
+		It("is posix", func() {
+			shellType := renderer.Type()
+			Expect(shellType).To(Equal(renderers.ShellTypePosix))
 		})
 	})
 })

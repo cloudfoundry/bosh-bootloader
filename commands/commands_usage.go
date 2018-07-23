@@ -111,7 +111,7 @@ const (
 
 	PrintEnvCommandUsage = `Prints required BOSH environment variables.
 
-  --shell                Prints for the given shell (bash|powershell)
+  --shell-type             Prints for the given shell (posix|powershell)
 `
 	LatestErrorCommandUsage = "Prints the output from the latest call to terraform"
 )

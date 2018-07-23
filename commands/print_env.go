@@ -42,7 +42,7 @@ type fs interface {
 }
 
 type PrintEnvConfig struct {
-	shell string
+	shellType string
 }
 
 // NewPrintEnv creates a new PrintEnv Command
@@ -82,7 +82,7 @@ func (p PrintEnv) ParseArgs(args []string, state storage.State) (PrintEnvConfig,
 	)
 
 	printEnvFlags := flags.New("print-env")
-	printEnvFlags.String(&config.shell, "shell", "")
+	printEnvFlags.String(&config.shellType, "shell-type", "")
 
 	err := printEnvFlags.Parse(args)
 	if err != nil {
@@ -100,7 +100,7 @@ func (p PrintEnv) Execute(args []string, state storage.State) error {
 		return err
 	}
 
-	shell := config.shell
+	shell := config.shellType
 	renderer, err := p.rendererFactory.Create(shell)
 	if err != nil {
 		return err

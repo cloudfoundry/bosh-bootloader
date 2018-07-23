@@ -5,15 +5,15 @@ import (
 	"strings"
 )
 
-type bash struct {
+type posix struct {
 }
 
-// NewBash defines a new bash renderer
-func NewBash() Renderer {
-	return &bash{}
+// NewPosix defines a new posix renderer
+func NewPosix() Renderer {
+	return &posix{}
 }
 
-func (renderer *bash) RenderEnvironmentVariable(variable string, value string) string {
+func (renderer *posix) RenderEnvironmentVariable(variable string, value string) string {
 	if strings.ContainsAny(value, "\n") {
 		suffix := ""
 		if !strings.HasSuffix(value, "\n") {
@@ -24,6 +24,6 @@ func (renderer *bash) RenderEnvironmentVariable(variable string, value string) s
 	return fmt.Sprintf("export %s=%s", variable, value)
 }
 
-func (renderer *bash) Shell() string {
-	return "bash"
+func (renderer *posix) Type() string {
+	return ShellTypePosix
 }

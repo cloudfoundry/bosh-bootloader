@@ -12,6 +12,7 @@ type powershell struct {
 func NewPowershell() Renderer {
 	return &powershell{}
 }
+
 func (renderer *powershell) RenderEnvironmentVariable(variable string, value string) string {
 	if strings.ContainsAny(value, "\n") {
 		suffix := ""
@@ -23,6 +24,6 @@ func (renderer *powershell) RenderEnvironmentVariable(variable string, value str
 	return fmt.Sprintf("$env:%s=\"%s\"", variable, value)
 }
 
-func (renderer *powershell) Shell() string {
-	return "powershell"
+func (renderer *powershell) Type() string {
+	return ShellTypePowershell
 }
