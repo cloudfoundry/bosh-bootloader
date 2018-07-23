@@ -52,7 +52,7 @@ var _ = Describe("PrintEnv", func() {
 				URL: "some-magical-jumpbox-url:22",
 			},
 		}
-		rendererFactory = renderers.NewFactory("darwin")
+		rendererFactory = renderers.NewFactory("darwin", &fakes.EnvGetter{Values: make(map[string]string)})
 		printEnv = commands.NewPrintEnv(logger, stderrLogger, stateValidator, allProxyGetter, credhubGetter, terraformManager, fileIO, rendererFactory)
 	})
 	Describe("CheckFastFails", func() {
@@ -95,7 +95,7 @@ var _ = Describe("PrintEnv", func() {
 		Context("when the platform is windows", func() {
 			It("prints powershell environment variables", func() {
 
-				rendererFactory = renderers.NewFactory("windows")
+				rendererFactory = renderers.NewFactory("windows", &fakes.EnvGetter{Values: make(map[string]string)})
 				printEnv = commands.NewPrintEnv(logger, stderrLogger, stateValidator, allProxyGetter, credhubGetter, terraformManager, fileIO, rendererFactory)
 
 				err := printEnv.Execute([]string{}, state)

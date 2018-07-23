@@ -2,52 +2,63 @@ package renderers
 
 import (
 	"fmt"
-	"os"
+
+	"github.com/cloudfoundry/bosh-bootloader/helpers"
 )
 
 type factory struct {
-	platform string
+	platform  string
+	envGetter helpers.EnvGetter
 }
 
 // Factory defines a new renderer factory
 type Factory interface {
-	Create(shell string) (Renderer, error)
+	Create(shellType string) (Renderer, error)
 }
 
 // NewFactory creates a new factory
-func NewFactory(platform string) Factory {
+func NewFactory(platform string, envGetter helpers.EnvGetter) Factory {
 	return &factory{
-		platform: platform,
+		platform:  platform,
+		envGetter: envGetter,
 	}
 }
 
 func (f *factory) createFromPlatform(platform string) (Renderer, error) {
-	shell := "bash"
+	shellType := ShellTypePosix
 	switch platform {
 	case "windows":
-		shell = "powershell"
+		value := f.envGetter.Get("CYGWIN")
+		if value != "" {
+			shellType = ShellTypePosix
+		} else {
+			shellType = ShellTypePowershell
+		}
 	default:
-		if _, ok := os.LookupEnv("PSModulePath"); ok {
-			shell = "powershell"
+		value := f.envGetter.Get("PSModulePath")
+		if value != "" {
+			shellType = ShellTypePowershell
+		} else {
+			shellType = ShellTypePosix
 		}
 	}
-	return f.createFromShell(shell)
+	return f.createFromType(shellType)
 }
 
-func (f *factory) createFromShell(shell string) (Renderer, error) {
-	switch shell {
-	case "powershell":
+func (f *factory) createFromType(shellType string) (Renderer, error) {
+	switch shellType {
+	case ShellTypePowershell:
 		return NewPowershell(), nil
-	case "bash":
-		return NewBash(), nil
+	case ShellTypePosix:
+		return NewPosix(), nil
 	default:
-		return nil, fmt.Errorf("unrecognized shell '%s'", shell)
+		return nil, fmt.Errorf("unrecognized type '%s'", shellType)
 	}
 }
 
-func (f *factory) Create(shell string) (Renderer, error) {
-	if shell == "" {
+func (f *factory) Create(shellType string) (Renderer, error) {
+	if shellType == "" {
 		return f.createFromPlatform(f.platform)
 	}
-	return f.createFromShell(shell)
+	return f.createFromType(shellType)
 }

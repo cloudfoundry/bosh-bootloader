@@ -3,135 +3,132 @@ package renderers_test
 import (
 	"os"
 
+	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/renderers"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("Factory", func() {
-	BeforeEach(func() {
-		os.Unsetenv("PSModulePath")
-	})
 	Describe("Create", func() {
+		var (
+			factory renderers.Factory
+			vars    map[string]string
+		)
+		BeforeEach(func() {
+			vars = make(map[string]string)
+		})
 		Context("WhenWindowsPlatform", func() {
-			var (
-				platform = "windows"
-				factory  renderers.Factory
-			)
 			BeforeEach(func() {
-				factory = renderers.NewFactory(platform)
+				platform := "windows"
+				envGetter := &fakes.EnvGetter{Values: vars}
+				factory = renderers.NewFactory(platform, envGetter)
 			})
-			Context("WhenDefaultShell", func() {
+			Context("WhenDefaultShellType", func() {
 				It("creates powershell renderer", func() {
-					shell := ""
-					renderer, err := factory.Create(shell)
+					shellType := ""
+					renderer, err := factory.Create(shellType)
 					Expect(err).To(BeNil())
-					Expect(renderer.Shell()).To(Equal("powershell"))
+					Expect(renderer.Type()).To(Equal(renderers.ShellTypePowershell))
 				})
 			})
-			Context("WhenShellIsPowershell", func() {
+			Context("WhenShellTypeIsPowershell", func() {
 				It("creates powershell renderer", func() {
-					shell := "powershell"
-					renderer, err := factory.Create(shell)
+					shellType := renderers.ShellTypePowershell
+					renderer, err := factory.Create(shellType)
 					Expect(err).To(BeNil())
-					Expect(renderer.Shell()).To(Equal("powershell"))
+					Expect(renderer.Type()).To(Equal(renderers.ShellTypePowershell))
 				})
 			})
-			Context("WhenShellIsBash", func() {
-				It("creates bash renderer", func() {
-					shell := "bash"
-					renderer, err := factory.Create(shell)
+			Context("WhenShellTypeIsPosix", func() {
+				It("creates posix renderer", func() {
+					shellType := renderers.ShellTypePosix
+					renderer, err := factory.Create(shellType)
 					Expect(err).To(BeNil())
-					Expect(renderer.Shell()).To(Equal("bash"))
+					Expect(renderer.Type()).To(Equal(renderers.ShellTypePosix))
 				})
 			})
 		})
 		Context("WhenDarwinPlatform", func() {
-			var (
-				platform = "darwin"
-				factory  renderers.Factory
-			)
 			BeforeEach(func() {
-				factory = renderers.NewFactory(platform)
+				platform := "darwin"
+				envGetter := &fakes.EnvGetter{Values: vars}
+				factory = renderers.NewFactory(platform, envGetter)
 			})
 			Context("WhenDefaultShell", func() {
 				Context("WhenPSModulePathEnvVarIsPresent", func() {
 					It("creates powershell renderer", func() {
-						err := os.Setenv("PSModulePath", "anything")
+						vars["PSModulePath"] = "anything"
+						shellType := ""
+						renderer, err := factory.Create(shellType)
 						Expect(err).To(BeNil())
-						shell := ""
-						renderer, err := factory.Create(shell)
-						Expect(err).To(BeNil())
-						Expect(renderer.Shell()).To(Equal("powershell"))
+						Expect(renderer.Type()).To(Equal(renderers.ShellTypePowershell))
 						Expect(err).To(BeNil())
 					})
 				})
-				It("creates bash renderer", func() {
-					shell := ""
-					renderer, err := factory.Create(shell)
+				It("creates posix renderer", func() {
+					shellType := ""
+					renderer, err := factory.Create(shellType)
 					Expect(err).To(BeNil())
-					Expect(renderer.Shell()).To(Equal("bash"))
+					Expect(renderer.Type()).To(Equal(renderers.ShellTypePosix))
 				})
 			})
 			Context("WhenShellIsPowershell", func() {
 				It("creates powershell renderer", func() {
-					shell := "powershell"
-					renderer, err := factory.Create(shell)
+					shellType := renderers.ShellTypePowershell
+					renderer, err := factory.Create(shellType)
 					Expect(err).To(BeNil())
-					Expect(renderer.Shell()).To(Equal("powershell"))
+					Expect(renderer.Type()).To(Equal(renderers.ShellTypePowershell))
 				})
 			})
-			Context("WhenShellIsBash", func() {
-				It("creates bash renderer", func() {
-					shell := "bash"
-					renderer, err := factory.Create(shell)
+			Context("WhenShellTypeIsPosix", func() {
+				It("creates posix renderer", func() {
+					shellType := renderers.ShellTypePosix
+					renderer, err := factory.Create(shellType)
 					Expect(err).To(BeNil())
-					Expect(renderer.Shell()).To(Equal("bash"))
+					Expect(renderer.Type()).To(Equal(renderers.ShellTypePosix))
 				})
 			})
 		})
 		Context("WhenLinuxPlatform", func() {
-			var (
-				platform = "linux"
-				factory  renderers.Factory
-			)
 			BeforeEach(func() {
-				factory = renderers.NewFactory(platform)
+				platform := "linux"
+				envGetter := &fakes.EnvGetter{Values: vars}
+				factory = renderers.NewFactory(platform, envGetter)
 			})
 			Context("WhenDefaultShell", func() {
 				Context("WhenPSModulePathEnvVarIsPresent", func() {
 					It("creates powershell renderer", func() {
-						err := os.Setenv("PSModulePath", "anything")
+						vars["PSModulePath"] = "anything"
+						shellType := ""
+						renderer, err := factory.Create(shellType)
 						Expect(err).To(BeNil())
-						shell := ""
-						renderer, err := factory.Create(shell)
-						Expect(err).To(BeNil())
-						Expect(renderer.Shell()).To(Equal("powershell"))
+						Expect(renderer.Type()).To(Equal(renderers.ShellTypePowershell))
 						err = os.Unsetenv("PSModulePath")
 						Expect(err).To(BeNil())
 					})
 				})
-				It("creates bash renderer", func() {
-					shell := ""
-					renderer, err := factory.Create(shell)
+				It("creates posix renderer", func() {
+					shellType := ""
+					renderer, err := factory.Create(shellType)
 					Expect(err).To(BeNil())
-					Expect(renderer.Shell()).To(Equal("bash"))
+					Expect(renderer.Type()).To(Equal(renderers.ShellTypePosix))
 				})
 			})
 			Context("WhenShellIsPowershell", func() {
 				It("creates powershell renderer", func() {
-					shell := "powershell"
-					renderer, err := factory.Create(shell)
+					shellType := renderers.ShellTypePowershell
+					renderer, err := factory.Create(shellType)
 					Expect(err).To(BeNil())
-					Expect(renderer.Shell()).To(Equal(shell))
+					Expect(renderer.Type()).To(Equal(shellType))
 				})
 			})
-			Context("WhenShellIsBash", func() {
-				It("creates bash renderer", func() {
-					shell := "bash"
-					renderer, err := factory.Create(shell)
+			Context("WhenShellTypeIsPosix", func() {
+				It("creates posix renderer", func() {
+					shellType := renderers.ShellTypePosix
+					renderer, err := factory.Create(shellType)
 					Expect(err).To(BeNil())
-					Expect(renderer.Shell()).To(Equal(shell))
+					Expect(renderer.Type()).To(Equal(shellType))
 				})
 			})
 		})

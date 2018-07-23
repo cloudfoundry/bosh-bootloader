@@ -55,7 +55,7 @@ func main() {
 	logger := application.NewLogger(os.Stdout, os.Stdin)
 	stderrLogger := application.NewLogger(os.Stderr, os.Stdin)
 	stateBootstrap := storage.NewStateBootstrap(stderrLogger, Version)
-	envRendererFactory := renderers.NewFactory(runtime.GOOS)
+	envRendererFactory := renderers.NewFactory(runtime.GOOS, helpers.NewEnvGetter())
 
 	globals, remainingArgs, err := config.ParseArgs(os.Args)
 	if err != nil {

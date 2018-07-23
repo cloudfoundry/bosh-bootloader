@@ -6,7 +6,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Powershell", func() {
+var _ = Describe(renderers.ShellTypePowershell, func() {
 	var (
 		renderer renderers.Renderer
 	)
@@ -40,10 +40,10 @@ var _ = Describe("Powershell", func() {
 		})
 	})
 
-	Describe("Shell", func() {
+	Describe("Type", func() {
 		It("is powershell", func() {
-			shell := renderer.Shell()
-			Expect(shell).To(Equal("powershell"))
+			t := renderer.Type()
+			Expect(t).To(Equal(renderers.ShellTypePowershell))
 		})
 	})
 })
