@@ -3,7 +3,6 @@ package acceptance_test
 import (
 	"fmt"
 	"os/exec"
-	"time"
 
 	acceptance "github.com/cloudfoundry/bosh-bootloader/acceptance-tests"
 	"github.com/cloudfoundry/bosh-bootloader/acceptance-tests/actors"
@@ -51,7 +50,7 @@ var _ = Describe("ssh", func() {
 	AfterEach(func() {
 		By("destroying the director and the jumpbox", func() {
 			session := bbl.Down()
-			Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
+			Eventually(session, bblDownTimeout).Should(gexec.Exit(0))
 		})
 
 		removeKnownHost()
@@ -60,7 +59,7 @@ var _ = Describe("ssh", func() {
 	It("bbl's up a new bosh director and jumpbox", func() {
 		By("cleaning up any leftovers", func() {
 			session := bbl.CleanupLeftovers(bbl.PredefinedEnvID())
-			Eventually(session, 10*time.Minute).Should(gexec.Exit())
+			Eventually(session, bblLeftoversTimeout).Should(gexec.Exit())
 		})
 
 		args := []string{
@@ -68,7 +67,7 @@ var _ = Describe("ssh", func() {
 		}
 		args = append(args, iaasHelper.GetLBArgs()...)
 		session := bbl.Up(args...)
-		Eventually(session, 60*time.Minute).Should(gexec.Exit(0))
+		Eventually(session, bblUpTimeout).Should(gexec.Exit(0))
 
 		By("noninteractively preverifying the jumpbox's public key", func() {
 			addKnownHost()
@@ -87,7 +86,7 @@ var _ = Describe("ssh", func() {
 			Expect(sshKey).NotTo(BeEmpty())
 
 			session := bbl.Rotate()
-			Eventually(session, 40*time.Minute).Should(gexec.Exit(0))
+			Eventually(session, bblRotateTimeout).Should(gexec.Exit(0))
 
 			rotatedKey := bbl.SSHKey()
 			Expect(rotatedKey).NotTo(BeEmpty())
