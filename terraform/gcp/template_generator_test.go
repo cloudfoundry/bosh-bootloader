@@ -19,7 +19,7 @@ var _ = Describe("TemplateGenerator", func() {
 		expectedTemplate  string
 		backendService    string
 		instanceGroups    string
-		subnetCIDRs       string
+		subnets           string
 		zones             []string
 		state             storage.State
 	)
@@ -83,17 +83,48 @@ resource "google_compute_instance_group" "router-lb-2" {
 }
 `
 
-		subnetCIDRs = `output "subnet_cidr_1" {
-  value = "${cidrsubnet(var.subnet_cidr, 8, 16)}"
+		subnets = `resource "google_compute_subnetwork" "bbl-subnet-1" {
+  name          = "${var.env_id}-subnet-1"
+  ip_cidr_range = "${cidrsubnet(var.subnet_cidr, 8, 16)}"
+  network       = "${google_compute_network.bbl-network.self_link}"
+}
+
+output "subnetwork_1" {
+  value = "${google_compute_subnetwork.bbl-subnet-1.name}"
+}
+
+output "subnet_cidr_1" {
+  value = "${google_compute_subnetwork.bbl-subnet-1.ip_cidr_range}"
+}
+
+resource "google_compute_subnetwork" "bbl-subnet-2" {
+  name          = "${var.env_id}-subnet-2"
+  ip_cidr_range = "${cidrsubnet(var.subnet_cidr, 8, 32)}"
+  network       = "${google_compute_network.bbl-network.self_link}"
+}
+
+output "subnetwork_2" {
+  value = "${google_compute_subnetwork.bbl-subnet-2.name}"
 }
 
 output "subnet_cidr_2" {
-  value = "${cidrsubnet(var.subnet_cidr, 8, 32)}"
+  value = "${google_compute_subnetwork.bbl-subnet-2.ip_cidr_range}"
+}
+
+resource "google_compute_subnetwork" "bbl-subnet-3" {
+  name          = "${var.env_id}-subnet-3"
+  ip_cidr_range = "${cidrsubnet(var.subnet_cidr, 8, 48)}"
+  network       = "${google_compute_network.bbl-network.self_link}"
+}
+
+output "subnetwork_3" {
+  value = "${google_compute_subnetwork.bbl-subnet-3.name}"
 }
 
 output "subnet_cidr_3" {
-  value = "${cidrsubnet(var.subnet_cidr, 8, 48)}"
+  value = "${google_compute_subnetwork.bbl-subnet-3.ip_cidr_range}"
 }
+
 `
 	})
 
@@ -122,7 +153,7 @@ output "subnet_cidr_3" {
 		Context("when a CF LB is provided", func() {
 			BeforeEach(func() {
 				expectedTemplate = expectTemplate("vars", "bosh_director", "jumpbox", "cf_lb")
-				expectedTemplate += "\n" + instanceGroups + "\n" + backendService + "\n" + subnetCIDRs
+				expectedTemplate += "\n" + instanceGroups + "\n" + backendService + "\n" + subnets
 				state = storage.State{
 					GCP: storage.GCP{Zones: []string{"z1", "z2", "z3"}},
 					LB:  storage.LB{Type: "cf"},
@@ -138,7 +169,7 @@ output "subnet_cidr_3" {
 			BeforeEach(func() {
 				expectedTemplate = expectTemplate("vars", "bosh_director", "jumpbox", "cf_lb")
 				dns := expectTemplate("cf_dns")
-				expectedTemplate += "\n" + instanceGroups + "\n" + backendService + "\n" + dns + "\n" + subnetCIDRs
+				expectedTemplate += "\n" + instanceGroups + "\n" + backendService + "\n" + dns + "\n" + subnets
 
 				state = storage.State{
 					GCP: storage.GCP{Zones: []string{"z1", "z2", "z3"}},
@@ -171,11 +202,11 @@ output "subnet_cidr_3" {
 
 	Describe("GenerateSubnetCidrs", func() {
 		BeforeEach(func() {
-			expectedTemplate = subnetCIDRs
+			expectedTemplate = subnets
 		})
 
 		It("returns a backend service terraform template", func() {
-			template := templateGenerator.GenerateSubnetCidrs(zones)
+			template := templateGenerator.GenerateSubnets(zones)
 
 			Expect(template).To(Equal(string(expectedTemplate)))
 		})

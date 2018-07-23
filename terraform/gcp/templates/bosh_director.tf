@@ -8,9 +8,21 @@ resource "google_compute_network" "bbl-network" {
   auto_create_subnetworks = false
 }
 
-resource "google_compute_subnetwork" "bbl-subnet" {
-  name          = "${var.env_id}-subnet"
-  ip_cidr_range = "${var.subnet_cidr}"
+resource "google_compute_subnetwork" "bbl-subnet-1" {
+  name          = "${var.env_id}-subnet-1"
+  ip_cidr_range = "${cidrsubnet(var.subnet_cidr, 8, 16)}"
+  network       = "${google_compute_network.bbl-network.self_link}"
+}
+
+resource "google_compute_subnetwork" "bbl-subnet-2" {
+  name          = "${var.env_id}-subnet-2"
+  ip_cidr_range = "${cidrsubnet(var.subnet_cidr, 8, 32)}"
+  network       = "${google_compute_network.bbl-network.self_link}"
+}
+
+resource "google_compute_subnetwork" "bbl-subnet-3" {
+  name          = "${var.env_id}-subnet-3"
+  ip_cidr_range = "${cidrsubnet(var.subnet_cidr, 8, 48)}"
   network       = "${google_compute_network.bbl-network.self_link}"
 }
 

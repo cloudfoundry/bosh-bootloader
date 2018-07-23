@@ -41,7 +41,7 @@ func (t TemplateGenerator) Generate(state storage.State) string {
 		}
 	}
 
-	cidrs := t.GenerateSubnetCidrs(state.GCP.Zones)
+	cidrs := t.GenerateSubnets(state.GCP.Zones)
 	if len(cidrs) > 0 {
 		template = strings.Join([]string{template, cidrs}, "\n")
 	}
@@ -91,15 +91,27 @@ func (t TemplateGenerator) GenerateInstanceGroups(zoneList []string) string {
 	return strings.Join(groups, "\n")
 }
 
-func (t TemplateGenerator) GenerateSubnetCidrs(zoneList []string) string {
-	var cidrs []string
-	for i := 0; i < len(zoneList); i++ {
-		cidrs = append(cidrs, fmt.Sprintf(`output "subnet_cidr_%d" {
-  value = "${cidrsubnet(var.subnet_cidr, 8, %d)}"
+func (t TemplateGenerator) GenerateSubnets(zoneList []string) string {
+	tmpl := `resource "google_compute_subnetwork" "bbl-subnet-%[1]d" {
+  name          = "${var.env_id}-subnet-%[1]d"
+  ip_cidr_range = "${cidrsubnet(var.subnet_cidr, 8, %[2]d)}"
+  network       = "${google_compute_network.bbl-network.self_link}"
 }
-`, i+1, (i+1)*16))
+
+output "subnetwork_%[1]d" {
+  value = "${google_compute_subnetwork.bbl-subnet-%[1]d.name}"
+}
+
+output "subnet_cidr_%[1]d" {
+  value = "${google_compute_subnetwork.bbl-subnet-%[1]d.ip_cidr_range}"
+}
+
+`
+	var output string
+	for i := range zoneList {
+		output += fmt.Sprintf(tmpl, i+1, (i+1)*16)
 	}
-	return strings.Join(cidrs, "\n")
+	return output
 }
 
 func readTemplates() templates {

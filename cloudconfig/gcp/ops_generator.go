@@ -269,7 +269,7 @@ func generateNetworkSubnet(az int) networkSubnet {
 		CloudProperties: subnetCloudProperties{
 			EphemeralExternalIP: true,
 			NetworkName:         "((network))",
-			SubnetworkName:      "((subnetwork))",
+			SubnetworkName:      fmt.Sprintf("((subnetwork-%d))", az),
 			Tags:                []string{"((internal_tag_name))"},
 		},
 	}

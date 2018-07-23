@@ -422,7 +422,7 @@
       cloud_properties:
         ephemeral_external_ip: true
         network_name: ((network))
-        subnetwork_name: ((subnetwork))
+        subnetwork_name: ((subnetwork-1))
         tags:
           - ((internal_tag_name))
     - az: z2
@@ -436,7 +436,7 @@
       cloud_properties:
         ephemeral_external_ip: true
         network_name: ((network))
-        subnetwork_name: ((subnetwork))
+        subnetwork_name: ((subnetwork-2))
         tags:
           - ((internal_tag_name))
     - az: z3
@@ -450,7 +450,7 @@
       cloud_properties:
         ephemeral_external_ip: true
         network_name: ((network))
-        subnetwork_name: ((subnetwork))
+        subnetwork_name: ((subnetwork-3))
         tags:
           - ((internal_tag_name))
     type: manual
@@ -471,7 +471,7 @@
       cloud_properties:
         ephemeral_external_ip: true
         network_name: ((network))
-        subnetwork_name: ((subnetwork))
+        subnetwork_name: ((subnetwork-1))
         tags:
           - ((internal_tag_name))
     - az: z2
@@ -485,7 +485,7 @@
       cloud_properties:
         ephemeral_external_ip: true
         network_name: ((network))
-        subnetwork_name: ((subnetwork))
+        subnetwork_name: ((subnetwork-2))
         tags:
           - ((internal_tag_name))
     - az: z3
@@ -499,7 +499,7 @@
       cloud_properties:
         ephemeral_external_ip: true
         network_name: ((network))
-        subnetwork_name: ((subnetwork))
+        subnetwork_name: ((subnetwork-3))
         tags:
           - ((internal_tag_name))
     type: manual
