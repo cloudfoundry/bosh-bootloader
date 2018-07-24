@@ -80,6 +80,19 @@ var _ = Describe("Destroy", func() {
 			})
 		})
 
+		Context("when state validator doesn't find a bbl state", func() {
+			BeforeEach(func() {
+				stateValidator.ValidateCall.Returns.Error = commands.NewNoBBLStateError("lol")
+			})
+
+			It("logs and indicates that we should exit sucessfully", func() {
+				err := destroy.CheckFastFails([]string{}, storage.State{})
+
+				Expect(logger.PrintlnCall.Receives.Message).To(ContainSubstring("bbl-state.json not found"))
+				Expect(err).To(MatchError(commands.ExitSuccessfully{}))
+			})
+		})
+
 		Context("when the environment is not paved", func() {
 			It("deletes the directory without attempting to destroy bosh or terraform", func() {
 				terraformManager.IsPavedCall.Returns.IsPaved = false

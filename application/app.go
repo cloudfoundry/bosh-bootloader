@@ -29,7 +29,11 @@ func New(commands CommandSet, configuration Configuration, usage usage) App {
 }
 
 func (a App) Run() error {
-	return a.execute()
+	err := a.execute()
+	if _, ok := err.(commands.ExitSuccessfully); !ok {
+		return err
+	}
+	return nil
 }
 
 func (a App) getCommand(commandString string) (commands.Command, error) {

@@ -41,8 +41,7 @@ var _ = Describe("StateValidator", func() {
 
 	Context("when state file cannot be found", func() {
 		It("returns an error", func() {
-			expectedError := fmt.Errorf("bbl-state.json not found in %q, ensure you're running this command in the proper state directory or create a new environment with bbl up", tempDirectory)
-			Expect(stateValidator.Validate()).To(MatchError(expectedError))
+			Expect(stateValidator.Validate()).To(MatchError(fmt.Sprintf("bbl-state.json not found in %q, ensure you're running this command in the proper state directory or create a new environment with bbl up", tempDirectory)))
 		})
 	})
 
