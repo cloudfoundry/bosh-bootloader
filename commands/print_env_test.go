@@ -52,7 +52,7 @@ var _ = Describe("PrintEnv", func() {
 				URL: "some-magical-jumpbox-url:22",
 			},
 		}
-		rendererFactory = renderers.NewFactory("darwin", &fakes.EnvGetter{Values: make(map[string]string)})
+		rendererFactory = renderers.NewFactory(&fakes.EnvGetter{Values: make(map[string]string)})
 		printEnv = commands.NewPrintEnv(logger, stderrLogger, stateValidator, allProxyGetter, credhubGetter, terraformManager, fileIO, rendererFactory)
 	})
 	Describe("CheckFastFails", func() {
@@ -92,10 +92,11 @@ var _ = Describe("PrintEnv", func() {
 			Expect(logger.PrintlnCall.Messages).To(ContainElement(`export BOSH_ALL_PROXY=ipfs://some-domain-with?private_key=the-key-path`))
 		})
 
-		Context("when the platform is windows", func() {
+		Context("WhenPSModulePathIsSet", func() {
 			It("prints powershell environment variables", func() {
 
-				rendererFactory = renderers.NewFactory("windows", &fakes.EnvGetter{Values: make(map[string]string)})
+				values := map[string]string{"PSModulePath": "something"}
+				rendererFactory = renderers.NewFactory(&fakes.EnvGetter{Values: values})
 				printEnv = commands.NewPrintEnv(logger, stderrLogger, stateValidator, allProxyGetter, credhubGetter, terraformManager, fileIO, rendererFactory)
 
 				err := printEnv.Execute([]string{}, state)

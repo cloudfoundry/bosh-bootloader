@@ -17,30 +17,17 @@ type Factory interface {
 }
 
 // NewFactory creates a new factory
-func NewFactory(platform string, envGetter helpers.EnvGetter) Factory {
+func NewFactory(envGetter helpers.EnvGetter) Factory {
 	return &factory{
-		platform:  platform,
 		envGetter: envGetter,
 	}
 }
 
-func (f *factory) createFromPlatform(platform string) (Renderer, error) {
+func (f *factory) createDefault() (Renderer, error) {
 	shellType := ShellTypePosix
-	switch platform {
-	case "windows":
-		value := f.envGetter.Get("CYGWIN")
-		if value != "" {
-			shellType = ShellTypePosix
-		} else {
-			shellType = ShellTypePowershell
-		}
-	default:
-		value := f.envGetter.Get("PSModulePath")
-		if value != "" {
-			shellType = ShellTypePowershell
-		} else {
-			shellType = ShellTypePosix
-		}
+	value := f.envGetter.Get("PSModulePath")
+	if value != "" {
+		shellType = ShellTypePowershell
 	}
 	return f.createFromType(shellType)
 }
@@ -58,7 +45,7 @@ func (f *factory) createFromType(shellType string) (Renderer, error) {
 
 func (f *factory) Create(shellType string) (Renderer, error) {
 	if shellType == "" {
-		return f.createFromPlatform(f.platform)
+		return f.createDefault()
 	}
 	return f.createFromType(shellType)
 }
