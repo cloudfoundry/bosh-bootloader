@@ -8,7 +8,6 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"runtime"
 
 	"github.com/cloudfoundry/bosh-bootloader/application"
 	"github.com/cloudfoundry/bosh-bootloader/aws"
@@ -55,7 +54,7 @@ func main() {
 	logger := application.NewLogger(os.Stdout, os.Stdin)
 	stderrLogger := application.NewLogger(os.Stderr, os.Stdin)
 	stateBootstrap := storage.NewStateBootstrap(stderrLogger, Version)
-	envRendererFactory := renderers.NewFactory(runtime.GOOS, helpers.NewEnvGetter())
+	envRendererFactory := renderers.NewFactory(helpers.NewEnvGetter())
 
 	globals, remainingArgs, err := config.ParseArgs(os.Args)
 	if err != nil {
