@@ -41,7 +41,7 @@ type network struct {
 }
 
 type networkSubnet struct {
-	AZ              string
+	AZs             []string
 	Gateway         string
 	Range           string
 	Reserved        []string
@@ -81,20 +81,32 @@ func (o OpsGenerator) GenerateVars(state storage.State) (string, error) {
 		return "", fmt.Errorf("Get terraform outputs: %s", err)
 	}
 
-	azs, err := generateAZs(state.GCP.Zones, terraformOutputs.Map)
+	subnetCidrVal, ok := terraformOutputs.Map["internal_cidr"]
+	if !ok {
+		return "", fmt.Errorf("internal_cidr was not in terraform outputs")
+	}
+	subnetCidr, ok := subnetCidrVal.(string)
+	if !ok {
+		return "", fmt.Errorf("internal_cidr requires a string value")
+	}
+	parsedCidr, err := bosh.ParseCIDRBlock(subnetCidr)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("internal_cidr is not a valid cidr")
 	}
 
 	varsYAML := map[string]interface{}{}
 	for k, v := range terraformOutputs.Map {
 		varsYAML[k] = v
 	}
-	for _, az := range azs {
-		for key, value := range az {
-			varsYAML[key] = value
-		}
-	}
+
+	firstReserved := parsedCidr.GetNthIP(1).String()
+	lastReserved := parsedCidr.GetNthIP(255).String()
+
+	firstStatic := parsedCidr.GetLastIP().Subtract(255).String()
+	lastStatic := parsedCidr.GetLastIP().Subtract(1).String()
+
+	varsYAML["subnetwork_reserved_ips"] = fmt.Sprintf("%s-%s", firstReserved, lastReserved)
+	varsYAML["subnetwork_static_ips"] = fmt.Sprintf("%s-%s", firstStatic, lastStatic)
 
 	varsBytes, err := marshal(varsYAML)
 	if err != nil {
@@ -102,55 +114,6 @@ func (o OpsGenerator) GenerateVars(state storage.State) (string, error) {
 	}
 
 	return string(varsBytes), nil
-}
-
-func generateAZs(zones []string, terraformOutputs map[string]interface{}) ([]map[string]string, error) {
-	var azs []map[string]string
-	for azIndex, azName := range zones {
-		output := fmt.Sprintf("subnet_cidr_%d", azIndex+1)
-
-		cidr, ok := terraformOutputs[output]
-		if !ok {
-			return []map[string]string{}, fmt.Errorf("Missing terraform outputs %s", output)
-		}
-
-		az, err := azify(
-			azIndex+1,
-			azName,
-			cidr.(string),
-		)
-
-		if err != nil {
-			return []map[string]string{}, err
-		}
-
-		azs = append(azs, az)
-	}
-
-	return azs, nil
-}
-
-func azify(az int, azName, cidr string) (map[string]string, error) {
-	parsedCidr, err := bosh.ParseCIDRBlock(cidr)
-	if err != nil {
-		return map[string]string{}, err
-	}
-
-	gateway := parsedCidr.GetNthIP(1).String()
-	firstReserved := parsedCidr.GetNthIP(2).String()
-	secondReserved := parsedCidr.GetNthIP(3).String()
-	lastReserved := parsedCidr.GetLastIP().String()
-	lastStatic := parsedCidr.GetLastIP().Subtract(1).String()
-	firstStatic := parsedCidr.GetLastIP().Subtract(65).String()
-
-	return map[string]string{
-		fmt.Sprintf("az%d_name", az):       azName,
-		fmt.Sprintf("az%d_gateway", az):    gateway,
-		fmt.Sprintf("az%d_range", az):      cidr,
-		fmt.Sprintf("az%d_reserved_1", az): fmt.Sprintf("%s-%s", firstReserved, secondReserved),
-		fmt.Sprintf("az%d_reserved_2", az): lastReserved,
-		fmt.Sprintf("az%d_static", az):     fmt.Sprintf("%s-%s", firstStatic, lastStatic),
-	}, nil
 }
 
 func (o OpsGenerator) Generate(state storage.State) (string, error) {
@@ -189,11 +152,28 @@ func (o *OpsGenerator) generateGCPOps(state storage.State) ([]op, error) {
 		}))
 	}
 
-	var subnets []networkSubnet
+	var zones []string
 	for i := range state.GCP.Zones {
-		subnet := generateNetworkSubnet(i)
-		subnets = append(subnets, subnet)
+		zones = append(zones, fmt.Sprintf("z%d", i+1))
 	}
+
+	subnets := []networkSubnet{{
+		AZs:     zones,
+		Gateway: "((internal_gw))",
+		Range:   "((internal_cidr))",
+		Reserved: []string{
+			"((subnetwork_reserved_ips))",
+		},
+		Static: []string{
+			"((subnetwork_static_ips))",
+		},
+		CloudProperties: subnetCloudProperties{
+			EphemeralExternalIP: true,
+			NetworkName:         "((network))",
+			SubnetworkName:      "((subnetwork))",
+			Tags:                []string{"((internal_tag_name))"},
+		},
+	}}
 
 	ops = append(ops, createOp("replace", "/networks/-", network{
 		Name:    "private",
@@ -251,26 +231,4 @@ func (o *OpsGenerator) generateGCPOps(state storage.State) ([]op, error) {
 	}
 
 	return ops, nil
-}
-
-func generateNetworkSubnet(az int) networkSubnet {
-	az++
-	return networkSubnet{
-		AZ:      fmt.Sprintf("z%d", az),
-		Gateway: fmt.Sprintf("((az%d_gateway))", az),
-		Range:   fmt.Sprintf("((az%d_range))", az),
-		Reserved: []string{
-			fmt.Sprintf("((az%d_reserved_1))", az),
-			fmt.Sprintf("((az%d_reserved_2))", az),
-		},
-		Static: []string{
-			fmt.Sprintf("((az%d_static))", az),
-		},
-		CloudProperties: subnetCloudProperties{
-			EphemeralExternalIP: true,
-			NetworkName:         "((network))",
-			SubnetworkName:      "((subnetwork))",
-			Tags:                []string{"((internal_tag_name))"},
-		},
-	}
 }

@@ -19,7 +19,6 @@ var _ = Describe("TemplateGenerator", func() {
 		expectedTemplate  string
 		backendService    string
 		instanceGroups    string
-		subnetCIDRs       string
 		zones             []string
 		state             storage.State
 	)
@@ -82,19 +81,6 @@ resource "google_compute_instance_group" "router-lb-2" {
   health_checks = ["${google_compute_health_check.cf-public-health-check.self_link}"]
 }
 `
-
-		subnetCIDRs = `output "subnet_cidr_1" {
-  value = "${cidrsubnet(var.subnet_cidr, 8, 16)}"
-}
-
-output "subnet_cidr_2" {
-  value = "${cidrsubnet(var.subnet_cidr, 8, 32)}"
-}
-
-output "subnet_cidr_3" {
-  value = "${cidrsubnet(var.subnet_cidr, 8, 48)}"
-}
-`
 	})
 
 	Describe("Generate", func() {
@@ -122,7 +108,7 @@ output "subnet_cidr_3" {
 		Context("when a CF LB is provided", func() {
 			BeforeEach(func() {
 				expectedTemplate = expectTemplate("vars", "bosh_director", "jumpbox", "cf_lb")
-				expectedTemplate += "\n" + instanceGroups + "\n" + backendService + "\n" + subnetCIDRs
+				expectedTemplate += "\n" + instanceGroups + "\n" + backendService
 				state = storage.State{
 					GCP: storage.GCP{Zones: []string{"z1", "z2", "z3"}},
 					LB:  storage.LB{Type: "cf"},
@@ -138,7 +124,7 @@ output "subnet_cidr_3" {
 			BeforeEach(func() {
 				expectedTemplate = expectTemplate("vars", "bosh_director", "jumpbox", "cf_lb")
 				dns := expectTemplate("cf_dns")
-				expectedTemplate += "\n" + instanceGroups + "\n" + backendService + "\n" + dns + "\n" + subnetCIDRs
+				expectedTemplate += "\n" + instanceGroups + "\n" + backendService + "\n" + dns
 
 				state = storage.State{
 					GCP: storage.GCP{Zones: []string{"z1", "z2", "z3"}},
@@ -169,17 +155,6 @@ output "subnet_cidr_3" {
 		})
 	})
 
-	Describe("GenerateSubnetCidrs", func() {
-		BeforeEach(func() {
-			expectedTemplate = subnetCIDRs
-		})
-
-		It("returns a backend service terraform template", func() {
-			template := templateGenerator.GenerateSubnetCidrs(zones)
-
-			Expect(template).To(Equal(string(expectedTemplate)))
-		})
-	})
 })
 
 func expectTemplate(parts ...string) string {
