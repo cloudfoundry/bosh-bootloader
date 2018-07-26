@@ -8,6 +8,7 @@ import (
 	"github.com/vmware/govmomi/object"
 )
 
+// Folder represents an inventory folder within vSphere.
 type Folder struct {
 	folder *object.Folder
 	name   string
