@@ -17,13 +17,13 @@ type BOSHClientProvider struct {
 			DirectorCACert   string
 		}
 		Returns struct {
-			Client bosh.Client
+			Client bosh.ConfigUpdater
 			Error  error
 		}
 	}
 }
 
-func (b *BOSHClientProvider) Client(jumpbox storage.Jumpbox, directorAddress, directorUsername, directorPassword, directorCACert string) (bosh.Client, error) {
+func (b *BOSHClientProvider) Client(jumpbox storage.Jumpbox, directorAddress, directorUsername, directorPassword, directorCACert string) (bosh.ConfigUpdater, error) {
 	b.ClientCall.CallCount++
 	b.ClientCall.Receives.Jumpbox = jumpbox
 	b.ClientCall.Receives.DirectorAddress = directorAddress

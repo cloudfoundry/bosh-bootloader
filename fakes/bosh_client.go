@@ -6,6 +6,17 @@ import (
 )
 
 type BOSHClient struct {
+	UpdateConfigCall struct {
+		CallCount int
+		Receives  struct {
+			Type string
+			Yaml []byte
+		}
+		Returns struct {
+			Error error
+		}
+	}
+
 	UpdateCloudConfigCall struct {
 		CallCount int
 		Receives  struct {
@@ -30,6 +41,13 @@ type BOSHClient struct {
 			Error error
 		}
 	}
+}
+
+func (c *BOSHClient) UpdateConfig(t string, yaml []byte) error {
+	c.UpdateConfigCall.CallCount++
+	c.UpdateConfigCall.Receives.Type = t
+	c.UpdateConfigCall.Receives.Yaml = yaml
+	return c.UpdateConfigCall.Returns.Error
 }
 
 func (c *BOSHClient) UpdateCloudConfig(yaml []byte) error {

@@ -153,4 +153,22 @@ var _ = Describe("Client Provider", func() {
 			Expect(string(certsPool.Subjects()[0])).To(ContainSubstring("some-fake-ca"))
 		})
 	})
+
+	Describe("Client", func() {
+		It("returns a well-formed bosh client", func() {
+			client, err := clientProvider.Client(storage.Jumpbox{URL: "https://some-jumpbox"}, "https://director:9999", "user", "pass", "some-fake-ca")
+			Expect(err).NotTo(HaveOccurred())
+
+			structClient := client.(bosh.Client)
+			Expect(structClient.DirectorAddress).To(Equal("https://director:9999"))
+			Expect(structClient.UAAAddress).To(Equal("https://director:8443"))
+		})
+
+		Context("given a director address without a port", func() {
+			It("Errors", func() {
+				_, err := clientProvider.Client(storage.Jumpbox{URL: "https://some-jumpbox"}, "https://director", "user", "pass", "some-fake-ca")
+				Expect(err).To(HaveOccurred())
+			})
+		})
+	})
 })

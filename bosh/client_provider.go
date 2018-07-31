@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"net/url"
 
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"golang.org/x/net/proxy"
@@ -69,14 +70,29 @@ func (ClientProvider) HTTPClient(dialer proxy.Dialer, directorCACert []byte) *ht
 	}
 }
 
-func (c ClientProvider) Client(jumpbox storage.Jumpbox, directorAddress, directorUsername, directorPassword, directorCACert string) (Client, error) {
-	dialer, err := c.Dialer(jumpbox)
+func parseHostFromAddress(address string) (string, error) {
+	urlParts, err := url.Parse(address)
 	if err != nil {
-		// not tested
-		return client{}, err
+		return "", err //not tested
 	}
 
+	boshHost, _, err := net.SplitHostPort(urlParts.Host)
+	return boshHost, err
+}
+
+func (c ClientProvider) Client(jumpbox storage.Jumpbox, directorAddress, directorUsername, directorPassword, directorCACert string) (ConfigUpdater, error) {
+	dialer, err := c.Dialer(jumpbox)
+	if err != nil {
+		return Client{}, err // not tested
+	}
+
+	boshHost, err := parseHostFromAddress(directorAddress)
+	if err != nil {
+		return Client{}, err
+	}
+	uaaAddress := fmt.Sprintf("https://%s:8443", boshHost)
+
 	httpClient := c.HTTPClient(dialer, []byte(directorCACert))
-	boshClient := NewClient(httpClient, directorAddress, directorUsername, directorPassword, directorCACert)
+	boshClient := NewClient(httpClient, directorAddress, uaaAddress, directorUsername, directorPassword, directorCACert)
 	return boshClient, nil
 }
