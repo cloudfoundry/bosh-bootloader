@@ -50,14 +50,16 @@ date.
  filename |  contents
 ------------ | -------------
 ``bbl-state.json`` | Environment name, and bbl version metadata
-``bosh-deployment`` | The latest [bosh-deployment](http://github.com/cloudfoundry/bosh-deployment) that has been tested with your version of bbl
-``create-director.sh`` | The BOSH cli command bbl will use to create your director when you run `bbl up`. See [docs/advanced-configuration](docs/advanced-configuration.md#opsfile) for help with modifying this.
+``terraform/`` | The terraform templates bbl used to pave your IaaS. See [docs/advanced-configuration](docs/advanced-configuration.md#terraform) for information on modifying this. 
+``vars/`` | This is where bbl will store environment specific variables. Consider storing this outside of version control.
+``jumpbox-deployment/`` | The latest [jumpbox-deployment](http://github.com/cppforlife/jumpbox-deployment) that has been tested with your version of bbl.
 ``create-jumpbox.sh`` | The BOSH cli command bbl will use to create your jumpbox.
-``delete-director.sh`` |The BOSH cli command bbl will use to delete your director.
+``bosh-deployment/`` | The latest [bosh-deployment](http://github.com/cloudfoundry/bosh-deployment) that has been tested with your version of bbl
+``create-director.sh`` | The BOSH cli command bbl will use to create your director when you run `bbl up`. See [docs/advanced-configuration](docs/advanced-configuration.md#opsfile) for help with modifying this.
+``cloud-config/``| The cloud-config yaml that bbl will upload to the director to map IAAS resources to BOSH resources.
+``delete-director.sh`` | The BOSH cli command bbl will use to delete your director.
 ``delete-jumpbox.sh`` | The BOSH cli command bbl will use to delete your jumpbox.
-``jumpbox-deployment`` | The latest [jumpbox-deployment](http://github.com/cppforlife/jumpbox-deployment) that has been tested with your version of bbl.
-``terraform`` | The terraform templates bbl used to pave your IaaS. See [docs/advanced-configuration](docs/advanced-configuration.md#terraform) for information on modifying this.
-``vars `` | This is where bbl will store environment specific variables. Consider storing this outside of version control.
+
 
 ### Tearing down an environment
 
