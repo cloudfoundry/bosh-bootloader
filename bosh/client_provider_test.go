@@ -31,11 +31,11 @@ var _ = Describe("Client Provider", func() {
 
 	Describe("Dialer", func() {
 		var (
-			socks5Network    string
-			socks5Addr       string
-			socks5Auth       *proxy.Auth
-			socks5Forward    proxy.Dialer
-			fakeSocks5Client *fakes.Socks5Client
+			socks5Network string
+			socks5Addr    string
+			socks5Auth    *proxy.Auth
+			socks5Forward proxy.Dialer
+			fakeDialer    *fakes.Dialer
 		)
 
 		BeforeEach(func() {
@@ -46,7 +46,7 @@ var _ = Describe("Client Provider", func() {
 				socks5Auth = auth
 				socks5Forward = forward
 
-				return fakeSocks5Client, nil
+				return fakeDialer, nil
 			})
 		})
 
@@ -56,9 +56,9 @@ var _ = Describe("Client Provider", func() {
 
 		Context("when using a jumpbox", func() {
 			It("starts the socks 5 proxy to the jumpbox and returns a socks 5 client", func() {
-				socks5Client, err := clientProvider.Dialer(storage.Jumpbox{URL: "https://some-jumpbox"})
+				proxyDialer, err := clientProvider.Dialer(storage.Jumpbox{URL: "https://some-jumpbox"})
 				Expect(err).NotTo(HaveOccurred())
-				Expect(socks5Client).To(Equal(fakeSocks5Client))
+				Expect(proxyDialer).To(Equal(fakeDialer))
 
 				Expect(socks5Proxy.StartCall.CallCount).To(Equal(1))
 				Expect(socks5Proxy.StartCall.Receives.Username).To(Equal(""))
@@ -121,7 +121,7 @@ var _ = Describe("Client Provider", func() {
 	Describe("HttpClient", func() {
 		var (
 			ca     []byte
-			dialer *fakes.Socks5Client
+			dialer *fakes.Dialer
 		)
 
 		BeforeEach(func() {
@@ -131,7 +131,7 @@ var _ = Describe("Client Provider", func() {
 			sshKeyGetter := &fakes.SSHKeyGetter{}
 
 			clientProvider = bosh.NewClientProvider(socks5Proxy, sshKeyGetter)
-			dialer = &fakes.Socks5Client{}
+			dialer = &fakes.Dialer{}
 		})
 
 		It("returns an http client that uses the dialer", func() {

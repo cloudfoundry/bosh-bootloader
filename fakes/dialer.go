@@ -2,7 +2,7 @@ package fakes
 
 import "net"
 
-type Socks5Client struct {
+type Dialer struct {
 	DialCall struct {
 		CallCount int
 		Stub      func(network, addr string) (net.Conn, error)
@@ -17,7 +17,7 @@ type Socks5Client struct {
 	}
 }
 
-func (s *Socks5Client) Dial(network, addr string) (net.Conn, error) {
+func (s *Dialer) Dial(network, addr string) (net.Conn, error) {
 	s.DialCall.CallCount++
 	s.DialCall.Receives.Network = network
 	s.DialCall.Receives.Addr = addr

@@ -19,7 +19,7 @@ type BOSHClient struct {
 	ConfigureHTTPClientCall struct {
 		CallCount int
 		Receives  struct {
-			Socks5Client proxy.Dialer
+			Dialer proxy.Dialer
 		}
 	}
 
@@ -38,9 +38,9 @@ func (c *BOSHClient) UpdateCloudConfig(yaml []byte) error {
 	return c.UpdateCloudConfigCall.Returns.Error
 }
 
-func (c *BOSHClient) ConfigureHTTPClient(socks5Client proxy.Dialer) {
+func (c *BOSHClient) ConfigureHTTPClient(dialer proxy.Dialer) {
 	c.ConfigureHTTPClientCall.CallCount++
-	c.ConfigureHTTPClientCall.Receives.Socks5Client = socks5Client
+	c.ConfigureHTTPClientCall.Receives.Dialer = dialer
 }
 
 func (c *BOSHClient) Info() (bosh.Info, error) {
