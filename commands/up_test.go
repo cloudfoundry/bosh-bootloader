@@ -17,11 +17,12 @@ var _ = Describe("Up", func() {
 	var (
 		command commands.Up
 
-		plan               *fakes.Plan
-		boshManager        *fakes.BOSHManager
-		terraformManager   *fakes.TerraformManager
-		cloudConfigManager *fakes.CloudConfigManager
-		stateStore         *fakes.StateStore
+		plan                 *fakes.Plan
+		boshManager          *fakes.BOSHManager
+		terraformManager     *fakes.TerraformManager
+		cloudConfigManager   *fakes.CloudConfigManager
+		runtimeConfigManager *fakes.RuntimeConfigManager
+		stateStore           *fakes.StateStore
 	)
 
 	BeforeEach(func() {
@@ -29,9 +30,10 @@ var _ = Describe("Up", func() {
 		boshManager = &fakes.BOSHManager{}
 		terraformManager = &fakes.TerraformManager{}
 		cloudConfigManager = &fakes.CloudConfigManager{}
+		runtimeConfigManager = &fakes.RuntimeConfigManager{}
 		stateStore = &fakes.StateStore{}
 
-		command = commands.NewUp(plan, boshManager, cloudConfigManager, stateStore, terraformManager)
+		command = commands.NewUp(plan, boshManager, cloudConfigManager, runtimeConfigManager, stateStore, terraformManager)
 	})
 
 	Describe("CheckFastFails", func() {
@@ -119,6 +121,9 @@ var _ = Describe("Up", func() {
 
 				Expect(cloudConfigManager.UpdateCall.CallCount).To(Equal(1))
 				Expect(cloudConfigManager.UpdateCall.Receives.State).To(Equal(createDirectorState))
+
+				Expect(runtimeConfigManager.UpdateCall.CallCount).To(Equal(1))
+				Expect(runtimeConfigManager.UpdateCall.Receives.State).To(Equal(createDirectorState))
 
 				Expect(stateStore.SetCall.CallCount).To(Equal(3))
 			})
@@ -250,6 +255,17 @@ var _ = Describe("Up", func() {
 				It("returns an error", func() {
 					err := command.Execute([]string{}, storage.State{})
 					Expect(err).To(MatchError("Update cloud config: coconut"))
+				})
+			})
+
+			Context("when the runtime config cannot be uploaded", func() {
+				BeforeEach(func() {
+					runtimeConfigManager.UpdateCall.Returns.Error = errors.New("grapefruit")
+				})
+
+				It("returns an error", func() {
+					err := command.Execute([]string{}, storage.State{})
+					Expect(err).To(MatchError("Update runtime config: grapefruit"))
 				})
 			})
 

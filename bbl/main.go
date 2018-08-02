@@ -20,6 +20,7 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/config"
 	"github.com/cloudfoundry/bosh-bootloader/gcp"
 	"github.com/cloudfoundry/bosh-bootloader/helpers"
+	"github.com/cloudfoundry/bosh-bootloader/runtimeconfig"
 	"github.com/cloudfoundry/bosh-bootloader/ssh"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/cloudfoundry/bosh-bootloader/terraform"
@@ -245,6 +246,7 @@ func main() {
 	}
 
 	cloudConfigManager := cloudconfig.NewManager(logger, boshCommand, stateStore, cloudConfigOpsGenerator, boshClientProvider, terraformManager, afs)
+	runtimeConfigManager := runtimeconfig.NewManager(logger, boshClientProvider, afs, stateStore)
 
 	// Commands
 	var envIDManager helpers.EnvIDManager
@@ -252,7 +254,7 @@ func main() {
 		envIDManager = helpers.NewEnvIDManager(envIDGenerator, networkClient)
 	}
 	plan := commands.NewPlan(boshManager, cloudConfigManager, stateStore, patchDetector, envIDManager, terraformManager, lbArgsHandler, stderrLogger, Version)
-	up := commands.NewUp(plan, boshManager, cloudConfigManager, stateStore, terraformManager)
+	up := commands.NewUp(plan, boshManager, cloudConfigManager, runtimeConfigManager, stateStore, terraformManager)
 	usage := commands.NewUsage(logger)
 
 	commandSet := application.CommandSet{}

@@ -14,8 +14,8 @@ import (
 )
 
 type ConfigUpdater interface {
-	UpdateConfig(string, []byte) error
 	UpdateCloudConfig(yaml []byte) error
+	UpdateRuntimeConfig(yaml []byte, name string) error
 	Info() (Info, error)
 }
 
@@ -79,11 +79,11 @@ type ConfigRequestBody struct {
 	Content string `json:"content"`
 }
 
-func (c Client) UpdateConfig(configType string, content []byte) error {
+func (c Client) UpdateConfig(configType, name string, content []byte) error {
 	var body bytes.Buffer
 
 	config := ConfigRequestBody{
-		Name:    "default",
+		Name:    name,
 		Type:    configType,
 		Content: string(content),
 	}
@@ -122,7 +122,11 @@ func (c Client) UpdateConfig(configType string, content []byte) error {
 }
 
 func (c Client) UpdateCloudConfig(yaml []byte) error {
-	return c.UpdateConfig("cloud", yaml)
+	return c.UpdateConfig("cloud", "default", yaml)
+}
+
+func (c Client) UpdateRuntimeConfig(yaml []byte, name string) error {
+	return c.UpdateConfig("runtime", name, yaml)
 }
 
 func makeRequests(httpClient *http.Client, request *http.Request) (*http.Response, error) {

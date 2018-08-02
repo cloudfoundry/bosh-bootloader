@@ -37,7 +37,7 @@ func (BOSHCLI) Env(address, caCertPath string) (string, error) {
 	return string(env), err
 }
 
-func (BOSHCLI) CloudConfig(address, caCertPath, username, password string) (string, error) {
+func (b BOSHCLI) CloudConfig(address, caCertPath, username, password string) (string, error) {
 	cmd := exec.Command("bosh",
 		"--ca-cert", caCertPath,
 		"--client", username,
@@ -49,4 +49,20 @@ func (BOSHCLI) CloudConfig(address, caCertPath, username, password string) (stri
 	cloudConfig, err := cmd.Output()
 
 	return string(cloudConfig), err
+}
+
+func (b BOSHCLI) RuntimeConfig(address, caCertPath, username, password, configName string) (string, error) {
+	cmd := exec.Command("bosh",
+		"--ca-cert", caCertPath,
+		"--client", username,
+		"--client-secret", password,
+		"-e", address,
+		"config",
+		"--type", "runtime",
+		"--name", configName,
+	)
+	cmd.Env = os.Environ()
+	runtimeConfig, err := cmd.Output()
+
+	return string(runtimeConfig), err
 }

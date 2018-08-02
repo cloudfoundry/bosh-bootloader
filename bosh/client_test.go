@@ -190,18 +190,18 @@ var _ = Describe("Client", func() {
 		})
 
 		It("uses uaa to get a token", func() {
-			err := client.UpdateConfig("arbitrary_type", []byte("some: yaml"))
+			err := client.UpdateConfig("arbitrary_type", "some-name", []byte("some: yaml"))
 			Expect(err).NotTo(HaveOccurred())
 			Expect(token).To(Equal("Bearer some-uaa-token"))
 		})
 
 		It("updates the appropriately typed default config", func() {
-			err := client.UpdateConfig("arbitrary_type", []byte("some: yaml"))
+			err := client.UpdateConfig("arbitrary_type", "some-name", []byte("some: yaml"))
 			Expect(err).NotTo(HaveOccurred())
 			Expect(contentType).To(Equal("application/json"))
 			Expect(configRequestBody.Type).To(Equal("arbitrary_type"))
 			Expect(configRequestBody.Content).To(Equal("some: yaml"))
-			Expect(configRequestBody.Name).To(Equal("default"))
+			Expect(configRequestBody.Name).To(Equal("some-name"))
 		})
 	})
 

@@ -89,6 +89,11 @@ var _ = Describe("up", func() {
 			iaasHelper.VerifyCloudConfigExtensions(vmExtensions)
 		})
 
+		By("varifying that the bosh dns runtime config was set", func() {
+			_, err := boshcli.RuntimeConfig(directorAddress, caCertPath, directorUsername, directorPassword, "dns")
+			Expect(err).NotTo(HaveOccurred())
+		})
+
 		By("checking if bbl print-env prints the bosh environment variables", func() {
 			stdout := bbl.PrintEnv()
 

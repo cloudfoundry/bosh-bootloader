@@ -6,11 +6,11 @@ import (
 )
 
 type BOSHClient struct {
-	UpdateConfigCall struct {
+	UpdateRuntimeConfigCall struct {
 		CallCount int
 		Receives  struct {
-			Type string
 			Yaml []byte
+			Name string
 		}
 		Returns struct {
 			Error error
@@ -43,11 +43,11 @@ type BOSHClient struct {
 	}
 }
 
-func (c *BOSHClient) UpdateConfig(t string, yaml []byte) error {
-	c.UpdateConfigCall.CallCount++
-	c.UpdateConfigCall.Receives.Type = t
-	c.UpdateConfigCall.Receives.Yaml = yaml
-	return c.UpdateConfigCall.Returns.Error
+func (c *BOSHClient) UpdateRuntimeConfig(yaml []byte, name string) error {
+	c.UpdateRuntimeConfigCall.CallCount++
+	c.UpdateRuntimeConfigCall.Receives.Yaml = yaml
+	c.UpdateRuntimeConfigCall.Receives.Name = name
+	return c.UpdateRuntimeConfigCall.Returns.Error
 }
 
 func (c *BOSHClient) UpdateCloudConfig(yaml []byte) error {
