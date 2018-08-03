@@ -120,7 +120,7 @@ func main() {
 	allProxyGetter := bosh.NewAllProxyGetter(sshKeyGetter, afs)
 	credhubGetter := bosh.NewCredhubGetter(stateStore, afs)
 	boshManager := bosh.NewManager(boshExecutor, logger, stateStore, sshKeyGetter, afs)
-	boshClientProvider := bosh.NewClientProvider(socks5Proxy, sshKeyGetter)
+	boshClientProvider := bosh.NewClientProvider(allProxyGetter, socks5Proxy, sshKeyGetter, boshPath)
 
 	// Clients that require IAAS credentials.
 	var (
@@ -246,7 +246,7 @@ func main() {
 	}
 
 	cloudConfigManager := cloudconfig.NewManager(logger, boshCommand, stateStore, cloudConfigOpsGenerator, boshClientProvider, terraformManager, afs)
-	runtimeConfigManager := runtimeconfig.NewManager(logger, boshClientProvider, afs, stateStore)
+	runtimeConfigManager := runtimeconfig.NewManager(logger, stateStore, boshClientProvider)
 
 	// Commands
 	var envIDManager helpers.EnvIDManager

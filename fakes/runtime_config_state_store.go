@@ -1,6 +1,6 @@
 package fakes
 
-type RuntimeStateStore struct {
+type DirProvider struct {
 	GetDirectorDeploymentDirCall struct {
 		CallCount int
 		Returns   struct {
@@ -10,8 +10,8 @@ type RuntimeStateStore struct {
 	}
 }
 
-func (ss *RuntimeStateStore) GetDirectorDeploymentDir() (string, error) {
-	ss.GetDirectorDeploymentDirCall.CallCount++
+func (d *DirProvider) GetDirectorDeploymentDir() (string, error) {
+	d.GetDirectorDeploymentDirCall.CallCount++
 
-	return ss.GetDirectorDeploymentDirCall.Returns.Dir, ss.GetDirectorDeploymentDirCall.Returns.Error
+	return d.GetDirectorDeploymentDirCall.Returns.Dir, d.GetDirectorDeploymentDirCall.Returns.Error
 }

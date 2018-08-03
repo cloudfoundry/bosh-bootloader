@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"net/url"
@@ -15,8 +16,10 @@ import (
 var proxySOCKS5 func(string, string, *proxy.Auth, proxy.Dialer) (proxy.Dialer, error) = proxy.SOCKS5
 
 type ClientProvider struct {
-	socks5Proxy  socks5Proxy
-	sshKeyGetter sshKeyGetter
+	allProxyGetter allProxyGetter
+	socks5Proxy    socks5Proxy
+	sshKeyGetter   sshKeyGetter
+	boshCLIPath    string
 }
 
 type socks5Proxy interface {
@@ -24,10 +27,17 @@ type socks5Proxy interface {
 	Addr() (string, error)
 }
 
-func NewClientProvider(socks5Proxy socks5Proxy, sshKeyGetter sshKeyGetter) ClientProvider {
+type allProxyGetter interface {
+	GeneratePrivateKey() (string, error)
+	BoshAllProxy(string, string) string
+}
+
+func NewClientProvider(allProxyGetter allProxyGetter, socks5Proxy socks5Proxy, sshKeyGetter sshKeyGetter, boshCLIPath string) ClientProvider {
 	return ClientProvider{
-		socks5Proxy:  socks5Proxy,
-		sshKeyGetter: sshKeyGetter,
+		allProxyGetter: allProxyGetter,
+		socks5Proxy:    socks5Proxy,
+		sshKeyGetter:   sshKeyGetter,
+		boshCLIPath:    boshCLIPath,
 	}
 }
 
@@ -41,7 +51,6 @@ func (c ClientProvider) Dialer(jumpbox storage.Jumpbox) (proxy.Dialer, error) {
 	if err != nil {
 		return nil, fmt.Errorf("start proxy: %s", err)
 	}
-
 	addr, err := c.socks5Proxy.Addr()
 	if err != nil {
 		return nil, fmt.Errorf("get proxy address: %s", err)
@@ -95,4 +104,14 @@ func (c ClientProvider) Client(jumpbox storage.Jumpbox, directorAddress, directo
 	httpClient := c.HTTPClient(dialer, []byte(directorCACert))
 	boshClient := NewClient(httpClient, directorAddress, uaaAddress, directorUsername, directorPassword, directorCACert)
 	return boshClient, nil
+}
+
+func (c ClientProvider) BoshCLI(jumpbox storage.Jumpbox, stderr io.Writer, directorAddress, directorUsername, directorPassword, directorCACert string) (RuntimeConfigUpdater, error) {
+	privateKey, err := c.allProxyGetter.GeneratePrivateKey()
+	if err != nil {
+		return BOSHCLI{}, err
+	}
+
+	boshAllProxy := c.allProxyGetter.BoshAllProxy(jumpbox.URL, privateKey)
+	return NewBOSHCLI(stderr, c.boshCLIPath, directorAddress, directorUsername, directorPassword, directorCACert, boshAllProxy), nil
 }

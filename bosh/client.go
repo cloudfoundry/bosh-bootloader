@@ -15,8 +15,11 @@ import (
 
 type ConfigUpdater interface {
 	UpdateCloudConfig(yaml []byte) error
-	UpdateRuntimeConfig(yaml []byte, name string) error
 	Info() (Info, error)
+}
+
+type RuntimeConfigUpdater interface {
+	UpdateRuntimeConfig(filepath, name string) error
 }
 
 type Info struct {
@@ -123,10 +126,6 @@ func (c Client) UpdateConfig(configType, name string, content []byte) error {
 
 func (c Client) UpdateCloudConfig(yaml []byte) error {
 	return c.UpdateConfig("cloud", "default", yaml)
-}
-
-func (c Client) UpdateRuntimeConfig(yaml []byte, name string) error {
-	return c.UpdateConfig("runtime", name, yaml)
 }
 
 func makeRequests(httpClient *http.Client, request *http.Request) (*http.Response, error) {

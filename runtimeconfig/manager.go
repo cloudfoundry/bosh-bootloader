@@ -2,75 +2,65 @@ package runtimeconfig
 
 import (
 	"fmt"
+	"io"
+	"os"
 	"path/filepath"
 
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
-	"github.com/cloudfoundry/bosh-bootloader/fileio"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
 type Manager struct {
 	logger             logger
 	boshClientProvider boshClientProvider
-	fs                 fs
-	stateStore         stateStore
+	dirProvider        dirProvider
 }
 
 type logger interface {
 	Step(string, ...interface{})
 }
 
-type stateStore interface {
+type boshClientProvider interface {
+	BoshCLI(jumpbox storage.Jumpbox, stderr io.Writer, directorAddress, directorUsername, directorPassword, directorCACert string) (bosh.RuntimeConfigUpdater, error)
+}
+
+type dirProvider interface {
 	GetDirectorDeploymentDir() (string, error)
 }
 
-type fs interface {
-	fileio.FileReader
-}
-
-type boshClientProvider interface {
-	Client(jumpbox storage.Jumpbox, directorAddress, directorUsername, directorPassword, caCert string) (bosh.ConfigUpdater, error)
-}
-
-func NewManager(logger logger, boshClientProvider boshClientProvider, fs fs, stateStore stateStore) Manager {
+func NewManager(logger logger, dirProvider dirProvider, boshClientProvider boshClientProvider) Manager {
 	return Manager{
 		logger:             logger,
-		fs:                 fs,
-		stateStore:         stateStore,
 		boshClientProvider: boshClientProvider,
+		dirProvider:        dirProvider,
 	}
 }
 
 func (m Manager) Update(state storage.State) error {
-	boshClient, err := m.boshClientProvider.Client(state.Jumpbox, state.BOSH.DirectorAddress, state.BOSH.DirectorUsername, state.BOSH.DirectorPassword, state.BOSH.DirectorSSLCA)
+	boshCLI, err := m.boshClientProvider.BoshCLI(state.Jumpbox,
+		os.Stderr,
+		state.BOSH.DirectorAddress,
+		state.BOSH.DirectorUsername,
+		state.BOSH.DirectorPassword,
+		state.BOSH.DirectorSSLCA,
+	)
 	if err != nil {
-		return err // not tested
+		panic(err)
 	}
 
-	m.logger.Step("loading runtime config")
-	yaml, err := m.LoadRuntimeConfigFile("dns.yml")
+	dir, err := m.dirProvider.GetDirectorDeploymentDir()
 	if err != nil {
-		return fmt.Errorf("could not open runtime config file %q: %s", "dns.yml", err)
+		return fmt.Errorf("could not find bosh-deployment directory: %s", err)
 	}
 
+	filename := "dns.yml"
 	m.logger.Step("applying runtime config")
-	err = boshClient.UpdateRuntimeConfig(yaml, "dns")
+	filepath := filepath.Join(dir, "runtime-configs", filename)
+
+	err = boshCLI.UpdateRuntimeConfig(filepath, "dns")
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to update runtime-config: %s", err)
 	}
 
 	return nil
-}
-
-func (m Manager) LoadRuntimeConfigFile(filename string) ([]byte, error) {
-	dir, err := m.stateStore.GetDirectorDeploymentDir()
-	if err != nil {
-		return nil, err // untested
-	}
-	filePath := filepath.Join(dir, "runtime-configs", filename)
-	bts, err := m.fs.ReadFile(filePath)
-	if err != nil {
-		return nil, err
-	}
-	return bts, nil
 }

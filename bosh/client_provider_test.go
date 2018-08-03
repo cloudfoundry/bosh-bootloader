@@ -17,16 +17,18 @@ var _ = Describe("Client Provider", func() {
 	var (
 		clientProvider bosh.ClientProvider
 		jumpbox        storage.Jumpbox
+		allProxyGetter *fakes.AllProxyGetter
 		socks5Proxy    *fakes.Socks5Proxy
 		sshKeyGetter   *fakes.SSHKeyGetter
 	)
 
 	BeforeEach(func() {
+		allProxyGetter = &fakes.AllProxyGetter{}
 		socks5Proxy = &fakes.Socks5Proxy{}
 		sshKeyGetter = &fakes.SSHKeyGetter{}
 		sshKeyGetter.GetCall.Returns.PrivateKey = "some-private-key"
 
-		clientProvider = bosh.NewClientProvider(socks5Proxy, sshKeyGetter)
+		clientProvider = bosh.NewClientProvider(allProxyGetter, socks5Proxy, sshKeyGetter, "some-path-to-bosh")
 	})
 
 	Describe("Dialer", func() {
@@ -130,7 +132,7 @@ var _ = Describe("Client Provider", func() {
 			Expect(err).NotTo(HaveOccurred())
 			sshKeyGetter := &fakes.SSHKeyGetter{}
 
-			clientProvider = bosh.NewClientProvider(socks5Proxy, sshKeyGetter)
+			clientProvider = bosh.NewClientProvider(allProxyGetter, socks5Proxy, sshKeyGetter, "some-path-to-bosh")
 			dialer = &fakes.Dialer{}
 		})
 
@@ -168,6 +170,33 @@ var _ = Describe("Client Provider", func() {
 			It("Errors", func() {
 				_, err := clientProvider.Client(storage.Jumpbox{URL: "https://some-jumpbox"}, "https://director", "user", "pass", "some-fake-ca")
 				Expect(err).To(HaveOccurred())
+			})
+		})
+	})
+
+	Describe("BoshCLI", func() {
+		It("returns an authenticated bosh cli", func() {
+			allProxyGetter.BoshAllProxyCall.Returns.URL = "some-all-proxy-url"
+			cli, err := clientProvider.BoshCLI(storage.Jumpbox{URL: "https://some-jumpbox"}, nil, "some-address", "some-username", "some-password", "some-fake-ca")
+			Expect(err).NotTo(HaveOccurred())
+
+			boshCLI := cli.(bosh.BOSHCLI)
+			Expect(boshCLI.GlobalArgs).To(Equal([]string{
+				"--environment", "some-address",
+				"--client", "some-username",
+				"--client-secret", "some-password",
+				"--ca-cert", "some-fake-ca",
+				"--non-interactive",
+			}))
+			Expect(boshCLI.BOSHAllProxy).To(Equal("some-all-proxy-url"))
+		})
+
+		Context("when it can not get the correct key", func() {
+			It("Errors", func() {
+				allProxyGetter.GeneratePrivateKeyCall.Returns.Error = errors.New("fruit")
+				_, err := clientProvider.BoshCLI(storage.Jumpbox{URL: "https://some-jumpbox"}, nil, "some-address", "some-username", "some-password", "some-fake-ca")
+				Expect(err).To(HaveOccurred())
+				Expect(err).To(MatchError("fruit"))
 			})
 		})
 	})
