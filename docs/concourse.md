@@ -30,8 +30,8 @@ install using `bbl` and `bosh`.
   ```bash
   cat >secrets.yml <<EOL
 local_user:
-  username: <username>
-  password: <super-secret-password>
+    username: <username>
+    password: <super-secret-password>
 EOL
 
   bosh deploy -d concourse concourse.yml \
