@@ -92,7 +92,7 @@
         },
         {
             "location": "/cf-lbs/",
-            "text": "Cloud Foundry Load Balancers\n\n\nAWS\n\n\nbbl\n creates 3 load balancers on AWS.\n\n\n\n\n\n\ncf-ssh-lb\n\n\n\n\nIn the cloud-config, this lb is referenced with the vm extension \ndiego-ssh-proxy-network-properties\n.\n\n\nIn cf-deployment, this vm extension will be associated with the \nscheduler\n vm.\n\n\nIt forwards \nTCP:2222\n to \nTCP:2222\n.\n\n\n\n\n\n\n\n\ncf-tcp-lb\n\n\n\n\nIn the cloud-config, this lb is referenced with the vm extension \ncf-tcp-router-network-properties\n.\n\n\nIn cf-deployment, this vm extension will be associated with the \ntcp-router\n vm.\n\n\nIt forwards \nTCP:1024-1123\n to \nTCP:1024-1123\n.\n\n\n\n\n\n\n\n\ncf-router-lb\n\n\n\n\nIn the cloud-config, this lb is referenced with the vm extension \ncf-router-network-properties\n.\n\n\nIn cf-deployment, this vm extension will be associated with the \nrouter\n vm.\n\n\nIt forwards:\n\n\nHTTP:80\n   to \nHTTP:80\n\n\nHTTPS:443\n to \nHTTP:80\n\n\nTLS:4443\n  to \nTCP:80\n\n\n\n\n\n\n\n\n\n\n\n\nGCP\n\n\nbbl\n creates 4 load balancers on GCP.\n\n\n\n\n\n\ncf-router-lb\n\n\n\n\nIn the cloud-config, this lb is referenced with the vm extension \ncf-router-network-properties\n.\n\n\nIn cf-deployment, this vm extension will be associated with the \nrouter\n vm.\n\n\nConfiguration:\n\n\nCompute address\n\n\nBackend service with an instance group per availability zone\n\n\nInstance group per availability zone allowing \nhttps:443\n\n\nFirewall rule allowing \ntcp:80\n \n \ntcp:443\n to the backend service\n\n\nHealth check for \ntcp:8080\n \n \ntcp:80\n\n\n\n\n\n\n\n\n\n\n\n\ncf-ws-lb\n\n\n\n\nIn the cloud-config, this lb is referenced with the vm extension \ncf-router-network-properties\n.\n\n\nIn cf-deployment, this vm extension will be associated with the \nrouter\n vm.\n\n\nConfiguration:\n\n\nCompute address\n\n\nTarget pool\n\n\nForwarding rule allowing \ntcp:443\n to the target pool\n\n\nForwarding rule allowing \ntcp:80\n to the target pool\n\n\n\n\n\n\n\n\n\n\n\n\ncf-tcp-router-lb\n\n\n\n\nIn the cloud-config, this lb is referenced with the vm extension \ncf-tcp-router-network-properties\n.\n\n\nIn cf-deployment, this vm extension will be associated with the \ntcp-router\n vm.\n\n\nConfiguration:\n\n\nCompute address\n\n\nTarget pool\n\n\nFirewall rule allowing \ntcp:1024-32768\n to the target pool\n\n\nForwarding rule for \ntcp:1024-32768\n to the target pool\n\n\n\n\n\n\n\n\n\n\n\n\ncf-ssh-proxy-lb\n\n\n\n\nIn the cloud-config, this lb is referenced with the vm extension \ndiego-ssh-proxy-network-properties\n.\n\n\nIn cf-deployment, this vm extension will be associated with the \nscheduler\n vm.\n\n\nConfiguration:\n\n\nCompute address\n\n\nTarget pool\n\n\nFirewall rule allowing \ntcp:2222\n to the target pool\n\n\nForwarding rule for \ntcp:2222\n to the target pool\n\n\n\n\n\n\n\n\n\n\n\n\nMicrosoft Azure\n\n\nThere is an application gateway.\n\n\n\n\ncf-app-gateway\n\n\nIn the cloud-config, this lb is referenced with the vm extension \ncf-router-network-properties\n.\n\n\nIn cf-deployment, this vm extension will be associated with the \nrouter\n vm.\n\n\nConfiguration:\n\n\nPublic IP\n\n\nApplication Gateway\n\n\nNetwork Security Rules\n\n\nNetwork Security Group\n\n\n\n\n\n\n\n\n\n\n\n\nvSphere\n\n\nN/A.\n\n\nOpenStack\n\n\nN/A.",
+            "text": "Cloud Foundry Load Balancers\n\n\nAWS\n\n\nbbl\n creates 3 load balancers on AWS.\n\n\n\n\n\n\ncf-ssh-lb\n\n\n\n\nIn the cloud-config, this lb is referenced with the vm extension \ndiego-ssh-proxy-network-properties\n.\n\n\nIn cf-deployment, this vm extension will be associated with the \nscheduler\n vm.\n\n\nIt forwards \nTCP:2222\n to \nTCP:2222\n.\n\n\n\n\n\n\n\n\ncf-tcp-lb\n\n\n\n\nIn the cloud-config, this lb is referenced with the vm extension \ncf-tcp-router-network-properties\n.\n\n\nIn cf-deployment, this vm extension will be associated with the \ntcp-router\n vm.\n\n\nIt forwards \nTCP:1024-1123\n to \nTCP:1024-1123\n.\n\n\n\n\n\n\n\n\ncf-router-lb\n\n\n\n\nIn the cloud-config, this lb is referenced with the vm extension \ncf-router-network-properties\n.\n\n\nIn cf-deployment, this vm extension will be associated with the \nrouter\n vm.\n\n\nIt forwards:\n\n\nHTTP:80\n   to \nHTTP:80\n\n\nHTTPS:443\n to \nHTTP:80\n\n\nTLS:4443\n  to \nTCP:80\n\n\n\n\n\n\n\n\n\n\n\n\nGCP\n\n\nbbl\n creates 4 load balancers on GCP.\n\n\n\n\n\n\ncf-router-lb\n\n\n\n\nIn the cloud-config, this lb is referenced with the vm extension \ncf-router-network-properties\n.\n\n\nIn cf-deployment, this vm extension will be associated with the \nrouter\n vm.\n\n\nConfiguration:\n\n\nCompute address\n\n\nBackend service with an instance group per availability zone\n\n\nInstance group per availability zone allowing \nhttps:443\n\n\nFirewall rule allowing \ntcp:80\n \n \ntcp:443\n to the backend service\n\n\nHealth check for \ntcp:8080\n \n \ntcp:80\n\n\n\n\n\n\n\n\n\n\n\n\ncf-ws-lb\n\n\n\n\nIn the cloud-config, this lb is referenced with the vm extension \ncf-router-network-properties\n.\n\n\nIn cf-deployment, this vm extension will be associated with the \nrouter\n vm.\n\n\nConfiguration:\n\n\nCompute address\n\n\nTarget pool\n\n\nForwarding rule allowing \ntcp:443\n to the target pool\n\n\nForwarding rule allowing \ntcp:80\n to the target pool\n\n\n\n\n\n\n\n\n\n\n\n\ncf-tcp-router-lb\n\n\n\n\nIn the cloud-config, this lb is referenced with the vm extension \ncf-tcp-router-network-properties\n.\n\n\nIn cf-deployment, this vm extension will be associated with the \ntcp-router\n vm.\n\n\nConfiguration:\n\n\nCompute address\n\n\nTarget pool\n\n\nFirewall rule allowing \ntcp:1024-32768\n to the target pool\n\n\nForwarding rule for \ntcp:1024-32768\n to the target pool\n\n\n\n\n\n\n\n\n\n\n\n\ncf-ssh-proxy-lb\n\n\n\n\nIn the cloud-config, this lb is referenced with the vm extension \ndiego-ssh-proxy-network-properties\n.\n\n\nIn cf-deployment, this vm extension will be associated with the \nscheduler\n vm.\n\n\nConfiguration:\n\n\nCompute address\n\n\nTarget pool\n\n\nFirewall rule allowing \ntcp:2222\n to the target pool\n\n\nForwarding rule for \ntcp:2222\n to the target pool\n\n\n\n\n\n\n\n\n\n\n\n\nMicrosoft Azure\n\n\nbbl\n creates an application gateway on Microsoft Azure.\n\n\n\n\ncf-app-gateway\n\n\nIn the cloud-config, this lb is referenced with the vm extension \ncf-router-network-properties\n.\n\n\nIn cf-deployment, this vm extension will be associated with the \nrouter\n vm.\n\n\nConfiguration:\n\n\nPublic IP\n\n\nApplication Gateway\n\n\nNetwork Security Rules\n\n\nNetwork Security Group\n\n\n\n\n\n\n\n\n\n\n\n\nvSphere\n\n\nN/A.\n\n\nOpenStack\n\n\nN/A.",
             "title": "Cloud Foundry Load Balancers"
         },
         {
@@ -112,7 +112,7 @@
         },
         {
             "location": "/cf-lbs/#microsoft-azure",
-            "text": "There is an application gateway.   cf-app-gateway  In the cloud-config, this lb is referenced with the vm extension  cf-router-network-properties .  In cf-deployment, this vm extension will be associated with the  router  vm.  Configuration:  Public IP  Application Gateway  Network Security Rules  Network Security Group",
+            "text": "bbl  creates an application gateway on Microsoft Azure.   cf-app-gateway  In the cloud-config, this lb is referenced with the vm extension  cf-router-network-properties .  In cf-deployment, this vm extension will be associated with the  router  vm.  Configuration:  Public IP  Application Gateway  Network Security Rules  Network Security Group",
             "title": "Microsoft Azure"
         },
         {
@@ -147,23 +147,28 @@
         },
         {
             "location": "/cloudfoundry/",
-            "text": "Generic Steps for Cloud Foundry Deployment\n\n\n\n\n\n\nCreate an environment and target the BOSH director with \neval \"$(bbl print-env)\"\n\n\n\n\n\n\nbbl plan --lb-type cf --lb-cert cert --lb-key key \n bbl up\n with a certificate and key as flags or environment variables.\n(Continue to provide the IaaS credentials as flags or environment variables.)\n\n\n\n\n\n\nbosh deploy cf-deployment.yml -o operations/\nMY IaaS\n using the \nCF deployment manifest!",
-            "title": "Cloudfoundry"
-        },
-        {
-            "location": "/cloudfoundry/#generic-steps-for-cloud-foundry-deployment",
-            "text": "Create an environment and target the BOSH director with  eval \"$(bbl print-env)\"    bbl plan --lb-type cf --lb-cert cert --lb-key key   bbl up  with a certificate and key as flags or environment variables.\n(Continue to provide the IaaS credentials as flags or environment variables.)    bosh deploy cf-deployment.yml -o operations/ MY IaaS  using the  CF deployment manifest!",
+            "text": "Generic Steps for Cloud Foundry Deployment\n\n\n\n\n\n\nCreate an environment and target the BOSH director with \neval \"$(bbl print-env)\"\n\n\n\n\n\n\nbbl plan --lb-type cf --lb-cert \nPATH_TO_CERT_FILE\n --lb-key \nPATH_TO_KEY_FILE\n \n bbl up\n. You can use existing certificate and key files, or generate new ones. See below for instructions on generating these files for Microsoft Azure.\n\n\n\n\n\n\nbosh deploy cf-deployment.yml -o operations/\nMY IaaS\n using the \nCF deployment manifest!\n\n\n\n\n\n\nAppendix: Generating Load Balancer Key and Certificate Files for Microsoft Azure\n\n\nTo create Cloud Foundry load balancers for Microsoft Azure you must provide a certificate\nin the \n.pfx\n format:\n\n\nopenssl genrsa -out DOMAIN_NAME.key 2048\nopenssl req -new -x509 -days 365 -key DOMAIN_NAME.key -out DOMAIN_NAME.crt\nopenssl pkcs12 -export -out PFX_FILE -inkey DOMAIN_NAME.key -in DOMAIN_NAME.crt\n\n\n\n\nSave the password you entered when prompted by \nopenssl\n to a file.\n\n\necho SuperSecretPassword \n PFX_FILE_PASSWORD\n\n\n\n\nTo \nbbl  plan\n or \nbbl up\n you can provide the \n.pfx\n file and password:\n\n\nbbl plan --lb-type cf --lb-cert PFX_FILE --lb-key PFX_FILE_PASSWORD",
             "title": "Generic Steps for Cloud Foundry Deployment"
         },
         {
-            "location": "/concourse/",
-            "text": "Concourse\n\n\nThis document will walk through deploying a concourse clustered\ninstall using \nbbl\n and \nbosh\n.\n\n\nPrerequisites\n\n\n\n\nbbl\n\n\nbosh v2\n\n\nconcourse/concourse-bosh-deployment\n\n\n\n\nSteps\n\n\n\n\nCreate an environment and upload a stemcell.\n\n\n\n\n```bash\n  bbl up --lb-type concourse\n\n\nexport external_url=\"https://$(bbl lbs | awk -F':' '{print $2}' | awk -F'[' '{print $2}' | awk -F']' '{print $1}')\"\n\n\neval \"$(bbl print-env)\"\n\n\nbosh upload-stemcell https://bosh.io/d/stemcells/bosh-google-kvm-ubuntu-trusty-go_agent\n\n\ncd $GOPATH/src/github.com/concourse/concourse-bosh-deployment/cluster\n  ```\n\n\n\n\nDeploy concourse.\n\n\n\n\nbash\n  bosh deploy -d concourse concourse.yml \\\n    -l ../versions.yml \\\n    --vars-store cluster-creds.yml \\\n    -o operations/no-auth.yml \\\n    -o operations/privileged-http.yml \\\n    -o operations/privileged-https.yml \\\n    -o operations/tls.yml \\\n    -o operations/tls-vars.yml \\\n    -o operations/web-network-extension.yml \\\n    --var network_name=default \\\n    --var external_url=$external_url \\\n    --var web_vm_type=default \\\n    --var db_vm_type=default \\\n    --var db_persistent_disk_type=10GB \\\n    --var worker_vm_type=default \\\n    --var deployment_name=concourse \\\n    --var web_network_name=private \\\n    --var web_network_vm_extension=lb\n\n\nVerify\n\n\nPoint your browser to \n$external_url\n.",
-            "title": "Concourse"
+            "location": "/cloudfoundry/#generic-steps-for-cloud-foundry-deployment",
+            "text": "Create an environment and target the BOSH director with  eval \"$(bbl print-env)\"    bbl plan --lb-type cf --lb-cert  PATH_TO_CERT_FILE  --lb-key  PATH_TO_KEY_FILE    bbl up . You can use existing certificate and key files, or generate new ones. See below for instructions on generating these files for Microsoft Azure.    bosh deploy cf-deployment.yml -o operations/ MY IaaS  using the  CF deployment manifest!",
+            "title": "Generic Steps for Cloud Foundry Deployment"
         },
         {
-            "location": "/concourse/#concourse",
+            "location": "/cloudfoundry/#appendix-generating-load-balancer-key-and-certificate-files-for-microsoft-azure",
+            "text": "To create Cloud Foundry load balancers for Microsoft Azure you must provide a certificate\nin the  .pfx  format:  openssl genrsa -out DOMAIN_NAME.key 2048\nopenssl req -new -x509 -days 365 -key DOMAIN_NAME.key -out DOMAIN_NAME.crt\nopenssl pkcs12 -export -out PFX_FILE -inkey DOMAIN_NAME.key -in DOMAIN_NAME.crt  Save the password you entered when prompted by  openssl  to a file.  echo SuperSecretPassword   PFX_FILE_PASSWORD  To  bbl  plan  or  bbl up  you can provide the  .pfx  file and password:  bbl plan --lb-type cf --lb-cert PFX_FILE --lb-key PFX_FILE_PASSWORD",
+            "title": "Appendix: Generating Load Balancer Key and Certificate Files for Microsoft Azure"
+        },
+        {
+            "location": "/concourse/",
+            "text": "Generic Steps for Concourse Deployment\n\n\nThis document will walk through deploying a concourse clustered\ninstall using \nbbl\n and \nbosh\n.\n\n\nPrerequisites\n\n\n\n\nbbl\n\n\nbosh v2\n\n\nconcourse/concourse-bosh-deployment\n\n\n\n\nSteps\n\n\n\n\nCreate an environment and upload a stemcell.\n\n\n\n\n```bash\n  bbl up --lb-type concourse\n\n\nexport external_url=\"https://$(bbl lbs | awk -F': ' '{print $2}')\"\n\n\neval \"$(bbl print-env)\"\n\n\nbosh upload-stemcell https://bosh.io/d/stemcells/bosh-google-kvm-ubuntu-trusty-go_agent\n\n\ncd $GOPATH/src/github.com/concourse/concourse-bosh-deployment/cluster\n  ```\n\n\n\n\nDeploy concourse.\n\n\n\n\nbash\n  bosh deploy -d concourse concourse.yml \\\n    -l ../versions.yml \\\n    --vars-store cluster-creds.yml \\\n    -o operations/no-auth.yml \\\n    -o operations/privileged-http.yml \\\n    -o operations/privileged-https.yml \\\n    -o operations/tls.yml \\\n    -o operations/tls-vars.yml \\\n    -o operations/web-network-extension.yml \\\n    --var network_name=default \\\n    --var external_url=$external_url \\\n    --var web_vm_type=default \\\n    --var db_vm_type=default \\\n    --var db_persistent_disk_type=10GB \\\n    --var worker_vm_type=default \\\n    --var deployment_name=concourse \\\n    --var web_network_name=private \\\n    --var web_network_vm_extension=lb\n\n\nVerify\n\n\nPoint your browser to \n$external_url\n.",
+            "title": "Generic Steps for Concourse Deployment"
+        },
+        {
+            "location": "/concourse/#generic-steps-for-concourse-deployment",
             "text": "This document will walk through deploying a concourse clustered\ninstall using  bbl  and  bosh .",
-            "title": "Concourse"
+            "title": "Generic Steps for Concourse Deployment"
         },
         {
             "location": "/concourse/#prerequisites",
@@ -172,7 +177,7 @@
         },
         {
             "location": "/concourse/#steps",
-            "text": "Create an environment and upload a stemcell.   ```bash\n  bbl up --lb-type concourse  export external_url=\"https://$(bbl lbs | awk -F':' '{print $2}' | awk -F'[' '{print $2}' | awk -F']' '{print $1}')\"  eval \"$(bbl print-env)\"  bosh upload-stemcell https://bosh.io/d/stemcells/bosh-google-kvm-ubuntu-trusty-go_agent  cd $GOPATH/src/github.com/concourse/concourse-bosh-deployment/cluster\n  ```   Deploy concourse.   bash\n  bosh deploy -d concourse concourse.yml \\\n    -l ../versions.yml \\\n    --vars-store cluster-creds.yml \\\n    -o operations/no-auth.yml \\\n    -o operations/privileged-http.yml \\\n    -o operations/privileged-https.yml \\\n    -o operations/tls.yml \\\n    -o operations/tls-vars.yml \\\n    -o operations/web-network-extension.yml \\\n    --var network_name=default \\\n    --var external_url=$external_url \\\n    --var web_vm_type=default \\\n    --var db_vm_type=default \\\n    --var db_persistent_disk_type=10GB \\\n    --var worker_vm_type=default \\\n    --var deployment_name=concourse \\\n    --var web_network_name=private \\\n    --var web_network_vm_extension=lb",
+            "text": "Create an environment and upload a stemcell.   ```bash\n  bbl up --lb-type concourse  export external_url=\"https://$(bbl lbs | awk -F': ' '{print $2}')\"  eval \"$(bbl print-env)\"  bosh upload-stemcell https://bosh.io/d/stemcells/bosh-google-kvm-ubuntu-trusty-go_agent  cd $GOPATH/src/github.com/concourse/concourse-bosh-deployment/cluster\n  ```   Deploy concourse.   bash\n  bosh deploy -d concourse concourse.yml \\\n    -l ../versions.yml \\\n    --vars-store cluster-creds.yml \\\n    -o operations/no-auth.yml \\\n    -o operations/privileged-http.yml \\\n    -o operations/privileged-https.yml \\\n    -o operations/tls.yml \\\n    -o operations/tls-vars.yml \\\n    -o operations/web-network-extension.yml \\\n    --var network_name=default \\\n    --var external_url=$external_url \\\n    --var web_vm_type=default \\\n    --var db_vm_type=default \\\n    --var db_persistent_disk_type=10GB \\\n    --var worker_vm_type=default \\\n    --var deployment_name=concourse \\\n    --var web_network_name=private \\\n    --var web_network_vm_extension=lb",
             "title": "Steps"
         },
         {
@@ -182,13 +187,13 @@
         },
         {
             "location": "/credhub/",
-            "text": "Accessing the BOSH director credhub\n\n\nUsing CREDHUB_PROXY\n\n\nRequirements\n\n\n\n\nbbl v6.2\n\n\ncredhub-cli v1.6.0\n\n\na bbl environment\n\n\n\n\nSteps\n\n\nbbl print-env\n prints out environment variables (\nCREDHUB_CLIENT\n, \nCREDHUB_SECRET\n, \nCREDHUB_PROXY\n,\n\nCREDHUB_SERVER\n, \nCREDHUB_CA_CERT\n, and others)\nthat need to be exported to target the director credhub using the credhub-cli.\n\n\neval \n$(bbl print-env)\n\n\ncredhub find -n 'cf_admin_password'\n\n\n\n\nThe credhub-cli will parse \nCREDHUB_PROXY\n and determines from the \nssh+socks5://\n scheme\nthat it should proxy throuhg a jumpbox via a tunnel of its own making.\n\n\nUsing http_proxy\n\n\nRequirements\n\n\n\n\nbbl pre-v6.2\n\n\ncredhub-cli \n v1.6.0\n\n\na bbl environment\n\n\n\n\nSteps\n\n\n\n\n\n\nSet your CredHub client/secret\n\n\neval \"$(bbl print-env)\"\n\n\n\n\n\n\nMake an SSH tunnel to the jumpbox\n\n\nbbl ssh-key \n /tmp/jumpbox.key\nchmod 0700 /tmp/jumpbox.key\nssh -4 -D 5000 -fNC jumpbox@`bbl jumpbox-address` -i /tmp/jumpbox.key\n\n\n\n\n\n\nLogin\n    \nhttp_proxy=socks5://localhost:5000 credhub login\n\n\n\n\n\n\nGet credentials\n    \nhttp_proxy=socks5://localhost:5000 credhub find -n 'cf_admin_password'",
-            "title": "Accessing the BOSH director credhub"
+            "text": "Accessing the BOSH Director CredHub\n\n\nUsing \nCREDHUB_PROXY\n\n\nRequirements\n\n\n\n\nbbl v6.2\n or above\n\n\ncredhub-cli v1.6.0\n or above\n\n\na bbl environment\n\n\n\n\nInstructions\n\n\n\n\n\n\nSet necessary environment variables\n\n\nbbl print-env\n prints out environment variables (\nCREDHUB_CLIENT\n, \nCREDHUB_SECRET\n, \nCREDHUB_PROXY\n,\n\nCREDHUB_SERVER\n, \nCREDHUB_CA_CERT\n, and others) that need to be exported to target the Director CredHub using the CredHub CLI.\n\n\neval \"$(bbl print-env)\"\n\n\n\n\n\n\nGet credentials\n\n\nhttp_proxy=socks5://localhost:5000 credhub find -n 'cf_admin_password'\n\n\nThe CredHub CLI will parse \nCREDHUB_PROXY\n and determines from the \nssh+socks5://\n scheme that it should proxy throuhg a jumpbox via a tunnel of its own making.\n\n\n\n\n\n\nUsing \nhttp_proxy\n\n\nRequirements\n\n\n\n\nbbl\n\n\ncredhub-cli\n\n\na bbl environment\n\n\n\n\nInstructions\n\n\n\n\n\n\nSet your CredHub client/secret\n\n\neval \"$(bbl print-env)\"\n\n\n\n\n\n\nMake an SSH tunnel to the jumpbox\n\n\nbbl ssh-key \n /tmp/jumpbox.key\nchmod 0700 /tmp/jumpbox.key\nssh -4 -D 5000 -fNC jumpbox@`bbl jumpbox-address` -i /tmp/jumpbox.key\n\n\n\n\n\n\nLogin\n\n\nhttp_proxy=socks5://localhost:5000 credhub login\n\n\n\n\n\n\nGet credentials\n\n\nhttp_proxy=socks5://localhost:5000 credhub find -n 'cf_admin_password'",
+            "title": "Accessing the BOSH Director CredHub"
         },
         {
             "location": "/credhub/#accessing-the-bosh-director-credhub",
             "text": "",
-            "title": "Accessing the BOSH director credhub"
+            "title": "Accessing the BOSH Director CredHub"
         },
         {
             "location": "/credhub/#using-credhub_proxy",
@@ -197,13 +202,13 @@
         },
         {
             "location": "/credhub/#requirements",
-            "text": "bbl v6.2  credhub-cli v1.6.0  a bbl environment",
+            "text": "bbl v6.2  or above  credhub-cli v1.6.0  or above  a bbl environment",
             "title": "Requirements"
         },
         {
-            "location": "/credhub/#steps",
-            "text": "bbl print-env  prints out environment variables ( CREDHUB_CLIENT ,  CREDHUB_SECRET ,  CREDHUB_PROXY , CREDHUB_SERVER ,  CREDHUB_CA_CERT , and others)\nthat need to be exported to target the director credhub using the credhub-cli.  eval  $(bbl print-env) \n\ncredhub find -n 'cf_admin_password'  The credhub-cli will parse  CREDHUB_PROXY  and determines from the  ssh+socks5://  scheme\nthat it should proxy throuhg a jumpbox via a tunnel of its own making.",
-            "title": "Steps"
+            "location": "/credhub/#instructions",
+            "text": "Set necessary environment variables  bbl print-env  prints out environment variables ( CREDHUB_CLIENT ,  CREDHUB_SECRET ,  CREDHUB_PROXY , CREDHUB_SERVER ,  CREDHUB_CA_CERT , and others) that need to be exported to target the Director CredHub using the CredHub CLI.  eval \"$(bbl print-env)\"    Get credentials  http_proxy=socks5://localhost:5000 credhub find -n 'cf_admin_password'  The CredHub CLI will parse  CREDHUB_PROXY  and determines from the  ssh+socks5://  scheme that it should proxy throuhg a jumpbox via a tunnel of its own making.",
+            "title": "Instructions"
         },
         {
             "location": "/credhub/#using-http_proxy",
@@ -212,13 +217,13 @@
         },
         {
             "location": "/credhub/#requirements_1",
-            "text": "bbl pre-v6.2  credhub-cli   v1.6.0  a bbl environment",
+            "text": "bbl  credhub-cli  a bbl environment",
             "title": "Requirements"
         },
         {
-            "location": "/credhub/#steps_1",
-            "text": "Set your CredHub client/secret  eval \"$(bbl print-env)\"    Make an SSH tunnel to the jumpbox  bbl ssh-key   /tmp/jumpbox.key\nchmod 0700 /tmp/jumpbox.key\nssh -4 -D 5000 -fNC jumpbox@`bbl jumpbox-address` -i /tmp/jumpbox.key    Login\n     http_proxy=socks5://localhost:5000 credhub login    Get credentials\n     http_proxy=socks5://localhost:5000 credhub find -n 'cf_admin_password'",
-            "title": "Steps"
+            "location": "/credhub/#instructions_1",
+            "text": "Set your CredHub client/secret  eval \"$(bbl print-env)\"    Make an SSH tunnel to the jumpbox  bbl ssh-key   /tmp/jumpbox.key\nchmod 0700 /tmp/jumpbox.key\nssh -4 -D 5000 -fNC jumpbox@`bbl jumpbox-address` -i /tmp/jumpbox.key    Login  http_proxy=socks5://localhost:5000 credhub login    Get credentials  http_proxy=socks5://localhost:5000 credhub find -n 'cf_admin_password'",
+            "title": "Instructions"
         },
         {
             "location": "/customization/",
@@ -282,13 +287,13 @@
         },
         {
             "location": "/getting-started-aws/",
-            "text": "Getting started: AWS\n\n\nThis guide is a walkthrough for deploying a BOSH director with \nbbl\n\non AWS. Upon completion, you will have the following:\n\n\n\n\nA BOSH director\n\n\nA jumpbox\n\n\nA set of randomly generated BOSH director credentials\n\n\nA generated keypair allowing you to SSH into the BOSH director and\nany instances BOSH deploys\n\n\nA copy of the manifest the BOSH director was deployed with\n\n\nA basic cloud config\n\n\n\n\nCreating an IAM user\n\n\nIn order for \nbbl\n to interact with AWS, an \nIAM\n user must be created.\n\n\nThis user will be issuing API requests to create the infrastructure such\nas EC2 instances, load balancers, subnets, etc.\n\n\nThe user must have the following \npolicy\n:\n\n\n{\n    \nVersion\n: \n2012-10-17\n,\n    \nStatement\n: [\n        {\n            \nSid\n: \nVisualEditor0\n,\n            \nEffect\n: \nAllow\n,\n            \nAction\n: [\n                \nlogs:*\n,\n                \nelasticloadbalancing:*\n,\n                \ncloudformation:*\n,\n                \niam:*\n,\n                \nkms:*\n,\n                \nroute53:*\n,\n                \nec2:*\n\n            ],\n            \nResource\n: \n*\n\n        }\n    ]\n}\n\n\n\n\nTo create a user and associated policy with the AWS CLI run the \nfollowing commands (policy text must be in your clipboard):\n\n\n$ aws iam create-user --user-name \nbbl-user\n\n$ aws iam put-user-policy --user-name \nbbl-user\n \\\n    --policy-name \nbbl-policy\n \\\n    --policy-document \n$(pbpaste)\n\n$ aws iam create-access-key --user-name \nbbl-user\n\n\n\n\n\nThe \ncreate-access-key\n command will write an \"access key id\" and \"secret \naccess key\" to the terminal. These values are important and should\nbe kept secret. In the next section \nbbl\n will use these commands to\ncreate infrastructure on AWS.\n\n\nbbl up\n\n\nbbl\n will create infrastructure and deploy a BOSH director with the\nfollowing command:\n\n\nbbl up \\\n    --aws-access-key-id \nINSERT ACCESS KEY ID\n \\\n    --aws-secret-access-key \nINSERT SECRET ACCESS KEY\n \\\n    --aws-region us-west-1 \\\n    --iaas aws\n\n\n\n\nThe process takes around 5-8 minutes.\n\n\nThe bbl state directory contains all of the files that were used to\ncreate your bosh director. This should be checked in to version control,\nso that you have all the information necessary to later destroy or\nupdate this environment at a later date.\n\n\nConnecting to the BOSH director\n\n\nTo setup your BOSH CLI with the director you'll need the following\ncommand to set the credentials:\n\n\neval \n$(bbl print-env)\n\n\n\n\n\nAlternatives to \nbbl print-env\n\n\nSeparate commands are available for the \nbbl print-env\n fields:\n\n\n$ bbl director-address\nhttps://10.0.0.6:25555\n\n$ bbl director-username\nuser-d3783rk\n\n$ bbl director-password\np-23dah71skl\n\n$ bbl director-ca-cert\n-----BEGIN CERTIFICATE-----\nMIIDtzCCAp+gAwIBAgIJAIPgaUgWRCE8MA0GCSqGSIb3DQEBBQUAMEUxCzAJBgNV\n...\n-----END CERTIFICATE-----\n\n\n\n\nYou might save the CA certificate to a file:\n\n\n$ bbl director-ca-cert \n bosh.crt\n$ export BOSH_CA_CERT=bosh.crt\n\n\n\n\nTo login:\n\n\n$ export BOSH_ENVIRONMENT=$(bbl director-address)\n$ bosh alias-env \nINSERT TARGET NAME\n\n$ bosh log-in\nUsername: user-d3783rk\nPassword: p-23dah71sk1\n\n\n\n\nDisplay cloud config to test setup and show configuration mapping:\n\n\n$ bosh cloud-config\n...\n\n\n\n\nNow you're ready to deploy software with BOSH.",
-            "title": "Getting started aws"
+            "text": "Getting Started: AWS\n\n\nThis guide is a walkthrough for deploying a BOSH director with \nbbl\n\non AWS. Upon completion, you will have the following:\n\n\n\n\nA BOSH director\n\n\nA jumpbox\n\n\nA set of randomly generated BOSH director credentials\n\n\nA generated keypair allowing you to SSH into the BOSH director and\nany instances BOSH deploys\n\n\nA copy of the manifest the BOSH director was deployed with\n\n\nA basic cloud config\n\n\n\n\nCreating an IAM user\n\n\nIn order for \nbbl\n to interact with AWS, an \nIAM\n user must be created.\n\n\nThis user will be issuing API requests to create the infrastructure such\nas EC2 instances, load balancers, subnets, etc.\n\n\nThe user must have the following \npolicy\n:\n\n\n{\n    \nVersion\n: \n2012-10-17\n,\n    \nStatement\n: [\n        {\n            \nSid\n: \nVisualEditor0\n,\n            \nEffect\n: \nAllow\n,\n            \nAction\n: [\n                \nlogs:*\n,\n                \nelasticloadbalancing:*\n,\n                \ncloudformation:*\n,\n                \niam:*\n,\n                \nkms:*\n,\n                \nroute53:*\n,\n                \nec2:*\n\n            ],\n            \nResource\n: \n*\n\n        }\n    ]\n}\n\n\n\n\nTo create a user and associated policy with the AWS CLI run the \nfollowing commands (policy text must be in your clipboard):\n\n\n$ aws iam create-user --user-name \nbbl-user\n\n$ aws iam put-user-policy --user-name \nbbl-user\n \\\n    --policy-name \nbbl-policy\n \\\n    --policy-document \n$(pbpaste)\n\n$ aws iam create-access-key --user-name \nbbl-user\n\n\n\n\n\nThe \ncreate-access-key\n command will write an \"access key id\" and \"secret \naccess key\" to the terminal. These values are important and should\nbe kept secret. In the next section \nbbl\n will use these commands to\ncreate infrastructure on AWS.\n\n\nPave Infrastructure, Create a Jumpbox, and Create a BOSH Director\n\n\nbbl\n will create infrastructure and deploy a BOSH director with the\nfollowing command:\n\n\nbbl up \\\n    --aws-access-key-id \nINSERT ACCESS KEY ID\n \\\n    --aws-secret-access-key \nINSERT SECRET ACCESS KEY\n \\\n    --aws-region us-west-1 \\\n    --iaas aws\n\n\n\n\nThe process takes around 5-8 minutes.\n\n\nThe bbl state directory contains all of the files that were used to\ncreate your bosh director. This should be checked in to version control,\nso that you have all the information necessary to later destroy or\nupdate this environment at a later date.\n\n\nNext Steps\n\n\n\n\nTarget the BOSH Director\n\n\nDeploy Cloud Foundry\n\n\nDeploy Concourse",
+            "title": "Getting Started: AWS"
         },
         {
             "location": "/getting-started-aws/#getting-started-aws",
             "text": "This guide is a walkthrough for deploying a BOSH director with  bbl \non AWS. Upon completion, you will have the following:   A BOSH director  A jumpbox  A set of randomly generated BOSH director credentials  A generated keypair allowing you to SSH into the BOSH director and\nany instances BOSH deploys  A copy of the manifest the BOSH director was deployed with  A basic cloud config",
-            "title": "Getting started: AWS"
+            "title": "Getting Started: AWS"
         },
         {
             "location": "/getting-started-aws/#creating-an-iam-user",
@@ -296,28 +301,23 @@
             "title": "Creating an IAM user"
         },
         {
-            "location": "/getting-started-aws/#bbl-up",
+            "location": "/getting-started-aws/#pave-infrastructure-create-a-jumpbox-and-create-a-bosh-director",
             "text": "bbl  will create infrastructure and deploy a BOSH director with the\nfollowing command:  bbl up \\\n    --aws-access-key-id  INSERT ACCESS KEY ID  \\\n    --aws-secret-access-key  INSERT SECRET ACCESS KEY  \\\n    --aws-region us-west-1 \\\n    --iaas aws  The process takes around 5-8 minutes.  The bbl state directory contains all of the files that were used to\ncreate your bosh director. This should be checked in to version control,\nso that you have all the information necessary to later destroy or\nupdate this environment at a later date.",
-            "title": "bbl up"
+            "title": "Pave Infrastructure, Create a Jumpbox, and Create a BOSH Director"
         },
         {
-            "location": "/getting-started-aws/#connecting-to-the-bosh-director",
-            "text": "To setup your BOSH CLI with the director you'll need the following\ncommand to set the credentials:  eval  $(bbl print-env)",
-            "title": "Connecting to the BOSH director"
-        },
-        {
-            "location": "/getting-started-aws/#alternatives-to-bbl-print-env",
-            "text": "Separate commands are available for the  bbl print-env  fields:  $ bbl director-address\nhttps://10.0.0.6:25555\n\n$ bbl director-username\nuser-d3783rk\n\n$ bbl director-password\np-23dah71skl\n\n$ bbl director-ca-cert\n-----BEGIN CERTIFICATE-----\nMIIDtzCCAp+gAwIBAgIJAIPgaUgWRCE8MA0GCSqGSIb3DQEBBQUAMEUxCzAJBgNV\n...\n-----END CERTIFICATE-----  You might save the CA certificate to a file:  $ bbl director-ca-cert   bosh.crt\n$ export BOSH_CA_CERT=bosh.crt  To login:  $ export BOSH_ENVIRONMENT=$(bbl director-address)\n$ bosh alias-env  INSERT TARGET NAME \n$ bosh log-in\nUsername: user-d3783rk\nPassword: p-23dah71sk1  Display cloud config to test setup and show configuration mapping:  $ bosh cloud-config\n...  Now you're ready to deploy software with BOSH.",
-            "title": "Alternatives to bbl print-env"
+            "location": "/getting-started-aws/#next-steps",
+            "text": "Target the BOSH Director  Deploy Cloud Foundry  Deploy Concourse",
+            "title": "Next Steps"
         },
         {
             "location": "/getting-started-azure/",
-            "text": "Getting Started: Microsoft Azure\n\n\nCreate a Service Principal Account\n\n\nYou can use the cli utility \naz-automation\n\nfor creating a service principal account given you\nhave authenticated with the \naz\n cli.\n\n\nThe output will include your subscription id,\nyour tenant id, the client id, and the client secret.\n\n\nThese credentials will be passed to \nbbl\n so that\nit can interact with Azure.\n\n\nInfrastructure, Jumpbox, Director\n\n\n\n\nExport environment variables.\n    \nexport BBL_IAAS=azure\n    export BBL_AZURE_CLIENT_ID=\n    export BBL_AZURE_CLIENT_SECRET=\n    export BBL_AZURE_REGION=\n    export BBL_AZURE_SUBSCRIPTION_ID=\n    export BBL_AZURE_TENANT_ID=\n\n\nCreate infrastructure, jumpbox, and bosh director.\n    \nbbl up\n\n\n\n\n+ Cloud Foundry Load Balancers\n\n\nTo get all of the above plus load balancers for Cloud Foundry:\n\n\n\n\n\n\nTo create cf load balancers for azure you must provide a certificate\nin the \n.pfx\n format:\n    \nopenssl genrsa -out DOMAIN_NAME.key 2048\n    openssl req -new -x509 -days 365 -key DOMAIN_NAME.key -out DOMAIN_NAME.crt\n    openssl pkcs12 -export -out PFX_FILE -inkey DOMAIN_NAME.key -in DOMAIN_NAME.crt\n\n\n\n\n\n\nSave the password you entered when prompted by \nopenssl\n to a file.\n    \necho SuperSecretPassword \n PFX_FILE_PASSWORD\n\n\n\n\nTo \nbbl  plan\n or \nbbl up\n you can provide the pfx file and password:\n    \nbbl plan --lb-type cf --lb-cert PFX_FILE --lb-key PFX_FILE_PASSWORD\n    bbl up",
+            "text": "Getting Started: Microsoft Azure\n\n\nThis guide is a walkthrough for deploying a BOSH director with \nbbl\n\non Microsoft Azure. Upon completion, you will have the following:\n\n\n\n\nA BOSH director\n\n\nA jumpbox\n\n\nA set of randomly generated BOSH director credentials\n\n\nA generated keypair allowing you to SSH into the BOSH director and\nany instances BOSH deploys\n\n\nA copy of the manifest the BOSH director was deployed with\n\n\nA basic cloud config\n\n\n\n\nCreate a Service Principal Account\n\n\nYou can use the cli utility \naz-automation\n\nfor creating a service principal account given you\nhave authenticated with the \naz\n cli.\n\n\nThe output will include your subscription id,\nyour tenant id, the client id, and the client secret.\n\n\nThese credentials will be passed to \nbbl\n so that\nit can interact with Azure.\n\n\nPave Infrastructure, Create a Jumpbox, and Create a BOSH Director\n\n\n\n\nExport environment variables.\n    \nexport BBL_IAAS=azure\n    export BBL_AZURE_CLIENT_ID=\n    export BBL_AZURE_CLIENT_SECRET=\n    export BBL_AZURE_REGION=\n    export BBL_AZURE_SUBSCRIPTION_ID=\n    export BBL_AZURE_TENANT_ID=\n\n\nCreate infrastructure, jumpbox, and bosh director.\n    \nbbl up\n\n\n\n\nNext Steps\n\n\n\n\nTarget the BOSH Director\n\n\nDeploy Cloud Foundry\n\n\nDeploy Concourse",
             "title": "Getting Started: Microsoft Azure"
         },
         {
             "location": "/getting-started-azure/#getting-started-microsoft-azure",
-            "text": "",
+            "text": "This guide is a walkthrough for deploying a BOSH director with  bbl \non Microsoft Azure. Upon completion, you will have the following:   A BOSH director  A jumpbox  A set of randomly generated BOSH director credentials  A generated keypair allowing you to SSH into the BOSH director and\nany instances BOSH deploys  A copy of the manifest the BOSH director was deployed with  A basic cloud config",
             "title": "Getting Started: Microsoft Azure"
         },
         {
@@ -326,23 +326,23 @@
             "title": "Create a Service Principal Account"
         },
         {
-            "location": "/getting-started-azure/#infrastructure-jumpbox-director",
+            "location": "/getting-started-azure/#pave-infrastructure-create-a-jumpbox-and-create-a-bosh-director",
             "text": "Export environment variables.\n     export BBL_IAAS=azure\n    export BBL_AZURE_CLIENT_ID=\n    export BBL_AZURE_CLIENT_SECRET=\n    export BBL_AZURE_REGION=\n    export BBL_AZURE_SUBSCRIPTION_ID=\n    export BBL_AZURE_TENANT_ID=  Create infrastructure, jumpbox, and bosh director.\n     bbl up",
-            "title": "Infrastructure, Jumpbox, Director"
+            "title": "Pave Infrastructure, Create a Jumpbox, and Create a BOSH Director"
         },
         {
-            "location": "/getting-started-azure/#cloud-foundry-load-balancers",
-            "text": "To get all of the above plus load balancers for Cloud Foundry:    To create cf load balancers for azure you must provide a certificate\nin the  .pfx  format:\n     openssl genrsa -out DOMAIN_NAME.key 2048\n    openssl req -new -x509 -days 365 -key DOMAIN_NAME.key -out DOMAIN_NAME.crt\n    openssl pkcs12 -export -out PFX_FILE -inkey DOMAIN_NAME.key -in DOMAIN_NAME.crt    Save the password you entered when prompted by  openssl  to a file.\n     echo SuperSecretPassword   PFX_FILE_PASSWORD   To  bbl  plan  or  bbl up  you can provide the pfx file and password:\n     bbl plan --lb-type cf --lb-cert PFX_FILE --lb-key PFX_FILE_PASSWORD\n    bbl up",
-            "title": "+ Cloud Foundry Load Balancers"
+            "location": "/getting-started-azure/#next-steps",
+            "text": "Target the BOSH Director  Deploy Cloud Foundry  Deploy Concourse",
+            "title": "Next Steps"
         },
         {
             "location": "/getting-started-gcp/",
-            "text": "Getting Started: GCP\n\n\nCreate a Service Account\n\n\nIn order for \nbbl\n to interact with GCP, a service account must be created.\n\n\ngcloud iam service-accounts create \nservice account name\n\n\ngcloud iam service-accounts keys create --iam-account='\nservice account name\n@\nproject id\n.iam.gserviceaccount.com' \nservice account name\n.key.json\n\ngcloud projects add-iam-policy-binding \nproject id\n --member='serviceAccount:\nservice account name\n@\nproject id\n.iam.gserviceaccount.com' --role='roles/editor'\n\n\n\n\nInfrastructure, Jumpbox, Director\n\n\n\n\nExport environment variables.\n    \nexport BBL_IAAS=gcp\n    export BBL_GCP_REGION=\n    export BBL_GCP_SERVICE_ACCOUNT_KEY=\n\n\nCreate infrastructure, jumpbox, and bosh director.\n    \nbbl up\n\n\n\n\n+ Cloud Foundry Load Balancers\n\n\nTo get all of the above plus load balancers for Cloud Foundry:\n\n\n\n\nTo \nbbl  plan\n or \nbbl up\n you can provide a cert, key, and (optionally) a domain:\n    \nbbl plan --lb-type cf --lb-cert $CERT --lb-key $KEY --lb-domain $DOMAIN\n    bbl up",
+            "text": "Getting Started: GCP\n\n\nThis guide is a walkthrough for deploying a BOSH director with \nbbl\n\non GCP. Upon completion, you will have the following:\n\n\n\n\nA BOSH director\n\n\nA jumpbox\n\n\nA set of randomly generated BOSH director credentials\n\n\nA generated keypair allowing you to SSH into the BOSH director and\nany instances BOSH deploys\n\n\nA copy of the manifest the BOSH director was deployed with\n\n\nA basic cloud config\n\n\n\n\nCreate a Service Account\n\n\nIn order for \nbbl\n to interact with GCP, a service account must be created.\n\n\ngcloud iam service-accounts create \nservice account name\n\n\ngcloud iam service-accounts keys create --iam-account='\nservice account name\n@\nproject id\n.iam.gserviceaccount.com' \nservice account name\n.key.json\n\ngcloud projects add-iam-policy-binding \nproject id\n --member='serviceAccount:\nservice account name\n@\nproject id\n.iam.gserviceaccount.com' --role='roles/editor'\n\n\n\n\nPave Infrastructure, Create a Jumpbox, and Create a BOSH Director\n\n\n\n\nExport environment variables.\n    \nexport BBL_IAAS=gcp\n    export BBL_GCP_REGION=\n    export BBL_GCP_SERVICE_ACCOUNT_KEY=\n\n\nCreate infrastructure, jumpbox, and bosh director.\n    \nbbl up\n\n\n\n\nNext Steps\n\n\n\n\nTarget the BOSH Director\n\n\nDeploy Cloud Foundry\n\n\nDeploy Concourse",
             "title": "Getting Started: GCP"
         },
         {
             "location": "/getting-started-gcp/#getting-started-gcp",
-            "text": "",
+            "text": "This guide is a walkthrough for deploying a BOSH director with  bbl \non GCP. Upon completion, you will have the following:   A BOSH director  A jumpbox  A set of randomly generated BOSH director credentials  A generated keypair allowing you to SSH into the BOSH director and\nany instances BOSH deploys  A copy of the manifest the BOSH director was deployed with  A basic cloud config",
             "title": "Getting Started: GCP"
         },
         {
@@ -351,44 +351,54 @@
             "title": "Create a Service Account"
         },
         {
-            "location": "/getting-started-gcp/#infrastructure-jumpbox-director",
+            "location": "/getting-started-gcp/#pave-infrastructure-create-a-jumpbox-and-create-a-bosh-director",
             "text": "Export environment variables.\n     export BBL_IAAS=gcp\n    export BBL_GCP_REGION=\n    export BBL_GCP_SERVICE_ACCOUNT_KEY=  Create infrastructure, jumpbox, and bosh director.\n     bbl up",
-            "title": "Infrastructure, Jumpbox, Director"
+            "title": "Pave Infrastructure, Create a Jumpbox, and Create a BOSH Director"
         },
         {
-            "location": "/getting-started-gcp/#cloud-foundry-load-balancers",
-            "text": "To get all of the above plus load balancers for Cloud Foundry:   To  bbl  plan  or  bbl up  you can provide a cert, key, and (optionally) a domain:\n     bbl plan --lb-type cf --lb-cert $CERT --lb-key $KEY --lb-domain $DOMAIN\n    bbl up",
-            "title": "+ Cloud Foundry Load Balancers"
+            "location": "/getting-started-gcp/#next-steps",
+            "text": "Target the BOSH Director  Deploy Cloud Foundry  Deploy Concourse",
+            "title": "Next Steps"
         },
         {
             "location": "/getting-started-openstack/",
-            "text": "Getting Started: OpenStack\n\n\nbbl\n creates and maintains the lifecycle of the jumpbox and BOSH director.\n\n\nIt does not create any networks, security groups, or load balancers on OpenStack.\n\n\nJumpbox, Director\n\n\n\n\nExport environment variables.\n    \nexport BBL_IAAS=openstack\n    export BBL_OPENSTACK_INTERNAL_CIDR=\n    export BBL_OPENSTACK_EXTERNAL_IP=\n    export BBL_OPENSTACK_AUTH_URL=\n    export BBL_OPENSTACK_AZ=\n    export BBL_OPENSTACK_DEFAULT_KEY_NAME=\n    export BBL_OPENSTACK_DEFAULT_SECURITY_GROUP=\n    export BBL_OPENSTACK_NETWORK_ID=\n    export BBL_OPENSTACK_PASSWORD=\n    export BBL_OPENSTACK_USERNAME=\n    export BBL_OPENSTACK_PROJECT=\n    export BBL_OPENSTACK_DOMAIN=\n    export BBL_OPENSTACK_REGION=\n    export BBL_OPENSTACK_PRIVATE_KEY=\n\n\nCreate jumpbox and bosh director.\n    \nbbl up",
+            "text": "Getting Started: OpenStack\n\n\nThis guide is a walkthrough for deploying a BOSH director with \nbbl\n\non OpenStack. Upon completion, you will have the following:\n\n\n\n\nA BOSH director\n\n\nA jumpbox\n\n\nA set of randomly generated BOSH director credentials\n\n\nA generated keypair allowing you to SSH into the BOSH director and\nany instances BOSH deploys\n\n\nA copy of the manifest the BOSH director was deployed with\n\n\nA basic cloud config\n\n\n\n\nbbl\n creates and maintains the lifecycle of the jumpbox and BOSH director.\n\n\nIt does not create any networks, security groups, or load balancers on OpenStack.\n\n\nCreate a Jumpbox and a BOSH Director\n\n\n\n\nExport environment variables.\n    \nexport BBL_IAAS=openstack\n    export BBL_OPENSTACK_INTERNAL_CIDR=\n    export BBL_OPENSTACK_EXTERNAL_IP=\n    export BBL_OPENSTACK_AUTH_URL=\n    export BBL_OPENSTACK_AZ=\n    export BBL_OPENSTACK_DEFAULT_KEY_NAME=\n    export BBL_OPENSTACK_DEFAULT_SECURITY_GROUP=\n    export BBL_OPENSTACK_NETWORK_ID=\n    export BBL_OPENSTACK_PASSWORD=\n    export BBL_OPENSTACK_USERNAME=\n    export BBL_OPENSTACK_PROJECT=\n    export BBL_OPENSTACK_DOMAIN=\n    export BBL_OPENSTACK_REGION=\n    export BBL_OPENSTACK_PRIVATE_KEY=\n\n\nCreate jumpbox and bosh director.\n    \nbbl up\n\n\n\n\nNext Steps\n\n\n\n\nTarget the BOSH Director",
             "title": "Getting Started: OpenStack"
         },
         {
             "location": "/getting-started-openstack/#getting-started-openstack",
-            "text": "bbl  creates and maintains the lifecycle of the jumpbox and BOSH director.  It does not create any networks, security groups, or load balancers on OpenStack.",
+            "text": "This guide is a walkthrough for deploying a BOSH director with  bbl \non OpenStack. Upon completion, you will have the following:   A BOSH director  A jumpbox  A set of randomly generated BOSH director credentials  A generated keypair allowing you to SSH into the BOSH director and\nany instances BOSH deploys  A copy of the manifest the BOSH director was deployed with  A basic cloud config   bbl  creates and maintains the lifecycle of the jumpbox and BOSH director.  It does not create any networks, security groups, or load balancers on OpenStack.",
             "title": "Getting Started: OpenStack"
         },
         {
-            "location": "/getting-started-openstack/#jumpbox-director",
+            "location": "/getting-started-openstack/#create-a-jumpbox-and-a-bosh-director",
             "text": "Export environment variables.\n     export BBL_IAAS=openstack\n    export BBL_OPENSTACK_INTERNAL_CIDR=\n    export BBL_OPENSTACK_EXTERNAL_IP=\n    export BBL_OPENSTACK_AUTH_URL=\n    export BBL_OPENSTACK_AZ=\n    export BBL_OPENSTACK_DEFAULT_KEY_NAME=\n    export BBL_OPENSTACK_DEFAULT_SECURITY_GROUP=\n    export BBL_OPENSTACK_NETWORK_ID=\n    export BBL_OPENSTACK_PASSWORD=\n    export BBL_OPENSTACK_USERNAME=\n    export BBL_OPENSTACK_PROJECT=\n    export BBL_OPENSTACK_DOMAIN=\n    export BBL_OPENSTACK_REGION=\n    export BBL_OPENSTACK_PRIVATE_KEY=  Create jumpbox and bosh director.\n     bbl up",
-            "title": "Jumpbox, Director"
+            "title": "Create a Jumpbox and a BOSH Director"
+        },
+        {
+            "location": "/getting-started-openstack/#next-steps",
+            "text": "Target the BOSH Director",
+            "title": "Next Steps"
         },
         {
             "location": "/getting-started-vsphere/",
-            "text": "Getting Started: vSphere\n\n\nbbl\n creates and maintains the lifecycle of the jumpbox and BOSH director.\n\n\nIt does not create any networks, security groups, or load balancers on vSphere.\n\n\nJumbpox, Director\n\n\n\n\n\n\nExport environment variables.\n    \nexport BBL_IAAS=vsphere\n    export BBL_VSPHERE_VCENTER_USER\n    export BBL_VSPHERE_VCENTER_PASSWORD\n    export BBL_VSPHERE_VCENTER_IP\n    export BBL_VSPHERE_VCENTER_DC\n    export BBL_VSPHERE_VCENTER_CLUSTER\n    export BBL_VSPHERE_VCENTER_RP\n    export BBL_VSPHERE_NETWORK\n    export BBL_VSPHERE_VCENTER_DS\n    export BBL_VSPHERE_SUBNET\n\n\n\n\n\n\nCreate jumpbox and bosh director.\n    \nbbl up",
+            "text": "Getting Started: vSphere\n\n\nThis guide is a walkthrough for deploying a BOSH director with \nbbl\n\non vSphere. Upon completion, you will have the following:\n\n\n\n\nA BOSH director\n\n\nA jumpbox\n\n\nA set of randomly generated BOSH director credentials\n\n\nA generated keypair allowing you to SSH into the BOSH director and\nany instances BOSH deploys\n\n\nA copy of the manifest the BOSH director was deployed with\n\n\nA basic cloud config\n\n\n\n\nbbl\n creates and maintains the lifecycle of the jumpbox and BOSH director.\n\n\nIt does not create any networks, security groups, or load balancers on vSphere.\n\n\nCreate a Jumpbox and a BOSH Director\n\n\n\n\n\n\nExport environment variables.\n    \nexport BBL_IAAS=vsphere\n    export BBL_VSPHERE_VCENTER_USER\n    export BBL_VSPHERE_VCENTER_PASSWORD\n    export BBL_VSPHERE_VCENTER_IP\n    export BBL_VSPHERE_VCENTER_DC\n    export BBL_VSPHERE_VCENTER_CLUSTER\n    export BBL_VSPHERE_VCENTER_RP\n    export BBL_VSPHERE_NETWORK\n    export BBL_VSPHERE_VCENTER_DS\n    export BBL_VSPHERE_SUBNET\n    export BBL_VSPHERE_VCENTER_DISKS\n    export BBL_VSPHERE_VCENTER_TEMPLATES\n    export BBL_VSPHERE_VCENTER_VMS\n\n\n\n\n\n\nCreate jumpbox and bosh director.\n    \nbbl up\n\n\n\n\n\n\nNext Steps\n\n\n\n\nTarget the BOSH Director",
             "title": "Getting Started: vSphere"
         },
         {
             "location": "/getting-started-vsphere/#getting-started-vsphere",
-            "text": "bbl  creates and maintains the lifecycle of the jumpbox and BOSH director.  It does not create any networks, security groups, or load balancers on vSphere.",
+            "text": "This guide is a walkthrough for deploying a BOSH director with  bbl \non vSphere. Upon completion, you will have the following:   A BOSH director  A jumpbox  A set of randomly generated BOSH director credentials  A generated keypair allowing you to SSH into the BOSH director and\nany instances BOSH deploys  A copy of the manifest the BOSH director was deployed with  A basic cloud config   bbl  creates and maintains the lifecycle of the jumpbox and BOSH director.  It does not create any networks, security groups, or load balancers on vSphere.",
             "title": "Getting Started: vSphere"
         },
         {
-            "location": "/getting-started-vsphere/#jumbpox-director",
-            "text": "Export environment variables.\n     export BBL_IAAS=vsphere\n    export BBL_VSPHERE_VCENTER_USER\n    export BBL_VSPHERE_VCENTER_PASSWORD\n    export BBL_VSPHERE_VCENTER_IP\n    export BBL_VSPHERE_VCENTER_DC\n    export BBL_VSPHERE_VCENTER_CLUSTER\n    export BBL_VSPHERE_VCENTER_RP\n    export BBL_VSPHERE_NETWORK\n    export BBL_VSPHERE_VCENTER_DS\n    export BBL_VSPHERE_SUBNET    Create jumpbox and bosh director.\n     bbl up",
-            "title": "Jumbpox, Director"
+            "location": "/getting-started-vsphere/#create-a-jumpbox-and-a-bosh-director",
+            "text": "Export environment variables.\n     export BBL_IAAS=vsphere\n    export BBL_VSPHERE_VCENTER_USER\n    export BBL_VSPHERE_VCENTER_PASSWORD\n    export BBL_VSPHERE_VCENTER_IP\n    export BBL_VSPHERE_VCENTER_DC\n    export BBL_VSPHERE_VCENTER_CLUSTER\n    export BBL_VSPHERE_VCENTER_RP\n    export BBL_VSPHERE_NETWORK\n    export BBL_VSPHERE_VCENTER_DS\n    export BBL_VSPHERE_SUBNET\n    export BBL_VSPHERE_VCENTER_DISKS\n    export BBL_VSPHERE_VCENTER_TEMPLATES\n    export BBL_VSPHERE_VCENTER_VMS    Create jumpbox and bosh director.\n     bbl up",
+            "title": "Create a Jumpbox and a BOSH Director"
+        },
+        {
+            "location": "/getting-started-vsphere/#next-steps",
+            "text": "Target the BOSH Director",
+            "title": "Next Steps"
         },
         {
             "location": "/howto-ssh/",
@@ -419,6 +429,26 @@
             "location": "/howto-ssh/#troubleshooting",
             "text": "It is not necessary to set BOSH_GW_HOST and other old-style  bosh ssh  variables. Unset them.    The ubuntu stemcell allows a maximum of three login attempts, so ensure you do not have a lot of keys in your SSH keyring.  ssh-add -D  can clear them all.",
             "title": "Troubleshooting"
+        },
+        {
+            "location": "/howto-target-bosh-director/",
+            "text": "How To Target The BOSH Director\n\n\nThe easy way: \nbbl print-env\n\n\neval \n$(bbl print-env)\n\n\n\n\n\nAlternatives to \nbbl print-env\n\n\nSeparate commands are available for the \nbbl print-env\n fields:\n\n\n$ bbl director-address\nhttps://10.0.0.6:25555\n\n$ bbl director-username\nuser-d3783rk\n\n$ bbl director-password\np-23dah71skl\n\n$ bbl director-ca-cert\n-----BEGIN CERTIFICATE-----\nMIIDtzCCAp+gAwIBAgIJAIPgaUgWRCE8MA0GCSqGSIb3DQEBBQUAMEUxCzAJBgNV\n...\n-----END CERTIFICATE-----\n\n\n\n\nYou might save the CA certificate to a file:\n\n\n$ bbl director-ca-cert \n bosh.crt\n$ export BOSH_CA_CERT=bosh.crt\n\n\n\n\nTo login:\n\n\n$ export BOSH_ENVIRONMENT=$(bbl director-address)\n$ bosh alias-env \nINSERT TARGET NAME\n\n$ bosh log-in\nUsername: user-d3783rk\nPassword: p-23dah71sk1\n\n\n\n\nNow you're ready to deploy software with BOSH.",
+            "title": "How To Target The BOSH Director"
+        },
+        {
+            "location": "/howto-target-bosh-director/#how-to-target-the-bosh-director",
+            "text": "",
+            "title": "How To Target The BOSH Director"
+        },
+        {
+            "location": "/howto-target-bosh-director/#the-easy-way-bbl-print-env",
+            "text": "eval  $(bbl print-env)",
+            "title": "The easy way: bbl print-env"
+        },
+        {
+            "location": "/howto-target-bosh-director/#alternatives-to-bbl-print-env",
+            "text": "Separate commands are available for the  bbl print-env  fields:  $ bbl director-address\nhttps://10.0.0.6:25555\n\n$ bbl director-username\nuser-d3783rk\n\n$ bbl director-password\np-23dah71skl\n\n$ bbl director-ca-cert\n-----BEGIN CERTIFICATE-----\nMIIDtzCCAp+gAwIBAgIJAIPgaUgWRCE8MA0GCSqGSIb3DQEBBQUAMEUxCzAJBgNV\n...\n-----END CERTIFICATE-----  You might save the CA certificate to a file:  $ bbl director-ca-cert   bosh.crt\n$ export BOSH_CA_CERT=bosh.crt  To login:  $ export BOSH_ENVIRONMENT=$(bbl director-address)\n$ bosh alias-env  INSERT TARGET NAME \n$ bosh log-in\nUsername: user-d3783rk\nPassword: p-23dah71sk1  Now you're ready to deploy software with BOSH.",
+            "title": "Alternatives to bbl print-env"
         },
         {
             "location": "/known-issues/",

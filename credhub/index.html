@@ -36,7 +36,7 @@
     
     
       
-        <title>Accessing the BOSH director credhub - BBL</title>
+        <title>Accessing the BOSH Director CredHub - BBL</title>
       
     
     
@@ -105,7 +105,7 @@
                 BBL
               </span>
               <span class="md-header-nav__topic">
-                Accessing the BOSH director credhub
+                Accessing the BOSH Director CredHub
               </span>
             
           
@@ -224,8 +224,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../cloudfoundry/" title="Cloudfoundry" class="md-nav__link">
-      Cloudfoundry
+    <a href="../cloudfoundry/" title="Generic Steps for Cloud Foundry Deployment" class="md-nav__link">
+      Generic Steps for Cloud Foundry Deployment
     </a>
   </li>
 
@@ -236,8 +236,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../concourse/" title="Concourse" class="md-nav__link">
-      Concourse
+    <a href="../concourse/" title="Generic Steps for Concourse Deployment" class="md-nav__link">
+      Generic Steps for Concourse Deployment
     </a>
   </li>
 
@@ -257,11 +257,11 @@
     
     
       <label class="md-nav__link md-nav__link--active" for="__toc">
-        Accessing the BOSH director credhub
+        Accessing the BOSH Director CredHub
       </label>
     
-    <a href="./" title="Accessing the BOSH director credhub" class="md-nav__link md-nav__link--active">
-      Accessing the BOSH director credhub
+    <a href="./" title="Accessing the BOSH Director CredHub" class="md-nav__link md-nav__link--active">
+      Accessing the BOSH Director CredHub
     </a>
     
       
@@ -290,8 +290,8 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#steps" title="Steps" class="md-nav__link">
-    Steps
+  <a href="#instructions" title="Instructions" class="md-nav__link">
+    Instructions
   </a>
   
 </li>
@@ -317,8 +317,8 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#steps_1" title="Steps" class="md-nav__link">
-    Steps
+  <a href="#instructions_1" title="Instructions" class="md-nav__link">
+    Instructions
   </a>
   
 </li>
@@ -429,6 +429,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../howto-target-bosh-director/" title="Howto target bosh director" class="md-nav__link">
+      Howto target bosh director
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
     <a href="../known-issues/" title="Known issues" class="md-nav__link">
       Known issues
     </a>
@@ -483,8 +495,8 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#steps" title="Steps" class="md-nav__link">
-    Steps
+  <a href="#instructions" title="Instructions" class="md-nav__link">
+    Instructions
   </a>
   
 </li>
@@ -510,8 +522,8 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#steps_1" title="Steps" class="md-nav__link">
-    Steps
+  <a href="#instructions_1" title="Instructions" class="md-nav__link">
+    Instructions
   </a>
   
 </li>
@@ -538,33 +550,36 @@
               
                 
                 
-                <h1 id="accessing-the-bosh-director-credhub">Accessing the BOSH director credhub</h1>
-<h2 id="using-credhub_proxy">Using CREDHUB_PROXY</h2>
+                <h1 id="accessing-the-bosh-director-credhub">Accessing the BOSH Director CredHub</h1>
+<h2 id="using-credhub_proxy">Using <code>CREDHUB_PROXY</code></h2>
 <h3 id="requirements">Requirements</h3>
 <ul>
-<li><code>bbl v6.2</code></li>
-<li><code>credhub-cli v1.6.0</code></li>
+<li><code>bbl v6.2</code> or above</li>
+<li><code>credhub-cli v1.6.0</code> or above</li>
 <li>a bbl environment</li>
 </ul>
-<h3 id="steps">Steps</h3>
+<h3 id="instructions">Instructions</h3>
+<ol>
+<li>
+<p>Set necessary environment variables</p>
 <p><code>bbl print-env</code> prints out environment variables (<code>CREDHUB_CLIENT</code>, <code>CREDHUB_SECRET</code>, <code>CREDHUB_PROXY</code>,
-<code>CREDHUB_SERVER</code>, <code>CREDHUB_CA_CERT</code>, and others)
-that need to be exported to target the director credhub using the credhub-cli.</p>
-<pre><code>eval &quot;$(bbl print-env)&quot;
-
-credhub find -n 'cf_admin_password'
-</code></pre>
-
-<p>The credhub-cli will parse <code>CREDHUB_PROXY</code> and determines from the <code>ssh+socks5://</code> scheme
-that it should proxy throuhg a jumpbox via a tunnel of its own making.</p>
-<h2 id="using-http_proxy">Using http_proxy</h2>
+<code>CREDHUB_SERVER</code>, <code>CREDHUB_CA_CERT</code>, and others) that need to be exported to target the Director CredHub using the CredHub CLI.</p>
+<p><code>eval "$(bbl print-env)"</code></p>
+</li>
+<li>
+<p>Get credentials</p>
+<p><code>http_proxy=socks5://localhost:5000 credhub find -n 'cf_admin_password'</code></p>
+<p>The CredHub CLI will parse <code>CREDHUB_PROXY</code> and determines from the <code>ssh+socks5://</code> scheme that it should proxy throuhg a jumpbox via a tunnel of its own making.</p>
+</li>
+</ol>
+<h2 id="using-http_proxy">Using <code>http_proxy</code></h2>
 <h3 id="requirements_1">Requirements</h3>
 <ul>
-<li><code>bbl pre-v6.2</code></li>
-<li><code>credhub-cli &lt; v1.6.0</code></li>
+<li><code>bbl</code></li>
+<li><code>credhub-cli</code></li>
 <li>a bbl environment</li>
 </ul>
-<h3 id="steps_1">Steps</h3>
+<h3 id="instructions_1">Instructions</h3>
 <ol>
 <li>
 <p>Set your CredHub client/secret</p>
@@ -577,12 +592,12 @@ chmod 0700 /tmp/jumpbox.key
 ssh -4 -D 5000 -fNC jumpbox@`bbl jumpbox-address` -i /tmp/jumpbox.key</code></p>
 </li>
 <li>
-<p>Login
-    <code>http_proxy=socks5://localhost:5000 credhub login</code></p>
+<p>Login</p>
+<p><code>http_proxy=socks5://localhost:5000 credhub login</code></p>
 </li>
 <li>
-<p>Get credentials
-    <code>http_proxy=socks5://localhost:5000 credhub find -n 'cf_admin_password'</code></p>
+<p>Get credentials</p>
+<p><code>http_proxy=socks5://localhost:5000 credhub find -n 'cf_admin_password'</code></p>
 </li>
 </ol>
                 
@@ -605,7 +620,7 @@ ssh -4 -D 5000 -fNC jumpbox@`bbl jumpbox-address` -i /tmp/jumpbox.key</code></p>
     <div class="md-footer-nav">
       <nav class="md-footer-nav__inner md-grid">
         
-          <a href="../concourse/" title="Concourse" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+          <a href="../concourse/" title="Generic Steps for Concourse Deployment" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
             <div class="md-flex__cell md-flex__cell--shrink">
               <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
             </div>
@@ -614,7 +629,7 @@ ssh -4 -D 5000 -fNC jumpbox@`bbl jumpbox-address` -i /tmp/jumpbox.key</code></p>
                 <span class="md-footer-nav__direction">
                   Previous
                 </span>
-                Concourse
+                Generic Steps for Concourse Deployment
               </span>
             </div>
           </a>

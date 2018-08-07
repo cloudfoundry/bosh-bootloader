@@ -36,7 +36,7 @@
     
     
       
-        <title>Getting Started: vSphere - BBL</title>
+        <title>How To Target The BOSH Director - BBL</title>
       
     
     
@@ -79,7 +79,7 @@
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
     <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
     
-      <a href="#getting-started-vsphere" tabindex="1" class="md-skip">
+      <a href="#how-to-target-the-bosh-director" tabindex="1" class="md-skip">
         Skip to content
       </a>
     
@@ -105,7 +105,7 @@
                 BBL
               </span>
               <span class="md-header-nav__topic">
-                Getting Started: vSphere
+                How To Target The BOSH Director
               </span>
             
           
@@ -318,6 +318,30 @@
       
       
 
+
+  <li class="md-nav__item">
+    <a href="../getting-started-vsphere/" title="Getting Started: vSphere" class="md-nav__link">
+      Getting Started: vSphere
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../howto-ssh/" title="How To SSH" class="md-nav__link">
+      How To SSH
+    </a>
+  </li>
+
+    
+      
+      
+      
+
   
 
 
@@ -329,11 +353,11 @@
     
     
       <label class="md-nav__link md-nav__link--active" for="__toc">
-        Getting Started: vSphere
+        How To Target The BOSH Director
       </label>
     
-    <a href="./" title="Getting Started: vSphere" class="md-nav__link md-nav__link--active">
-      Getting Started: vSphere
+    <a href="./" title="How To Target The BOSH Director" class="md-nav__link md-nav__link--active">
+      How To Target The BOSH Director
     </a>
     
       
@@ -347,15 +371,15 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#create-a-jumpbox-and-a-bosh-director" title="Create a Jumpbox and a BOSH Director" class="md-nav__link">
-    Create a Jumpbox and a BOSH Director
+  <a href="#the-easy-way-bbl-print-env" title="The easy way: bbl print-env" class="md-nav__link">
+    The easy way: bbl print-env
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#next-steps" title="Next Steps" class="md-nav__link">
-    Next Steps
+  <a href="#alternatives-to-bbl-print-env" title="Alternatives to bbl print-env" class="md-nav__link">
+    Alternatives to bbl print-env
   </a>
   
 </li>
@@ -368,30 +392,6 @@
   
 </nav>
     
-  </li>
-
-    
-      
-      
-      
-
-
-  <li class="md-nav__item">
-    <a href="../howto-ssh/" title="Howto ssh" class="md-nav__link">
-      Howto ssh
-    </a>
-  </li>
-
-    
-      
-      
-      
-
-
-  <li class="md-nav__item">
-    <a href="../howto-target-bosh-director/" title="Howto target bosh director" class="md-nav__link">
-      Howto target bosh director
-    </a>
   </li>
 
     
@@ -440,15 +440,15 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#create-a-jumpbox-and-a-bosh-director" title="Create a Jumpbox and a BOSH Director" class="md-nav__link">
-    Create a Jumpbox and a BOSH Director
+  <a href="#the-easy-way-bbl-print-env" title="The easy way: bbl print-env" class="md-nav__link">
+    The easy way: bbl print-env
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#next-steps" title="Next Steps" class="md-nav__link">
-    Next Steps
+  <a href="#alternatives-to-bbl-print-env" title="Alternatives to bbl print-env" class="md-nav__link">
+    Alternatives to bbl print-env
   </a>
   
 </li>
@@ -470,47 +470,43 @@
               
                 
                 
-                <h1 id="getting-started-vsphere">Getting Started: vSphere</h1>
-<p>This guide is a walkthrough for deploying a BOSH director with <code>bbl</code>
-on vSphere. Upon completion, you will have the following:</p>
-<ol>
-<li>A BOSH director</li>
-<li>A jumpbox</li>
-<li>A set of randomly generated BOSH director credentials</li>
-<li>A generated keypair allowing you to SSH into the BOSH director and
-any instances BOSH deploys</li>
-<li>A copy of the manifest the BOSH director was deployed with</li>
-<li>A basic cloud config</li>
-</ol>
-<p><code>bbl</code> creates and maintains the lifecycle of the jumpbox and BOSH director.</p>
-<p>It does not create any networks, security groups, or load balancers on vSphere.</p>
-<h2 id="create-a-jumpbox-and-a-bosh-director">Create a Jumpbox and a BOSH Director</h2>
-<ol>
-<li>
-<p>Export environment variables.
-    <code>export BBL_IAAS=vsphere
-    export BBL_VSPHERE_VCENTER_USER
-    export BBL_VSPHERE_VCENTER_PASSWORD
-    export BBL_VSPHERE_VCENTER_IP
-    export BBL_VSPHERE_VCENTER_DC
-    export BBL_VSPHERE_VCENTER_CLUSTER
-    export BBL_VSPHERE_VCENTER_RP
-    export BBL_VSPHERE_NETWORK
-    export BBL_VSPHERE_VCENTER_DS
-    export BBL_VSPHERE_SUBNET
-    export BBL_VSPHERE_VCENTER_DISKS
-    export BBL_VSPHERE_VCENTER_TEMPLATES
-    export BBL_VSPHERE_VCENTER_VMS</code></p>
-</li>
-<li>
-<p>Create jumpbox and bosh director.
-    <code>bbl up</code></p>
-</li>
-</ol>
-<h2 id="next-steps">Next Steps</h2>
-<ul>
-<li><a href="../howto-target-bosh-director/">Target the BOSH Director</a></li>
-</ul>
+                <h1 id="how-to-target-the-bosh-director">How To Target The BOSH Director</h1>
+<h2 id="the-easy-way-bbl-print-env">The easy way: <code>bbl print-env</code></h2>
+<pre><code>eval &quot;$(bbl print-env)&quot;
+</code></pre>
+
+<h2 id="alternatives-to-bbl-print-env">Alternatives to <code>bbl print-env</code></h2>
+<p>Separate commands are available for the <code>bbl print-env</code> fields:</p>
+<pre><code>$ bbl director-address
+https://10.0.0.6:25555
+
+$ bbl director-username
+user-d3783rk
+
+$ bbl director-password
+p-23dah71skl
+
+$ bbl director-ca-cert
+-----BEGIN CERTIFICATE-----
+MIIDtzCCAp+gAwIBAgIJAIPgaUgWRCE8MA0GCSqGSIb3DQEBBQUAMEUxCzAJBgNV
+...
+-----END CERTIFICATE-----
+</code></pre>
+
+<p>You might save the CA certificate to a file:</p>
+<pre><code>$ bbl director-ca-cert &gt; bosh.crt
+$ export BOSH_CA_CERT=bosh.crt
+</code></pre>
+
+<p>To login:</p>
+<pre><code>$ export BOSH_ENVIRONMENT=$(bbl director-address)
+$ bosh alias-env &lt;INSERT TARGET NAME&gt;
+$ bosh log-in
+Username: user-d3783rk
+Password: p-23dah71sk1
+</code></pre>
+
+<p>Now you're ready to deploy software with BOSH.</p>
                 
                   
                 
@@ -531,7 +527,7 @@ any instances BOSH deploys</li>
     <div class="md-footer-nav">
       <nav class="md-footer-nav__inner md-grid">
         
-          <a href="../getting-started-openstack/" title="Getting Started: OpenStack" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+          <a href="../howto-ssh/" title="How To SSH" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
             <div class="md-flex__cell md-flex__cell--shrink">
               <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
             </div>
@@ -540,19 +536,19 @@ any instances BOSH deploys</li>
                 <span class="md-footer-nav__direction">
                   Previous
                 </span>
-                Getting Started: OpenStack
+                How To SSH
               </span>
             </div>
           </a>
         
         
-          <a href="../howto-ssh/" title="Howto ssh" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+          <a href="../known-issues/" title="Known issues" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
             <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
               <span class="md-flex__ellipsis">
                 <span class="md-footer-nav__direction">
                   Next
                 </span>
-                Howto ssh
+                Known issues
               </span>
             </div>
             <div class="md-flex__cell md-flex__cell--shrink">

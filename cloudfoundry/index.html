@@ -36,7 +36,7 @@
     
     
       
-        <title>Cloudfoundry - BBL</title>
+        <title>Generic Steps for Cloud Foundry Deployment - BBL</title>
       
     
     
@@ -105,7 +105,7 @@
                 BBL
               </span>
               <span class="md-header-nav__topic">
-                Cloudfoundry
+                Generic Steps for Cloud Foundry Deployment
               </span>
             
           
@@ -229,26 +229,30 @@
     
     <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
     
+      
+    
     
       <label class="md-nav__link md-nav__link--active" for="__toc">
-        Cloudfoundry
+        Generic Steps for Cloud Foundry Deployment
       </label>
     
-    <a href="./" title="Cloudfoundry" class="md-nav__link md-nav__link--active">
-      Cloudfoundry
+    <a href="./" title="Generic Steps for Cloud Foundry Deployment" class="md-nav__link md-nav__link--active">
+      Generic Steps for Cloud Foundry Deployment
     </a>
     
       
 <nav class="md-nav md-nav--secondary">
   
   
+    
+  
   
     <label class="md-nav__title" for="__toc">Table of contents</label>
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#generic-steps-for-cloud-foundry-deployment" title="Generic Steps for Cloud Foundry Deployment" class="md-nav__link">
-    Generic Steps for Cloud Foundry Deployment
+  <a href="#appendix-generating-load-balancer-key-and-certificate-files-for-microsoft-azure" title="Appendix: Generating Load Balancer Key and Certificate Files for Microsoft Azure" class="md-nav__link">
+    Appendix: Generating Load Balancer Key and Certificate Files for Microsoft Azure
   </a>
   
 </li>
@@ -378,6 +382,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../howto-target-bosh-director/" title="Howto target bosh director" class="md-nav__link">
+      Howto target bosh director
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
     <a href="../known-issues/" title="Known issues" class="md-nav__link">
       Known issues
     </a>
@@ -410,13 +426,15 @@
 <nav class="md-nav md-nav--secondary">
   
   
+    
+  
   
     <label class="md-nav__title" for="__toc">Table of contents</label>
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#generic-steps-for-cloud-foundry-deployment" title="Generic Steps for Cloud Foundry Deployment" class="md-nav__link">
-    Generic Steps for Cloud Foundry Deployment
+  <a href="#appendix-generating-load-balancer-key-and-certificate-files-for-microsoft-azure" title="Appendix: Generating Load Balancer Key and Certificate Files for Microsoft Azure" class="md-nav__link">
+    Appendix: Generating Load Balancer Key and Certificate Files for Microsoft Azure
   </a>
   
 </li>
@@ -438,21 +456,33 @@
               
                 
                 
-                  <h1>Cloudfoundry</h1>
-                
-                <h2 id="generic-steps-for-cloud-foundry-deployment">Generic Steps for Cloud Foundry Deployment</h2>
+                <h1 id="generic-steps-for-cloud-foundry-deployment">Generic Steps for Cloud Foundry Deployment</h1>
 <ol>
 <li>
 <p>Create an environment and target the BOSH director with <code>eval "$(bbl print-env)"</code></p>
 </li>
 <li>
-<p><code>bbl plan --lb-type cf --lb-cert cert --lb-key key &amp;&amp; bbl up</code> with a certificate and key as flags or environment variables.
-(Continue to provide the IaaS credentials as flags or environment variables.)</p>
+<p><code>bbl plan --lb-type cf --lb-cert &lt;PATH_TO_CERT_FILE&gt; --lb-key &lt;PATH_TO_KEY_FILE&gt; &amp;&amp; bbl up</code>. You can use existing certificate and key files, or generate new ones. See below for instructions on generating these files for Microsoft Azure.</p>
 </li>
 <li>
 <p><code>bosh deploy cf-deployment.yml -o operations/&lt;MY IaaS&gt;</code> using the <a href="https://github.com/cloudfoundry/cf-deployment">CF deployment manifest!</a></p>
 </li>
 </ol>
+<h2 id="appendix-generating-load-balancer-key-and-certificate-files-for-microsoft-azure">Appendix: Generating Load Balancer Key and Certificate Files for Microsoft Azure</h2>
+<p>To create Cloud Foundry load balancers for Microsoft Azure you must provide a certificate
+in the <code>.pfx</code> format:</p>
+<pre><code>openssl genrsa -out DOMAIN_NAME.key 2048
+openssl req -new -x509 -days 365 -key DOMAIN_NAME.key -out DOMAIN_NAME.crt
+openssl pkcs12 -export -out PFX_FILE -inkey DOMAIN_NAME.key -in DOMAIN_NAME.crt
+</code></pre>
+
+<p>Save the password you entered when prompted by <code>openssl</code> to a file.</p>
+<pre><code>echo SuperSecretPassword &gt; PFX_FILE_PASSWORD
+</code></pre>
+
+<p>To <code>bbl  plan</code> or <code>bbl up</code> you can provide the <code>.pfx</code> file and password:</p>
+<pre><code>bbl plan --lb-type cf --lb-cert PFX_FILE --lb-key PFX_FILE_PASSWORD
+</code></pre>
                 
                   
                 
