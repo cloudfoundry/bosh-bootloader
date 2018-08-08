@@ -137,6 +137,18 @@ var _ = Describe("Commands Usage", func() {
 		})
 	})
 
+	Describe("PrintEnv", func() {
+		Describe("Usage", func() {
+			It("returns string describing usage", func() {
+				command := commands.PrintEnv{}
+				usageText := command.Usage()
+				Expect(usageText).To(Equal(`Prints required BOSH environment variables.
+
+  --shell-type             Prints for the given shell (posix|powershell)
+`))
+			})
+		})
+	})
 	Describe("Usage", func() {
 		Describe("Usage", func() {
 			It("returns string describing usage", func() {
@@ -161,7 +173,6 @@ var _ = Describe("Commands Usage", func() {
 		Entry("env-id", newStateQuery("environment id"), "Prints environment ID"),
 		Entry("ssh-key", commands.SSHKey{}, "Prints SSH private key for the jumpbox."),
 		Entry("director-ssh-key", commands.SSHKey{Director: true}, "Prints SSH private key for the director."),
-		Entry("print-env", commands.PrintEnv{}, "Prints required BOSH environment variables"),
 		Entry("latest-error", commands.LatestError{}, "Prints the output from the latest call to terraform"),
 		Entry("version", commands.Version{}, "Prints version"),
 	)

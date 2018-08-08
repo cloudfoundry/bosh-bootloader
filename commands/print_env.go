@@ -4,9 +4,12 @@ import (
 	"fmt"
 
 	"github.com/cloudfoundry/bosh-bootloader/fileio"
+	"github.com/cloudfoundry/bosh-bootloader/flags"
+	"github.com/cloudfoundry/bosh-bootloader/renderers"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
+// PrintEnv defines a PrintEnv command
 type PrintEnv struct {
 	stateValidator   stateValidator
 	logger           logger
@@ -15,6 +18,7 @@ type PrintEnv struct {
 	terraformManager terraformManager
 	credhubGetter    credhubGetter
 	fs               fs
+	rendererFactory  renderers.Factory
 }
 
 type envSetter interface {
@@ -37,6 +41,11 @@ type fs interface {
 	fileio.FileWriter
 }
 
+type PrintEnvConfig struct {
+	shellType string
+}
+
+// NewPrintEnv creates a new PrintEnv Command
 func NewPrintEnv(
 	logger logger,
 	stderrLogger logger,
@@ -44,7 +53,8 @@ func NewPrintEnv(
 	allProxyGetter allProxyGetter,
 	credhubGetter credhubGetter,
 	terraformManager terraformManager,
-	fs fs) PrintEnv {
+	fs fs,
+	rendererFactory renderers.Factory) PrintEnv {
 	return PrintEnv{
 		stateValidator:   stateValidator,
 		logger:           logger,
@@ -53,6 +63,7 @@ func NewPrintEnv(
 		terraformManager: terraformManager,
 		credhubGetter:    credhubGetter,
 		fs:               fs,
+		rendererFactory:  rendererFactory,
 	}
 }
 
@@ -65,53 +76,90 @@ func (p PrintEnv) CheckFastFails(subcommandFlags []string, state storage.State) 
 	return nil
 }
 
+func (p PrintEnv) ParseArgs(args []string, state storage.State) (PrintEnvConfig, error) {
+	var (
+		config PrintEnvConfig
+	)
+
+	printEnvFlags := flags.New("print-env")
+	printEnvFlags.String(&config.shellType, "shell-type", "")
+
+	err := printEnvFlags.Parse(args)
+	if err != nil {
+		return PrintEnvConfig{}, err
+	}
+
+	return config, nil
+}
+
 func (p PrintEnv) Execute(args []string, state storage.State) error {
+	variables := make(map[string]string)
+
+	config, err := p.ParseArgs(args, state)
+	if err != nil {
+		return err
+	}
+
+	shell := config.shellType
+	renderer, err := p.rendererFactory.Create(shell)
+	if err != nil {
+		return err
+	}
+
 	if state.NoDirector {
 		terraformOutputs, err := p.terraformManager.GetOutputs()
 		if err != nil {
 			return err
 		}
-
-		p.logger.Println(fmt.Sprintf("export BOSH_ENVIRONMENT=https://%s:25555", terraformOutputs.GetString("external_ip")))
+		externalIP := terraformOutputs.GetString("external_ip")
+		variables["BOSH_ENVIRONMENT"] = fmt.Sprintf("https://%s:25555", externalIP)
+		p.renderVariables(renderer, variables)
 		return nil
 	}
 
-	p.logger.Println(fmt.Sprintf("export BOSH_CLIENT=%s", state.BOSH.DirectorUsername))
-	p.logger.Println(fmt.Sprintf("export BOSH_CLIENT_SECRET=%s", state.BOSH.DirectorPassword))
-	p.logger.Println(fmt.Sprintf("export BOSH_ENVIRONMENT=%s", state.BOSH.DirectorAddress))
-	p.logger.Println(fmt.Sprintf("export BOSH_CA_CERT='%s'", state.BOSH.DirectorSSLCA))
-
-	p.logger.Println("export CREDHUB_CLIENT=credhub-admin")
+	variables["BOSH_CLIENT"] = state.BOSH.DirectorUsername
+	variables["BOSH_CLIENT_SECRET"] = state.BOSH.DirectorPassword
+	variables["BOSH_ENVIRONMENT"] = state.BOSH.DirectorAddress
+	variables["BOSH_CA_CERT"] = state.BOSH.DirectorSSLCA
+	variables["CREDHUB_CLIENT"] = "credhub-admin"
 
 	credhubPassword, err := p.credhubGetter.GetPassword()
 	if err == nil {
-		p.logger.Println(fmt.Sprintf("export CREDHUB_SECRET=%s", credhubPassword))
+		variables["CREDHUB_SECRET"] = credhubPassword
 	} else {
 		p.stderrLogger.Println("No credhub password found.")
 	}
 
 	credhubServer, err := p.credhubGetter.GetServer()
 	if err == nil {
-		p.logger.Println(fmt.Sprintf("export CREDHUB_SERVER=%s", credhubServer))
+		variables["CREDHUB_SERVER"] = credhubServer
 	} else {
 		p.stderrLogger.Println("No credhub server found.")
 	}
 
 	credhubCerts, err := p.credhubGetter.GetCerts()
 	if err == nil {
-		p.logger.Println(fmt.Sprintf("export CREDHUB_CA_CERT='%s'", credhubCerts))
+		variables["CREDHUB_CA_CERT"] = credhubCerts
 	} else {
 		p.stderrLogger.Println("No credhub certs found.")
 	}
 
 	privateKeyPath, err := p.allProxyGetter.GeneratePrivateKey()
 	if err != nil {
+		p.renderVariables(renderer, variables)
 		return err
 	}
 
-	p.logger.Println(fmt.Sprintf("export JUMPBOX_PRIVATE_KEY=%s", privateKeyPath))
-	p.logger.Println(fmt.Sprintf("export BOSH_ALL_PROXY=%s", p.allProxyGetter.BoshAllProxy(state.Jumpbox.URL, privateKeyPath)))
-	p.logger.Println(fmt.Sprintf("export CREDHUB_PROXY=%s", p.allProxyGetter.BoshAllProxy(state.Jumpbox.URL, privateKeyPath)))
+	variables["JUMPBOX_PRIVATE_KEY"] = privateKeyPath
+	variables["BOSH_ALL_PROXY"] = p.allProxyGetter.BoshAllProxy(state.Jumpbox.URL, privateKeyPath)
+	variables["CREDHUB_PROXY"] = p.allProxyGetter.BoshAllProxy(state.Jumpbox.URL, privateKeyPath)
 
+	p.renderVariables(renderer, variables)
 	return nil
+}
+
+func (p PrintEnv) renderVariables(renderer renderers.Renderer, variables map[string]string) {
+	for k, v := range variables {
+		p.logger.Println(renderer.RenderEnvironmentVariable(k, v))
+	}
 }
