@@ -42,7 +42,7 @@ type OpsGenerator interface {
 }
 
 type boshClientProvider interface {
-	Client(jumpbox storage.Jumpbox, directorAddress, directorUsername, directorPassword, caCert string) (bosh.Client, error)
+	Client(jumpbox storage.Jumpbox, directorAddress, directorUsername, directorPassword, caCert string) (bosh.ConfigUpdater, error)
 }
 
 type terraformManager interface {

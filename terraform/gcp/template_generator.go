@@ -41,11 +41,6 @@ func (t TemplateGenerator) Generate(state storage.State) string {
 		}
 	}
 
-	cidrs := t.GenerateSubnetCidrs(state.GCP.Zones)
-	if len(cidrs) > 0 {
-		template = strings.Join([]string{template, cidrs}, "\n")
-	}
-
 	return template
 }
 
@@ -89,17 +84,6 @@ func (t TemplateGenerator) GenerateInstanceGroups(zoneList []string) string {
 	}
 
 	return strings.Join(groups, "\n")
-}
-
-func (t TemplateGenerator) GenerateSubnetCidrs(zoneList []string) string {
-	var cidrs []string
-	for i := 0; i < len(zoneList); i++ {
-		cidrs = append(cidrs, fmt.Sprintf(`output "subnet_cidr_%d" {
-  value = "${cidrsubnet(var.subnet_cidr, 8, %d)}"
-}
-`, i+1, (i+1)*16))
-	}
-	return strings.Join(cidrs, "\n")
 }
 
 func readTemplates() templates {

@@ -104,10 +104,6 @@ resource "google_compute_firewall" "internal" {
   target_tags = ["${var.env_id}-internal"]
 }
 
-locals {
-  internal_cidr = "${cidrsubnet(var.subnet_cidr, 8, 0)}"
-}
-
 output "network" {
   value = "${google_compute_network.bbl-network.name}"
 }
@@ -116,24 +112,24 @@ output "subnetwork" {
   value = "${google_compute_subnetwork.bbl-subnet.name}"
 }
 
+output "internal_cidr" {
+  value = "${var.subnet_cidr}"
+}
+
+output "internal_gw" {
+  value = "${google_compute_subnetwork.bbl-subnet.gateway_address}"
+}
+
 output "director_name" {
   value = "bosh-${var.env_id}"
 }
 
-output "internal_cidr" {
-  value = "${local.internal_cidr}"
-}
-
-output "internal_gw" {
-  value = "${cidrhost(local.internal_cidr, 1)}"
-}
-
 output "jumpbox__internal_ip" {
-  value = "${cidrhost(local.internal_cidr, 5)}"
+  value = "${cidrhost(var.subnet_cidr, 5)}"
 }
 
 output "director__internal_ip" {
-  value = "${cidrhost(local.internal_cidr, 6)}"
+  value = "${cidrhost(var.subnet_cidr, 6)}"
 }
 
 output "jumpbox__tags" {

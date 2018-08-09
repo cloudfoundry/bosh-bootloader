@@ -93,32 +93,32 @@ func (s Store) GetStateDir() string {
 }
 
 func (s Store) GetCloudConfigDir() (string, error) {
-	return s.getDir("cloud-config")
+	return s.getDir("cloud-config", os.ModePerm)
 }
 
 func (s Store) GetTerraformDir() (string, error) {
-	return s.getDir("terraform")
+	return s.getDir("terraform", os.ModePerm)
 }
 
 func (s Store) GetVarsDir() (string, error) {
-	return s.getDir("vars")
+	return s.getDir("vars", StateMode)
 }
 
 func (s Store) GetDirectorDeploymentDir() (string, error) {
-	return s.getDir("bosh-deployment")
+	return s.getDir("bosh-deployment", os.ModePerm)
 }
 
 func (s Store) GetJumpboxDeploymentDir() (string, error) {
-	return s.getDir("jumpbox-deployment")
+	return s.getDir("jumpbox-deployment", os.ModePerm)
 }
 
 func (s Store) GetOldBblDir() string {
 	return filepath.Join(s.dir, ".bbl")
 }
 
-func (s Store) getDir(name string) (string, error) {
+func (s Store) getDir(name string, perm os.FileMode) (string, error) {
 	dir := filepath.Join(s.dir, name)
-	err := s.fs.MkdirAll(dir, os.ModePerm)
+	err := s.fs.MkdirAll(dir, perm)
 	if err != nil {
 		return "", fmt.Errorf("Get %s dir: %s", name, err)
 	}

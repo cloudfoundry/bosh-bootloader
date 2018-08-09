@@ -325,4 +325,15 @@ var _ = Describe("Store", func() {
 			})
 		})
 	})
+
+	Describe("GetVarsDir", func() {
+		Context("when the vars dir is requested but may not exist", func() {
+			It("a path is request and may be created and set with restrained permissions", func() {
+				_, err := store.GetVarsDir()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(fileIO.MkdirAllCall.Receives.Perm).To(Equal(os.FileMode(storage.StateMode)))
+			})
+		})
+
+	})
 })

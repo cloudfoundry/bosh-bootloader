@@ -21,6 +21,7 @@ type Leftovers struct {
 	resource resource
 }
 
+// List will print all of the resources that match the provided filter.
 func (l Leftovers) List(filter string) {
 	l.logger.NoConfirm()
 
@@ -34,10 +35,16 @@ func (l Leftovers) List(filter string) {
 	}
 }
 
+// Types will print all the resource types that can
+// be deleted on this IaaS.
 func (l Leftovers) Types() {
 	l.logger.Println(l.resource.Type())
 }
 
+// Delete will collect all resources that contain
+// the provided filter in the resource's identifier, prompt
+// you to confirm deletion (if enabled), and delete those
+// that are selected.
 func (l Leftovers) Delete(filter string) error {
 	var deletables []Deletable
 
@@ -60,10 +67,17 @@ func (l Leftovers) Delete(filter string) error {
 	return nil
 }
 
+// DeleteType will collect all resources of the provied type that contain
+// the provided filter in the resource's identifier, prompt
+// you to confirm deletion (if enabled), and delete those
+// that are selected.
 func (l Leftovers) DeleteType(filter, rType string) error {
 	return l.Delete(filter)
 }
 
+// NewLeftovers returns a new Leftovers for Azure that can be used to list resources,
+// list types, or delete resources for the provided account. It returns an error
+// if the credentials provided are invalid.
 func NewLeftovers(logger logger, clientId, clientSecret, subscriptionId, tenantId string) (Leftovers, error) {
 	if clientId == "" {
 		return Leftovers{}, errors.New("Missing client id.")

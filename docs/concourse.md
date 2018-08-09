@@ -28,14 +28,20 @@ install using `bbl` and `bosh`.
 1. Deploy concourse.
 
   ```bash
+  cat >secrets.yml <<EOL
+local_user:
+    username: <username>
+    password: <super-secret-password>
+EOL
+
   bosh deploy -d concourse concourse.yml \
     -l ../versions.yml \
+    -l secrets.yml \
     --vars-store cluster-creds.yml \
-    -o operations/no-auth.yml \
+    -o operations/basic-auth.yml \
     -o operations/privileged-http.yml \
     -o operations/privileged-https.yml \
     -o operations/tls.yml \
-    -o operations/tls-vars.yml \
     -o operations/web-network-extension.yml \
     --var network_name=default \
     --var external_url=$external_url \

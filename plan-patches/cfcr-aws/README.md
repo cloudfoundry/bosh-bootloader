@@ -2,7 +2,7 @@
 
 Steps to deploy cfcr with bbl:
 
-1. Supply a kubernetes master host. Your k8s api will be at this hostname.
+1. Supply a kubernetes master host. Your k8s api will be at api.${kubernetes_master_host}.
     ```
     export kubernetes_master_host=cfcr.your-domain-here.biz
     ```

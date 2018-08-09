@@ -411,42 +411,13 @@
   value:
     name: private
     subnets:
-    - az: z1
-      gateway: ((az1_gateway))
-      range: ((az1_range))
+    - azs: [z1, z2, z3]
+      gateway: ((internal_gw))
+      range: ((internal_cidr))
       reserved:
-      - ((az1_reserved_1))
-      - ((az1_reserved_2))
+      - ((subnetwork_reserved_ips))
       static:
-      - ((az1_static))
-      cloud_properties:
-        ephemeral_external_ip: true
-        network_name: ((network))
-        subnetwork_name: ((subnetwork))
-        tags:
-          - ((internal_tag_name))
-    - az: z2
-      gateway: ((az2_gateway))
-      range: ((az2_range))
-      reserved:
-      - ((az2_reserved_1))
-      - ((az2_reserved_2))
-      static:
-      - ((az2_static))
-      cloud_properties:
-        ephemeral_external_ip: true
-        network_name: ((network))
-        subnetwork_name: ((subnetwork))
-        tags:
-          - ((internal_tag_name))
-    - az: z3
-      gateway: ((az3_gateway))
-      range: ((az3_range))
-      reserved:
-      - ((az3_reserved_1))
-      - ((az3_reserved_2))
-      static:
-      - ((az3_static))
+      - ((subnetwork_static_ips))
       cloud_properties:
         ephemeral_external_ip: true
         network_name: ((network))
@@ -460,42 +431,13 @@
   value:
     name: default
     subnets:
-    - az: z1
-      gateway: ((az1_gateway))
-      range: ((az1_range))
+    - azs: [z1, z2, z3]
+      gateway: ((internal_gw))
+      range: ((internal_cidr))
       reserved:
-      - ((az1_reserved_1))
-      - ((az1_reserved_2))
+      - ((subnetwork_reserved_ips))
       static:
-      - ((az1_static))
-      cloud_properties:
-        ephemeral_external_ip: true
-        network_name: ((network))
-        subnetwork_name: ((subnetwork))
-        tags:
-          - ((internal_tag_name))
-    - az: z2
-      gateway: ((az2_gateway))
-      range: ((az2_range))
-      reserved:
-      - ((az2_reserved_1))
-      - ((az2_reserved_2))
-      static:
-      - ((az2_static))
-      cloud_properties:
-        ephemeral_external_ip: true
-        network_name: ((network))
-        subnetwork_name: ((subnetwork))
-        tags:
-          - ((internal_tag_name))
-    - az: z3
-      gateway: ((az3_gateway))
-      range: ((az3_range))
-      reserved:
-      - ((az3_reserved_1))
-      - ((az3_reserved_2))
-      static:
-      - ((az3_static))
+      - ((subnetwork_static_ips))
       cloud_properties:
         ephemeral_external_ip: true
         network_name: ((network))

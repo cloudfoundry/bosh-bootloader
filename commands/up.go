@@ -8,22 +8,25 @@ import (
 )
 
 type Up struct {
-	plan               plan
-	boshManager        boshManager
-	cloudConfigManager cloudConfigManager
-	stateStore         stateStore
-	terraformManager   terraformManager
+	plan                 plan
+	boshManager          boshManager
+	cloudConfigManager   cloudConfigManager
+	runtimeConfigManager runtimeConfigManager
+	stateStore           stateStore
+	terraformManager     terraformManager
 }
 
 func NewUp(plan plan, boshManager boshManager,
 	cloudConfigManager cloudConfigManager,
+	runtimeConfigManager runtimeConfigManager,
 	stateStore stateStore, terraformManager terraformManager) Up {
 	return Up{
-		plan:               plan,
-		boshManager:        boshManager,
-		cloudConfigManager: cloudConfigManager,
-		stateStore:         stateStore,
-		terraformManager:   terraformManager,
+		plan:                 plan,
+		boshManager:          boshManager,
+		cloudConfigManager:   cloudConfigManager,
+		runtimeConfigManager: runtimeConfigManager,
+		stateStore:           stateStore,
+		terraformManager:     terraformManager,
 	}
 }
 
@@ -99,6 +102,11 @@ func (u Up) Execute(args []string, state storage.State) error {
 	err = u.cloudConfigManager.Update(state)
 	if err != nil {
 		return fmt.Errorf("Update cloud config: %s", err)
+	}
+
+	err = u.runtimeConfigManager.Update(state)
+	if err != nil {
+		return fmt.Errorf("Update runtime config: %s", err)
 	}
 
 	return nil

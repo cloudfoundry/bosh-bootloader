@@ -7,6 +7,7 @@ type Group struct {
 	identifier string
 }
 
+// Group represents an Azure resource group.
 func NewGroup(client groupsClient, name *string) Group {
 	return Group{
 		client:     client,
@@ -14,6 +15,8 @@ func NewGroup(client groupsClient, name *string) Group {
 	}
 }
 
+// Delete deletes an Azure resource group and all other Azure
+// resources in the resource group.
 func (g Group) Delete() error {
 	_, errChan := g.client.Delete(g.identifier, nil)
 

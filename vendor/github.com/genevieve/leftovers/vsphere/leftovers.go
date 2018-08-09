@@ -21,6 +21,8 @@ type Leftovers struct {
 	resources []resource
 }
 
+// List will print all the resources that contain
+// the provided filter in the resource's identifier.
 func (l Leftovers) List(filter string) {
 	var all []Deletable
 
@@ -38,16 +40,26 @@ func (l Leftovers) List(filter string) {
 	}
 }
 
+// Types will print all the resource types that can
+// be deleted on this IaaS.
 func (l Leftovers) Types() {
 	for _, r := range l.resources {
 		l.logger.Println(r.Type())
 	}
 }
 
+// Delete will collect all resources that contain
+// the provided filter in the resource's identifier, prompt
+// you to confirm deletion (if enabled), and delete those
+// that are selected.
 func (l Leftovers) Delete(filter string) error {
 	return l.DeleteType(filter, "")
 }
 
+// DeleteType will collect all resources of the provied type that contain
+// the provided filter in the resource's identifier, prompt
+// you to confirm deletion, and delete those
+// that are selected.
 func (l Leftovers) DeleteType(filter, rType string) error {
 	var deletables []Deletable
 
@@ -74,6 +86,9 @@ func (l Leftovers) DeleteType(filter, rType string) error {
 	return nil
 }
 
+// NewLeftovers returns a new Leftovers for vSphere that can be used to list resources,
+// list types, or delete resources for the provided account. It returns an error
+// if the credentials provided are invalid or a client cannot be created.
 func NewLeftovers(logger logger, vCenterIP, vCenterUser, vCenterPassword, vCenterDC string) (Leftovers, error) {
 	if vCenterIP == "" {
 		return Leftovers{}, errors.New("Missing vCenter IP.")

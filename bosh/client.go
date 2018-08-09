@@ -5,9 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net"
 	"net/http"
-	"net/url"
 	"strings"
 	"time"
 
@@ -15,9 +13,13 @@ import (
 	"golang.org/x/oauth2/clientcredentials"
 )
 
-type Client interface {
+type ConfigUpdater interface {
 	UpdateCloudConfig(yaml []byte) error
 	Info() (Info, error)
+}
+
+type RuntimeConfigUpdater interface {
+	UpdateRuntimeConfig(filepath, name string) error
 }
 
 type Info struct {
@@ -31,17 +33,19 @@ var (
 	RETRY_DELAY = 10 * time.Second
 )
 
-type client struct {
-	directorAddress string
+type Client struct {
+	DirectorAddress string
+	UAAAddress      string
 	username        string
 	password        string
 	caCert          string
 	httpClient      *http.Client
 }
 
-func NewClient(httpClient *http.Client, directorAddress, username, password, caCert string) Client {
-	return client{
-		directorAddress: directorAddress,
+func NewClient(httpClient *http.Client, DirectorAddress, uaaAddress, username, password, caCert string) Client {
+	return Client{
+		DirectorAddress: DirectorAddress,
+		UAAAddress:      uaaAddress,
 		username:        username,
 		password:        password,
 		caCert:          caCert,
@@ -49,8 +53,8 @@ func NewClient(httpClient *http.Client, directorAddress, username, password, caC
 	}
 }
 
-func (c client) Info() (Info, error) {
-	request, err := http.NewRequest("GET", fmt.Sprintf("%s/info", c.directorAddress), strings.NewReader(""))
+func (c Client) Info() (Info, error) {
+	request, err := http.NewRequest("GET", fmt.Sprintf("%s/info", c.DirectorAddress), strings.NewReader(""))
 	if err != nil {
 		return Info{}, err
 	}
@@ -72,30 +76,39 @@ func (c client) Info() (Info, error) {
 	return info, nil
 }
 
-func (c client) UpdateCloudConfig(yaml []byte) error {
-	request, err := http.NewRequest("POST", fmt.Sprintf("%s/cloud_configs", c.directorAddress), bytes.NewBuffer(yaml))
+type ConfigRequestBody struct {
+	Name    string `json:"name"`
+	Type    string `json:"type"`
+	Content string `json:"content"`
+}
+
+func (c Client) UpdateConfig(configType, name string, content []byte) error {
+	var body bytes.Buffer
+
+	config := ConfigRequestBody{
+		Name:    name,
+		Type:    configType,
+		Content: string(content),
+	}
+
+	var err error
+	err = json.NewEncoder(&body).Encode(config)
+	if err != nil {
+		return err // untested
+	}
+
+	request, err := http.NewRequest("POST", fmt.Sprintf("%s/configs", c.DirectorAddress), &body)
 	if err != nil {
 		return err
 	}
-	request.Header.Set("Content-Type", "text/yaml")
-
-	urlParts, err := url.Parse(c.directorAddress)
-	if err != nil {
-		return err //not tested
-	}
-
-	boshHost, _, err := net.SplitHostPort(urlParts.Host)
-	if err != nil {
-		return err //not tested
-	}
-
+	request.Header.Set("Content-Type", "application/json")
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, oauth2.HTTPClient, c.httpClient)
 
 	conf := &clientcredentials.Config{
 		ClientID:     c.username,
 		ClientSecret: c.password,
-		TokenURL:     fmt.Sprintf("https://%s:8443/oauth/token", boshHost),
+		TokenURL:     fmt.Sprintf("%s/oauth/token", c.UAAAddress),
 	}
 
 	httpClient := conf.Client(ctx)
@@ -109,6 +122,10 @@ func (c client) UpdateCloudConfig(yaml []byte) error {
 	}
 
 	return nil
+}
+
+func (c Client) UpdateCloudConfig(yaml []byte) error {
+	return c.UpdateConfig("cloud", "default", yaml)
 }
 
 func makeRequests(httpClient *http.Client, request *http.Request) (*http.Response, error) {

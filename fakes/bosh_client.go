@@ -6,6 +6,17 @@ import (
 )
 
 type BOSHClient struct {
+	UpdateRuntimeConfigCall struct {
+		CallCount int
+		Receives  struct {
+			Yaml []byte
+			Name string
+		}
+		Returns struct {
+			Error error
+		}
+	}
+
 	UpdateCloudConfigCall struct {
 		CallCount int
 		Receives  struct {
@@ -19,7 +30,7 @@ type BOSHClient struct {
 	ConfigureHTTPClientCall struct {
 		CallCount int
 		Receives  struct {
-			Socks5Client proxy.Dialer
+			Dialer proxy.Dialer
 		}
 	}
 
@@ -32,15 +43,22 @@ type BOSHClient struct {
 	}
 }
 
+func (c *BOSHClient) UpdateRuntimeConfig(yaml []byte, name string) error {
+	c.UpdateRuntimeConfigCall.CallCount++
+	c.UpdateRuntimeConfigCall.Receives.Yaml = yaml
+	c.UpdateRuntimeConfigCall.Receives.Name = name
+	return c.UpdateRuntimeConfigCall.Returns.Error
+}
+
 func (c *BOSHClient) UpdateCloudConfig(yaml []byte) error {
 	c.UpdateCloudConfigCall.CallCount++
 	c.UpdateCloudConfigCall.Receives.Yaml = yaml
 	return c.UpdateCloudConfigCall.Returns.Error
 }
 
-func (c *BOSHClient) ConfigureHTTPClient(socks5Client proxy.Dialer) {
+func (c *BOSHClient) ConfigureHTTPClient(dialer proxy.Dialer) {
 	c.ConfigureHTTPClientCall.CallCount++
-	c.ConfigureHTTPClientCall.Receives.Socks5Client = socks5Client
+	c.ConfigureHTTPClientCall.Receives.Dialer = dialer
 }
 
 func (c *BOSHClient) Info() (bosh.Info, error) {

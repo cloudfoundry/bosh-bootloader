@@ -21,6 +21,7 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/gcp"
 	"github.com/cloudfoundry/bosh-bootloader/helpers"
 	"github.com/cloudfoundry/bosh-bootloader/renderers"
+	"github.com/cloudfoundry/bosh-bootloader/runtimeconfig"
 	"github.com/cloudfoundry/bosh-bootloader/ssh"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/cloudfoundry/bosh-bootloader/terraform"
@@ -121,7 +122,7 @@ func main() {
 	allProxyGetter := bosh.NewAllProxyGetter(sshKeyGetter, afs)
 	credhubGetter := bosh.NewCredhubGetter(stateStore, afs)
 	boshManager := bosh.NewManager(boshExecutor, logger, stateStore, sshKeyGetter, afs)
-	boshClientProvider := bosh.NewClientProvider(socks5Proxy, sshKeyGetter)
+	boshClientProvider := bosh.NewClientProvider(allProxyGetter, socks5Proxy, sshKeyGetter, boshPath)
 
 	// Clients that require IAAS credentials.
 	var (
@@ -247,6 +248,7 @@ func main() {
 	}
 
 	cloudConfigManager := cloudconfig.NewManager(logger, boshCommand, stateStore, cloudConfigOpsGenerator, boshClientProvider, terraformManager, afs)
+	runtimeConfigManager := runtimeconfig.NewManager(logger, stateStore, boshClientProvider)
 
 	// Commands
 	var envIDManager helpers.EnvIDManager
@@ -254,7 +256,7 @@ func main() {
 		envIDManager = helpers.NewEnvIDManager(envIDGenerator, networkClient)
 	}
 	plan := commands.NewPlan(boshManager, cloudConfigManager, stateStore, patchDetector, envIDManager, terraformManager, lbArgsHandler, stderrLogger, Version)
-	up := commands.NewUp(plan, boshManager, cloudConfigManager, stateStore, terraformManager)
+	up := commands.NewUp(plan, boshManager, cloudConfigManager, runtimeConfigManager, stateStore, terraformManager)
 	usage := commands.NewUsage(logger)
 
 	commandSet := application.CommandSet{}

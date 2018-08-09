@@ -39,6 +39,9 @@ type Leftovers struct {
 	resources []resource
 }
 
+// NewLeftovers returns a new Leftovers for AWS that can be used to list resources,
+// list types, or delete resources for the provided account. It returns an error
+// if the credentials provided are invalid.
 func NewLeftovers(logger logger, accessKeyId, secretAccessKey, region string) (Leftovers, error) {
 	if accessKeyId == "" {
 		return Leftovers{}, errors.New("Missing aws access key id.")
@@ -118,6 +121,8 @@ func NewLeftovers(logger logger, accessKeyId, secretAccessKey, region string) (L
 	}, nil
 }
 
+// Types will print all the resource types that can
+// be deleted on this IaaS.
 func (l Leftovers) Types() {
 	l.logger.NoConfirm()
 
@@ -126,6 +131,8 @@ func (l Leftovers) Types() {
 	}
 }
 
+// List will print all the resources that contain
+// the provided filter in the resource's identifier.
 func (l Leftovers) List(filter string) {
 	l.logger.NoConfirm()
 
@@ -144,6 +151,10 @@ func (l Leftovers) List(filter string) {
 	}
 }
 
+// Delete will collect all resources that contain
+// the provided filter in the resource's identifier, prompt
+// you to confirm deletion (if enabled), and delete those
+// that are selected.
 func (l Leftovers) Delete(filter string) error {
 	deletables := [][]common.Deletable{}
 
@@ -161,6 +172,10 @@ func (l Leftovers) Delete(filter string) error {
 	return nil
 }
 
+// DeleteType will collect all resources of the provied type that contain
+// the provided filter in the resource's identifier, prompt
+// you to confirm deletion (if enabled), and delete those
+// that are selected.
 func (l Leftovers) DeleteType(filter, rType string) error {
 	deletables := [][]common.Deletable{}
 
@@ -192,7 +207,8 @@ func (l Leftovers) asyncDelete(deletables [][]common.Deletable) {
 
 				l.logger.Println(fmt.Sprintf("[%s: %s] Deleting...", d.Type(), d.Name()))
 
-				if err := d.Delete(); err != nil {
+				err := d.Delete()
+				if err != nil {
 					l.logger.Println(fmt.Sprintf("[%s: %s] %s", d.Type(), d.Name(), color.YellowString(err.Error())))
 				} else {
 					l.logger.Println(fmt.Sprintf("[%s: %s] %s", d.Type(), d.Name(), color.GreenString("Deleted!")))

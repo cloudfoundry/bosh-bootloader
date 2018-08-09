@@ -1,9 +1,10 @@
 package application
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
+
+	"github.com/cloudfoundry/bosh-bootloader/commands"
 )
 
 type StateValidator struct {
@@ -17,7 +18,7 @@ func NewStateValidator(stateDir string) StateValidator {
 func (s StateValidator) Validate() error {
 	_, err := os.Stat(filepath.Join(s.stateDir, "bbl-state.json"))
 	if os.IsNotExist(err) {
-		return fmt.Errorf("bbl-state.json not found in %q, ensure you're running this command in the proper state directory or create a new environment with bbl up", s.stateDir)
+		return commands.NewNoBBLStateError(s.stateDir)
 	}
 	if err != nil {
 		return err

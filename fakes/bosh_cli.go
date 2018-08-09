@@ -12,7 +12,26 @@ type BOSHCLI struct {
 			Path string
 		}
 	}
-
+	RunCall struct {
+		CallCount int
+		Receieves struct {
+			Stdout           io.Writer
+			WorkingDirectory string
+			Args             []string
+		}
+		Returns struct {
+			Error error
+		}
+	}
+	UpdateRuntimeConfigCall struct {
+		CallCount int
+		Receives  struct {
+			Filepath, Name string
+		}
+		Returns struct {
+			Error error
+		}
+	}
 	RunStub        func(stdout io.Writer, workingDirectory string, args []string) error
 	runMutex       sync.RWMutex
 	runArgsForCall []struct {
@@ -110,4 +129,13 @@ func (fake *BOSHCLI) recordInvocation(key string, args []interface{}) {
 		fake.invocations[key] = [][]interface{}{}
 	}
 	fake.invocations[key] = append(fake.invocations[key], args)
+}
+
+func (fake *BOSHCLI) UpdateRuntimeConfig(filepath, name string) error {
+	fake.UpdateRuntimeConfigCall.CallCount++
+
+	fake.UpdateRuntimeConfigCall.Receives.Filepath = filepath
+	fake.UpdateRuntimeConfigCall.Receives.Name = name
+
+	return fake.UpdateRuntimeConfigCall.Returns.Error
 }

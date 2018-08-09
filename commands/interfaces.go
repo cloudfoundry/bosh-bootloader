@@ -107,3 +107,7 @@ type cloudConfigManager interface {
 	IsPresentCloudConfig() bool
 	IsPresentCloudConfigVars() bool
 }
+
+type runtimeConfigManager interface {
+	Update(state storage.State) error
+}

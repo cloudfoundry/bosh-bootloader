@@ -53,6 +53,11 @@ func (d Destroy) CheckFastFails(subcommandFlags []string, state storage.State) e
 	}
 
 	err = d.stateValidator.Validate()
+	if _, ok := err.(NoBBLStateError); ok {
+		d.logger.Println(err.Error())
+		return ExitSuccessfully{}
+	}
+
 	if err != nil {
 		return err
 	}
