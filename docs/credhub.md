@@ -54,12 +54,12 @@
 1. Login
 
     ```
-    http_proxy=socks5://localhost:5000 credhub login
+    http_proxy=socks5://localhost:5000; credhub login
     ```
 
 1. Get credentials
 
     ```
-    http_proxy=socks5://localhost:5000 credhub find -n 'cf_admin_password'
+    http_proxy=socks5://localhost:5000; credhub find -n 'cf_admin_password'
     ```
 
