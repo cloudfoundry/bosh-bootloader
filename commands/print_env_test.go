@@ -5,6 +5,7 @@ import (
 
 	"github.com/cloudfoundry/bosh-bootloader/commands"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
+	"github.com/cloudfoundry/bosh-bootloader/renderers"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/cloudfoundry/bosh-bootloader/terraform"
 	. "github.com/onsi/ginkgo"
@@ -21,6 +22,7 @@ var _ = Describe("PrintEnv", func() {
 		credhubGetter    *fakes.CredhubGetter
 		fileIO           *fakes.FileIO
 		printEnv         commands.PrintEnv
+		rendererFactory  renderers.Factory
 		state            storage.State
 	)
 
@@ -34,7 +36,7 @@ var _ = Describe("PrintEnv", func() {
 		allProxyGetter.BoshAllProxyCall.Returns.URL = "ipfs://some-domain-with?private_key=the-key-path"
 		credhubGetter = &fakes.CredhubGetter{}
 		credhubGetter.GetServerCall.Returns.Server = "some-credhub-server"
-		credhubGetter.GetCertsCall.Returns.Certs = "some-credhub-certs"
+		credhubGetter.GetCertsCall.Returns.Certs = "-----BEGIN CERTIFICATE-----\nsome-credhub-certs\n-----END CERTIFICATE-----\n"
 		credhubGetter.GetPasswordCall.Returns.Password = "some-credhub-password"
 
 		fileIO = &fakes.FileIO{}
@@ -44,14 +46,14 @@ var _ = Describe("PrintEnv", func() {
 				DirectorUsername: "some-director-username",
 				DirectorPassword: "some-director-password",
 				DirectorAddress:  "some-director-address",
-				DirectorSSLCA:    "some-director-ca-cert",
+				DirectorSSLCA:    "-----BEGIN CERTIFICATE-----\nsome-director-ca-cert\n-----END CERTIFICATE-----\n",
 			},
 			Jumpbox: storage.Jumpbox{
 				URL: "some-magical-jumpbox-url:22",
 			},
 		}
-
-		printEnv = commands.NewPrintEnv(logger, stderrLogger, stateValidator, allProxyGetter, credhubGetter, terraformManager, fileIO)
+		rendererFactory = renderers.NewFactory(&fakes.EnvGetter{Values: make(map[string]string)})
+		printEnv = commands.NewPrintEnv(logger, stderrLogger, stateValidator, allProxyGetter, credhubGetter, terraformManager, fileIO, rendererFactory)
 	})
 	Describe("CheckFastFails", func() {
 		Context("when the state does not exist", func() {
@@ -77,17 +79,47 @@ var _ = Describe("PrintEnv", func() {
 
 			Expect(logger.PrintlnCall.Messages).To(ContainElement("export BOSH_CLIENT=some-director-username"))
 			Expect(logger.PrintlnCall.Messages).To(ContainElement("export BOSH_CLIENT_SECRET=some-director-password"))
-			Expect(logger.PrintlnCall.Messages).To(ContainElement("export BOSH_CA_CERT='some-director-ca-cert'"))
+			Expect(logger.PrintlnCall.Messages).To(ContainElement("export BOSH_CA_CERT='-----BEGIN CERTIFICATE-----\nsome-director-ca-cert\n-----END CERTIFICATE-----\n'"))
 			Expect(logger.PrintlnCall.Messages).To(ContainElement("export BOSH_ENVIRONMENT=some-director-address"))
 
 			Expect(logger.PrintlnCall.Messages).To(ContainElement("export CREDHUB_SERVER=some-credhub-server"))
-			Expect(logger.PrintlnCall.Messages).To(ContainElement("export CREDHUB_CA_CERT='some-credhub-certs'"))
+			Expect(logger.PrintlnCall.Messages).To(ContainElement("export CREDHUB_CA_CERT='-----BEGIN CERTIFICATE-----\nsome-credhub-certs\n-----END CERTIFICATE-----\n'"))
 			Expect(logger.PrintlnCall.Messages).To(ContainElement("export CREDHUB_CLIENT=credhub-admin"))
 			Expect(logger.PrintlnCall.Messages).To(ContainElement("export CREDHUB_SECRET=some-credhub-password"))
 			Expect(logger.PrintlnCall.Messages).To(ContainElement("export CREDHUB_PROXY=ipfs://some-domain-with?private_key=the-key-path"))
 
 			Expect(logger.PrintlnCall.Messages).To(ContainElement(`export JUMPBOX_PRIVATE_KEY=the-key-path`))
 			Expect(logger.PrintlnCall.Messages).To(ContainElement(`export BOSH_ALL_PROXY=ipfs://some-domain-with?private_key=the-key-path`))
+		})
+
+		Context("WhenPSModulePathIsSet", func() {
+			It("prints powershell environment variables", func() {
+
+				values := map[string]string{"PSModulePath": "something"}
+				rendererFactory = renderers.NewFactory(&fakes.EnvGetter{Values: values})
+				printEnv = commands.NewPrintEnv(logger, stderrLogger, stateValidator, allProxyGetter, credhubGetter, terraformManager, fileIO, rendererFactory)
+
+				err := printEnv.Execute([]string{}, state)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(allProxyGetter.GeneratePrivateKeyCall.CallCount).To(Equal(1))
+				Expect(allProxyGetter.BoshAllProxyCall.Receives.JumpboxURL).To(Equal("some-magical-jumpbox-url:22"))
+				Expect(allProxyGetter.BoshAllProxyCall.Receives.PrivateKey).To(Equal("the-key-path"))
+
+				Expect(logger.PrintlnCall.Messages).To(ContainElement("$env:BOSH_CLIENT=\"some-director-username\""))
+				Expect(logger.PrintlnCall.Messages).To(ContainElement("$env:BOSH_CLIENT_SECRET=\"some-director-password\""))
+				Expect(logger.PrintlnCall.Messages).To(ContainElement("$env:BOSH_CA_CERT='\r\n-----BEGIN CERTIFICATE-----\nsome-director-ca-cert\n-----END CERTIFICATE-----\n'"))
+				Expect(logger.PrintlnCall.Messages).To(ContainElement("$env:BOSH_ENVIRONMENT=\"some-director-address\""))
+
+				Expect(logger.PrintlnCall.Messages).To(ContainElement("$env:CREDHUB_SERVER=\"some-credhub-server\""))
+				Expect(logger.PrintlnCall.Messages).To(ContainElement("$env:CREDHUB_CA_CERT='\r\n-----BEGIN CERTIFICATE-----\nsome-credhub-certs\n-----END CERTIFICATE-----\n'"))
+				Expect(logger.PrintlnCall.Messages).To(ContainElement("$env:CREDHUB_CLIENT=\"credhub-admin\""))
+				Expect(logger.PrintlnCall.Messages).To(ContainElement("$env:CREDHUB_SECRET=\"some-credhub-password\""))
+				Expect(logger.PrintlnCall.Messages).To(ContainElement("$env:CREDHUB_PROXY=\"ipfs://some-domain-with?private_key=the-key-path\""))
+
+				Expect(logger.PrintlnCall.Messages).To(ContainElement("$env:JUMPBOX_PRIVATE_KEY=\"the-key-path\""))
+				Expect(logger.PrintlnCall.Messages).To(ContainElement("$env:BOSH_ALL_PROXY=\"ipfs://some-domain-with?private_key=the-key-path\""))
+			})
 		})
 
 		Context("when there is no director", func() {
