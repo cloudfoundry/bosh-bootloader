@@ -6,8 +6,9 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"path/filepath"
 	"sync"
+
+	homedir "github.com/mitchellh/go-homedir"
 
 	"github.com/fatih/color"
 	"github.com/genevieve/leftovers/gcp/common"
@@ -44,9 +45,15 @@ func NewLeftovers(logger logger, keyPath string) (Leftovers, error) {
 		return Leftovers{}, errors.New("Missing service account key path.")
 	}
 
-	absKeyPath, _ := filepath.Abs(keyPath)
+	if keyPath[0] == '~' {
+		var err error
+		keyPath, err = homedir.Expand(keyPath)
+		if err != nil {
+			return Leftovers{}, fmt.Errorf("Invalid service account key path: %s", keyPath)
+		}
+	}
 
-	key, err := ioutil.ReadFile(absKeyPath)
+	key, err := ioutil.ReadFile(keyPath)
 	if err != nil {
 		key = []byte(keyPath)
 	}

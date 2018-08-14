@@ -177,7 +177,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:03f75d81d26822e313944b356daecbac0ff4c1c1fee02a50a09f5b65f18222e2"
+  digest = "1:23adee77c780c885c3b7b4193b91394b5a7579512dccff2ac9df59f5577b2725"
   name = "github.com/genevieve/leftovers"
   packages = [
     "aws",
@@ -202,7 +202,7 @@
     "vsphere",
   ]
   pruneopts = "U"
-  revision = "4a9d72ef79608bd93f54939e2eb671bf30c41ce4"
+  revision = "ae40ad9a345fcb9b67acc052c01a3f8bc4b4b79e"
 
 [[projects]]
   digest = "1:039d212663a562ed6e04b63e5e2b955b8a409990874d83c371164620590081ab"
@@ -301,6 +301,14 @@
   packages = ["."]
   pruneopts = "U"
   revision = "e4ef56d48eb029648b0e895bb0b6a393ef0829c3"
+
+[[projects]]
+  branch = "master"
+  digest = "1:83854f6b1d2ce047b69657e3a87ba7602f4c5505e8bdfd02ab857db8e983bde1"
+  name = "github.com/mitchellh/go-homedir"
+  packages = ["."]
+  pruneopts = "U"
+  revision = "58046073cbffe2f25d425fe1331102f55cf719de"
 
 [[projects]]
   branch = "master"
