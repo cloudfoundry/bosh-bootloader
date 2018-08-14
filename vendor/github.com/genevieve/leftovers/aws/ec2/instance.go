@@ -48,6 +48,10 @@ func NewInstance(client instancesClient, logger logger, resourceTags resourceTag
 var pending = []string{"pending", "running", "shutting-down", "stopped", "stopping"}
 var target = []string{"terminated"}
 
+// Delete finds any addresses bound to the instance set for deletion,
+// terminates the instance, waits for it to be terminated, deletes
+// any tags that were bound to this instance, and finally releases
+// the addresses.
 func (i Instance) Delete() error {
 	addresses, err := i.client.DescribeAddresses(&awsec2.DescribeAddressesInput{
 		Filters: []*awsec2.Filter{{
