@@ -22,13 +22,15 @@ Steps to deploy cfcr with bbl:
     eval "$(bbl print-env)"
     ```
 
-1. Upload the appropriate kubo-release. These instructions should be expanded, but we don't have time right now. At the time of this edit, the following does not get you a version that matches kubo-deployment:
-~~`bosh upload-release https://storage.googleapis.com/kubo-public/kubo-release-latest.tgz`~~
+1. Upload the desired kubo-release from the github repo: https://github.com/cloudfoundry-incubator/kubo-release/releases.
+   ```
+   bosh upload-release <github-kubo-release-link>
+   ```
 
-1. `bosh upload-stemcell https://bosh.io/d/stemcells/bosh-google-kvm-ubuntu-trusty-go_agent`
+1. `bosh upload-stemcell https://bosh.io/d/stemcells/bosh-google-kvm-ubuntu-xenial-go_agent`
 
-1. export KD as your path to kubo-deployment so you can copy-paste from below if you so desire.
-   be careful to check out the manifest that matches the kubo-release you downloaded above.
+1. Export KD as your path to kubo-deployment so you can copy-paste from below if you so desire.
+   Be careful to check out the manifest that matches the kubo-release you downloaded above.
    ```
    git clone git@github.com:cloudfoundry-incubator/kubo-deployment.git
    export KD=$(pwd)/kubo-deployment
@@ -52,36 +54,22 @@ Steps to deploy cfcr with bbl:
    ```
 
 1. Configure kubectl
-
-   Then run the following to mix them together into kubectl-appropriate forms:
    ```
-   export director_name=$(bosh int <(bbl outputs) --path=/director_name)
-   export address="https://${kubernetes_master_host}:8443"
-   export cluster_name="kubo:${director_name}:cfcr"
-   export user_name="kubo:${director_name}:cfcr-admin"
-   export context_name="kubo:${director_name}:cfcr"
-
    credhub login
-   export admin_password=$(bosh int <(credhub get -n "${director_name}/cfcr/kubo-admin-password" --output-json) --path=/value)
-
-   # add this credhub-generated CA to your system keyring if you'd like to authenticate without --insecure-skip-tls-verify=true
-   export tmp_ca_file="$(mktemp)"
-   bosh int <(credhub get -n "${director_name}/cfcr/tls-kubernetes" --output-json) --path=/value/ca > "${tmp_ca_file}"
-
-   kubectl config set-cluster "${cluster_name}" --server="${address}" --insecure-skip-tls-verify=true
-   kubectl config set-credentials "${user_name}" --token="${admin_password}"
-   kubectl config set-context "${context_name}" --cluster="${cluster_name}" --user="${user_name}"
-   kubectl config use-context "${context_name}"
+   export director_name=$(bosh int <(bbl outputs) --path=/director_name)
+   
+   ${KD}/bin/set_kubeconfig ${director_name}/cfcr https://${kubernetes_master_host}:8443
    ```
 
- - `kubectl get pods`
+ - Run `kubectl get nodes` to ensure kubectl was configured correctly
  - create, scale, and expose apps with the kubernetes bootcamp docker image:
    ```
    kubectl run kubernetes-bootcamp --image=docker.io/jocatalin/kubernetes-bootcamp:v1 --port=8080
    kubectl get pods
    kubectl expose deployment/kubernetes-bootcamp --type="LoadBalancer"
    kubectl get services
-   # get EXTERNAL-IP for kubernetes-bootcamp
-   curl http://${EXTERNAL-IP}:8080
+
+   export external_ip=$(kubectl get service/kubernetes-bootcamp -o jsonpath={.status.loadBalancer.ingress[0].ip})
+   curl http://${external_ip}:8080
    ```
 
