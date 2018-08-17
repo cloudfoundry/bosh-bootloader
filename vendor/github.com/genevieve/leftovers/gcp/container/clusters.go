@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/genevieve/leftovers/gcp/common"
+	"github.com/genevieve/leftovers/common"
 	gcpcontainer "google.golang.org/api/container/v1"
 )
 

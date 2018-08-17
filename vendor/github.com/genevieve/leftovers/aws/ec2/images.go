@@ -6,7 +6,7 @@ import (
 
 	awsec2 "github.com/aws/aws-sdk-go/service/ec2"
 	awssts "github.com/aws/aws-sdk-go/service/sts"
-	"github.com/genevieve/leftovers/aws/common"
+	"github.com/genevieve/leftovers/common"
 )
 
 type imagesClient interface {

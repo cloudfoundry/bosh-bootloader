@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	awsroute53 "github.com/aws/aws-sdk-go/service/route53"
-	"github.com/genevieve/leftovers/aws/common"
+	"github.com/genevieve/leftovers/common"
 )
 
 type hostedZonesClient interface {

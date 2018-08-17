@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/genevieve/leftovers/gcp/common"
+	"github.com/genevieve/leftovers/common"
 	gcpsql "google.golang.org/api/sqladmin/v1beta4"
 )
 

@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	awselbv2 "github.com/aws/aws-sdk-go/service/elbv2"
-	"github.com/genevieve/leftovers/aws/common"
+	"github.com/genevieve/leftovers/common"
 )
 
 type targetGroupsClient interface {

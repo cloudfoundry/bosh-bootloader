@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	awss3 "github.com/aws/aws-sdk-go/service/s3"
-	"github.com/genevieve/leftovers/aws/common"
+	"github.com/genevieve/leftovers/common"
 )
 
 type bucketsClient interface {

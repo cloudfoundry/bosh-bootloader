@@ -3,6 +3,7 @@ package ec2
 import (
 	"fmt"
 
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	awsec2 "github.com/aws/aws-sdk-go/service/ec2"
 )
 
@@ -23,6 +24,9 @@ func NewVolume(client volumesClient, id, state *string) Volume {
 func (v Volume) Delete() error {
 	_, err := v.client.DeleteVolume(&awsec2.DeleteVolumeInput{VolumeId: v.id})
 	if err != nil {
+		if ec2err, ok := err.(awserr.Error); ok && ec2err.Code() == "InvalidVolume.NotFound" {
+			return nil
+		}
 		return fmt.Errorf("Delete: %s", err)
 	}
 

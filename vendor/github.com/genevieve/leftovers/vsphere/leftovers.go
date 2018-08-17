@@ -8,11 +8,13 @@ import (
 	"time"
 
 	"github.com/fatih/color"
+	"github.com/genevieve/leftovers/common"
+	multierror "github.com/hashicorp/go-multierror"
 	"github.com/vmware/govmomi"
 )
 
 type resource interface {
-	List(filter string, rType string) ([]Deletable, error)
+	List(filter string, rType string) ([]common.Deletable, error)
 	Type() string
 }
 
@@ -24,7 +26,7 @@ type Leftovers struct {
 // List will print all the resources that contain
 // the provided filter in the resource's identifier.
 func (l Leftovers) List(filter string) {
-	var all []Deletable
+	var all []common.Deletable
 
 	for _, r := range l.resources {
 		list, err := r.List(filter, "")
@@ -61,7 +63,10 @@ func (l Leftovers) Delete(filter string) error {
 // you to confirm deletion, and delete those
 // that are selected.
 func (l Leftovers) DeleteType(filter, rType string) error {
-	var deletables []Deletable
+	var (
+		deletables []common.Deletable
+		result     *multierror.Error
+	)
 
 	for _, r := range l.resources {
 		list, err := r.List(filter, rType)
@@ -77,13 +82,16 @@ func (l Leftovers) DeleteType(filter, rType string) error {
 
 		err := d.Delete()
 		if err != nil {
-			l.logger.Println(fmt.Sprintf("[%s: %s] %s", d.Type(), d.Name(), color.YellowString(err.Error())))
+			err = fmt.Errorf("[%s: %s] %s", d.Type(), d.Name(), color.YellowString(err.Error()))
+			result = multierror.Append(result, err)
+
+			l.logger.Println(err.Error())
 		} else {
 			l.logger.Println(fmt.Sprintf("[%s: %s] %s", d.Type(), d.Name(), color.GreenString("Deleted!")))
 		}
 	}
 
-	return nil
+	return result.ErrorOrNil()
 }
 
 // NewLeftovers returns a new Leftovers for vSphere that can be used to list resources,
