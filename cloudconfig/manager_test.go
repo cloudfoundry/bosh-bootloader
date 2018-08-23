@@ -63,7 +63,7 @@ var _ = Describe("Manager", func() {
 			IAAS: "gcp",
 			BOSH: storage.BOSH{
 				DirectorAddress:  "some-director-address",
-				DirectorUsername: "some-director-username",
+				DirectorUsername: "some-director-username"RR
 				DirectorPassword: "some-director-password",
 			},
 		}
