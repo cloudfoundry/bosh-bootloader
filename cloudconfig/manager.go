@@ -21,7 +21,7 @@ type fs interface {
 type Manager struct {
 	logger             logger
 	command            command
-	stateStore         stateStore
+	dirProvider        dirProvider
 	opsGenerator       OpsGenerator
 	boshClientProvider boshClientProvider
 	terraformManager   terraformManager
@@ -49,17 +49,17 @@ type terraformManager interface {
 	GetOutputs() (terraform.Outputs, error)
 }
 
-type stateStore interface {
+type dirProvider interface {
 	GetCloudConfigDir() (string, error)
 	GetVarsDir() (string, error)
 }
 
-func NewManager(logger logger, cmd command, stateStore stateStore, opsGenerator OpsGenerator, boshClientProvider boshClientProvider,
+func NewManager(logger logger, cmd command, dirProvider dirProvider, opsGenerator OpsGenerator, boshClientProvider boshClientProvider,
 	terraformManager terraformManager, fs fs) Manager {
 	return Manager{
 		logger:             logger,
 		command:            cmd,
-		stateStore:         stateStore,
+		dirProvider:        dirProvider,
 		opsGenerator:       opsGenerator,
 		boshClientProvider: boshClientProvider,
 		terraformManager:   terraformManager,
@@ -68,7 +68,7 @@ func NewManager(logger logger, cmd command, stateStore stateStore, opsGenerator 
 }
 
 func (m Manager) Initialize(state storage.State) error {
-	cloudConfigDir, err := m.stateStore.GetCloudConfigDir()
+	cloudConfigDir, err := m.dirProvider.GetCloudConfigDir()
 	if err != nil {
 		return err
 	}
@@ -92,7 +92,7 @@ func (m Manager) Initialize(state storage.State) error {
 }
 
 func (m Manager) GenerateVars(state storage.State) error {
-	varsDir, err := m.stateStore.GetVarsDir()
+	varsDir, err := m.dirProvider.GetVarsDir()
 	if err != nil {
 		return err
 	}
@@ -111,7 +111,7 @@ func (m Manager) GenerateVars(state storage.State) error {
 }
 
 func (m Manager) IsPresentCloudConfig() bool {
-	cloudConfigDir, err := m.stateStore.GetCloudConfigDir()
+	cloudConfigDir, err := m.dirProvider.GetCloudConfigDir()
 	if err != nil {
 		return false
 	}
@@ -126,7 +126,7 @@ func (m Manager) IsPresentCloudConfig() bool {
 }
 
 func (m Manager) IsPresentCloudConfigVars() bool {
-	varsDir, err := m.stateStore.GetVarsDir()
+	varsDir, err := m.dirProvider.GetVarsDir()
 	if err != nil {
 		return false
 	}
@@ -140,12 +140,12 @@ func (m Manager) IsPresentCloudConfigVars() bool {
 }
 
 func (m Manager) Interpolate() (string, error) {
-	cloudConfigDir, err := m.stateStore.GetCloudConfigDir()
+	cloudConfigDir, err := m.dirProvider.GetCloudConfigDir()
 	if err != nil {
 		return "", err
 	}
 
-	varsDir, err := m.stateStore.GetVarsDir()
+	varsDir, err := m.dirProvider.GetVarsDir()
 	if err != nil {
 		return "", err
 	}

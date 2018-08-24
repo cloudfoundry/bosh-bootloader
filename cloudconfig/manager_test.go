@@ -21,7 +21,7 @@ var _ = Describe("Manager", func() {
 	var (
 		logger             *fakes.Logger
 		cli                *fakes.BOSHCLI
-		stateStore         *fakes.StateStore
+		dirProvider        *fakes.DirProvider
 		opsGenerator       *fakes.CloudConfigOpsGenerator
 		boshClientProvider *fakes.BOSHClientProvider
 		boshClient         *fakes.BOSHClient
@@ -39,7 +39,7 @@ var _ = Describe("Manager", func() {
 	BeforeEach(func() {
 		logger = &fakes.Logger{}
 		cli = &fakes.BOSHCLI{}
-		stateStore = &fakes.StateStore{}
+		dirProvider = &fakes.DirProvider{}
 		opsGenerator = &fakes.CloudConfigOpsGenerator{}
 		boshClient = &fakes.BOSHClient{}
 		boshClientProvider = &fakes.BOSHClientProvider{}
@@ -49,10 +49,10 @@ var _ = Describe("Manager", func() {
 		boshClientProvider.ClientCall.Returns.Client = boshClient
 
 		cloudConfigDir = "some-cloud-config-dir"
-		stateStore.GetCloudConfigDirCall.Returns.Directory = cloudConfigDir
+		dirProvider.GetCloudConfigDirCall.Returns.Directory = cloudConfigDir
 
 		varsDir = "some-vars-dir"
-		stateStore.GetVarsDirCall.Returns.Directory = varsDir
+		dirProvider.GetVarsDirCall.Returns.Directory = varsDir
 
 		cli.RunStub = func(stdout io.Writer, workingDirectory string, args []string) error {
 			stdout.Write([]byte("some-cloud-config"))
@@ -75,7 +75,7 @@ var _ = Describe("Manager", func() {
 		baseCloudConfig, err = ioutil.ReadFile("fixtures/base-cloud-config.yml")
 		Expect(err).NotTo(HaveOccurred())
 
-		manager = cloudconfig.NewManager(logger, cli, stateStore, opsGenerator, boshClientProvider, terraformManager, fileIO)
+		manager = cloudconfig.NewManager(logger, cli, dirProvider, opsGenerator, boshClientProvider, terraformManager, fileIO)
 	})
 
 	Describe("Initialize", func() {
@@ -95,7 +95,7 @@ var _ = Describe("Manager", func() {
 		Context("failure cases", func() {
 			Context("when getting the cloud config dir fails", func() {
 				BeforeEach(func() {
-					stateStore.GetCloudConfigDirCall.Returns.Error = errors.New("carrot")
+					dirProvider.GetCloudConfigDirCall.Returns.Error = errors.New("carrot")
 				})
 
 				It("returns an error", func() {
@@ -158,7 +158,7 @@ var _ = Describe("Manager", func() {
 		Context("failure cases", func() {
 			Context("when getting the vars dir fails", func() {
 				BeforeEach(func() {
-					stateStore.GetVarsDirCall.Returns.Error = errors.New("eggplant")
+					dirProvider.GetVarsDirCall.Returns.Error = errors.New("eggplant")
 				})
 
 				It("returns an error", func() {
@@ -235,7 +235,7 @@ var _ = Describe("Manager", func() {
 		Context("failure cases", func() {
 			Context("when getting the cloud config dir fails", func() {
 				BeforeEach(func() {
-					stateStore.GetCloudConfigDirCall.Returns.Error = errors.New("carrot")
+					dirProvider.GetCloudConfigDirCall.Returns.Error = errors.New("carrot")
 				})
 
 				It("returns false", func() {
@@ -274,7 +274,7 @@ var _ = Describe("Manager", func() {
 		Context("failure cases", func() {
 			Context("when getting the vars dir fails", func() {
 				BeforeEach(func() {
-					stateStore.GetVarsDirCall.Returns.Error = errors.New("carrot")
+					dirProvider.GetVarsDirCall.Returns.Error = errors.New("carrot")
 				})
 
 				It("returns false", func() {
@@ -319,7 +319,7 @@ var _ = Describe("Manager", func() {
 		Context("failure cases", func() {
 			Context("when getting the cloud config dir fails", func() {
 				BeforeEach(func() {
-					stateStore.GetCloudConfigDirCall.Returns.Error = errors.New("carrot")
+					dirProvider.GetCloudConfigDirCall.Returns.Error = errors.New("carrot")
 				})
 
 				It("returns an error", func() {
@@ -330,7 +330,7 @@ var _ = Describe("Manager", func() {
 
 			Context("when getting the vars dir fails", func() {
 				BeforeEach(func() {
-					stateStore.GetVarsDirCall.Returns.Error = errors.New("eggplant")
+					dirProvider.GetVarsDirCall.Returns.Error = errors.New("eggplant")
 				})
 
 				It("returns an error", func() {
