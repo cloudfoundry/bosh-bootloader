@@ -248,7 +248,7 @@ func main() {
 	}
 
 	cloudConfigManager := cloudconfig.NewManager(logger, boshCommand, stateStore, cloudConfigOpsGenerator, boshClientProvider, terraformManager, afs)
-	runtimeConfigManager := runtimeconfig.NewManager(logger, stateStore, boshClientProvider)
+	runtimeConfigManager := runtimeconfig.NewManager(logger, stateStore, boshClientProvider, boshCommand, afs)
 
 	// Commands
 	var envIDManager helpers.EnvIDManager

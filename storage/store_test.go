@@ -326,6 +326,10 @@ var _ = Describe("Store", func() {
 		})
 	})
 
+	// TODO
+	PDescribe("GetRuntimeConfigDir", func() {
+	})
+
 	Describe("GetVarsDir", func() {
 		Context("when the vars dir is requested but may not exist", func() {
 			It("a path is request and may be created and set with restrained permissions", func() {
