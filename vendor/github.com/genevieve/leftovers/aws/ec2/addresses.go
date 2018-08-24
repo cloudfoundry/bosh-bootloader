@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	awsec2 "github.com/aws/aws-sdk-go/service/ec2"
-	"github.com/genevieve/leftovers/aws/common"
+	"github.com/genevieve/leftovers/common"
 )
 
 type addressesClient interface {

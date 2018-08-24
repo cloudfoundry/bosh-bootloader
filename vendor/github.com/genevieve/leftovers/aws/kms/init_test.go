@@ -9,5 +9,5 @@ import (
 
 func TestKms(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "kms")
+	RunSpecs(t, "aws/kms")
 }

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/genevieve/leftovers/gcp/common"
+	"github.com/genevieve/leftovers/common"
 	gcpdns "google.golang.org/api/dns/v1"
 )
 

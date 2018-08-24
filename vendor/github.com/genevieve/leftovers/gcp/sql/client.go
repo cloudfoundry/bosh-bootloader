@@ -39,6 +39,11 @@ type request interface {
 func (c client) wait(request request) error {
 	op, err := request.Do()
 	if err != nil {
+		if gerr, ok := err.(*googleapi.Error); ok {
+			if gerr.Code == 404 {
+				return nil
+			}
+		}
 		return fmt.Errorf("Do request: %s", err)
 	}
 

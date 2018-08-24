@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	awsec2 "github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/genevieve/leftovers/aws/ec2"
 	"github.com/genevieve/leftovers/aws/ec2/fakes"
@@ -89,6 +90,17 @@ var _ = Describe("Instance", func() {
 			It("returns the error", func() {
 				err := instance.Delete()
 				Expect(err).To(MatchError("Terminate: banana"))
+			})
+		})
+
+		Context("when the instance is not found", func() {
+			BeforeEach(func() {
+				client.TerminateInstancesCall.Returns.Error = awserr.New("InvalidInstanceID.NotFound", "", nil)
+			})
+
+			It("returns the error", func() {
+				err := instance.Delete()
+				Expect(err).NotTo(HaveOccurred())
 			})
 		})
 

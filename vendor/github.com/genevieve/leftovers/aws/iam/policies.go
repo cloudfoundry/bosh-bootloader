@@ -6,7 +6,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	awsiam "github.com/aws/aws-sdk-go/service/iam"
-	"github.com/genevieve/leftovers/aws/common"
+	"github.com/genevieve/leftovers/common"
 )
 
 type policiesClient interface {

@@ -63,8 +63,15 @@ func (i Instance) Delete() error {
 		return fmt.Errorf("Describe addresses: %s", err)
 	}
 
-	_, err = i.client.TerminateInstances(&awsec2.TerminateInstancesInput{InstanceIds: []*string{i.id}})
+	input := &awsec2.TerminateInstancesInput{InstanceIds: []*string{i.id}}
+
+	_, err = i.client.TerminateInstances(input)
 	if err != nil {
+		ec2err, ok := err.(awserr.Error)
+		if ok && ec2err.Code() == "InvalidInstanceID.NotFound" {
+			return nil
+		}
+
 		return fmt.Errorf("Terminate: %s", err)
 	}
 

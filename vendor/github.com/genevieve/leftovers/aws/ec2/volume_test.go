@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/genevieve/leftovers/aws/ec2"
 	"github.com/genevieve/leftovers/aws/ec2/fakes"
 
@@ -34,6 +35,17 @@ var _ = Describe("Volume", func() {
 
 			Expect(client.DeleteVolumeCall.CallCount).To(Equal(1))
 			Expect(client.DeleteVolumeCall.Receives.Input.VolumeId).To(Equal(id))
+		})
+
+		Context("the volume has already been deleted", func() {
+			BeforeEach(func() {
+				client.DeleteVolumeCall.Returns.Error = awserr.New("InvalidVolume.NotFound", "msg", nil)
+			})
+
+			It("returns nil", func() {
+				err := volume.Delete()
+				Expect(err).NotTo(HaveOccurred())
+			})
 		})
 
 		Context("the client fails", func() {

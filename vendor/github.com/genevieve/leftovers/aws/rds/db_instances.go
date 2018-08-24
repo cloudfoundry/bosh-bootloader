@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	awsrds "github.com/aws/aws-sdk-go/service/rds"
-	"github.com/genevieve/leftovers/aws/common"
+	"github.com/genevieve/leftovers/common"
 )
 
 type dbInstancesClient interface {

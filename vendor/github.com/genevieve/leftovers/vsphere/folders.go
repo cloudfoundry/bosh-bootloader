@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/genevieve/leftovers/common"
 	"github.com/vmware/govmomi/object"
 )
 
@@ -26,7 +27,7 @@ func NewFolders(client client, logger logger) Folders {
 
 // List not only lists top-level folders, it also lists child and grandchild
 // folders, and all VMs within those folders.
-func (v Folders) List(filter string, rType string) ([]Deletable, error) {
+func (v Folders) List(filter string, rType string) ([]common.Deletable, error) {
 	root, err := v.client.GetRootFolder(filter)
 	if err != nil {
 		return nil, fmt.Errorf("Getting root folder: %s", err)
@@ -35,8 +36,8 @@ func (v Folders) List(filter string, rType string) ([]Deletable, error) {
 	return v.listChildren(root, rType)
 }
 
-func (f Folders) listChildren(parent *object.Folder, rType string) ([]Deletable, error) {
-	var deletable []Deletable
+func (f Folders) listChildren(parent *object.Folder, rType string) ([]common.Deletable, error) {
+	var deletable []common.Deletable
 
 	ctx := context.Background()
 	children, err := parent.Children(ctx)

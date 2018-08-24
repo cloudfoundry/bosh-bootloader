@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/genevieve/leftovers/aws/ec2"
 	"github.com/genevieve/leftovers/aws/ec2/fakes"
 
@@ -34,7 +35,18 @@ var _ = Describe("KeyPair", func() {
 			Expect(client.DeleteKeyPairCall.Receives.Input.KeyName).To(Equal(name))
 		})
 
-		Context("the client fails", func() {
+		Context("when the client fails", func() {
+			BeforeEach(func() {
+				client.DeleteKeyPairCall.Returns.Error = awserr.New("InvalidKeyPair.NotFound", "", nil)
+			})
+
+			It("returns nil", func() {
+				err := keyPair.Delete()
+				Expect(err).NotTo(HaveOccurred())
+			})
+		})
+
+		Context("when the key is not found", func() {
 			BeforeEach(func() {
 				client.DeleteKeyPairCall.Returns.Error = errors.New("banana")
 			})

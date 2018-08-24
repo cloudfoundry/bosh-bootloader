@@ -3,6 +3,7 @@ package ec2
 import (
 	"fmt"
 
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	awsec2 "github.com/aws/aws-sdk-go/service/ec2"
 )
 
@@ -23,8 +24,15 @@ func NewKeyPair(client keyPairsClient, name *string) KeyPair {
 }
 
 func (k KeyPair) Delete() error {
-	_, err := k.client.DeleteKeyPair(&awsec2.DeleteKeyPairInput{KeyName: k.name})
+	input := &awsec2.DeleteKeyPairInput{KeyName: k.name}
+
+	_, err := k.client.DeleteKeyPair(input)
 	if err != nil {
+		awsErr, ok := err.(awserr.Error)
+		if ok && awsErr.Code() == "InvalidKeyPair.NotFound" {
+			return nil
+		}
+
 		return fmt.Errorf("Delete: %s", err)
 	}
 

@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	awskms "github.com/aws/aws-sdk-go/service/kms"
-	"github.com/genevieve/leftovers/aws/common"
+	"github.com/genevieve/leftovers/common"
 )
 
 type keysClient interface {

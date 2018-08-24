@@ -6,6 +6,7 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/arm/resources/resources"
 	"github.com/Azure/go-autorest/autorest"
+	"github.com/genevieve/leftovers/common"
 )
 
 type groupsClient interface {
@@ -25,13 +26,13 @@ func NewGroups(client groupsClient, logger logger) Groups {
 	}
 }
 
-func (g Groups) List(filter string) ([]Deletable, error) {
+func (g Groups) List(filter string) ([]common.Deletable, error) {
 	groups, err := g.client.List("", nil)
 	if err != nil {
 		return nil, fmt.Errorf("Listing Resource Groups: %s", err)
 	}
 
-	var resources []Deletable
+	var resources []common.Deletable
 	for _, group := range *groups.Value {
 		r := NewGroup(g.client, group.Name)
 
