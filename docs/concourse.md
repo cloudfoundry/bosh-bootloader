@@ -20,7 +20,7 @@ install using `bbl` and `bosh`.
 
   eval "$(bbl print-env)"
 
-  bosh upload-stemcell https://bosh.io/d/stemcells/bosh-google-kvm-ubuntu-trusty-go_agent
+  bosh upload-stemcell https://bosh.io/d/stemcells/bosh-google-kvm-ubuntu-xenial-go_agent
 
   cd $GOPATH/src/github.com/concourse/concourse-bosh-deployment/cluster
   ```
