@@ -16,11 +16,12 @@ install using `bbl` and `bosh`.
   ```bash
   bbl up --lb-type concourse
 
-  export external_url="https://$(bbl lbs | awk -F': ' '{print $2}')"
+  export external_host="$(bbl lbs | awk -F': ' '{print $2}')"
+  export external_url="https://$external_host"
 
   eval "$(bbl print-env)"
 
-  bosh upload-stemcell https://bosh.io/d/stemcells/bosh-google-kvm-ubuntu-trusty-go_agent
+  bosh upload-stemcell https://bosh.io/d/stemcells/bosh-google-kvm-ubuntu-xenial-go_agent
 
   cd $GOPATH/src/github.com/concourse/concourse-bosh-deployment/cluster
   ```
@@ -42,9 +43,11 @@ EOL
     -o operations/privileged-http.yml \
     -o operations/privileged-https.yml \
     -o operations/tls.yml \
+    -o operations/tls-vars.yml \
     -o operations/web-network-extension.yml \
     --var network_name=default \
     --var external_url=$external_url \
+    --var external_host=$external_host \
     --var web_vm_type=default \
     --var db_vm_type=default \
     --var db_persistent_disk_type=10GB \
