@@ -47,6 +47,7 @@ Steps to deploy cfcr with bbl:
    -o ${KD}/manifests/ops-files/iaas/vsphere/master-static-ip.yml \
    -o ${KD}/manifests/ops-files/add-hostname-to-master-certificate.yml
    -o ${KD}/manifests/ops-files/iaas/vsphere/set-working-dir-no-rp.yml \
+   -o cfcr-ops.yml \
    -v kubernetes_master_host="${kubernetes_master_host}" \
    -v api-hostname="${kubernetes_master_host}" \
    -l <(bbl outputs)

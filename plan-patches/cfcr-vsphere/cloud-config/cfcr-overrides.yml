@@ -4,4 +4,12 @@
 - type: replace
   path: /networks/name=default/subnets/0/static?
   value:
-	- 10.0.0.35
+  - 10.0.0.35
+
+- type: replace
+  path: /vm_extensions/-
+  value:
+    name: cfcr-worker-cloud-properties
+    cloud_properties:
+      vmx_options:
+        disk.enableUUID: "1"
