@@ -2,6 +2,7 @@ package dns
 
 import (
 	gcpdns "google.golang.org/api/dns/v1"
+	"google.golang.org/api/googleapi"
 )
 
 type client struct {
@@ -26,7 +27,9 @@ func (c client) ListManagedZones() (*gcpdns.ManagedZonesListResponse, error) {
 }
 
 func (c client) DeleteManagedZone(managedZone string) error {
-	return c.managedZones.Delete(c.project, managedZone).Do()
+	err := c.managedZones.Delete(c.project, managedZone).Do()
+
+	return handleNotFoundError(err)
 }
 
 func (c client) ListRecordSets(managedZone string) (*gcpdns.ResourceRecordSetsListResponse, error) {
@@ -35,5 +38,17 @@ func (c client) ListRecordSets(managedZone string) (*gcpdns.ResourceRecordSetsLi
 
 func (c client) DeleteRecordSets(managedZone string, change *gcpdns.Change) error {
 	_, err := c.changes.Create(c.project, managedZone, change).Do()
-	return err
+	return handleNotFoundError(err)
+}
+
+func handleNotFoundError(err error) error {
+	if err != nil {
+		gerr, ok := err.(*googleapi.Error)
+		if ok && gerr != nil && gerr.Code == 404 {
+			return nil
+		}
+
+		return err
+	}
+	return nil
 }

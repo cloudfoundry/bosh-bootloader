@@ -31,11 +31,9 @@ var _ = Describe("BackendServices", func() {
 		BeforeEach(func() {
 			filter = "banana"
 			logger.PromptWithDetailsCall.Returns.Proceed = true
-			client.ListBackendServicesCall.Returns.Output = &gcpcompute.BackendServiceList{
-				Items: []*gcpcompute.BackendService{{
-					Name: "banana-backend-service",
-				}},
-			}
+			client.ListBackendServicesCall.Returns.Output = []*gcpcompute.BackendService{{
+				Name: "banana-backend-service",
+			}}
 		})
 
 		It("lists, filters, and prompts for backend services to delete", func() {

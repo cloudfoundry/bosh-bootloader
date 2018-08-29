@@ -9,7 +9,7 @@ import (
 )
 
 type imagesClient interface {
-	ListImages() (*gcpcompute.ImageList, error)
+	ListImages() ([]*gcpcompute.Image, error)
 	DeleteImage(image string) error
 }
 
@@ -32,7 +32,7 @@ func (i Images) List(filter string) ([]common.Deletable, error) {
 	}
 
 	var resources []common.Deletable
-	for _, image := range images.Items {
+	for _, image := range images {
 		resource := NewImage(i.client, image.Name)
 
 		if !strings.Contains(image.Name, filter) {

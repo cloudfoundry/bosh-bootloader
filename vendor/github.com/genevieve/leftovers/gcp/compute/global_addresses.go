@@ -9,7 +9,7 @@ import (
 )
 
 type globalAddressesClient interface {
-	ListGlobalAddresses() (*gcpcompute.AddressList, error)
+	ListGlobalAddresses() ([]*gcpcompute.Address, error)
 	DeleteGlobalAddress(address string) error
 }
 
@@ -32,7 +32,7 @@ func (a GlobalAddresses) List(filter string) ([]common.Deletable, error) {
 	}
 
 	var resources []common.Deletable
-	for _, address := range addresses.Items {
+	for _, address := range addresses {
 		resource := NewGlobalAddress(a.client, address.Name)
 
 		if !strings.Contains(address.Name, filter) {

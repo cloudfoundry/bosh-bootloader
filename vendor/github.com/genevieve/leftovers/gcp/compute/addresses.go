@@ -9,7 +9,7 @@ import (
 )
 
 type addressesClient interface {
-	ListAddresses(region string) (*gcpcompute.AddressList, error)
+	ListAddresses(region string) ([]*gcpcompute.Address, error)
 	DeleteAddress(region, address string) error
 }
 
@@ -35,7 +35,7 @@ func (a Addresses) List(filter string) ([]common.Deletable, error) {
 			return nil, fmt.Errorf("List Addresses for Region %s: %s", region, err)
 		}
 
-		addresses = append(addresses, l.Items...)
+		addresses = append(addresses, l...)
 	}
 
 	var resources []common.Deletable

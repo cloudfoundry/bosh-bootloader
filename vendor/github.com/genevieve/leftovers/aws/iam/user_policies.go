@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	awsiam "github.com/aws/aws-sdk-go/service/iam"
 )
 
@@ -42,20 +43,28 @@ func (o UserPolicies) Delete(userName string) error {
 			UserName:  aws.String(userName),
 			PolicyArn: p.PolicyArn,
 		})
-		if err == nil {
-			o.logger.Printf("[IAM User: %s] Detached policy %s \n", userName, n)
+		if err != nil {
+			if awsErr, ok := err.(awserr.Error); ok && awsErr.Code() == "NoSuchEntity" {
+				o.logger.Printf("[IAM User: %s] Detached policy %s \n", userName, n)
+			} else {
+				o.logger.Printf("[IAM User: %s] Detach policy %s: %s \n", userName, n, err)
+			}
 		} else {
-			o.logger.Printf("[IAM User: %s] Detach policy %s: %s \n", userName, n, err)
+			o.logger.Printf("[IAM User: %s] Detached policy %s \n", userName, n)
 		}
 
 		_, err = o.client.DeleteUserPolicy(&awsiam.DeleteUserPolicyInput{
 			UserName:   aws.String(userName),
 			PolicyName: p.PolicyName,
 		})
-		if err == nil {
-			o.logger.Printf("[IAM User: %s] Deleted policy %s \n", userName, n)
+		if err != nil {
+			if awsErr, ok := err.(awserr.Error); ok && awsErr.Code() == "NoSuchEntity" {
+				o.logger.Printf("[IAM User: %s] Deleted policy %s \n", userName, n)
+			} else {
+				o.logger.Printf("[IAM User: %s] Delete policy %s: %s \n", userName, n, err)
+			}
 		} else {
-			o.logger.Printf("[IAM User: %s] Delete policy %s: %s \n", userName, n, err)
+			o.logger.Printf("[IAM User: %s] Deleted policy %s \n", userName, n)
 		}
 	}
 

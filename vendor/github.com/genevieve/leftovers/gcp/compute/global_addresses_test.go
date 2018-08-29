@@ -31,11 +31,9 @@ var _ = Describe("GlobalAddresses", func() {
 		var filter string
 
 		BeforeEach(func() {
-			client.ListGlobalAddressesCall.Returns.Output = &gcpcompute.AddressList{
-				Items: []*gcpcompute.Address{{
-					Name: "banana-address",
-				}},
-			}
+			client.ListGlobalAddressesCall.Returns.Output = []*gcpcompute.Address{{
+				Name: "banana-address",
+			}}
 			filter = "banana"
 		})
 

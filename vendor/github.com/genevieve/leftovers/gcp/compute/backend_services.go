@@ -9,7 +9,7 @@ import (
 )
 
 type backendServicesClient interface {
-	ListBackendServices() (*gcpcompute.BackendServiceList, error)
+	ListBackendServices() ([]*gcpcompute.BackendService, error)
 	DeleteBackendService(backendService string) error
 }
 
@@ -32,7 +32,7 @@ func (b BackendServices) List(filter string) ([]common.Deletable, error) {
 	}
 
 	var resources []common.Deletable
-	for _, backend := range backendServices.Items {
+	for _, backend := range backendServices {
 		resource := NewBackendService(b.client, backend.Name)
 
 		if !strings.Contains(backend.Name, filter) {

@@ -15,7 +15,7 @@ func NewServiceAccount(client serviceAccountsClient, name string) ServiceAccount
 }
 
 func (s ServiceAccount) Delete() error {
-	_, err := s.client.DeleteServiceAccount(s.name)
+	err := s.client.DeleteServiceAccount(s.name)
 	if err != nil {
 		return fmt.Errorf("Delete: %s", err)
 	}

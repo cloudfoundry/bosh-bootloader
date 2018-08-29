@@ -9,7 +9,7 @@ import (
 )
 
 type disksClient interface {
-	ListDisks(zone string) (*gcpcompute.DiskList, error)
+	ListDisks(zone string) ([]*gcpcompute.Disk, error)
 	DeleteDisk(zone, disk string) error
 }
 
@@ -35,7 +35,7 @@ func (d Disks) List(filter string) ([]common.Deletable, error) {
 			return nil, fmt.Errorf("List Disks for zone %s: %s", zone, err)
 		}
 
-		disks = append(disks, l.Items...)
+		disks = append(disks, l...)
 	}
 
 	var resources []common.Deletable

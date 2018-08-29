@@ -10,7 +10,7 @@ import (
 
 type serviceAccountsClient interface {
 	ListServiceAccounts() ([]*gcpiam.ServiceAccount, error)
-	DeleteServiceAccount(account string) (*gcpiam.Empty, error)
+	DeleteServiceAccount(account string) error
 }
 
 type ServiceAccounts struct {

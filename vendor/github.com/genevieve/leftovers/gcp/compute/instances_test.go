@@ -32,12 +32,10 @@ var _ = Describe("Instances", func() {
 
 		BeforeEach(func() {
 			logger.PromptWithDetailsCall.Returns.Proceed = true
-			client.ListInstancesCall.Returns.Output = &gcpcompute.InstanceList{
-				Items: []*gcpcompute.Instance{{
-					Name: "banana-instance",
-					Zone: "https://zone-1",
-				}},
-			}
+			client.ListInstancesCall.Returns.Output = []*gcpcompute.Instance{{
+				Name: "banana-instance",
+				Zone: "https://zone-1",
+			}}
 			filter = "banana"
 		})
 

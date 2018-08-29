@@ -2,6 +2,7 @@ package compute
 
 import (
 	"fmt"
+	"time"
 
 	gcpcompute "google.golang.org/api/compute/v1"
 	"google.golang.org/api/googleapi"
@@ -70,48 +71,164 @@ func NewClient(project string, service *gcpcompute.Service, logger logger) clien
 	}
 }
 
-func (c client) ListAddresses(region string) (*gcpcompute.AddressList, error) {
-	return c.addresses.List(c.project, region).Do()
+func (c client) ListAddresses(region string) ([]*gcpcompute.Address, error) {
+	var token string
+	list := []*gcpcompute.Address{}
+
+	for {
+		resp, err := c.addresses.List(c.project, region).PageToken(token).Do()
+		if err != nil {
+			return nil, err
+		}
+
+		list = append(list, resp.Items...)
+
+		token = resp.NextPageToken
+		if token == "" {
+			break
+		}
+
+		time.Sleep(2 * time.Second)
+	}
+
+	return list, nil
 }
 
 func (c client) DeleteAddress(region, address string) error {
 	return c.wait(c.addresses.Delete(c.project, region, address))
 }
 
-func (c client) ListGlobalAddresses() (*gcpcompute.AddressList, error) {
-	return c.globalAddresses.List(c.project).Do()
+func (c client) ListGlobalAddresses() ([]*gcpcompute.Address, error) {
+	var token string
+	list := []*gcpcompute.Address{}
+
+	for {
+		resp, err := c.globalAddresses.List(c.project).PageToken(token).Do()
+		if err != nil {
+			return nil, err
+		}
+
+		list = append(list, resp.Items...)
+
+		token = resp.NextPageToken
+		if token == "" {
+			break
+		}
+
+		time.Sleep(2 * time.Second)
+	}
+
+	return list, nil
 }
 
 func (c client) DeleteGlobalAddress(address string) error {
 	return c.wait(c.globalAddresses.Delete(c.project, address))
 }
 
-func (c client) ListBackendServices() (*gcpcompute.BackendServiceList, error) {
-	return c.backendServices.List(c.project).Do()
+func (c client) ListBackendServices() ([]*gcpcompute.BackendService, error) {
+	var token string
+	list := []*gcpcompute.BackendService{}
+
+	for {
+		resp, err := c.backendServices.List(c.project).PageToken(token).Do()
+		if err != nil {
+			return nil, err
+		}
+
+		list = append(list, resp.Items...)
+
+		token = resp.NextPageToken
+		if token == "" {
+			break
+		}
+
+		time.Sleep(2 * time.Second)
+	}
+
+	return list, nil
 }
 
 func (c client) DeleteBackendService(backendService string) error {
 	return c.wait(c.backendServices.Delete(c.project, backendService))
 }
 
-func (c client) ListDisks(zone string) (*gcpcompute.DiskList, error) {
-	return c.disks.List(c.project, zone).Do()
+// ListDisks returns the full list of disks.
+func (c client) ListDisks(zone string) ([]*gcpcompute.Disk, error) {
+	var token string
+	list := []*gcpcompute.Disk{}
+
+	for {
+		resp, err := c.disks.List(c.project, zone).PageToken(token).Do()
+		if err != nil {
+			return nil, err
+		}
+
+		list = append(list, resp.Items...)
+
+		token = resp.NextPageToken
+		if token == "" {
+			break
+		}
+
+		time.Sleep(2 * time.Second)
+	}
+
+	return list, nil
 }
 
 func (c client) DeleteDisk(zone, disk string) error {
 	return c.wait(c.disks.Delete(c.project, zone, disk))
 }
 
-func (c client) ListImages() (*gcpcompute.ImageList, error) {
-	return c.images.List(c.project).Do()
+// ListImages returns the full list of images.
+func (c client) ListImages() ([]*gcpcompute.Image, error) {
+	var token string
+	list := []*gcpcompute.Image{}
+
+	for {
+		resp, err := c.images.List(c.project).PageToken(token).Do()
+		if err != nil {
+			return nil, err
+		}
+
+		list = append(list, resp.Items...)
+
+		token = resp.NextPageToken
+		if token == "" {
+			break
+		}
+
+		time.Sleep(2 * time.Second)
+	}
+
+	return list, nil
 }
 
 func (c client) DeleteImage(image string) error {
 	return c.wait(c.images.Delete(c.project, image))
 }
 
-func (c client) ListInstances(zone string) (*gcpcompute.InstanceList, error) {
-	return c.instances.List(c.project, zone).Do()
+func (c client) ListInstances(zone string) ([]*gcpcompute.Instance, error) {
+	var token string
+	list := []*gcpcompute.Instance{}
+
+	for {
+		resp, err := c.instances.List(c.project, zone).PageToken(token).Do()
+		if err != nil {
+			return nil, err
+		}
+
+		list = append(list, resp.Items...)
+
+		token = resp.NextPageToken
+		if token == "" {
+			break
+		}
+
+		time.Sleep(2 * time.Second)
+	}
+
+	return list, nil
 }
 
 func (c client) DeleteInstance(zone, instance string) error {

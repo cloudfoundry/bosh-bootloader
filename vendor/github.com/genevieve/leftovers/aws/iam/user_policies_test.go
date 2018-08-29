@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	awsiam "github.com/aws/aws-sdk-go/service/iam"
 	"github.com/genevieve/leftovers/aws/iam"
 	"github.com/genevieve/leftovers/aws/iam/fakes"
@@ -88,6 +89,23 @@ var _ = Describe("UserPolicies", func() {
 			})
 		})
 
+		Context("when the client fails to detach the user policy due to NoSuchEntity", func() {
+			BeforeEach(func() {
+				client.DetachUserPolicyCall.Returns.Error = awserr.New("NoSuchEntity", "hi", nil)
+			})
+
+			It("logs success", func() {
+				err := policies.Delete("banana")
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(client.DeleteUserPolicyCall.CallCount).To(Equal(1))
+				Expect(logger.PrintfCall.Messages).To(Equal([]string{
+					"[IAM User: banana] Detached policy the-policy \n",
+					"[IAM User: banana] Deleted policy the-policy \n",
+				}))
+			})
+		})
+
 		Context("when the client fails to delete the user policy", func() {
 			BeforeEach(func() {
 				client.DeleteUserPolicyCall.Returns.Error = errors.New("some error")
@@ -100,6 +118,24 @@ var _ = Describe("UserPolicies", func() {
 				Expect(logger.PrintfCall.Messages).To(Equal([]string{
 					"[IAM User: banana] Detached policy the-policy \n",
 					"[IAM User: banana] Delete policy the-policy: some error \n",
+				}))
+			})
+		})
+
+		Context("when the client fails to delete the user policy due to NoSuchEntity", func() {
+			BeforeEach(func() {
+				client.DetachUserPolicyCall.Returns.Error = awserr.New("NoSuchEntity", "hi", nil)
+				client.DeleteUserPolicyCall.Returns.Error = awserr.New("NoSuchEntity", "hi", nil)
+			})
+
+			It("logs success", func() {
+				err := policies.Delete("banana")
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(client.DeleteUserPolicyCall.CallCount).To(Equal(1))
+				Expect(logger.PrintfCall.Messages).To(Equal([]string{
+					"[IAM User: banana] Detached policy the-policy \n",
+					"[IAM User: banana] Deleted policy the-policy \n",
 				}))
 			})
 		})

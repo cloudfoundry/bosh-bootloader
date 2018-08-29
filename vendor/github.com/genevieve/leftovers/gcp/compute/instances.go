@@ -9,7 +9,7 @@ import (
 )
 
 type instancesClient interface {
-	ListInstances(zone string) (*gcpcompute.InstanceList, error)
+	ListInstances(zone string) ([]*gcpcompute.Instance, error)
 	DeleteInstance(zone, instance string) error
 }
 
@@ -35,7 +35,7 @@ func (i Instances) List(filter string) ([]common.Deletable, error) {
 			return nil, fmt.Errorf("List Instances for zone %s: %s", zone, err)
 		}
 
-		instances = append(instances, l.Items...)
+		instances = append(instances, l...)
 	}
 
 	var resources []common.Deletable

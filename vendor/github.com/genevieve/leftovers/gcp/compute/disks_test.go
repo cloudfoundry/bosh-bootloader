@@ -33,12 +33,13 @@ var _ = Describe("Disks", func() {
 		BeforeEach(func() {
 			filter = "banana"
 			logger.PromptWithDetailsCall.Returns.Proceed = true
-			client.ListDisksCall.Returns.Output = &gcpcompute.DiskList{
-				Items: []*gcpcompute.Disk{{
-					Name: "banana-disk",
-					Zone: "https://zone-1",
-				}},
-			}
+			client.ListDisksCall.Returns.Output = []*gcpcompute.Disk{{
+				Name: "banana-disk",
+				Zone: "https://zone-1",
+			}, {
+				Name: "just-another-disk",
+				Zone: "https://zone-2",
+			}}
 		})
 
 		It("lists, filters, and prompts for disks to delete", func() {

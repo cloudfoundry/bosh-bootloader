@@ -30,11 +30,9 @@ var _ = Describe("Images", func() {
 
 		BeforeEach(func() {
 			logger.PromptWithDetailsCall.Returns.Proceed = true
-			client.ListImagesCall.Returns.Output = &gcpcompute.ImageList{
-				Items: []*gcpcompute.Image{{
-					Name: "banana-image",
-				}},
-			}
+			client.ListImagesCall.Returns.Output = []*gcpcompute.Image{{
+				Name: "banana-image",
+			}}
 			filter = "banana"
 		})
 
