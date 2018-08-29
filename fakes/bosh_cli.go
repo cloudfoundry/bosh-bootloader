@@ -14,19 +14,10 @@ type BOSHCLI struct {
 	}
 	RunCall struct {
 		CallCount int
-		Receieves struct {
+		Receives  struct {
 			Stdout           io.Writer
 			WorkingDirectory string
 			Args             []string
-		}
-		Returns struct {
-			Error error
-		}
-	}
-	UpdateRuntimeConfigCall struct {
-		CallCount int
-		Receives  struct {
-			Filepath, Name string
 		}
 		Returns struct {
 			Error error
@@ -56,6 +47,17 @@ func (fake *BOSHCLI) GetBOSHPath() string {
 }
 
 func (fake *BOSHCLI) Run(stdout io.Writer, workingDirectory string, args []string) error {
+	// TODO don't mix handrolled/generated fakes
+	if fake.RunStub == nil {
+		fake.RunCall.CallCount++
+
+		fake.RunCall.Receives.Stdout = stdout
+		fake.RunCall.Receives.WorkingDirectory = workingDirectory
+		fake.RunCall.Receives.Args = args
+
+		return fake.RunCall.Returns.Error
+	}
+
 	var argsCopy []string
 	if args != nil {
 		argsCopy = make([]string, len(args))
@@ -129,13 +131,4 @@ func (fake *BOSHCLI) recordInvocation(key string, args []interface{}) {
 		fake.invocations[key] = [][]interface{}{}
 	}
 	fake.invocations[key] = append(fake.invocations[key], args)
-}
-
-func (fake *BOSHCLI) UpdateRuntimeConfig(filepath, name string) error {
-	fake.UpdateRuntimeConfigCall.CallCount++
-
-	fake.UpdateRuntimeConfigCall.Receives.Filepath = filepath
-	fake.UpdateRuntimeConfigCall.Receives.Name = name
-
-	return fake.UpdateRuntimeConfigCall.Returns.Error
 }

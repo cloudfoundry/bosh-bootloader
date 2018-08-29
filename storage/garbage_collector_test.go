@@ -93,7 +93,7 @@ var _ = Describe("garbage collector", func() {
 				fileIO.StatCall.Returns.FileInfo = &fakes.DirFileInfo{}
 			})
 
-			It("removes the ops file, base file, and directory", func() {
+			It("removes the ops file and base file; removes the directory if there are no user-provided files", func() {
 				err := gc.Remove("some-dir")
 				Expect(err).NotTo(HaveOccurred())
 
@@ -102,6 +102,26 @@ var _ = Describe("garbage collector", func() {
 				// don't remove populated, relevant dirs
 				Expect(fileIO.RemoveCall.Receives).To(ContainElement(fakes.RemoveReceive{
 					Name: filepath.Join("some-dir", "cloud-config"),
+				}))
+			})
+		})
+
+		Describe("runtime-config", func() {
+			var runtimeConfig string
+
+			BeforeEach(func() {
+				runtimeConfig = filepath.Join("some-dir", "runtime-config", "runtime-config.yml")
+				fileIO.StatCall.Returns.FileInfo = &fakes.DirFileInfo{}
+			})
+
+			It("removes the runtime-config file; removes the directory if there are no user-provided files", func() {
+				err := gc.Remove("some-dir")
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(fileIO.RemoveAllCall.Receives).To(ContainElement(fakes.RemoveAllReceive{Path: runtimeConfig}))
+				// don't remove populated, relevant dirs
+				Expect(fileIO.RemoveCall.Receives).To(ContainElement(fakes.RemoveReceive{
+					Name: filepath.Join("some-dir", "runtime-config"),
 				}))
 			})
 		})

@@ -888,7 +888,8 @@ var _ = Describe("Executor", func() {
 
 		Context("when the run cli fails", func() {
 			BeforeEach(func() {
-				cli.RunReturns(errors.New("banana"))
+				cli.RunStub = nil
+				cli.RunCall.Returns.Error = errors.New("banana")
 			})
 
 			It("returns an error", func() {

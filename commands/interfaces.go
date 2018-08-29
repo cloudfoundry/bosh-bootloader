@@ -102,12 +102,11 @@ type stateStore interface {
 type cloudConfigManager interface {
 	Update(state storage.State) error
 	Initialize(state storage.State) error
-	GenerateVars(state storage.State) error
-	Interpolate() (string, error)
 	IsPresentCloudConfig() bool
 	IsPresentCloudConfigVars() bool
 }
 
 type runtimeConfigManager interface {
+	Initialize(state storage.State) error
 	Update(state storage.State) error
 }

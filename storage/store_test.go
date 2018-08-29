@@ -326,6 +326,36 @@ var _ = Describe("Store", func() {
 		})
 	})
 
+	Describe("GetRuntimeConfigDir", func() {
+		var expectedRuntimeConfigPath string
+
+		BeforeEach(func() {
+			expectedRuntimeConfigPath = filepath.Join(tempDir, "runtime-config")
+		})
+
+		Context("if the runtime-config subdirectory exists", func() {
+			It("returns the path to the runtime-config directory", func() {
+				runtimeConfigDir, err := store.GetRuntimeConfigDir()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(runtimeConfigDir).To(Equal(expectedRuntimeConfigPath))
+			})
+		})
+
+		Context("failure cases", func() {
+			Context("when there is a name collision with an existing file", func() {
+				BeforeEach(func() {
+					fileIO.MkdirAllCall.Returns.Error = errors.New("not a directory")
+				})
+
+				It("returns an error", func() {
+					runtimeConfigDir, err := store.GetRuntimeConfigDir()
+					Expect(err).To(MatchError("Get runtime-config dir: not a directory"))
+					Expect(runtimeConfigDir).To(Equal(""))
+				})
+			})
+		})
+	})
+
 	Describe("GetVarsDir", func() {
 		Context("when the vars dir is requested but may not exist", func() {
 			It("a path is request and may be created and set with restrained permissions", func() {

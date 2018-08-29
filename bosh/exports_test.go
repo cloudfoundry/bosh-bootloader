@@ -2,8 +2,6 @@ package bosh
 
 import (
 	"os"
-
-	"golang.org/x/net/proxy"
 )
 
 func SetOSSetenv(f func(string, string) error) {
@@ -20,12 +18,4 @@ func SetOSUnsetenv(f func(string) error) {
 
 func ResetOSUnsetenv() {
 	osUnsetenv = os.Unsetenv
-}
-
-func SetProxySOCKS5(f func(string, string, *proxy.Auth, proxy.Dialer) (proxy.Dialer, error)) {
-	proxySOCKS5 = f
-}
-
-func ResetProxySOCKS5() {
-	proxySOCKS5 = proxy.SOCKS5
 }

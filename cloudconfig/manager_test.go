@@ -2,13 +2,12 @@ package cloudconfig_test
 
 import (
 	"errors"
-	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/cloudconfig"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
@@ -19,15 +18,13 @@ import (
 
 var _ = Describe("Manager", func() {
 	var (
-		logger             *fakes.Logger
-		cli                *fakes.BOSHCLI
-		stateStore         *fakes.StateStore
-		opsGenerator       *fakes.CloudConfigOpsGenerator
-		boshClientProvider *fakes.BOSHClientProvider
-		boshClient         *fakes.BOSHClient
-		terraformManager   *fakes.TerraformManager
-		fileIO             *fakes.FileIO
-		manager            cloudconfig.Manager
+		logger           *fakes.Logger
+		configUpdater    *fakes.BOSHConfigUpdater
+		dirProvider      *fakes.DirProvider
+		opsGenerator     *fakes.CloudConfigOpsGenerator
+		terraformManager *fakes.TerraformManager
+		fileIO           *fakes.FileIO
+		manager          cloudconfig.Manager
 
 		cloudConfigDir string
 		varsDir        string
@@ -38,26 +35,17 @@ var _ = Describe("Manager", func() {
 
 	BeforeEach(func() {
 		logger = &fakes.Logger{}
-		cli = &fakes.BOSHCLI{}
-		stateStore = &fakes.StateStore{}
+		configUpdater = &fakes.BOSHConfigUpdater{}
+		dirProvider = &fakes.DirProvider{}
 		opsGenerator = &fakes.CloudConfigOpsGenerator{}
-		boshClient = &fakes.BOSHClient{}
-		boshClientProvider = &fakes.BOSHClientProvider{}
 		terraformManager = &fakes.TerraformManager{}
 		fileIO = &fakes.FileIO{}
 
-		boshClientProvider.ClientCall.Returns.Client = boshClient
-
 		cloudConfigDir = "some-cloud-config-dir"
-		stateStore.GetCloudConfigDirCall.Returns.Directory = cloudConfigDir
+		dirProvider.GetCloudConfigDirCall.Returns.Directory = cloudConfigDir
 
 		varsDir = "some-vars-dir"
-		stateStore.GetVarsDirCall.Returns.Directory = varsDir
-
-		cli.RunStub = func(stdout io.Writer, workingDirectory string, args []string) error {
-			stdout.Write([]byte("some-cloud-config"))
-			return nil
-		}
+		dirProvider.GetVarsDirCall.Returns.Directory = varsDir
 
 		incomingState = storage.State{
 			IAAS: "gcp",
@@ -75,7 +63,7 @@ var _ = Describe("Manager", func() {
 		baseCloudConfig, err = ioutil.ReadFile("fixtures/base-cloud-config.yml")
 		Expect(err).NotTo(HaveOccurred())
 
-		manager = cloudconfig.NewManager(logger, cli, stateStore, opsGenerator, boshClientProvider, terraformManager, fileIO)
+		manager = cloudconfig.NewManager(logger, configUpdater, dirProvider, opsGenerator, terraformManager, fileIO)
 	})
 
 	Describe("Initialize", func() {
@@ -95,7 +83,7 @@ var _ = Describe("Manager", func() {
 		Context("failure cases", func() {
 			Context("when getting the cloud config dir fails", func() {
 				BeforeEach(func() {
-					stateStore.GetCloudConfigDirCall.Returns.Error = errors.New("carrot")
+					dirProvider.GetCloudConfigDirCall.Returns.Error = errors.New("carrot")
 				})
 
 				It("returns an error", func() {
@@ -143,56 +131,6 @@ var _ = Describe("Manager", func() {
 		})
 	})
 
-	Describe("GenerateVars", func() {
-		It("writes cloud config vars to the vars dir", func() {
-			err := manager.GenerateVars(incomingState)
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(opsGenerator.GenerateVarsCall.Receives.State).To(Equal(incomingState))
-
-			Expect(fileIO.WriteFileCall.Receives[0].Filename).To(Equal(filepath.Join("some-vars-dir", "cloud-config-vars.yml")))
-			Expect(fileIO.WriteFileCall.Receives[0].Contents).To(MatchYAML([]byte("some-vars")))
-			Expect(err).NotTo(HaveOccurred())
-		})
-
-		Context("failure cases", func() {
-			Context("when getting the vars dir fails", func() {
-				BeforeEach(func() {
-					stateStore.GetVarsDirCall.Returns.Error = errors.New("eggplant")
-				})
-
-				It("returns an error", func() {
-					err := manager.GenerateVars(storage.State{})
-					Expect(err).To(MatchError("eggplant"))
-				})
-			})
-
-			Context("when ops generator fails to generate vars", func() {
-				BeforeEach(func() {
-					opsGenerator.GenerateVarsCall.Returns.Error = errors.New("raspberry")
-				})
-
-				It("returns an error", func() {
-					err := manager.GenerateVars(storage.State{})
-					Expect(err).To(MatchError("Generate cloud config vars: raspberry"))
-				})
-			})
-
-			Context("when write file fails to write the vars file", func() {
-				BeforeEach(func() {
-					fileIO.WriteFileCall.Returns = []fakes.WriteFileReturn{{
-						Error: errors.New("apple"),
-					}}
-				})
-
-				It("returns an error", func() {
-					err := manager.GenerateVars(storage.State{})
-					Expect(err).To(MatchError("Write cloud config vars: apple"))
-				})
-			})
-		})
-	})
-
 	Describe("IsPresentCloudConfig", func() {
 		Context("when cloud config files exist in the state dir", func() {
 			BeforeEach(func() {
@@ -235,7 +173,7 @@ var _ = Describe("Manager", func() {
 		Context("failure cases", func() {
 			Context("when getting the cloud config dir fails", func() {
 				BeforeEach(func() {
-					stateStore.GetCloudConfigDirCall.Returns.Error = errors.New("carrot")
+					dirProvider.GetCloudConfigDirCall.Returns.Error = errors.New("carrot")
 				})
 
 				It("returns false", func() {
@@ -274,7 +212,7 @@ var _ = Describe("Manager", func() {
 		Context("failure cases", func() {
 			Context("when getting the vars dir fails", func() {
 				BeforeEach(func() {
-					stateStore.GetVarsDirCall.Returns.Error = errors.New("carrot")
+					dirProvider.GetVarsDirCall.Returns.Error = errors.New("carrot")
 				})
 
 				It("returns false", func() {
@@ -284,7 +222,7 @@ var _ = Describe("Manager", func() {
 		})
 	})
 
-	Describe("Interpolate", func() {
+	Describe("Update", func() {
 		BeforeEach(func() {
 			fileIO.ReadDirCall.Returns.FileInfos = []os.FileInfo{
 				fakes.FileInfo{
@@ -299,71 +237,6 @@ var _ = Describe("Manager", func() {
 			}
 		})
 
-		It("returns a cloud config yaml provided a valid bbl state", func() {
-			cloudConfigYAML, err := manager.Interpolate()
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(cli.RunCallCount()).To(Equal(1))
-			_, workingDirectory, args := cli.RunArgsForCall(0)
-			Expect(workingDirectory).To(Equal(cloudConfigDir))
-			Expect(args).To(Equal([]string{
-				"interpolate", fmt.Sprintf("%s%ccloud-config.yml", cloudConfigDir, os.PathSeparator),
-				"--vars-file", fmt.Sprintf("%s%ccloud-config-vars.yml", varsDir, os.PathSeparator),
-				"-o", fmt.Sprintf("%s/ops.yml", cloudConfigDir),
-				"-o", fmt.Sprintf("%s/shenanigans-ops.yml", cloudConfigDir),
-			}))
-
-			Expect(cloudConfigYAML).To(Equal("some-cloud-config"))
-		})
-
-		Context("failure cases", func() {
-			Context("when getting the cloud config dir fails", func() {
-				BeforeEach(func() {
-					stateStore.GetCloudConfigDirCall.Returns.Error = errors.New("carrot")
-				})
-
-				It("returns an error", func() {
-					_, err := manager.Interpolate()
-					Expect(err).To(MatchError("carrot"))
-				})
-			})
-
-			Context("when getting the vars dir fails", func() {
-				BeforeEach(func() {
-					stateStore.GetVarsDirCall.Returns.Error = errors.New("eggplant")
-				})
-
-				It("returns an error", func() {
-					_, err := manager.Interpolate()
-					Expect(err).To(MatchError("eggplant"))
-				})
-			})
-
-			Context("when reading the cloud config dir fails", func() {
-				BeforeEach(func() {
-					fileIO.ReadDirCall.Returns.Error = errors.New("aubergine")
-				})
-
-				It("returns an error", func() {
-					_, err := manager.Interpolate()
-					Expect(err).To(MatchError("Read cloud config dir: aubergine"))
-				})
-			})
-
-			Context("when command fails to run", func() {
-				BeforeEach(func() {
-					cli.RunReturns(errors.New("Interpolate cloud config: failed to run"))
-				})
-
-				It("returns an error", func() {
-					_, err := manager.Interpolate()
-					Expect(err).To(MatchError("Interpolate cloud config: failed to run"))
-				})
-			})
-		})
-	})
-
-	Describe("Update", func() {
 		It("logs steps taken", func() {
 			err := manager.Update(incomingState)
 			Expect(err).NotTo(HaveOccurred())
@@ -374,36 +247,109 @@ var _ = Describe("Manager", func() {
 		})
 
 		It("updates the bosh director with a cloud config provided a valid bbl state", func() {
+			boshCLI := bosh.AuthenticatedCLI{
+				BOSHExecutablePath: "some-bosh-cli-path",
+			}
+			configUpdater.InitializeAuthenticatedCLICall.Returns.AuthenticatedCLIRunner = boshCLI
+
 			err := manager.Update(incomingState)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(boshClientProvider.ClientCall.Receives.DirectorAddress).To(Equal("some-director-address"))
-			Expect(boshClientProvider.ClientCall.Receives.DirectorUsername).To(Equal("some-director-username"))
-			Expect(boshClientProvider.ClientCall.Receives.DirectorPassword).To(Equal("some-director-password"))
+			Expect(opsGenerator.GenerateVarsCall.Receives.State).To(Equal(incomingState))
 
-			Expect(boshClient.UpdateCloudConfigCall.Receives.Yaml).To(Equal([]byte("some-cloud-config")))
+			Expect(fileIO.WriteFileCall.Receives[0].Filename).To(Equal(filepath.Join("some-vars-dir", "cloud-config-vars.yml")))
+			Expect(fileIO.WriteFileCall.Receives[0].Contents).To(MatchYAML([]byte("some-vars")))
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(configUpdater.InitializeAuthenticatedCLICall.CallCount).To(Equal(1))
+			Expect(configUpdater.InitializeAuthenticatedCLICall.Receives.State).To(Equal(incomingState))
+
+			Expect(configUpdater.UpdateCloudConfigCall.CallCount).To(Equal(1))
+			Expect(configUpdater.UpdateCloudConfigCall.Receives.AuthenticatedCLIRunner).To(Equal(boshCLI))
+			Expect(configUpdater.UpdateCloudConfigCall.Receives.Filepath).To(Equal(filepath.Join(cloudConfigDir, "cloud-config.yml")))
+			Expect(configUpdater.UpdateCloudConfigCall.Receives.VarsFilepath).To(Equal(filepath.Join(varsDir, "cloud-config-vars.yml")))
+			Expect(configUpdater.UpdateCloudConfigCall.Receives.OpsFilepaths).To(Equal([]string{
+				filepath.Join(cloudConfigDir, "shenanigans-ops.yml"),
+				filepath.Join(cloudConfigDir, "ops.yml"),
+			}))
+
 		})
 
 		Context("failure cases", func() {
-			Context("when manager generate's command fails to run", func() {
+			Context("when the config updater fails to initialize the authenticated bosh cli", func() {
 				BeforeEach(func() {
-					cli.RunReturns(errors.New("failed to run"))
+					configUpdater.InitializeAuthenticatedCLICall.Returns.Error = errors.New("naval")
 				})
 
 				It("returns an error", func() {
 					err := manager.Update(storage.State{})
-					Expect(err).To(MatchError("failed to run"))
+					Expect(err).To(MatchError("failed to initialize authenticated bosh cli: naval"))
 				})
 			})
 
-			Context("when bosh client fails to update cloud config", func() {
+			Context("when getting the vars dir fails", func() {
+				It("returns an error", func() {
+					dirProvider.GetVarsDirCall.Returns.Directory = ""
+					dirProvider.GetVarsDirCall.Returns.Error = errors.New("avocado")
+
+					err := manager.Update(storage.State{})
+					Expect(err).To(MatchError("could not find vars directory: avocado"))
+				})
+			})
+
+			Context("when ops generator fails to generate vars", func() {
 				BeforeEach(func() {
-					boshClient.UpdateCloudConfigCall.Returns.Error = errors.New("failed to update")
+					opsGenerator.GenerateVarsCall.Returns.Error = errors.New("raspberry")
 				})
 
 				It("returns an error", func() {
 					err := manager.Update(storage.State{})
-					Expect(err).To(MatchError("failed to update"))
+					Expect(err).To(MatchError("failed to generate cloud config vars: raspberry"))
+				})
+			})
+
+			Context("when write file fails to write the vars file", func() {
+				BeforeEach(func() {
+					fileIO.WriteFileCall.Returns = []fakes.WriteFileReturn{{
+						Error: errors.New("apple"),
+					}}
+				})
+
+				It("returns an error", func() {
+					err := manager.Update(storage.State{})
+					Expect(err).To(MatchError("failed to write cloud config vars: apple"))
+				})
+			})
+
+			Context("when getting the cloud-config dir fails", func() {
+				It("returns an error", func() {
+					dirProvider.GetCloudConfigDirCall.Returns.Directory = ""
+					dirProvider.GetCloudConfigDirCall.Returns.Error = errors.New("lime")
+
+					err := manager.Update(storage.State{})
+					Expect(err).To(MatchError("could not find cloud-config directory: lime"))
+				})
+			})
+
+			Context("when reading the cloud-config directory fails", func() {
+				BeforeEach(func() {
+					fileIO.ReadDirCall.Returns.Error = errors.New("aubergine")
+				})
+
+				It("returns an error", func() {
+					err := manager.Update(storage.State{})
+					Expect(err).To(MatchError("failed to read the cloud-config directory: aubergine"))
+				})
+			})
+
+			Context("when the config updater fails to update the cloud config", func() {
+				BeforeEach(func() {
+					configUpdater.UpdateCloudConfigCall.Returns.Error = errors.New("mandarin")
+				})
+
+				It("returns an error", func() {
+					err := manager.Update(storage.State{})
+					Expect(err).To(MatchError("failed to update cloud-config: mandarin"))
 				})
 			})
 		})

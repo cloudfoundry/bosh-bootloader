@@ -1,7 +1,6 @@
 package cloudconfig
 
 import (
-	"bytes"
 	"fmt"
 	"io"
 	"path/filepath"
@@ -12,6 +11,11 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/terraform"
 )
 
+type configUpdater interface {
+	InitializeAuthenticatedCLI(state storage.State) (bosh.AuthenticatedCLIRunner, error)
+	UpdateCloudConfig(boshCLI bosh.AuthenticatedCLIRunner, filepath string, opsFilepaths []string, varsFilepath string) error
+}
+
 type fs interface {
 	fileio.FileWriter
 	fileio.DirReader
@@ -20,10 +24,9 @@ type fs interface {
 
 type Manager struct {
 	logger             logger
-	command            command
-	stateStore         stateStore
+	cloudConfigUpdater configUpdater
+	dirProvider        dirProvider
 	opsGenerator       OpsGenerator
-	boshClientProvider boshClientProvider
 	terraformManager   terraformManager
 	fs                 fs
 }
@@ -41,34 +44,33 @@ type OpsGenerator interface {
 	GenerateVars(state storage.State) (string, error)
 }
 
-type boshClientProvider interface {
-	Client(jumpbox storage.Jumpbox, directorAddress, directorUsername, directorPassword, caCert string) (bosh.ConfigUpdater, error)
+type boshCLIProvider interface {
+	Client(jumpbox storage.Jumpbox, directorAddress, directorUsername, directorPassword, caCert string) (configUpdater, error)
 }
 
 type terraformManager interface {
 	GetOutputs() (terraform.Outputs, error)
 }
 
-type stateStore interface {
+type dirProvider interface {
 	GetCloudConfigDir() (string, error)
 	GetVarsDir() (string, error)
 }
 
-func NewManager(logger logger, cmd command, stateStore stateStore, opsGenerator OpsGenerator, boshClientProvider boshClientProvider,
+func NewManager(logger logger, cloudConfigUpdater configUpdater, dirProvider dirProvider, opsGenerator OpsGenerator,
 	terraformManager terraformManager, fs fs) Manager {
 	return Manager{
 		logger:             logger,
-		command:            cmd,
-		stateStore:         stateStore,
+		cloudConfigUpdater: cloudConfigUpdater,
+		dirProvider:        dirProvider,
 		opsGenerator:       opsGenerator,
-		boshClientProvider: boshClientProvider,
 		terraformManager:   terraformManager,
 		fs:                 fs,
 	}
 }
 
 func (m Manager) Initialize(state storage.State) error {
-	cloudConfigDir, err := m.stateStore.GetCloudConfigDir()
+	cloudConfigDir, err := m.dirProvider.GetCloudConfigDir()
 	if err != nil {
 		return err
 	}
@@ -91,27 +93,8 @@ func (m Manager) Initialize(state storage.State) error {
 	return nil
 }
 
-func (m Manager) GenerateVars(state storage.State) error {
-	varsDir, err := m.stateStore.GetVarsDir()
-	if err != nil {
-		return err
-	}
-
-	vars, err := m.opsGenerator.GenerateVars(state)
-	if err != nil {
-		return fmt.Errorf("Generate cloud config vars: %s", err)
-	}
-
-	err = m.fs.WriteFile(filepath.Join(varsDir, "cloud-config-vars.yml"), []byte(vars), storage.StateMode)
-	if err != nil {
-		return fmt.Errorf("Write cloud config vars: %s", err)
-	}
-
-	return nil
-}
-
 func (m Manager) IsPresentCloudConfig() bool {
-	cloudConfigDir, err := m.stateStore.GetCloudConfigDir()
+	cloudConfigDir, err := m.dirProvider.GetCloudConfigDir()
 	if err != nil {
 		return false
 	}
@@ -126,7 +109,7 @@ func (m Manager) IsPresentCloudConfig() bool {
 }
 
 func (m Manager) IsPresentCloudConfigVars() bool {
-	varsDir, err := m.stateStore.GetVarsDir()
+	varsDir, err := m.dirProvider.GetVarsDir()
 	if err != nil {
 		return false
 	}
@@ -139,66 +122,53 @@ func (m Manager) IsPresentCloudConfigVars() bool {
 	return true
 }
 
-func (m Manager) Interpolate() (string, error) {
-	cloudConfigDir, err := m.stateStore.GetCloudConfigDir()
-	if err != nil {
-		return "", err
-	}
-
-	varsDir, err := m.stateStore.GetVarsDir()
-	if err != nil {
-		return "", err
-	}
-
-	args := []string{
-		"interpolate", filepath.Join(cloudConfigDir, "cloud-config.yml"),
-		"--vars-file", filepath.Join(varsDir, "cloud-config-vars.yml"),
-		"-o", filepath.Join(cloudConfigDir, "ops.yml"),
-	}
-
-	files, err := m.fs.ReadDir(cloudConfigDir)
-	if err != nil {
-		return "", fmt.Errorf("Read cloud config dir: %s", err)
-	}
-
-	for _, file := range files {
-		name := file.Name()
-		if name != "cloud-config.yml" && name != "ops.yml" {
-			args = append(args, "-o", filepath.Join(cloudConfigDir, name))
-		}
-	}
-
-	buf := bytes.NewBuffer([]byte{})
-	err = m.command.Run(buf, cloudConfigDir, args)
-	if err != nil {
-		return "", err
-	}
-
-	return buf.String(), nil
-}
-
 func (m Manager) Update(state storage.State) error {
-	boshClient, err := m.boshClientProvider.Client(state.Jumpbox, state.BOSH.DirectorAddress, state.BOSH.DirectorUsername, state.BOSH.DirectorPassword, state.BOSH.DirectorSSLCA)
+	boshCLI, err := m.cloudConfigUpdater.InitializeAuthenticatedCLI(state)
 	if err != nil {
-		return err // not tested
+		return fmt.Errorf("failed to initialize authenticated bosh cli: %s", err)
 	}
 
 	m.logger.Step("generating cloud config")
 
-	err = m.GenerateVars(state)
+	varsDir, err := m.dirProvider.GetVarsDir()
 	if err != nil {
-		return err
+		return fmt.Errorf("could not find vars directory: %s", err)
+	}
+	vars, err := m.opsGenerator.GenerateVars(state)
+	if err != nil {
+		return fmt.Errorf("failed to generate cloud config vars: %s", err)
 	}
 
-	cloudConfig, err := m.Interpolate()
+	err = m.fs.WriteFile(filepath.Join(varsDir, "cloud-config-vars.yml"), []byte(vars), storage.StateMode)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to write cloud config vars: %s", err)
+	}
+
+	cloudConfigDir, err := m.dirProvider.GetCloudConfigDir()
+	if err != nil {
+		return fmt.Errorf("could not find cloud-config directory: %s", err)
+	}
+	cloudConfigPath := filepath.Join(cloudConfigDir, "cloud-config.yml")
+
+	varsFilepath := filepath.Join(varsDir, "cloud-config-vars.yml")
+
+	opsFiles := []string{}
+	files, err := m.fs.ReadDir(cloudConfigDir)
+	if err != nil {
+		return fmt.Errorf("failed to read the cloud-config directory: %s", err)
+	}
+
+	for _, file := range files {
+		name := file.Name()
+		if name != "cloud-config.yml" {
+			opsFiles = append(opsFiles, filepath.Join(cloudConfigDir, name))
+		}
 	}
 
 	m.logger.Step("applying cloud config")
-	err = boshClient.UpdateCloudConfig([]byte(cloudConfig))
+	err = m.cloudConfigUpdater.UpdateCloudConfig(boshCLI, cloudConfigPath, opsFiles, varsFilepath)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to update cloud-config: %s", err)
 	}
 
 	return nil

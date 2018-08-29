@@ -96,6 +96,10 @@ func (s Store) GetCloudConfigDir() (string, error) {
 	return s.getDir("cloud-config", os.ModePerm)
 }
 
+func (s Store) GetRuntimeConfigDir() (string, error) {
+	return s.getDir("runtime-config", os.ModePerm)
+}
+
 func (s Store) GetTerraformDir() (string, error) {
 	return s.getDir("terraform", os.ModePerm)
 }

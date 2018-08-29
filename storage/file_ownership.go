@@ -31,6 +31,9 @@ var bblManaged = []string{
 	"cloud-config/cloud-config.yml",
 	"cloud-config/ops.yml",
 
+	// runtime config
+	"runtime-config/runtime-config.yml",
+
 	// directories
 	"jumpbox-deployment",
 	"bosh-deployment",
@@ -41,6 +44,7 @@ var bblManagedDirsWhichMayContainUserFiles = []string{
 	"vars",
 	"terraform",
 	"cloud-config",
+	"runtime-config",
 }
 
 // relPath must be from same dir as patterns above

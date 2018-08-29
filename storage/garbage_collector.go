@@ -28,6 +28,7 @@ func (g GarbageCollector) Remove(dir string) error {
 	}
 
 	for _, relPath := range bblManagedDirsWhichMayContainUserFiles {
+		// this will not delete directories with files in them
 		g.fs.Remove(filepath.Join(dir, relPath))
 	}
 
