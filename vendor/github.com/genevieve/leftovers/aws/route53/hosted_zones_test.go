@@ -13,8 +13,9 @@ import (
 
 var _ = Describe("HostedZones", func() {
 	var (
-		client *fakes.HostedZonesClient
-		logger *fakes.Logger
+		client     *fakes.HostedZonesClient
+		logger     *fakes.Logger
+		recordSets *fakes.RecordSets
 
 		hostedZones route53.HostedZones
 	)
@@ -23,7 +24,7 @@ var _ = Describe("HostedZones", func() {
 		client = &fakes.HostedZonesClient{}
 		logger = &fakes.Logger{}
 
-		hostedZones = route53.NewHostedZones(client, logger)
+		hostedZones = route53.NewHostedZones(client, logger, recordSets)
 	})
 
 	Describe("List", func() {

@@ -11,20 +11,24 @@ import (
 type hostedZonesClient interface {
 	ListHostedZones(*awsroute53.ListHostedZonesInput) (*awsroute53.ListHostedZonesOutput, error)
 	DeleteHostedZone(*awsroute53.DeleteHostedZoneInput) (*awsroute53.DeleteHostedZoneOutput, error)
-
-	ListResourceRecordSets(*awsroute53.ListResourceRecordSetsInput) (*awsroute53.ListResourceRecordSetsOutput, error)
-	ChangeResourceRecordSets(*awsroute53.ChangeResourceRecordSetsInput) (*awsroute53.ChangeResourceRecordSetsOutput, error)
 }
 
 type HostedZones struct {
-	client hostedZonesClient
-	logger logger
+	client     hostedZonesClient
+	logger     logger
+	recordSets recordSets
 }
 
-func NewHostedZones(client hostedZonesClient, logger logger) HostedZones {
+type recordSets interface {
+	Get(hostedZoneId *string) ([]*awsroute53.ResourceRecordSet, error)
+	Delete(hostedZoneId *string, hostedZoneName string, recordSets []*awsroute53.ResourceRecordSet) error
+}
+
+func NewHostedZones(client hostedZonesClient, logger logger, recordSets recordSets) HostedZones {
 	return HostedZones{
-		client: client,
-		logger: logger,
+		client:     client,
+		logger:     logger,
+		recordSets: recordSets,
 	}
 }
 
@@ -36,7 +40,7 @@ func (z HostedZones) List(filter string) ([]common.Deletable, error) {
 
 	var resources []common.Deletable
 	for _, zone := range zones.HostedZones {
-		r := NewHostedZone(z.client, zone.Id, zone.Name)
+		r := NewHostedZone(z.client, zone.Id, zone.Name, z.recordSets)
 
 		if !strings.Contains(r.Name(), filter) {
 			continue

@@ -38,7 +38,7 @@ func (v Volumes) List(filter string) ([]common.Deletable, error) {
 
 	var resources []common.Deletable
 	for _, volume := range output.Volumes {
-		r := NewVolume(v.client, volume.VolumeId, volume.State)
+		r := NewVolume(v.client, volume.VolumeId, volume.State, volume.Tags)
 
 		proceed := v.logger.PromptWithDetails(r.Type(), r.Name())
 		if !proceed {

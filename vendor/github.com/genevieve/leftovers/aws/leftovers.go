@@ -82,6 +82,8 @@ func NewLeftovers(logger logger, accessKeyId, secretAccessKey, region string) (L
 	subnets := ec2.NewSubnets(ec2Client, logger, resourceTags)
 	bucketManager := s3.NewBucketManager(region)
 
+	recordSets := route53.NewRecordSets(route53Client)
+
 	asyncDeleter := app.NewAsyncDeleter(logger)
 
 	return Leftovers{
@@ -119,7 +121,7 @@ func NewLeftovers(logger logger, accessKeyId, secretAccessKey, region string) (L
 			kms.NewAliases(kmsClient, logger),
 			kms.NewKeys(kmsClient, logger),
 
-			route53.NewHostedZones(route53Client, logger),
+			route53.NewHostedZones(route53Client, logger, recordSets),
 			route53.NewHealthChecks(route53Client, logger),
 		},
 	}, nil

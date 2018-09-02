@@ -1,6 +1,7 @@
 package common
 
 import (
+	"errors"
 	"fmt"
 	"time"
 )
@@ -178,16 +179,18 @@ func (s *State) Wait() (interface{}, error) {
 						break forSelect
 					}
 
-					// target state not reached, save the result for the
-					// TimeoutError and wait for the channel to close
+					// target state not reached, save the result and wait for channel to close
 					lastResult = r
 				case <-timeout:
-					s.logger.Printf("Waiting for state DONE exceeded refresh grace period.\n")
 					break forSelect
 				}
 			}
 
-			return nil, fmt.Errorf("Timeout waiting for state to be DONE: %s", lastResult.Error)
+			if lastResult.Error != nil {
+				return nil, fmt.Errorf("Timeout waiting for operation to complete: %s", lastResult.Error)
+			}
+
+			return nil, errors.New("Timeout waiting for operation to complete.")
 		}
 	}
 }

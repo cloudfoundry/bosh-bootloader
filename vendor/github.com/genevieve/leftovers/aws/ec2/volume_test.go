@@ -5,6 +5,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
+	awsec2 "github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/genevieve/leftovers/aws/ec2"
 	"github.com/genevieve/leftovers/aws/ec2/fakes"
 
@@ -24,8 +25,9 @@ var _ = Describe("Volume", func() {
 		client = &fakes.VolumesClient{}
 		id = aws.String("the-id")
 		state = aws.String("available")
+		tags := []*awsec2.Tag{{Key: aws.String("hi"), Value: aws.String("bye")}}
 
-		volume = ec2.NewVolume(client, id, state)
+		volume = ec2.NewVolume(client, id, state, tags)
 	})
 
 	Describe("Delete", func() {
@@ -62,7 +64,7 @@ var _ = Describe("Volume", func() {
 
 	Describe("Name", func() {
 		It("returns the identifier", func() {
-			Expect(volume.Name()).To(Equal("the-id (State:available)"))
+			Expect(volume.Name()).To(Equal("the-id (State:available) (hi:bye)"))
 		})
 	})
 

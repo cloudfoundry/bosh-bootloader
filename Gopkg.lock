@@ -114,27 +114,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:b9aa4288038198d87f3e6eb7e844a8840766d8be27e69fd78f5d81bbba089018"
-  name = "github.com/cloudfoundry/go-socks5"
-  packages = ["."]
-  pruneopts = "U"
-  revision = "54f73bdb8a8e85a6611d3d29ab9bbf98c2a060d7"
-
-[[projects]]
-  branch = "master"
   digest = "1:aef8bf17ddf9acac3b5c674dfcec7f8001c24d6b3c4c6ae530bacdbc2d5c2b30"
   name = "github.com/cloudfoundry/multierror"
   packages = ["."]
   pruneopts = "U"
   revision = "dafed03eebc65cdf3de2928e3f94793bc893ede0"
-
-[[projects]]
-  branch = "master"
-  digest = "1:9fb53cfccceea2b74c19753467bfe0d0115a6c4b04ba5af27135b235cf685d2f"
-  name = "github.com/cloudfoundry/socks5-proxy"
-  packages = ["."]
-  pruneopts = "U"
-  revision = "3659db090cb23a57807b53e2f8580b2427dc2659"
 
 [[projects]]
   digest = "1:31f3d86da6e6e971e3603ed663121c4f0744d3e4c4db67f3f83a35cb48893b90"
@@ -177,7 +161,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:edad0e3b002ca1de9e1dd2b2d0e40cd434a20ac27cac0cee873ea5f5e24fb9aa"
+  digest = "1:9eb321d804958499ec53ecaef623cacaf3a7c623a4505c83bd85e6bfc016c1aa"
   name = "github.com/genevieve/leftovers"
   packages = [
     "app",
@@ -204,7 +188,7 @@
     "vsphere",
   ]
   pruneopts = "U"
-  revision = "81bb4a3d84a0f4f2f1d11d856e48be69ed17e9bb"
+  revision = "6a605c0098ad6f9aa141b8d341e80aa68df0c993"
 
 [[projects]]
   digest = "1:039d212663a562ed6e04b63e5e2b955b8a409990874d83c371164620590081ab"
@@ -526,7 +510,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:f8d46f6d3bdbaba6fb34a7c6fc2afa36205835344f5972c445182fbb7e1325d8"
+  digest = "1:3f8e7ea6a1dd87bfef20b912174105fc84cdf0167d9637ddbdd00ed60ba8c0f6"
   name = "golang.org/x/net"
   packages = [
     "context",
@@ -538,9 +522,7 @@
     "http2",
     "http2/hpack",
     "idna",
-    "internal/socks",
     "internal/timeseries",
-    "proxy",
     "trace",
   ]
   pruneopts = "U"
@@ -548,11 +530,10 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:cea02ca975979917007817d0378c7b874dd40d63eb6079b9b2e5288a0f4bd994"
+  digest = "1:42ad22f2ee6d72206cf08da7efe94580a8ad5214ea2855d098d190ec4a955e66"
   name = "golang.org/x/oauth2"
   packages = [
     ".",
-    "clientcredentials",
     "google",
     "internal",
     "jws",
@@ -721,7 +702,6 @@
     "github.com/aws/aws-sdk-go/service/route53",
     "github.com/cloudfoundry/bbl-state-resource/storage",
     "github.com/cloudfoundry/multierror",
-    "github.com/cloudfoundry/socks5-proxy",
     "github.com/coreos/go-semver/semver",
     "github.com/genevieve/leftovers/aws",
     "github.com/genevieve/leftovers/azure",
@@ -743,9 +723,6 @@
     "github.com/spf13/afero",
     "golang.org/x/crypto/pkcs12",
     "golang.org/x/crypto/ssh",
-    "golang.org/x/net/proxy",
-    "golang.org/x/oauth2",
-    "golang.org/x/oauth2/clientcredentials",
     "golang.org/x/oauth2/google",
     "golang.org/x/oauth2/jwt",
     "google.golang.org/api/compute/v1",
