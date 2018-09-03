@@ -52,6 +52,15 @@ var _ = Describe("Addresses", func() {
 			Expect(items).To(HaveLen(1))
 		})
 
+		Context("when the address tags do not contain the filter", func() {
+			It("does not try releasing them", func() {
+				_, err := addresses.List("kiwi")
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(0))
+			})
+		})
+
 		Context("when the client fails to describe addresses", func() {
 			BeforeEach(func() {
 				client.DescribeAddressesCall.Returns.Error = errors.New("some error")

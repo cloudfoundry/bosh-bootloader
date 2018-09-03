@@ -2,6 +2,7 @@ package ec2
 
 import (
 	"fmt"
+	"strings"
 
 	awsec2 "github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/genevieve/leftovers/common"
@@ -32,11 +33,11 @@ func (d Addresses) List(filter string) ([]common.Deletable, error) {
 
 	var resources []common.Deletable
 	for _, a := range addresses.Addresses {
-		if a.InstanceId != nil && *a.InstanceId != "" {
+		r := NewAddress(d.client, a.PublicIp, a.AllocationId, a.Tags)
+
+		if !strings.Contains(r.Name(), filter) {
 			continue
 		}
-
-		r := NewAddress(d.client, a.PublicIp, a.AllocationId)
 
 		proceed := d.logger.PromptWithDetails(r.Type(), r.Name())
 		if !proceed {

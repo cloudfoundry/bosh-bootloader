@@ -161,7 +161,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:9eb321d804958499ec53ecaef623cacaf3a7c623a4505c83bd85e6bfc016c1aa"
+  digest = "1:f96f980409ec57e1748a39df6f00cc3a9a649b493456c2c8edf914407f5cad11"
   name = "github.com/genevieve/leftovers"
   packages = [
     "app",
@@ -188,7 +188,7 @@
     "vsphere",
   ]
   pruneopts = "U"
-  revision = "6a605c0098ad6f9aa141b8d341e80aa68df0c993"
+  revision = "9438d7792f9baed86b31dc9ed6cf0a019be4ca3c"
 
 [[projects]]
   digest = "1:039d212663a562ed6e04b63e5e2b955b8a409990874d83c371164620590081ab"
