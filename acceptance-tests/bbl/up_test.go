@@ -90,7 +90,7 @@ var _ = Describe("up", func() {
 		})
 
 		By("varifying that the bosh dns runtime config was set", func() {
-			_, err := boshcli.RuntimeConfig(directorAddress, caCertPath, directorUsername, directorPassword, "default")
+			_, err := boshcli.RuntimeConfig(directorAddress, caCertPath, directorUsername, directorPassword, "dns")
 			Expect(err).NotTo(HaveOccurred())
 		})
 
