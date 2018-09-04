@@ -97,7 +97,7 @@ func (m Manager) Update(state storage.State) error {
 
 	m.logger.Step("applying runtime config")
 	runtimeConfigPath := filepath.Join(dir, "runtime-config.yml")
-	err = m.runtimeConfigUpdater.UpdateRuntimeConfig(boshCLI, runtimeConfigPath, opsFiles, "default")
+	err = m.runtimeConfigUpdater.UpdateRuntimeConfig(boshCLI, runtimeConfigPath, opsFiles, "dns")
 	if err != nil {
 		return fmt.Errorf("failed to update runtime-config: %s", err)
 	}

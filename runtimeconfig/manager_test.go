@@ -127,7 +127,7 @@ var _ = Describe("Manager", func() {
 				filepath.Join("some-runtime-config-dir", "shenanigans-ops.yml"),
 				filepath.Join("some-runtime-config-dir", "cool-ops.yml"),
 			}))
-			Expect(configUpdater.UpdateRuntimeConfigCall.Receives.Name).To(Equal("default"))
+			Expect(configUpdater.UpdateRuntimeConfigCall.Receives.Name).To(Equal("dns"))
 		})
 
 		Context("failure cases", func() {
