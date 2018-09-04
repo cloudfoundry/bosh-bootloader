@@ -9,7 +9,7 @@ import (
 )
 
 type globalHealthChecksClient interface {
-	ListGlobalHealthChecks() (*gcpcompute.HealthCheckList, error)
+	ListGlobalHealthChecks() ([]*gcpcompute.HealthCheck, error)
 	DeleteGlobalHealthCheck(globalHealthCheck string) error
 }
 
@@ -32,7 +32,7 @@ func (h GlobalHealthChecks) List(filter string) ([]common.Deletable, error) {
 	}
 
 	var resources []common.Deletable
-	for _, check := range checks.Items {
+	for _, check := range checks {
 		resource := NewGlobalHealthCheck(h.client, check.Name)
 
 		if !strings.Contains(check.Name, filter) {

@@ -32,12 +32,10 @@ var _ = Describe("ForwardingRules", func() {
 
 		BeforeEach(func() {
 			logger.PromptWithDetailsCall.Returns.Proceed = true
-			client.ListForwardingRulesCall.Returns.Output = &gcpcompute.ForwardingRuleList{
-				Items: []*gcpcompute.ForwardingRule{{
-					Name:   "banana-rule",
-					Region: "https://region-1",
-				}},
-			}
+			client.ListForwardingRulesCall.Returns.Output = []*gcpcompute.ForwardingRule{{
+				Name:   "banana-rule",
+				Region: "https://region-1",
+			}}
 			filter = "banana"
 		})
 

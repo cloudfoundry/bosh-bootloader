@@ -8,6 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	awsec2 "github.com/aws/aws-sdk-go/service/ec2"
+	awseks "github.com/aws/aws-sdk-go/service/eks"
 	awselb "github.com/aws/aws-sdk-go/service/elb"
 	awselbv2 "github.com/aws/aws-sdk-go/service/elbv2"
 	awsiam "github.com/aws/aws-sdk-go/service/iam"
@@ -19,6 +20,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/genevieve/leftovers/app"
 	"github.com/genevieve/leftovers/aws/ec2"
+	"github.com/genevieve/leftovers/aws/eks"
 	"github.com/genevieve/leftovers/aws/elb"
 	"github.com/genevieve/leftovers/aws/elbv2"
 	"github.com/genevieve/leftovers/aws/iam"
@@ -62,6 +64,7 @@ func NewLeftovers(logger logger, accessKeyId, secretAccessKey, region string) (L
 	}
 	sess := session.New(config)
 
+	eksClient := awseks.New(sess)
 	ec2Client := awsec2.New(sess)
 	elbClient := awselb.New(sess)
 	elbv2Client := awselbv2.New(sess)
@@ -99,6 +102,8 @@ func NewLeftovers(logger logger, accessKeyId, secretAccessKey, region string) (L
 			iam.NewUsers(iamClient, logger, userPolicies, accessKeys),
 			iam.NewPolicies(iamClient, logger),
 			iam.NewServerCertificates(iamClient, logger),
+
+			eks.NewClusters(eksClient, logger),
 
 			ec2.NewKeyPairs(ec2Client, logger),
 			ec2.NewInstances(ec2Client, logger, resourceTags),

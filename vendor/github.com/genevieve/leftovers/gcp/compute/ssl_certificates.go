@@ -9,7 +9,7 @@ import (
 )
 
 type sslCertificatesClient interface {
-	ListSslCertificates() (*gcpcompute.SslCertificateList, error)
+	ListSslCertificates() ([]*gcpcompute.SslCertificate, error)
 	DeleteSslCertificate(certificate string) error
 }
 
@@ -32,7 +32,7 @@ func (s SslCertificates) List(filter string) ([]common.Deletable, error) {
 	}
 
 	var resources []common.Deletable
-	for _, cert := range sslCertificates.Items {
+	for _, cert := range sslCertificates {
 		resource := NewSslCertificate(s.client, cert.Name)
 
 		if !strings.Contains(resource.Name(), filter) {

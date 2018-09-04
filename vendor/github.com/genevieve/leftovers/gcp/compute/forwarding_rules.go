@@ -9,7 +9,7 @@ import (
 )
 
 type forwardingRulesClient interface {
-	ListForwardingRules(region string) (*gcpcompute.ForwardingRuleList, error)
+	ListForwardingRules(region string) ([]*gcpcompute.ForwardingRule, error)
 	DeleteForwardingRule(region, rule string) error
 }
 
@@ -35,7 +35,7 @@ func (f ForwardingRules) List(filter string) ([]common.Deletable, error) {
 			return nil, fmt.Errorf("List Forwarding Rules for region %s: %s", region, err)
 		}
 
-		rules = append(rules, l.Items...)
+		rules = append(rules, l...)
 	}
 
 	var resources []common.Deletable

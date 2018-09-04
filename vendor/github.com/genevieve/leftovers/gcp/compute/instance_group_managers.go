@@ -9,7 +9,7 @@ import (
 )
 
 type instanceGroupManagersClient interface {
-	ListInstanceGroupManagers(zone string) (*gcpcompute.InstanceGroupManagerList, error)
+	ListInstanceGroupManagers(zone string) ([]*gcpcompute.InstanceGroupManager, error)
 	DeleteInstanceGroupManager(zone, instanceGroupManager string) error
 }
 
@@ -35,7 +35,7 @@ func (i InstanceGroupManagers) List(filter string) ([]common.Deletable, error) {
 			return nil, fmt.Errorf("List Instance Group Managers for zone %s: %s", zone, err)
 		}
 
-		managers = append(managers, l.Items...)
+		managers = append(managers, l...)
 	}
 
 	var resources []common.Deletable

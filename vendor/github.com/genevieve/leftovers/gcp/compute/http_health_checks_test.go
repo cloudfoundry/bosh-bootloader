@@ -30,11 +30,9 @@ var _ = Describe("HttpHealthChecks", func() {
 
 		BeforeEach(func() {
 			logger.PromptWithDetailsCall.Returns.Proceed = true
-			client.ListHttpHealthChecksCall.Returns.Output = &gcpcompute.HttpHealthCheckList{
-				Items: []*gcpcompute.HttpHealthCheck{{
-					Name: "banana-check",
-				}},
-			}
+			client.ListHttpHealthChecksCall.Returns.Output = []*gcpcompute.HttpHealthCheck{{
+				Name: "banana-check",
+			}}
 			filter = "banana"
 		})
 

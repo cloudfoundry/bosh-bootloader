@@ -30,11 +30,9 @@ var _ = Describe("GlobalHealthChecks", func() {
 
 		BeforeEach(func() {
 			logger.PromptWithDetailsCall.Returns.Proceed = true
-			client.ListGlobalHealthChecksCall.Returns.Output = &gcpcompute.HealthCheckList{
-				Items: []*gcpcompute.HealthCheck{{
-					Name: "banana-check",
-				}},
-			}
+			client.ListGlobalHealthChecksCall.Returns.Output = []*gcpcompute.HealthCheck{{
+				Name: "banana-check",
+			}}
 			filter = "banana"
 		})
 

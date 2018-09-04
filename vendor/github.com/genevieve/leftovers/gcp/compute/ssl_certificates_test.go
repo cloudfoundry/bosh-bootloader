@@ -30,11 +30,9 @@ var _ = Describe("SslCertificates", func() {
 
 		BeforeEach(func() {
 			logger.PromptWithDetailsCall.Returns.Proceed = true
-			client.ListSslCertificatesCall.Returns.Output = &gcpcompute.SslCertificateList{
-				Items: []*gcpcompute.SslCertificate{{
-					Name: "banana-certificate",
-				}},
-			}
+			client.ListSslCertificatesCall.Returns.Output = []*gcpcompute.SslCertificate{{
+				Name: "banana-certificate",
+			}}
 			filter = "banana"
 		})
 

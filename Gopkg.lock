@@ -54,7 +54,7 @@
   revision = "7db4be5742aecc82f99aa44d27ce25a3600a7a80"
 
 [[projects]]
-  digest = "1:416f0ca9df27122d88ec289a3ec29fedb907187896ed45b1401aa10a20b4a3e8"
+  digest = "1:b7f3b81b447d4b69c40f690681be32ce4a5d1da1ba6b85219772c327d010a073"
   name = "github.com/aws/aws-sdk-go"
   packages = [
     "aws",
@@ -86,9 +86,11 @@
     "private/protocol/query",
     "private/protocol/query/queryutil",
     "private/protocol/rest",
+    "private/protocol/restjson",
     "private/protocol/restxml",
     "private/protocol/xml/xmlutil",
     "service/ec2",
+    "service/eks",
     "service/elb",
     "service/elbv2",
     "service/iam",
@@ -161,13 +163,14 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:f96f980409ec57e1748a39df6f00cc3a9a649b493456c2c8edf914407f5cad11"
+  digest = "1:69922a0f6b6e4c5502da7a6869a8d54ee91883078b4c650e24e22bdcda9fe513"
   name = "github.com/genevieve/leftovers"
   packages = [
     "app",
     "aws",
     "aws/common",
     "aws/ec2",
+    "aws/eks",
     "aws/elb",
     "aws/elbv2",
     "aws/iam",
@@ -188,7 +191,7 @@
     "vsphere",
   ]
   pruneopts = "U"
-  revision = "9438d7792f9baed86b31dc9ed6cf0a019be4ca3c"
+  revision = "25417dde06925a269ba5d5fcce0f764b0aba3d45"
 
 [[projects]]
   digest = "1:039d212663a562ed6e04b63e5e2b955b8a409990874d83c371164620590081ab"

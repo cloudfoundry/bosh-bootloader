@@ -30,11 +30,9 @@ var _ = Describe("InstanceTemplates", func() {
 
 		BeforeEach(func() {
 			logger.PromptWithDetailsCall.Returns.Proceed = true
-			client.ListInstanceTemplatesCall.Returns.Output = &gcpcompute.InstanceTemplateList{
-				Items: []*gcpcompute.InstanceTemplate{{
-					Name: "banana-template",
-				}},
-			}
+			client.ListInstanceTemplatesCall.Returns.Output = []*gcpcompute.InstanceTemplate{{
+				Name: "banana-template",
+			}}
 			filter = "banana"
 		})
 

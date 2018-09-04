@@ -9,7 +9,7 @@ import (
 )
 
 type globalForwardingRulesClient interface {
-	ListGlobalForwardingRules() (*gcpcompute.ForwardingRuleList, error)
+	ListGlobalForwardingRules() ([]*gcpcompute.ForwardingRule, error)
 	DeleteGlobalForwardingRule(rule string) error
 }
 
@@ -32,7 +32,7 @@ func (g GlobalForwardingRules) List(filter string) ([]common.Deletable, error) {
 	}
 
 	var resources []common.Deletable
-	for _, rule := range rules.Items {
+	for _, rule := range rules {
 		resource := NewGlobalForwardingRule(g.client, rule.Name)
 
 		if !strings.Contains(rule.Name, filter) {

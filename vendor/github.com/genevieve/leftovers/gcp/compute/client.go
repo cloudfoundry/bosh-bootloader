@@ -88,7 +88,7 @@ func (c client) ListAddresses(region string) ([]*gcpcompute.Address, error) {
 			break
 		}
 
-		time.Sleep(2 * time.Second)
+		time.Sleep(time.Second)
 	}
 
 	return list, nil
@@ -115,7 +115,7 @@ func (c client) ListGlobalAddresses() ([]*gcpcompute.Address, error) {
 			break
 		}
 
-		time.Sleep(2 * time.Second)
+		time.Sleep(time.Second)
 	}
 
 	return list, nil
@@ -142,7 +142,7 @@ func (c client) ListBackendServices() ([]*gcpcompute.BackendService, error) {
 			break
 		}
 
-		time.Sleep(2 * time.Second)
+		time.Sleep(time.Second)
 	}
 
 	return list, nil
@@ -170,7 +170,7 @@ func (c client) ListDisks(zone string) ([]*gcpcompute.Disk, error) {
 			break
 		}
 
-		time.Sleep(2 * time.Second)
+		time.Sleep(time.Second)
 	}
 
 	return list, nil
@@ -198,7 +198,7 @@ func (c client) ListImages() ([]*gcpcompute.Image, error) {
 			break
 		}
 
-		time.Sleep(2 * time.Second)
+		time.Sleep(time.Second)
 	}
 
 	return list, nil
@@ -225,7 +225,7 @@ func (c client) ListInstances(zone string) ([]*gcpcompute.Instance, error) {
 			break
 		}
 
-		time.Sleep(2 * time.Second)
+		time.Sleep(time.Second)
 	}
 
 	return list, nil
@@ -235,96 +235,324 @@ func (c client) DeleteInstance(zone, instance string) error {
 	return c.wait(c.instances.Delete(c.project, zone, instance))
 }
 
-func (c client) ListInstanceTemplates() (*gcpcompute.InstanceTemplateList, error) {
-	return c.instanceTemplates.List(c.project).Do()
+func (c client) ListInstanceTemplates() ([]*gcpcompute.InstanceTemplate, error) {
+	var token string
+	list := []*gcpcompute.InstanceTemplate{}
+
+	for {
+		resp, err := c.instanceTemplates.List(c.project).PageToken(token).Do()
+		if err != nil {
+			return nil, err
+		}
+
+		list = append(list, resp.Items...)
+
+		token = resp.NextPageToken
+		if token == "" {
+			break
+		}
+
+		time.Sleep(time.Second)
+	}
+
+	return list, nil
 }
 
 func (c client) DeleteInstanceTemplate(instanceTemplate string) error {
 	return c.wait(c.instanceTemplates.Delete(c.project, instanceTemplate))
 }
 
-func (c client) ListInstanceGroups(zone string) (*gcpcompute.InstanceGroupList, error) {
-	return c.instanceGroups.List(c.project, zone).Do()
+func (c client) ListInstanceGroups(zone string) ([]*gcpcompute.InstanceGroup, error) {
+	var token string
+	list := []*gcpcompute.InstanceGroup{}
+
+	for {
+		resp, err := c.instanceGroups.List(c.project, zone).PageToken(token).Do()
+		if err != nil {
+			return nil, err
+		}
+
+		list = append(list, resp.Items...)
+
+		token = resp.NextPageToken
+		if token == "" {
+			break
+		}
+
+		time.Sleep(time.Second)
+	}
+
+	return list, nil
 }
 
 func (c client) DeleteInstanceGroup(zone, instanceGroup string) error {
 	return c.wait(c.instanceGroups.Delete(c.project, zone, instanceGroup))
 }
 
-func (c client) ListInstanceGroupManagers(zone string) (*gcpcompute.InstanceGroupManagerList, error) {
-	return c.instanceGroupManagers.List(c.project, zone).Do()
+func (c client) ListInstanceGroupManagers(zone string) ([]*gcpcompute.InstanceGroupManager, error) {
+	var token string
+	list := []*gcpcompute.InstanceGroupManager{}
+
+	for {
+		resp, err := c.instanceGroupManagers.List(c.project, zone).PageToken(token).Do()
+		if err != nil {
+			return nil, err
+		}
+
+		list = append(list, resp.Items...)
+
+		token = resp.NextPageToken
+		if token == "" {
+			break
+		}
+
+		time.Sleep(time.Second)
+	}
+
+	return list, nil
 }
 
 func (c client) DeleteInstanceGroupManager(zone, instanceGroupManager string) error {
 	return c.wait(c.instanceGroupManagers.Delete(c.project, zone, instanceGroupManager))
 }
 
-func (c client) ListGlobalHealthChecks() (*gcpcompute.HealthCheckList, error) {
-	return c.globalHealthChecks.List(c.project).Do()
+func (c client) ListGlobalHealthChecks() ([]*gcpcompute.HealthCheck, error) {
+	var token string
+	list := []*gcpcompute.HealthCheck{}
+
+	for {
+		resp, err := c.globalHealthChecks.List(c.project).PageToken(token).Do()
+		if err != nil {
+			return nil, err
+		}
+
+		list = append(list, resp.Items...)
+
+		token = resp.NextPageToken
+		if token == "" {
+			break
+		}
+
+		time.Sleep(time.Second)
+	}
+
+	return list, nil
 }
 
 func (c client) DeleteGlobalHealthCheck(globalHealthCheck string) error {
 	return c.wait(c.globalHealthChecks.Delete(c.project, globalHealthCheck))
 }
 
-func (c client) ListHttpHealthChecks() (*gcpcompute.HttpHealthCheckList, error) {
-	return c.httpHealthChecks.List(c.project).Do()
+func (c client) ListHttpHealthChecks() ([]*gcpcompute.HttpHealthCheck, error) {
+	var token string
+	list := []*gcpcompute.HttpHealthCheck{}
+
+	for {
+		resp, err := c.httpHealthChecks.List(c.project).PageToken(token).Do()
+		if err != nil {
+			return nil, err
+		}
+
+		list = append(list, resp.Items...)
+
+		token = resp.NextPageToken
+		if token == "" {
+			break
+		}
+
+		time.Sleep(time.Second)
+	}
+
+	return list, nil
 }
 
 func (c client) DeleteHttpHealthCheck(httpHealthCheck string) error {
 	return c.wait(c.httpHealthChecks.Delete(c.project, httpHealthCheck))
 }
 
-func (c client) ListHttpsHealthChecks() (*gcpcompute.HttpsHealthCheckList, error) {
-	return c.httpsHealthChecks.List(c.project).Do()
+func (c client) ListHttpsHealthChecks() ([]*gcpcompute.HttpsHealthCheck, error) {
+	var token string
+	list := []*gcpcompute.HttpsHealthCheck{}
+
+	for {
+		resp, err := c.httpsHealthChecks.List(c.project).PageToken(token).Do()
+		if err != nil {
+			return nil, err
+		}
+
+		list = append(list, resp.Items...)
+
+		token = resp.NextPageToken
+		if token == "" {
+			break
+		}
+
+		time.Sleep(time.Second)
+	}
+
+	return list, nil
 }
 
 func (c client) DeleteHttpsHealthCheck(httpsHealthCheck string) error {
 	return c.wait(c.httpsHealthChecks.Delete(c.project, httpsHealthCheck))
 }
 
-func (c client) ListFirewalls() (*gcpcompute.FirewallList, error) {
-	return c.firewalls.List(c.project).Do()
+func (c client) ListFirewalls() ([]*gcpcompute.Firewall, error) {
+	var token string
+	list := []*gcpcompute.Firewall{}
+
+	for {
+		resp, err := c.firewalls.List(c.project).PageToken(token).Do()
+		if err != nil {
+			return nil, err
+		}
+
+		list = append(list, resp.Items...)
+
+		token = resp.NextPageToken
+		if token == "" {
+			break
+		}
+
+		time.Sleep(time.Second)
+	}
+
+	return list, nil
 }
 
 func (c client) DeleteFirewall(firewall string) error {
 	return c.wait(c.firewalls.Delete(c.project, firewall))
 }
 
-func (c client) ListGlobalForwardingRules() (*gcpcompute.ForwardingRuleList, error) {
-	return c.globalForwardingRules.List(c.project).Do()
+func (c client) ListGlobalForwardingRules() ([]*gcpcompute.ForwardingRule, error) {
+	var token string
+	list := []*gcpcompute.ForwardingRule{}
+
+	for {
+		resp, err := c.globalForwardingRules.List(c.project).PageToken(token).Do()
+		if err != nil {
+			return nil, err
+		}
+
+		list = append(list, resp.Items...)
+
+		token = resp.NextPageToken
+		if token == "" {
+			break
+		}
+
+		time.Sleep(time.Second)
+	}
+
+	return list, nil
 }
 
 func (c client) DeleteGlobalForwardingRule(globalForwardingRule string) error {
 	return c.wait(c.globalForwardingRules.Delete(c.project, globalForwardingRule))
 }
 
-func (c client) ListForwardingRules(region string) (*gcpcompute.ForwardingRuleList, error) {
-	return c.forwardingRules.List(c.project, region).Do()
+func (c client) ListForwardingRules(region string) ([]*gcpcompute.ForwardingRule, error) {
+	var token string
+	list := []*gcpcompute.ForwardingRule{}
+
+	for {
+		resp, err := c.forwardingRules.List(c.project, region).PageToken(token).Do()
+		if err != nil {
+			return nil, err
+		}
+
+		list = append(list, resp.Items...)
+
+		token = resp.NextPageToken
+		if token == "" {
+			break
+		}
+
+		time.Sleep(time.Second)
+	}
+
+	return list, nil
 }
 
 func (c client) DeleteForwardingRule(region, forwardingRule string) error {
 	return c.wait(c.forwardingRules.Delete(c.project, region, forwardingRule))
 }
 
-func (c client) ListNetworks() (*gcpcompute.NetworkList, error) {
-	return c.networks.List(c.project).Do()
+func (c client) ListNetworks() ([]*gcpcompute.Network, error) {
+	var token string
+	list := []*gcpcompute.Network{}
+
+	for {
+		resp, err := c.networks.List(c.project).PageToken(token).Do()
+		if err != nil {
+			return nil, err
+		}
+
+		list = append(list, resp.Items...)
+
+		token = resp.NextPageToken
+		if token == "" {
+			break
+		}
+
+		time.Sleep(time.Second)
+	}
+
+	return list, nil
 }
 
 func (c client) DeleteNetwork(network string) error {
 	return c.wait(c.networks.Delete(c.project, network))
 }
 
-func (c client) ListSubnetworks(region string) (*gcpcompute.SubnetworkList, error) {
-	return c.subnetworks.List(c.project, region).Do()
+func (c client) ListSubnetworks(region string) ([]*gcpcompute.Subnetwork, error) {
+	var token string
+	list := []*gcpcompute.Subnetwork{}
+
+	for {
+		resp, err := c.subnetworks.List(c.project, region).PageToken(token).Do()
+		if err != nil {
+			return nil, err
+		}
+
+		list = append(list, resp.Items...)
+
+		token = resp.NextPageToken
+		if token == "" {
+			break
+		}
+
+		time.Sleep(time.Second)
+	}
+
+	return list, nil
 }
 
 func (c client) DeleteSubnetwork(region, subnetwork string) error {
 	return c.wait(c.subnetworks.Delete(c.project, region, subnetwork))
 }
 
-func (c client) ListSslCertificates() (*gcpcompute.SslCertificateList, error) {
-	return c.sslCertificates.List(c.project).Do()
+func (c client) ListSslCertificates() ([]*gcpcompute.SslCertificate, error) {
+	var token string
+	list := []*gcpcompute.SslCertificate{}
+
+	for {
+		resp, err := c.sslCertificates.List(c.project).PageToken(token).Do()
+		if err != nil {
+			return nil, err
+		}
+
+		list = append(list, resp.Items...)
+
+		token = resp.NextPageToken
+		if token == "" {
+			break
+		}
+
+		time.Sleep(time.Second)
+	}
+
+	return list, nil
 }
 
 func (c client) DeleteSslCertificate(certificate string) error {

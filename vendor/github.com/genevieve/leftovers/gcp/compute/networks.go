@@ -9,7 +9,7 @@ import (
 )
 
 type networksClient interface {
-	ListNetworks() (*gcp.NetworkList, error)
+	ListNetworks() ([]*gcp.Network, error)
 	DeleteNetwork(network string) error
 }
 
@@ -32,7 +32,7 @@ func (n Networks) List(filter string) ([]common.Deletable, error) {
 	}
 
 	var resources []common.Deletable
-	for _, network := range networks.Items {
+	for _, network := range networks {
 		resource := NewNetwork(n.client, network.Name)
 
 		if network.Name == "default" {

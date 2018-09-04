@@ -30,11 +30,9 @@ var _ = Describe("Networks", func() {
 
 		BeforeEach(func() {
 			logger.PromptWithDetailsCall.Returns.Proceed = true
-			client.ListNetworksCall.Returns.Output = &gcpcompute.NetworkList{
-				Items: []*gcpcompute.Network{{
-					Name: "banana-network",
-				}},
-			}
+			client.ListNetworksCall.Returns.Output = []*gcpcompute.Network{{
+				Name: "banana-network",
+			}}
 			filter = "banana"
 		})
 
@@ -74,11 +72,9 @@ var _ = Describe("Networks", func() {
 
 		Context("when it is the default network", func() {
 			BeforeEach(func() {
-				client.ListNetworksCall.Returns.Output = &gcpcompute.NetworkList{
-					Items: []*gcpcompute.Network{{
-						Name: "default",
-					}},
-				}
+				client.ListNetworksCall.Returns.Output = []*gcpcompute.Network{{
+					Name: "default",
+				}}
 			})
 
 			It("does not add it to the list", func() {

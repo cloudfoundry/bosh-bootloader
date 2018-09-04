@@ -9,7 +9,7 @@ import (
 )
 
 type instanceGroupsClient interface {
-	ListInstanceGroups(zone string) (*gcpcompute.InstanceGroupList, error)
+	ListInstanceGroups(zone string) ([]*gcpcompute.InstanceGroup, error)
 	DeleteInstanceGroup(zone, instanceGroup string) error
 }
 
@@ -35,7 +35,7 @@ func (i InstanceGroups) List(filter string) ([]common.Deletable, error) {
 			return nil, fmt.Errorf("List Instance Groups for zone %s: %s", zone, err)
 		}
 
-		groups = append(groups, l.Items...)
+		groups = append(groups, l...)
 	}
 
 	var resources []common.Deletable

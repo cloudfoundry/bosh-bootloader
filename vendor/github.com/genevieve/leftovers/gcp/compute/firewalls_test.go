@@ -30,11 +30,9 @@ var _ = Describe("Firewalls", func() {
 
 		BeforeEach(func() {
 			logger.PromptWithDetailsCall.Returns.Proceed = true
-			client.ListFirewallsCall.Returns.Output = &gcpcompute.FirewallList{
-				Items: []*gcpcompute.Firewall{{
-					Name: "banana-firewall",
-				}},
-			}
+			client.ListFirewallsCall.Returns.Output = []*gcpcompute.Firewall{{
+				Name: "banana-firewall",
+			}}
 			filter = "banana"
 		})
 
@@ -74,11 +72,9 @@ var _ = Describe("Firewalls", func() {
 
 		Context("when the firewall name contains default", func() {
 			BeforeEach(func() {
-				client.ListFirewallsCall.Returns.Output = &gcpcompute.FirewallList{
-					Items: []*gcpcompute.Firewall{{
-						Name: "default-allow-banana",
-					}},
-				}
+				client.ListFirewallsCall.Returns.Output = []*gcpcompute.Firewall{{
+					Name: "default-allow-banana",
+				}}
 			})
 
 			It("does not add it to the list", func() {

@@ -9,7 +9,7 @@ import (
 )
 
 type subnetworksClient interface {
-	ListSubnetworks(region string) (*gcpcompute.SubnetworkList, error)
+	ListSubnetworks(region string) ([]*gcpcompute.Subnetwork, error)
 	DeleteSubnetwork(region, network string) error
 }
 
@@ -35,7 +35,7 @@ func (n Subnetworks) List(filter string) ([]common.Deletable, error) {
 			return nil, fmt.Errorf("List Subnetworks for region %s: %s", region, err)
 		}
 
-		subnetworks = append(subnetworks, l.Items...)
+		subnetworks = append(subnetworks, l...)
 	}
 
 	var resources []common.Deletable

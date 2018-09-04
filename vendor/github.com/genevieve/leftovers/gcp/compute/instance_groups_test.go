@@ -32,12 +32,10 @@ var _ = Describe("InstanceGroups", func() {
 
 		BeforeEach(func() {
 			logger.PromptWithDetailsCall.Returns.Proceed = true
-			client.ListInstanceGroupsCall.Returns.Output = &gcpcompute.InstanceGroupList{
-				Items: []*gcpcompute.InstanceGroup{{
-					Name: "banana-group",
-					Zone: "https://zone-1",
-				}},
-			}
+			client.ListInstanceGroupsCall.Returns.Output = []*gcpcompute.InstanceGroup{{
+				Name: "banana-group",
+				Zone: "https://zone-1",
+			}}
 			filter = "banana"
 		})
 

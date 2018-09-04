@@ -9,7 +9,7 @@ import (
 )
 
 type firewallsClient interface {
-	ListFirewalls() (*gcpcompute.FirewallList, error)
+	ListFirewalls() ([]*gcpcompute.Firewall, error)
 	DeleteFirewall(firewall string) error
 }
 
@@ -32,7 +32,7 @@ func (f Firewalls) List(filter string) ([]common.Deletable, error) {
 	}
 
 	var resources []common.Deletable
-	for _, firewall := range firewalls.Items {
+	for _, firewall := range firewalls {
 		resource := NewFirewall(f.client, firewall.Name)
 
 		if strings.Contains(resource.Name(), "default") {

@@ -32,12 +32,10 @@ var _ = Describe("Subnetworks", func() {
 
 		BeforeEach(func() {
 			logger.PromptWithDetailsCall.Returns.Proceed = true
-			client.ListSubnetworksCall.Returns.Output = &gcpcompute.SubnetworkList{
-				Items: []*gcpcompute.Subnetwork{{
-					Name:   "banana-subnetwork",
-					Region: "https://region-1",
-				}},
-			}
+			client.ListSubnetworksCall.Returns.Output = []*gcpcompute.Subnetwork{{
+				Name:   "banana-subnetwork",
+				Region: "https://region-1",
+			}}
 			filter = "banana"
 		})
 
@@ -78,12 +76,10 @@ var _ = Describe("Subnetworks", func() {
 
 		Context("when it is the default subnetwork", func() {
 			BeforeEach(func() {
-				client.ListSubnetworksCall.Returns.Output = &gcpcompute.SubnetworkList{
-					Items: []*gcpcompute.Subnetwork{{
-						Name:   "default",
-						Region: "https://region-1",
-					}},
-				}
+				client.ListSubnetworksCall.Returns.Output = []*gcpcompute.Subnetwork{{
+					Name:   "default",
+					Region: "https://region-1",
+				}}
 			})
 
 			It("does not add it to the list", func() {

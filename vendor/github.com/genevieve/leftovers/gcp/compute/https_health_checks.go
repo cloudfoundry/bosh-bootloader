@@ -9,7 +9,7 @@ import (
 )
 
 type httpsHealthChecksClient interface {
-	ListHttpsHealthChecks() (*gcpcompute.HttpsHealthCheckList, error)
+	ListHttpsHealthChecks() ([]*gcpcompute.HttpsHealthCheck, error)
 	DeleteHttpsHealthCheck(httpsHealthCheck string) error
 }
 
@@ -32,7 +32,7 @@ func (h HttpsHealthChecks) List(filter string) ([]common.Deletable, error) {
 	}
 
 	var resources []common.Deletable
-	for _, check := range checks.Items {
+	for _, check := range checks {
 		resource := NewHttpsHealthCheck(h.client, check.Name)
 
 		if !strings.Contains(check.Name, filter) {

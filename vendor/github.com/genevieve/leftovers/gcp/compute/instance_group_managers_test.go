@@ -32,12 +32,10 @@ var _ = Describe("InstanceGroupManagers", func() {
 
 		BeforeEach(func() {
 			logger.PromptWithDetailsCall.Returns.Proceed = true
-			client.ListInstanceGroupManagersCall.Returns.Output = &gcpcompute.InstanceGroupManagerList{
-				Items: []*gcpcompute.InstanceGroupManager{{
-					Name: "banana-group",
-					Zone: "https://zone-1",
-				}},
-			}
+			client.ListInstanceGroupManagersCall.Returns.Output = []*gcpcompute.InstanceGroupManager{{
+				Name: "banana-group",
+				Zone: "https://zone-1",
+			}}
 			filter = "banana"
 		})
 

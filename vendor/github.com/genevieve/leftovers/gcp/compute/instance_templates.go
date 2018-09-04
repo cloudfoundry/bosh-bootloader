@@ -9,7 +9,7 @@ import (
 )
 
 type instanceTemplatesClient interface {
-	ListInstanceTemplates() (*gcpcompute.InstanceTemplateList, error)
+	ListInstanceTemplates() ([]*gcpcompute.InstanceTemplate, error)
 	DeleteInstanceTemplate(template string) error
 }
 
@@ -32,7 +32,7 @@ func (i InstanceTemplates) List(filter string) ([]common.Deletable, error) {
 	}
 
 	var resources []common.Deletable
-	for _, template := range templates.Items {
+	for _, template := range templates {
 		resource := NewInstanceTemplate(i.client, template.Name)
 
 		if !strings.Contains(resource.Name(), filter) {
