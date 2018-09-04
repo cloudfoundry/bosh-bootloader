@@ -152,7 +152,7 @@ func (m Manager) Update(state storage.State) error {
 
 	varsFilepath := filepath.Join(varsDir, "cloud-config-vars.yml")
 
-	opsFiles := []string{}
+	opsFiles := []string{filepath.Join(cloudConfigDir, "ops.yml")}
 	files, err := m.fs.ReadDir(cloudConfigDir)
 	if err != nil {
 		return fmt.Errorf("failed to read the cloud-config directory: %s", err)
@@ -160,7 +160,7 @@ func (m Manager) Update(state storage.State) error {
 
 	for _, file := range files {
 		name := file.Name()
-		if name != "cloud-config.yml" {
+		if name != "cloud-config.yml" && name != "ops.yml" {
 			opsFiles = append(opsFiles, filepath.Join(cloudConfigDir, name))
 		}
 	}

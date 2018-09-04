@@ -269,8 +269,8 @@ var _ = Describe("Manager", func() {
 			Expect(configUpdater.UpdateCloudConfigCall.Receives.Filepath).To(Equal(filepath.Join(cloudConfigDir, "cloud-config.yml")))
 			Expect(configUpdater.UpdateCloudConfigCall.Receives.VarsFilepath).To(Equal(filepath.Join(varsDir, "cloud-config-vars.yml")))
 			Expect(configUpdater.UpdateCloudConfigCall.Receives.OpsFilepaths).To(Equal([]string{
-				filepath.Join(cloudConfigDir, "shenanigans-ops.yml"),
 				filepath.Join(cloudConfigDir, "ops.yml"),
+				filepath.Join(cloudConfigDir, "shenanigans-ops.yml"),
 			}))
 
 		})
