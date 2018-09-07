@@ -1,0 +1,7 @@
+---
+- type: replace
+  path: /vm_extensions/name=cf-router-network-properties/cloud_properties?
+  value:
+    target_pool: ((router_target_pool))
+    tags:
+    - ((router_target_pool))
