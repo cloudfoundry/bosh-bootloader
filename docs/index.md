@@ -6,7 +6,7 @@ on an IaaS.
 
 `bbl` currently supports AWS, GCP, Microsoft Azure, Openstack and vSphere.
 
-* [CI](https://wings.concourse-ci.org/teams/cf-infrastructure/pipelines/bosh-bootloader)
+* [CI](https://infra.ci.cf-app.com/teams/main/pipelines/bosh-bootloader/)
 * [Tracker](https://www.pivotaltracker.com/n/projects/1488988)
 
 ## What `bbl` does
