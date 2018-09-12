@@ -31,6 +31,14 @@ gcloud projects add-iam-policy-binding <project id> --member='serviceAccount:<se
     export BBL_GCP_REGION=
     export BBL_GCP_SERVICE_ACCOUNT_KEY=
     ```
+
+    or powershell:
+
+    ```powershell
+    $env:BBL_IAAS="gcp"
+    $env:BBL_GCP_REGION=
+    $env:BBL_GCP_SERVICE_ACCOUNT_KEY=
+    ```
 1. Create infrastructure, jumpbox, and bosh director.
     ```
     bbl up

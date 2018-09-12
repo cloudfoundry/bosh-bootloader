@@ -6,6 +6,11 @@
 eval "$(bbl print-env)"
 ```
 
+or powershell:
+
+```powershell
+iex $(bbl print-env | Out-String)
+```
 ## Alternatives to `bbl print-env`
 
 Separate commands are available for the `bbl print-env` fields:
@@ -34,6 +39,11 @@ $ bbl director-ca-cert > bosh.crt
 $ export BOSH_CA_CERT=bosh.crt
 ```
 
+```powershell
+bbl director-ca-cert | Out-File bosh.crt
+$env:BOSH_CA_CERT="bosh.crt"
+```
+
 To login:
 
 ```
@@ -42,6 +52,15 @@ $ bosh alias-env <INSERT TARGET NAME>
 $ bosh log-in
 Username: user-d3783rk
 Password: p-23dah71sk1
+```
+
+or powershell:
+
+```powershell
+$env:TARGET_NAME="example-name" # Assigns a name to the created environment for easier access.
+$env:BOSH_ENVIRONMENT=$(bbl director-address)
+bosh alias-env $env:TARGET_NAME
+bosh log-in
 ```
 
 Now you're ready to deploy software with BOSH.

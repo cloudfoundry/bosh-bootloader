@@ -34,6 +34,24 @@ It does not create any networks, security groups, or load balancers on vSphere.
     export BBL_VSPHERE_VCENTER_VMS
     ```
 
+    or powershell:
+
+    ```powershell
+    $env:BBL_IAAS="vsphere"
+    $env:BBL_VSPHERE_VCENTER_USER=
+    $env:BBL_VSPHERE_VCENTER_PASSWORD=
+    $env:BBL_VSPHERE_VCENTER_IP=
+    $env:BBL_VSPHERE_VCENTER_DC=
+    $env:BBL_VSPHERE_VCENTER_CLUSTER=
+    $env:BBL_VSPHERE_VCENTER_RP=
+    $env:BBL_VSPHERE_NETWORK=
+    $env:BBL_VSPHERE_VCENTER_DS=
+    $env:BBL_VSPHERE_SUBNET=
+    $env:BBL_VSPHERE_VCENTER_DISKS=
+    $env:BBL_VSPHERE_VCENTER_TEMPLATES=
+    $env:BBL_VSPHERE_VCENTER_VMS=
+    ```
+
 1. Create jumpbox and bosh director.
     ```
     bbl up

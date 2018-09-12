@@ -34,6 +34,23 @@ It does not create any networks, security groups, or load balancers on OpenStack
     export BBL_OPENSTACK_REGION=
     export BBL_OPENSTACK_PRIVATE_KEY=
     ```
+
+    ```powershell
+    $env:BBL_IAAS="openstack"
+    $env:BBL_OPENSTACK_INTERNAL_CIDR=
+    $env:BBL_OPENSTACK_EXTERNAL_IP=
+    $env:BBL_OPENSTACK_AUTH_URL=
+    $env:BBL_OPENSTACK_AZ=
+    $env:BBL_OPENSTACK_DEFAULT_KEY_NAME=
+    $env:BBL_OPENSTACK_DEFAULT_SECURITY_GROUP=
+    $env:BBL_OPENSTACK_NETWORK_ID=
+    $env:BBL_OPENSTACK_PASSWORD=
+    $env:BBL_OPENSTACK_USERNAME=
+    $env:BBL_OPENSTACK_PROJECT=
+    $env:BBL_OPENSTACK_DOMAIN=
+    $env:BBL_OPENSTACK_REGION=
+    $env:BBL_OPENSTACK_PRIVATE_KEY=
+    ```
 1. Create jumpbox and bosh director.
     ```
     bbl up
