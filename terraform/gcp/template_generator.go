@@ -31,8 +31,12 @@ func (t TemplateGenerator) Generate(state storage.State) string {
 	case "concourse":
 		template = strings.Join([]string{template, tmpls.concourseLB}, "\n")
 	case "cf":
-		instanceGroups := t.GenerateInstanceGroups(state.GCP.Zones)
-		backendService := t.GenerateBackendService(state.GCP.Zones)
+		zoneList := state.GCP.Zones
+		if len(zoneList) > 2 {
+			zoneList = zoneList[:2]
+		}
+		instanceGroups := t.GenerateInstanceGroups(zoneList)
+		backendService := t.GenerateBackendService(zoneList)
 
 		template = strings.Join([]string{template, tmpls.cfLB, instanceGroups, backendService}, "\n")
 

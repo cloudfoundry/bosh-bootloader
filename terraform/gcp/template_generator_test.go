@@ -47,17 +47,6 @@ resource "google_compute_instance_group" "router-lb-1" {
     port = "443"
   }
 }
-
-resource "google_compute_instance_group" "router-lb-2" {
-  name        = "${var.env_id}-router-lb-2-z3"
-  description = "terraform generated instance group that is multi-zone for https loadbalancing"
-  zone        = "z3"
-
-  named_port {
-    name = "https"
-    port = "443"
-  }
-}
 `
 		backendService = `resource "google_compute_backend_service" "router-lb-backend-service" {
   name        = "${var.env_id}-router-lb"
@@ -72,10 +61,6 @@ resource "google_compute_instance_group" "router-lb-2" {
 
   backend {
     group = "${google_compute_instance_group.router-lb-1.self_link}"
-  }
-
-  backend {
-    group = "${google_compute_instance_group.router-lb-2.self_link}"
   }
 
   health_checks = ["${google_compute_health_check.cf-public-health-check.self_link}"]
