@@ -282,7 +282,7 @@ func main() {
 	commandSet["env-id"] = commands.NewStateQuery(logger, stateValidator, terraformManager, commands.EnvIDPropertyName)
 	commandSet["latest-error"] = commands.NewLatestError(logger, stateValidator)
 	commandSet["print-env"] = commands.NewPrintEnv(logger, stderrLogger, stateValidator, allProxyGetter, credhubGetter, terraformManager, afs, envRendererFactory)
-	commandSet["ssh"] = commands.NewSSH(sshCLI, sshKeyGetter, pathFinder, afs, ssh.RandomPort{})
+	commandSet["ssh"] = commands.NewSSH(logger, sshCLI, sshKeyGetter, pathFinder, afs, ssh.RandomPort{})
 
 	app := application.New(commandSet, appConfig, usage)
 
