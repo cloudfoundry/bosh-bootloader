@@ -21,6 +21,7 @@ var _ = Describe("SSH", func() {
 		sshKeyGetter *fakes.FancySSHKeyGetter
 		fileIO       *fakes.FileIO
 		randomPort   *fakes.RandomPort
+		logger       *fakes.Logger
 	)
 
 	BeforeEach(func() {
@@ -29,8 +30,9 @@ var _ = Describe("SSH", func() {
 		pathFinder = &fakes.PathFinder{}
 		fileIO = &fakes.FileIO{}
 		randomPort = &fakes.RandomPort{}
+		logger = &fakes.Logger{}
 
-		ssh = commands.NewSSH(sshCLI, sshKeyGetter, pathFinder, fileIO, randomPort)
+		ssh = commands.NewSSH(logger, sshCLI, sshKeyGetter, pathFinder, fileIO, randomPort)
 	})
 
 	Describe("CheckFastFails", func() {
@@ -81,6 +83,11 @@ var _ = Describe("SSH", func() {
 				err := ssh.Execute([]string{"--director"}, state)
 				Expect(err).NotTo(HaveOccurred())
 
+				Expect(logger.PrintlnCall.Messages).To(Equal([]string{
+					"checking host key",
+					"opening a tunnel through your jumpbox",
+				}))
+
 				Expect(sshCLI.RunCall.Receives[0]).To(ConsistOf(
 					"-T",
 					"jumpbox@jumpboxURL",
@@ -95,7 +102,13 @@ var _ = Describe("SSH", func() {
 				err := ssh.Execute([]string{"--director"}, state)
 				Expect(err).NotTo(HaveOccurred())
 
+				Expect(logger.PrintlnCall.Messages).To(Equal([]string{
+					"checking host key",
+					"opening a tunnel through your jumpbox",
+				}))
+
 				Expect(sshKeyGetter.JumpboxGetCall.CallCount).To(Equal(1))
+
 				Expect(fileIO.WriteFileCall.Receives).To(ContainElement(
 					fakes.WriteFileReceive{
 						Filename: jumpboxPrivateKeyPath,
@@ -103,6 +116,7 @@ var _ = Describe("SSH", func() {
 						Mode:     os.FileMode(0600),
 					},
 				))
+
 				Expect(sshCLI.StartCall.Receives[0]).To(ConsistOf(
 					"-4", "-D", "60000", "-nNC", "jumpbox@jumpboxURL", "-i", jumpboxPrivateKeyPath,
 				))

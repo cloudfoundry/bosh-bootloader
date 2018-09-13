@@ -15,6 +15,7 @@ import (
 )
 
 type SSH struct {
+	logger        logger
 	cli           sshCLI
 	keyGetter     sshKeyGetter
 	pathFinder    pathFinder
@@ -40,8 +41,9 @@ type tempDirWriter interface {
 	fileio.TempDirer
 }
 
-func NewSSH(sshCLI sshCLI, sshKeyGetter sshKeyGetter, pathFinder pathFinder, tempDirWriter tempDirWriter, randomPort randomPort) SSH {
+func NewSSH(logger logger, sshCLI sshCLI, sshKeyGetter sshKeyGetter, pathFinder pathFinder, tempDirWriter tempDirWriter, randomPort randomPort) SSH {
 	return SSH{
+		logger:        logger,
 		cli:           sshCLI,
 		keyGetter:     sshKeyGetter,
 		pathFinder:    pathFinder,
@@ -120,7 +122,7 @@ func (s SSH) Execute(args []string, state storage.State) error {
 		return fmt.Errorf("Open proxy port: %s", err)
 	}
 
-	fmt.Println("checking host key")
+	s.logger.Println("checking host key")
 	err = s.cli.Run([]string{
 		"-T",
 		fmt.Sprintf("jumpbox@%s", jumpboxURL),
@@ -130,8 +132,7 @@ func (s SSH) Execute(args []string, state storage.State) error {
 	if err != nil {
 		return fmt.Errorf("unable to verify host key fingerprint: %s", err)
 	}
-
-	fmt.Println("opening a tunnel through your jumpbox")
+	s.logger.Println("opening a tunnel through your jumpbox")
 	backgroundTunnel, err := s.cli.Start([]string{
 		"-4",
 		"-D", port,
