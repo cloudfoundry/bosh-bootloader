@@ -2,11 +2,6 @@
 # but is not reserved. IPs 10 or more above the base of your cidr should be safe.
 ---
 - type: replace
-  path: /networks/name=default/subnets/0/static?
-  value:
-  - 10.0.0.35
-
-- type: replace
   path: /vm_extensions/-
   value:
     name: cfcr-worker-cloud-properties
