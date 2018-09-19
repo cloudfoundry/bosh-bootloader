@@ -28,7 +28,7 @@ Steps to deploy cfcr with bbl:
 
 1. `bosh upload-release https://storage.googleapis.com/kubo-public/kubo-release-latest.tgz`
 
-1. `bosh upload-stemcell https://bosh.io/stemcells/bosh-vsphere-esxi-ubuntu-xenial-go_agent`
+1. `bosh upload-stemcell https://bosh.io/d/stemcells/bosh-vsphere-esxi-ubuntu-xenial-go_agent`
 
 1. export KD as your path to kubo-deployment so you can copy-paste from below if you so desire.
    be careful to check out the manifest that matches the kubo-release you downloaded above.
