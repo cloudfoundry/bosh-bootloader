@@ -37,6 +37,12 @@ Steps to deploy cfcr with bbl:
    git clone git@github.com:cloudfoundry-incubator/kubo-deployment.git
    export KD=$(pwd)/kubo-deployment
    ```
+   
+1. Update the cloud config to enable disk UUID:
+
+   ```bash
+   bosh update-config ${KD}/manifests/cloud-config/iaas/vsphere/use-vm-extensions.yml --type=cloud --name=cfcr-diskuuid
+   ```
 
 1. Deploy the cfcr manifest. Since vSphere can't provision load balancers for us, we're going to deploy with a single master with a set static IP.
 
@@ -45,9 +51,10 @@ Steps to deploy cfcr with bbl:
    -o ${KD}/manifests/ops-files/iaas/vsphere/cloud-provider.yml \
    -o ${KD}/manifests/ops-files/misc/single-master.yml \
    -o ${KD}/manifests/ops-files/iaas/vsphere/master-static-ip.yml \
-   -o ${KD}/manifests/ops-files/add-hostname-to-master-certificate.yml
+   -o ${KD}/manifests/ops-files/add-hostname-to-master-certificate.yml \
    -o ${KD}/manifests/ops-files/iaas/vsphere/set-working-dir-no-rp.yml \
-   -o cfcr-ops.yml \
+   -o ${KD}/manifests/ops-files/iaas/vsphere/use-vm-extensions.yml \
+   -o ${KD}/manifests/ops-files/use-runtime-config-bosh-dns.yml \
    -v kubernetes_master_host="${kubernetes_master_host}" \
    -v api-hostname="${kubernetes_master_host}" \
    -l <(bbl outputs)
