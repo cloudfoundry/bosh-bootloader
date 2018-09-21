@@ -19,11 +19,11 @@ const (
 
 - type: replace
   path: /vm_types/name=default/cloud_properties?/instance_type
-  value: Standard_D1_v2
+  value: Standard_DS1_v2
 
 - type: replace
   path: /vm_types/name=large/cloud_properties?/instance_type
-  value: Standard_D3_v2
+  value: Standard_DS3_v2
 
 - type: replace
   path: /vm_extensions/name=1GB_ephemeral_disk/cloud_properties?/ephemeral_disk/size
@@ -58,28 +58,28 @@ const (
   value:
     ephemeral_disk:
       size: 10240
-    instance_type: Standard_F1
+    instance_type: Standard_F1s
 
 - type: replace
   path: /vm_types/name=small/cloud_properties?
   value:
     ephemeral_disk:
       size: 10240
-    instance_type: Standard_F2
+    instance_type: Standard_F2s_v2
 
 - type: replace
   path: /vm_types/name=medium/cloud_properties?
   value:
     ephemeral_disk:
       size: 10240
-    instance_type: Standard_F4
+    instance_type: Standard_F4s_v2
 
 - type: replace
   path: /vm_types/name=large/cloud_properties?
   value:
     ephemeral_disk:
       size: 10240
-    instance_type: Standard_D12_v2
+    instance_type: Standard_DS12_v2
 
 - type: replace
   path: /vm_types/name=small-highmem/cloud_properties?
@@ -93,6 +93,6 @@ const (
   value:
     ephemeral_disk:
       size: 10240
-    instance_type: Standard_D1
+    instance_type: Standard_B1ms
 `
 )

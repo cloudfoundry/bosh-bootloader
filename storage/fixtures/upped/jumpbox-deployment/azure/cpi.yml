@@ -16,7 +16,7 @@
 - type: replace
   path: /resource_pools/name=vms/cloud_properties?
   value:
-    instance_type: Standard_D1_v2
+    instance_type: Standard_DS1_v2
 
 - type: replace
   path: /networks/name=private/subnets/0/cloud_properties?
