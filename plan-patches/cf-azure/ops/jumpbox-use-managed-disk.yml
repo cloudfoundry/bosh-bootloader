@@ -1,0 +1,4 @@
+---
+- type: replace
+  path: /resource_pools/name=vms/cloud_properties/use_managed_disks?
+  value: true

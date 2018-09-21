@@ -1,0 +1,68 @@
+---
+- type: replace
+  path: /instance_groups/name=smoke-tests/networks/0/name
+  value: cf
+
+- type: replace
+  path: /instance_groups/name=consul/networks/0/name
+  value: cf
+
+- type: replace
+  path: /instance_groups/name=nats/networks/0/name
+  value: cf
+
+- type: replace
+  path: /instance_groups/name=adapter/networks/0/name
+  value: cf
+
+- type: replace
+  path: /instance_groups/name=database/networks/0/name
+  value: cf
+
+- type: replace
+  path: /instance_groups/name=diego-api/networks/0/name
+  value: cf
+
+- type: replace
+  path: /instance_groups/name=uaa/networks/0/name
+  value: cf
+
+- type: replace
+  path: /instance_groups/name=api/networks/0/name
+  value: cf
+
+- type: replace
+  path: /instance_groups/name=cc-worker/networks/0/name
+  value: cf
+
+- type: replace
+  path: /instance_groups/name=router/networks/0/name
+  value: cf
+
+- type: replace
+  path: /instance_groups/name=tcp-router/networks/0/name
+  value: cf
+
+- type: replace
+  path: /instance_groups/name=scheduler/networks/0/name
+  value: cf
+
+- type: replace
+  path: /instance_groups/name=doppler/networks/0/name
+  value: cf
+
+- type: replace
+  path: /instance_groups/name=diego-cell/networks/0/name
+  value: cf
+
+- type: replace
+  path: /instance_groups/name=log-api/networks/0/name
+  value: cf
+
+- type: replace
+  path: /instance_groups/name=credhub/networks/0/name
+  value: cf
+
+- type: replace
+  path: /instance_groups/name=rotate-cc-database-key/networks/0/name
+  value: cf
