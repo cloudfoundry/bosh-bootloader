@@ -5,7 +5,7 @@ Steps to deploy cf-lite with bbl:
 1. Follow the normal steps to bbl up with a patch.
 
     ```bash
-    export BOSH_BOOTLOADER=<YOUR BOSH BOOTLOAER PATH>
+    export BOSH_BOOTLOADER=<YOUR BOSH BOOTLOADER PATH>
     mkdir banana-env && cd banana-env
     bbl plan --name banana-env
     cp -r $BOSH_BOOTLOADER/plan-patches/cf-lite-azure/. .
@@ -13,7 +13,7 @@ Steps to deploy cf-lite with bbl:
     eval "$(bbl print-env)"
     ```
 
-2. export CD as your path to cf-deployment so you can copy-paste from below if you so desire.
+2. export CD as your path to cf-lite-deployment so you can copy-paste from below if you so desire.
 
     ```bash
     git clone git@github.com:virtualcloudfoundry/cf-lite-deployment.git
