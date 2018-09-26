@@ -1,0 +1,20 @@
+
+- type: replace
+  path: /networks/-
+  value:
+    name: cf
+    subnets:
+    - azs:
+      - z1
+      - z2
+      - z3
+      gateway: ((cf_internal_gw))
+      range: ((cf_subnet_cidr))
+      reserved:
+      - ((cf_internal_gw))/30
+      dns: [168.63.129.16]
+      cloud_properties:
+        virtual_network_name: ((vnet_name))
+        subnet_name: ((cf_subnet))
+        security_group: ((cf_security_group))
+    type: dynamic

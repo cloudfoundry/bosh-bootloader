@@ -35,3 +35,4 @@ Many of these have additional prep steps or specific downstream bosh deployments
 | [cfcr-openstack](cfcr-openstack/) | Deploy a CFCR with a single master floating static IP |
 | **Azure** |     |
 | [cf-lite-azure](cf-lite-azure/) | Deploy a cf-lite on azure, one-box dev environment for CF |
+| [cf-azure](cf-azure/) | Deploy a cf on azure |
