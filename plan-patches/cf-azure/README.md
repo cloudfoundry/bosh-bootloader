@@ -5,7 +5,7 @@ Steps to deploy cf with bbl:
 1. Follow the normal steps to bbl up with a patch.
 
     ```bash
-    export BOSH_BOOTLOADER=<YOUR BOSH BOOTLOAER PATH>
+    export BOSH_BOOTLOADER=<YOUR BOSH BOOTLOADER PATH>
     mkdir banana-env && cd banana-env
     bbl plan --name banana-env
     cp -r $BOSH_BOOTLOADER/plan-patches/cf-azure/. .

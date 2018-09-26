@@ -12,9 +12,7 @@
       range: ((cf_subnet_cidr))
       reserved:
       - ((cf_internal_gw))/30
-      dns:
-      - 8.8.8.8
-      - 168.63.129.16
+      dns: [168.63.129.16]
       cloud_properties:
         virtual_network_name: ((vnet_name))
         subnet_name: ((cf_subnet))

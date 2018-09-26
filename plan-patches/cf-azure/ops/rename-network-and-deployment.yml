@@ -32,10 +32,6 @@
   path: /instance_groups/name=uaa/networks/name=default/name
   value: ((network_name))
 
-# - type: replace
-#   path: /instance_groups/name=singleton-blobstore/networks/name=default/name
-#   value: ((network_name))
-
 - type: replace
   path: /instance_groups/name=api/networks/name=default/name
   value: ((network_name))
@@ -124,13 +120,6 @@
       deployment: ((deployment_name))
       network: ((network_name))
       domain: bosh
-  # - domain: blobstore.service.cf.internal
-  #   targets:
-  #   - query: '*'
-  #     instance_group: singleton-blobstore
-  #     deployment: ((deployment_name))
-  #     network: ((network_name))
-  #     domain: bosh
   - domain: cc-uploader.service.cf.internal
     targets:
     - query: '*'
