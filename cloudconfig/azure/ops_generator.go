@@ -89,7 +89,7 @@ func (o OpsGenerator) Generate(state storage.State) (string, error) {
 		Gateway:  "((internal_gw))",
 		Range:    "((subnet_cidr))",
 		Reserved: []string{"((jumpbox__internal_ip))", "((director__internal_ip))", "((internal_gw))/30"},
-		DNS:      []string{"8.8.8.8", "168.63.129.16"},
+		DNS:      []string{"168.63.129.16"},
 		CloudProperties: subnetCloudProperties{
 			VirtualNetworkName: "((vnet_name))",
 			SubnetName:         "((subnet_name))",
