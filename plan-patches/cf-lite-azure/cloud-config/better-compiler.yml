@@ -1,0 +1,14 @@
+- type: replace
+  path: /vm_types/-
+  value:
+    name: better_compiler
+    cloud_properties:
+      instance_type: Standard_DS2_v2
+      root_disk:
+        size: 102400
+      ephemeral_disk:
+        use_root_disk: true
+
+- type: replace
+  path: /compilation/vm_type
+  value: better_compiler

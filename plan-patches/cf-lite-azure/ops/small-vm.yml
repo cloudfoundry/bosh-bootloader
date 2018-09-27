@@ -1,0 +1,9 @@
+---
+# ----- Reduce default app memory to 256M ------
+- type: replace
+  path: /instance_groups/name=cf-all-in-one/jobs/name=cloud_controller_ng/properties/cc/default_app_memory?
+  value: 256
+
+- type: replace
+  path: /instance_groups/name=cf-all-in-one/vm_type
+  value: small
