@@ -1,0 +1,7 @@
+
+- type: replace
+  path: /vm_extensions/-
+  value:
+    name: cfcr-resource-group-properties
+    cloud_properties:
+      resource_group_name: ((cfcr_resource_group_name))
