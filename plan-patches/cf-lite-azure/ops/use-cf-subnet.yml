@@ -1,0 +1,4 @@
+---
+- type: replace
+  path: /instance_groups/name=cf-all-in-one/networks/0/name
+  value: cf
