@@ -32,6 +32,9 @@ func (s Subnetwork) Delete() error {
 	err := s.client.DeleteSubnetwork(s.region, s.name)
 
 	if err != nil {
+		if strings.Contains(err.Error(), "delete auto subnetwork") {
+			return nil
+		}
 		return fmt.Errorf("Delete: %s", err)
 	}
 

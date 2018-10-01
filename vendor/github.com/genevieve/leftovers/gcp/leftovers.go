@@ -119,11 +119,9 @@ func NewLeftovers(logger logger, keyPath string) (Leftovers, error) {
 		return Leftovers{}, err
 	}
 
-	asyncDeleter := app.NewAsyncDeleter(logger)
-
 	return Leftovers{
 		logger:       logger,
-		asyncDeleter: asyncDeleter,
+		asyncDeleter: app.NewAsyncDeleter(logger),
 		resources: []resource{
 			compute.NewForwardingRules(client, logger, regions),
 			compute.NewGlobalForwardingRules(client, logger),
@@ -142,6 +140,8 @@ func NewLeftovers(logger logger, keyPath string) (Leftovers, error) {
 			compute.NewHttpsHealthChecks(client, logger),
 			compute.NewImages(client, logger),
 			compute.NewDisks(client, logger, zones),
+			compute.NewVpnTunnels(client, logger, regions),
+			compute.NewTargetVpnGateways(client, logger, regions),
 			compute.NewSubnetworks(client, logger, regions),
 			compute.NewNetworks(client, logger),
 			compute.NewAddresses(client, logger, regions),

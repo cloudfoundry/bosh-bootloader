@@ -34,8 +34,10 @@ type client struct {
 	targetHttpProxies     *gcpcompute.TargetHttpProxiesService
 	targetHttpsProxies    *gcpcompute.TargetHttpsProxiesService
 	targetPools           *gcpcompute.TargetPoolsService
+	targetVpnGateways     *gcpcompute.TargetVpnGatewaysService
 	urlMaps               *gcpcompute.UrlMapsService
 	regions               *gcpcompute.RegionsService
+	vpnTunnels            *gcpcompute.VpnTunnelsService
 	zones                 *gcpcompute.ZonesService
 }
 
@@ -65,7 +67,9 @@ func NewClient(project string, service *gcpcompute.Service, logger logger) clien
 		targetHttpProxies:     service.TargetHttpProxies,
 		targetHttpsProxies:    service.TargetHttpsProxies,
 		targetPools:           service.TargetPools,
+		targetVpnGateways:     service.TargetVpnGateways,
 		urlMaps:               service.UrlMaps,
+		vpnTunnels:            service.VpnTunnels,
 		regions:               service.Regions,
 		zones:                 service.Zones,
 	}
@@ -583,12 +587,66 @@ func (c client) DeleteTargetPool(region string, targetPool string) error {
 	return c.wait(c.targetPools.Delete(c.project, region, targetPool))
 }
 
+func (c client) ListTargetVpnGateways(region string) ([]*gcpcompute.TargetVpnGateway, error) {
+	var token string
+	list := []*gcpcompute.TargetVpnGateway{}
+
+	for {
+		resp, err := c.targetVpnGateways.List(c.project, region).PageToken(token).Do()
+		if err != nil {
+			return nil, err
+		}
+
+		list = append(list, resp.Items...)
+
+		token = resp.NextPageToken
+		if token == "" {
+			break
+		}
+
+		time.Sleep(time.Second)
+	}
+
+	return list, nil
+}
+
+func (c client) DeleteTargetVpnGateway(region, targetVpnGateway string) error {
+	return c.wait(c.targetVpnGateways.Delete(c.project, region, targetVpnGateway))
+}
+
 func (c client) ListUrlMaps() (*gcpcompute.UrlMapList, error) {
 	return c.urlMaps.List(c.project).Do()
 }
 
 func (c client) DeleteUrlMap(urlMap string) error {
 	return c.wait(c.urlMaps.Delete(c.project, urlMap))
+}
+
+func (c client) ListVpnTunnels(region string) ([]*gcpcompute.VpnTunnel, error) {
+	var token string
+	list := []*gcpcompute.VpnTunnel{}
+
+	for {
+		resp, err := c.vpnTunnels.List(c.project, region).PageToken(token).Do()
+		if err != nil {
+			return nil, err
+		}
+
+		list = append(list, resp.Items...)
+
+		token = resp.NextPageToken
+		if token == "" {
+			break
+		}
+
+		time.Sleep(time.Second)
+	}
+
+	return list, nil
+}
+
+func (c client) DeleteVpnTunnel(region, vpnTunnel string) error {
+	return c.wait(c.vpnTunnels.Delete(c.project, region, vpnTunnel))
 }
 
 func (c client) ListRegions() (map[string]string, error) {

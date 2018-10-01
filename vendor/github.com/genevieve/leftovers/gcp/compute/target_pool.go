@@ -30,6 +30,6 @@ func (t TargetPool) Name() string {
 	return t.name
 }
 
-func (t TargetPool) Type() string {
+func (TargetPool) Type() string {
 	return "Target Pool"
 }

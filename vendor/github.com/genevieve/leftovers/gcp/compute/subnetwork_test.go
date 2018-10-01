@@ -39,6 +39,17 @@ var _ = Describe("Subnetwork", func() {
 			Expect(client.DeleteSubnetworkCall.Receives.Region).To(Equal(region))
 		})
 
+		Context("when the client fails to delete because it was created by a network in auto subnet mode", func() {
+			BeforeEach(func() {
+				client.DeleteSubnetworkCall.Returns.Error = errors.New("Cannot delete auto subnetwork from an auto subnet mode network.")
+			})
+
+			It("returns success", func() {
+				err := subnetwork.Delete()
+				Expect(err).NotTo(HaveOccurred())
+			})
+		})
+
 		Context("when the client fails to delete", func() {
 			BeforeEach(func() {
 				client.DeleteSubnetworkCall.Returns.Error = errors.New("the-error")
