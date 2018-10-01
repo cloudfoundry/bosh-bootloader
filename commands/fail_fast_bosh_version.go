@@ -28,7 +28,7 @@ func fastFailBOSHVersion(boshManager boshManager) error {
 
 	if currentVersion.LessThan(*minimumVersion) {
 		path := boshManager.Path()
-		return fmt.Errorf("%s: bosh-cli version must be at least v2.0.48", path)
+		return fmt.Errorf("%s: bosh-cli version must be at least v2.0.48, but found v%s", path, currentVersion)
 	}
 
 	return nil

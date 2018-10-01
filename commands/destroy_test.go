@@ -52,7 +52,7 @@ var _ = Describe("Destroy", func() {
 			It("returns a helpful error message", func() {
 				boshManager.VersionCall.Returns.Version = "1.9.0"
 				err := destroy.CheckFastFails([]string{}, storage.State{IAAS: "aws"})
-				Expect(err).To(MatchError("/bin/bosh1: bosh-cli version must be at least v2.0.48"))
+				Expect(err).To(MatchError("/bin/bosh1: bosh-cli version must be at least v2.0.48, but found v1.9.0"))
 			})
 		})
 

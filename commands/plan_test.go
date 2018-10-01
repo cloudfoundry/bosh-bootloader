@@ -218,7 +218,7 @@ var _ = Describe("Plan", func() {
 
 			It("returns an error", func() {
 				err := command.CheckFastFails([]string{}, storage.State{Version: 999})
-				Expect(err).To(MatchError("/bin/banana: bosh-cli version must be at least v2.0.48"))
+				Expect(err).To(MatchError("/bin/banana: bosh-cli version must be at least v2.0.48, but found v1.9.1"))
 			})
 		})
 
