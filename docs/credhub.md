@@ -22,7 +22,7 @@
 1. Get credentials
 
     ```
-    http_proxy=socks5://localhost:5000 credhub find -n 'cf_admin_password'
+    credhub find -n 'cf_admin_password'
     ```
 
     The CredHub CLI will parse `CREDHUB_PROXY` and determines from the `ssh+socks5://` scheme that it should proxy throuhg a jumpbox via a tunnel of its own making.
