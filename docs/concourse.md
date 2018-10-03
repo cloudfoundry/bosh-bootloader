@@ -16,7 +16,7 @@ install using `bbl` and `bosh`.
   ```bash
   bbl up --lb-type concourse
 
-  export external_host="$(bbl lbs | awk -F': ' '{print $2}')"
+  export external_host="$(bbl lbs | awk -F'[' '{print $2}' | awk -F']' '{print $1}')"
 
   eval "$(bbl print-env)"
 
@@ -45,7 +45,7 @@ EOL
     -o operations/tls-vars.yml \
     -o operations/web-network-extension.yml \
     --var network_name=default \
-    --var external_host=$external_host \
+    --var external_host=${external_host} \
     --var external_url="https://${external_host}" \
     --var web_vm_type=default \
     --var db_vm_type=default \
