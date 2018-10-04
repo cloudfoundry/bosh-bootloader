@@ -47,7 +47,7 @@ install using `bbl` and `bosh`.
 
 #### On Azure and GCP
   ```bash
-  pushd $GOPATH/src/github.com/concourse/concourse-bosh-deployment/cluster
+pushd $GOPATH/src/github.com/concourse/concourse-bosh-deployment/cluster
   
       export USERNAME="username"
       export PASSWORD="super-secure-password"
@@ -77,12 +77,12 @@ EOL
       -o operations/tls-vars.yml \
       -o operations/web-network-extension.yml
    
-   popd
+ popd
   ```
   
 #### On AWS
 ```bash
-  pushd $GOPATH/src/github.com/concourse/concourse-bosh-deployment/cluster
+pushd $GOPATH/src/github.com/concourse/concourse-bosh-deployment/cluster
   
       export USERNAME="username"
       export PASSWORD="super-secure-password"
@@ -133,7 +133,7 @@ EOL
       -o aws-tls-vars.yml \
       -o operations/web-network-extension.yml
    
-   popd
+popd
 ```
 
   
