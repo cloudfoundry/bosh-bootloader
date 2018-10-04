@@ -31,7 +31,7 @@ as ops files that configure the CPI, add UAA and Credhub to the director, and al
 `bbl` uses in its default director `create-env` script.
 
 ### `jumpbox-deployment`
-This is a copy of the [cppforlife/jumpbox-deployment](https://github.com/cppforlife/jumpbox-deployment) Git repository. It contains the base jumpbox manifest, as well
+This is a copy of the [cloudfoundry/jumpbox-deployment](https://github.com/cloudfoundry/jumpbox-deployment) Git repository. It contains the base jumpbox manifest, as well
 as ops files that configure the CPI. As with the `bosh-deployment` directory, the entire Git repository is provided, not just the files `bbl` uses.
 
 ## Override scripts
