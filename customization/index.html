@@ -632,7 +632,7 @@ be customized.</p>
 as ops files that configure the CPI, add UAA and Credhub to the director, and allow SSH access to the director. The entire repository is provided, not just the files that
 <code>bbl</code> uses in its default director <code>create-env</code> script.</p>
 <h3 id="jumpbox-deployment"><code>jumpbox-deployment</code></h3>
-<p>This is a copy of the <a href="https://github.com/cppforlife/jumpbox-deployment">cppforlife/jumpbox-deployment</a> Git repository. It contains the base jumpbox manifest, as well
+<p>This is a copy of the <a href="https://github.com/cloudfoundry/jumpbox-deployment">cloudfoundry/jumpbox-deployment</a> Git repository. It contains the base jumpbox manifest, as well
 as ops files that configure the CPI. As with the <code>bosh-deployment</code> directory, the entire Git repository is provided, not just the files <code>bbl</code> uses.</p>
 <h2 id="override-scripts">Override scripts</h2>
 <p>To create and destroy the jumpbox and director deployments, <code>bbl</code> does not shell out directly to the BOSH CLI. Instead, it uses four wrapper scripts, which are emitted into
