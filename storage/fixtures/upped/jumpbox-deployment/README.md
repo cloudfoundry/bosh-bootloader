@@ -16,7 +16,7 @@ IMPORTANT: Make sure to configure security group to allow only necessary traffic
 Requires new [BOSH CLI v0.0.146+](https://github.com/cloudfoundry/bosh-cli).
 
 ```
-$ git clone https://github.com/cppforlife/jumpbox-deployment ~/jumpbox-deployment
+$ git clone https://github.com/cloudfoundry/jumpbox-deployment ~/jumpbox-deployment
 
 $ mkdir -p ~/deployments/jumpbox-1
 

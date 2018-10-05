@@ -14,7 +14,7 @@
     * Through a VPN
         * [`bosh create-env`, OpenVPN option](https://github.com/dpb587/openvpn-bosh-release)
     * Through a jumpbox
-        * [`bosh create-env` option](https://github.com/cppforlife/jumpbox-deployment)
+        * [`bosh create-env` option](https://github.com/cloudfoundry/jumpbox-deployment)
     * [Expose Director on a Public IP](https://bosh.io/docs/init-external-ip.html) (not recommended)
 
 * [CLI v2](https://bosh.io/docs/cli-v2.html)

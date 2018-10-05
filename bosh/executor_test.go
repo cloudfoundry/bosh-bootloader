@@ -72,14 +72,14 @@ var _ = Describe("Executor", func() {
 
 			By("writing bosh-deployment assets to the deployment dir", func() {
 				simplePath := filepath.Join(deploymentDir, "no-external-ip.yml")
-				expectedContents := bosh.MustAsset("vendor/github.com/cppforlife/jumpbox-deployment/no-external-ip.yml")
+				expectedContents := bosh.MustAsset("vendor/github.com/cloudfoundry/jumpbox-deployment/no-external-ip.yml")
 
 				contents, err := fs.ReadFile(simplePath)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(contents).To(Equal(expectedContents))
 
 				nestedPath := filepath.Join(deploymentDir, "vsphere", "cpi.yml")
-				expectedContents = bosh.MustAsset("vendor/github.com/cppforlife/jumpbox-deployment/vsphere/cpi.yml")
+				expectedContents = bosh.MustAsset("vendor/github.com/cloudfoundry/jumpbox-deployment/vsphere/cpi.yml")
 
 				contents, err = fs.ReadFile(nestedPath)
 				Expect(err).NotTo(HaveOccurred())

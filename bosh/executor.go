@@ -44,7 +44,7 @@ type setupFile struct {
 }
 
 var (
-	jumpboxDeploymentRepo = "vendor/github.com/cppforlife/jumpbox-deployment"
+	jumpboxDeploymentRepo = "vendor/github.com/cloudfoundry/jumpbox-deployment"
 	boshDeploymentRepo    = "vendor/github.com/cloudfoundry/bosh-deployment"
 )
 
