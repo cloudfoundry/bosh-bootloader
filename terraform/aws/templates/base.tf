@@ -390,7 +390,7 @@ resource "aws_route_table" "bosh_route_table" {
 
 resource "aws_route" "bosh_route_table" {
   destination_cidr_block = "0.0.0.0/0"
-  gateway_id             = "${aws_internet_gateway.ig.id}"
+  gateway_id             = "${local.ig_id}"
   route_table_id         = "${aws_route_table.bosh_route_table.id}"
 }
 
@@ -430,7 +430,19 @@ resource "aws_route_table_association" "route_internal_subnets" {
   route_table_id = "${aws_route_table.internal_route_table.id}"
 }
 
+variable "existing_ig_id" {
+  type        = "string"
+  default     = ""
+  description = "Optionally use an existing Internet Gateway"
+}
+
+locals {
+  ig_count = "${length(var.existing_ig_id) > 0 ? 0 : 1}"
+  ig_id     = "${length(var.existing_ig_id) > 0 ? var.existing_ig_id : join(" ", aws_internet_gateway.ig.*.id)}"
+}
+
 resource "aws_internet_gateway" "ig" {
+  count  = "${local.ig_count}"
   vpc_id = "${local.vpc_id}"
 }
 
