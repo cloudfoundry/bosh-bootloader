@@ -143,7 +143,7 @@ func (c Client) ValidateSafeToDelete(vpcID, envID string) error {
 	}
 
 	vms := c.flattenVMs(output.Reservations)
-	vms = c.removeOneVM(vms, fmt.Sprintf("%s-nat", envID))
+	vms = c.removeAll(vms, fmt.Sprintf("%s-nat", envID))
 	vms = c.removeOneVM(vms, "NAT")
 	vms = c.removeOneVM(vms, "bosh/0")
 	vms = c.removeOneVM(vms, "jumpbox/0")
@@ -185,6 +185,18 @@ func (c Client) removeOneVM(vms []string, vmToRemove string) []string {
 	}
 
 	return vms
+}
+
+func (c Client) removeAll(vms []string, vmToRemove string) []string {
+	result := []string{}
+
+	for _, vm := range vms {
+		if vm != vmToRemove {
+			result = append(result, vm)
+		}
+	}
+
+	return result
 }
 
 func (c Client) GetVPC(vpcName string) (*string, error) {
