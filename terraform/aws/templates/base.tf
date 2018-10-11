@@ -430,15 +430,16 @@ resource "aws_route_table_association" "route_internal_subnets" {
   route_table_id = "${aws_route_table.internal_route_table.id}"
 }
 
-variable "existing_ig_id" {
-  type        = "string"
-  default     = ""
-  description = "Optionally use an existing Internet Gateway"
+locals {
+  ig_count = "${length(var.existing_vpc_id) > 0 ? 0 : 1}"
+  ig_id     = "${length(var.existing_vpc_id) > 0 ? data.aws_internet_gateway.default.id : join(" ", aws_internet_gateway.ig.*.id)}"
 }
 
-locals {
-  ig_count = "${length(var.existing_ig_id) > 0 ? 0 : 1}"
-  ig_id     = "${length(var.existing_ig_id) > 0 ? var.existing_ig_id : join(" ", aws_internet_gateway.ig.*.id)}"
+data "aws_internet_gateway" "default" {
+  filter {
+    name = "attachment.vpc-id"
+    values = ["${local.vpc_id}"]
+  }
 }
 
 resource "aws_internet_gateway" "ig" {
