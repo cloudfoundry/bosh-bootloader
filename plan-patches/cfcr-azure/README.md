@@ -13,38 +13,30 @@ Steps to deploy cf with bbl:
     eval "$(bbl print-env)"
     ```
 
-2. export KD as your path to cf-deployment so you can copy-paste from below if you so desire.
+2. export KD as your path to kubo-deployment so you can copy-paste from below if you so desire.
 
     ```bash
-    git clone git@github.com:cloudfoundry-incubator/kubo-deployment.git
+    git clone https://github.com/cloudfoundry-incubator/kubo-deployment.git
     export KD=$(pwd)/kubo-deployment
     ```
 
 3. upload the kubo-release
 
     ```bash
-    git clone https://github.com/virtualcloudfoundry/kubo-release -b azure_cfcr_support
+    git clone https://github.com/cloudfoundry-incubator/kubo-release.git
     pushd ./kubo-release
     bosh create-release && bosh upload-release
     popd
     ```
 
-    or use the pre-built package:
-
-    ```bash
-    bosh upload-release https://opensourcerelease.blob.core.windows.net/releases/kubo-release-0.21.0-dev.1537447050.tgz
-    ```
-
 4. Upload the stemcell required
-    you can build the latest stemcell from this repo:
+    you can build the latest xenial stemcell from this repo:
     https://github.com/cloudfoundry/bosh-linux-stemcell-builder
     and then use it for the deployment.
-    we need to do this because the stemcell contains this fix is not released yet:
-    https://github.com/cloudfoundry/bosh-agent/commit/94dba6370581a840f74d12592b34cb233e2cd316
 
-    or you can just use the pre-built for test usage.
+    or you can just use the candidate release.
     ```bash
-    bosh upload-stemcell https://opensourcerelease.blob.core.windows.net/releases/bosh-stemcell-6666.66-azure-hyperv-ubuntu-xenial-go_agent.tgz
+    bosh upload-stemcell https://s3.amazonaws.com/bosh-core-stemcells-candidate/azure/bosh-stemcell-156-azure-hyperv-ubuntu-xenial-go_agent.tgz
     ```
 
 5. Create cloud config for the deployment
@@ -58,7 +50,7 @@ Steps to deploy cf with bbl:
     -l <(bbl outputs)
     ```
 
-6. Deploy the cf manifest.
+6. Deploy the cfcr manifest.
 
    Notes: if you only want to do a test, use:
             -o ./ops/small-vm.yml \
