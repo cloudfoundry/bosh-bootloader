@@ -66,6 +66,7 @@ Steps to deploy cf with bbl:
     -o ./ops/use-latest-kubo-release.yml \
     -o ./ops/use-vm-extensions.yml \
     -o ./ops/single-worker.yml \
+    -o ./ops/use-cfcr-subnet.yml \
     -o ./ops/cloud-provider.yml \
     -v deployment_name=${deployment_name} \
     -l <(bbl outputs)

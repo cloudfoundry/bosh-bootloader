@@ -10,8 +10,7 @@ resource "azurerm_lb" "cfcr-balancer" {
   name                = "${var.env_id}-cfcr-lb"
   location            = "${var.region}"
   sku                 = "Standard"
-  # TODO move this to cfcr resource group.
-  resource_group_name = "${azurerm_resource_group.bosh.name}"
+  resource_group_name = "${azurerm_resource_group.cfcr.name}"
 
   frontend_ip_configuration {
     name                 = "${azurerm_public_ip.cfcr-balancer-ip.name}"
@@ -21,13 +20,13 @@ resource "azurerm_lb" "cfcr-balancer" {
 
 resource "azurerm_lb_backend_address_pool" "cfcr-balancer-backend-pool" {
   name                = "${var.env_id}-cfcr-backend-pool"
-  resource_group_name = "${azurerm_resource_group.bosh.name}"
+  resource_group_name = "${azurerm_resource_group.cfcr.name}"
   loadbalancer_id     = "${azurerm_lb.cfcr-balancer.id}"
 }
 
 resource "azurerm_lb_probe" "api-health-probe" {
   name                = "${var.env_id}-api-health-probe"
-  resource_group_name = "${azurerm_resource_group.bosh.name}"
+  resource_group_name = "${azurerm_resource_group.cfcr.name}"
   loadbalancer_id     = "${azurerm_lb.cfcr-balancer.id}"
   protocol            = "Tcp"
   interval_in_seconds = 5
@@ -37,7 +36,7 @@ resource "azurerm_lb_probe" "api-health-probe" {
 
 resource "azurerm_lb_rule" "cfcr-balancer-api-rule" {
   name                           = "${var.env_id}-api-rule"
-  resource_group_name            = "${azurerm_resource_group.bosh.name}"
+  resource_group_name            = "${azurerm_resource_group.cfcr.name}"
   loadbalancer_id                = "${azurerm_lb.cfcr-balancer.id}"
   protocol                       = "Tcp"
   frontend_port                  = 8443
