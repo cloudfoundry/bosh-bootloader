@@ -15,5 +15,7 @@
       cloud_properties:
         virtual_network_name: ((cfcr_vnet_name))
         subnet_name: ((cfcr_subnet))
-        security_group: ((cfcr_worker_security_group))
+        security_group:
+          resource_group_name: ((cfcr_resource_group_name))
+          name: ((cfcr_master_security_group))
     type: dynamic

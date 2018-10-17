@@ -71,10 +71,6 @@ output "cfcr_subnet_name" {
     value = "${azurerm_subnet.cfcr-subnet.name}"
 }
 
-output "cfcr_worker_security_group" {
-    value = "${azurerm_network_security_group.cfcr-worker.name}"
-}
-
 output "primary_availability_set" {
     value = "bosh-${var.env_id}-azurecfcr-worker"
 }

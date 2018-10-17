@@ -1,9 +1,9 @@
 
-// Security Group For CFCR Master Nodes
+// Security Group For CFCR Nodes
 resource "azurerm_network_security_group" "cfcr-master" {
   name                = "${var.env_id}-cfcr-master-sg"
   location            = "${var.region}"
-  resource_group_name          = "${azurerm_resource_group.bosh.name}"
+  resource_group_name          = "${azurerm_resource_group.cfcr.name}"
 
   security_rule {
     name                       = "master"
@@ -16,12 +16,4 @@ resource "azurerm_network_security_group" "cfcr-master" {
     source_address_prefix      = "*"
     destination_address_prefix = "*"
   }
-}
-
-// Security Group For CFCR Worker Nodes
-resource "azurerm_network_security_group" "cfcr-worker" {
-  name                = "${var.env_id}-cfcr-worker-sg"
-  location            = "${var.region}"
-  # TODO: after the new cpi release, switch to cfcr resource group.
-  resource_group_name          = "${azurerm_resource_group.bosh.name}"
 }

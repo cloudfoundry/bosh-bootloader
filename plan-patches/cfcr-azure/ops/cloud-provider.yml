@@ -17,7 +17,7 @@
           vnet-resource-group-name: ((cfcr_vnet_resource_group_name))
           vnet-name: ((cfcr_vnet_name))
           subnet-name: ((cfcr_vnet_name))
-          network-security-group-name: ((cfcr_worker_security_group))
+          network-security-group-name: ((cfcr_master_security_group))
           availability-set: ((primary_availability_set))
 
     provides:
@@ -62,7 +62,7 @@
           vnet-resource-group-name: ((cfcr_vnet_resource_group_name))
           vnet-name: ((cfcr_vnet_name))
           subnet-name: ((cfcr_subnet_name))
-          network-security-group-name: ((cfcr_worker_security_group))
+          network-security-group-name: ((cfcr_master_security_group))
           availability-set: ((primary_availability_set))
     provides:
       cloud-provider: {as: worker-cloud-provider}
