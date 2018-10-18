@@ -10,7 +10,7 @@ mkdir banana-env && cd banana-env
 
 bbl plan --name banana-env
 
-cp -r bosh-bootloader/plan-patches/bosh-lite-gcp/. .
+cp -R bosh-bootloader/plan-patches/bosh-lite-gcp/* .
 
 bbl up
 ```
