@@ -51,10 +51,6 @@ output "client_secret" {
     value = "${var.client_secret}"
 }
 
-output "location" {
-    value = "southeastasia"
-}
-
 output "cfcr_resource_group_name" {
     value = "${azurerm_resource_group.cfcr.name}"
 }
