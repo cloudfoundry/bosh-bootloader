@@ -55,7 +55,6 @@ Steps to deploy cf with bbl:
    Notes: if you only want to do a test, use:
             -o ./ops/small-vm.yml \
           if you want to preview the manifest before apply it. use the "bosh interpolate"
-          if you want to use xip.io run the script go get it:
 
     ```bash
     bosh -n -d ${deployment_name} deploy ${KD}/manifests/cfcr.yml \
@@ -69,6 +68,7 @@ Steps to deploy cf with bbl:
     -o ./ops/use-cfcr-subnet.yml \
     -o ./ops/cloud-provider.yml \
     -v deployment_name=${deployment_name} \
+    -v cfcr_location=${BBL_AZURE_REGION} \
     -l <(bbl outputs)
 
     bosh -d ${deployment_name} run-errand apply-specs
