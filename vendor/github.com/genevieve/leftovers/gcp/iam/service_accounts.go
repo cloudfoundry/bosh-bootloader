@@ -5,12 +5,16 @@ import (
 	"strings"
 
 	"github.com/genevieve/leftovers/common"
+	gcpcrm "google.golang.org/api/cloudresourcemanager/v1"
 	gcpiam "google.golang.org/api/iam/v1"
 )
 
 type serviceAccountsClient interface {
 	ListServiceAccounts() ([]*gcpiam.ServiceAccount, error)
 	DeleteServiceAccount(account string) error
+
+	GetProjectIamPolicy() (*gcpcrm.Policy, error)
+	SetProjectIamPolicy(*gcpcrm.Policy) (*gcpcrm.Policy, error)
 }
 
 type ServiceAccounts struct {
@@ -33,7 +37,7 @@ func (s ServiceAccounts) List(filter string) ([]common.Deletable, error) {
 
 	var resources []common.Deletable
 	for _, account := range accounts {
-		resource := NewServiceAccount(s.client, account.Name)
+		resource := NewServiceAccount(s.client, s.logger, account.Name, account.Email)
 
 		if !strings.Contains(resource.Name(), filter) {
 			continue

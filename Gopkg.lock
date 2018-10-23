@@ -163,7 +163,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:833a8ef5d6a387b152e70b438412cbf011cdf1528447e63f0a2887e91efd5a64"
+  digest = "1:bbae32c0d9ef1bdbe540b4826b50b993ece0a8708e6073cd7e233453881d6a04"
   name = "github.com/genevieve/leftovers"
   packages = [
     "app",
@@ -191,7 +191,7 @@
     "vsphere",
   ]
   pruneopts = "U"
-  revision = "8065b25d1d7eb720f8d2b4dbf685b9d6c4570115"
+  revision = "242488da414db8ad1465bf24503303ace855dedb"
 
 [[projects]]
   digest = "1:039d212663a562ed6e04b63e5e2b955b8a409990874d83c371164620590081ab"
@@ -590,9 +590,10 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:6b7c1983bcc234eaacefd32b4d9561f49b8e0a3a7d7428646e5f485ecfd591c7"
+  digest = "1:a9f1b92a63bd47c0777dd08b67f612042cc7e415c95c5a84fcc50c684c64aa76"
   name = "google.golang.org/api"
   packages = [
+    "cloudresourcemanager/v1",
     "compute/v1",
     "container/v1",
     "dns/v1",
