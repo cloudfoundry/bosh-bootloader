@@ -18,13 +18,11 @@ var _ = Describe("Manager", func() {
 		manager            runtimeconfig.Manager
 		incomingState      storage.State
 
-		fileIO      *fakes.FileIO
 		dirProvider *fakes.DirProvider
 	)
 	BeforeEach(func() {
 		logger = &fakes.Logger{}
 		dirProvider = &fakes.DirProvider{}
-		fileIO = &fakes.FileIO{}
 		boshCLI = &fakes.BOSHCLI{}
 		boshClientProvider = &fakes.BOSHClientProvider{}
 		incomingState = storage.State{
