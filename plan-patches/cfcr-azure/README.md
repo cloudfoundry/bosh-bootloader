@@ -19,24 +19,10 @@ Steps to deploy cf with bbl:
     git clone https://github.com/cloudfoundry-incubator/kubo-deployment.git
     export KD=$(pwd)/kubo-deployment
     ```
-
-3. upload the kubo-release
+4. Upload the stemcell 
 
     ```bash
-    git clone https://github.com/cloudfoundry-incubator/kubo-release.git
-    pushd ./kubo-release
-    bosh create-release && bosh upload-release
-    popd
-    ```
-
-4. Upload the stemcell required
-    you can build the latest xenial stemcell from this repo:
-    https://github.com/cloudfoundry/bosh-linux-stemcell-builder
-    and then use it for the deployment.
-
-    or you can just use the candidate release.
-    ```bash
-    bosh upload-stemcell https://s3.amazonaws.com/bosh-core-stemcells-candidate/azure/bosh-stemcell-156-azure-hyperv-ubuntu-xenial-go_agent.tgz
+    bosh upload-stemcell https://bosh.io/d/stemcells/bosh-azure-hyperv-ubuntu-xenial-go_agent
     ```
 
 5. Create cloud config for the deployment
@@ -62,7 +48,6 @@ Steps to deploy cf with bbl:
     -o ${KD}/manifests/ops-files/add-hostname-to-master-certificate.yml \
     -o ${KD}/manifests/ops-files/use-runtime-config-bosh-dns.yml \
     -o ${KD}/manifests/ops-files/rename.yml \
-    -o ./ops/use-latest-kubo-release.yml \
     -o ./ops/use-vm-extensions.yml \
     -o ./ops/single-worker.yml \
     -o ./ops/use-cfcr-subnet.yml \
