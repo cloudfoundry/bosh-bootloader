@@ -560,7 +560,7 @@ var _ = Describe("LoadState", func() {
 							"--vsphere-vcenter-rp", "rp",
 							"--vsphere-network", "network",
 							"--vsphere-vcenter-ds", "ds",
-							"--vsphere-subnet", "subnet",
+							"--vsphere-subnet-cidr", "subnet",
 							"--vsphere-vcenter-disks", "disks",
 							"--vsphere-vcenter-templates", "templates",
 							"--vsphere-vcenter-vms", "vms",
@@ -584,7 +584,7 @@ var _ = Describe("LoadState", func() {
 						Expect(state.VSphere.VCenterRP).To(Equal("rp"))
 						Expect(state.VSphere.VCenterDS).To(Equal("ds"))
 						Expect(state.VSphere.Network).To(Equal("network"))
-						Expect(state.VSphere.Subnet).To(Equal("subnet"))
+						Expect(state.VSphere.SubnetCIDR).To(Equal("subnet"))
 						Expect(state.VSphere.VCenterDisks).To(Equal("disks"))
 						Expect(state.VSphere.VCenterTemplates).To(Equal("templates"))
 						Expect(state.VSphere.VCenterVMs).To(Equal("vms"))
@@ -615,7 +615,7 @@ var _ = Describe("LoadState", func() {
 						os.Setenv("BBL_VSPHERE_VCENTER_RP", "rp")
 						os.Setenv("BBL_VSPHERE_NETWORK", "network")
 						os.Setenv("BBL_VSPHERE_VCENTER_DS", "ds")
-						os.Setenv("BBL_VSPHERE_SUBNET", "subnet")
+						os.Setenv("BBL_VSPHERE_SUBNET_CIDR", "subnet")
 						os.Setenv("BBL_VSPHERE_VCENTER_DISKS", "disks")
 						os.Setenv("BBL_VSPHERE_VCENTER_TEMPLATES", "templates")
 						os.Setenv("BBL_VSPHERE_VCENTER_VMS", "vms")
@@ -635,7 +635,7 @@ var _ = Describe("LoadState", func() {
 						Expect(state.VSphere.VCenterRP).To(Equal("rp"))
 						Expect(state.VSphere.Network).To(Equal("network"))
 						Expect(state.VSphere.VCenterDS).To(Equal("ds"))
-						Expect(state.VSphere.Subnet).To(Equal("subnet"))
+						Expect(state.VSphere.SubnetCIDR).To(Equal("subnet"))
 						Expect(state.VSphere.VCenterDisks).To(Equal("disks"))
 						Expect(state.VSphere.VCenterTemplates).To(Equal("templates"))
 						Expect(state.VSphere.VCenterVMs).To(Equal("vms"))
@@ -663,7 +663,7 @@ var _ = Describe("LoadState", func() {
 							"--vsphere-vcenter-rp", "rp",
 							"--vsphere-network", "network",
 							"--vsphere-vcenter-ds", "ds",
-							"--vsphere-subnet", "subnet",
+							"--vsphere-subnet-cidr", "subnet",
 							"up",
 							"--name", "some-env-id",
 						}
@@ -693,7 +693,7 @@ var _ = Describe("LoadState", func() {
 							VCenterRP:        "rp",
 							Network:          "network",
 							VCenterDS:        "ds",
-							Subnet:           "subnet",
+							SubnetCIDR:       "subnet",
 							VCenterDisks:     "disks",
 							VCenterTemplates: "templates",
 							VCenterVMs:       "vms",
@@ -715,7 +715,7 @@ var _ = Describe("LoadState", func() {
 							"--vsphere-vcenter-rp", "rp",
 							"--vsphere-network", "network",
 							"--vsphere-vcenter-ds", "ds",
-							"--vsphere-subnet", "subnet",
+							"--vsphere-subnet-cidr", "subnet",
 							"--vsphere-vcenter-vms", "vms",
 							"--vsphere-vcenter-templates", "templates",
 							"--vsphere-vcenter-disks", "disks",
@@ -1334,7 +1334,7 @@ var _ = Describe("LoadState", func() {
 						Network:         "value",
 					},
 				},
-				"Missing --vsphere-subnet. To see all required credentials run `bbl plan --help`."),
+				"Missing --vsphere-subnet-cidr. To see all required credentials run `bbl plan --help`."),
 			Entry("when any OpenStack credential is missing",
 				storage.State{
 					IAAS: "openstack",

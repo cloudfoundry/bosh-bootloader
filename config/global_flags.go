@@ -24,7 +24,7 @@ type GlobalFlags struct {
 	GCPRegion            string `long:"gcp-region"              env:"BBL_GCP_REGION"`
 
 	VSphereNetwork          string `long:"vsphere-network"            env:"BBL_VSPHERE_NETWORK"`
-	VSphereSubnet           string `long:"vsphere-subnet"             env:"BBL_VSPHERE_SUBNET"`
+	VSphereSubnetCIDR       string `long:"vsphere-subnet-cidr"        env:"BBL_VSPHERE_SUBNET_CIDR"`
 	VSphereVCenterCluster   string `long:"vsphere-vcenter-cluster"    env:"BBL_VSPHERE_VCENTER_CLUSTER"`
 	VSphereVCenterDC        string `long:"vsphere-vcenter-dc"         env:"BBL_VSPHERE_VCENTER_DC"`
 	VSphereVCenterDS        string `long:"vsphere-vcenter-ds"         env:"BBL_VSPHERE_VCENTER_DS"`

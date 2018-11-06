@@ -26,7 +26,7 @@ type Config struct {
 	GCPRegion            string
 
 	VSphereNetwork          string
-	VSphereSubnet           string
+	VSphereSubnetCIDR       string
 	VSphereVCenterIP        string
 	VSphereVCenterUser      string
 	VSphereVCenterPassword  string
@@ -214,7 +214,7 @@ func loadConfigFromEnvVars() Config {
 		GCPRegion:            os.Getenv("BBL_GCP_REGION"),
 
 		VSphereNetwork:          os.Getenv("BBL_VSPHERE_NETWORK"),
-		VSphereSubnet:           os.Getenv("BBL_VSPHERE_SUBNET"),
+		VSphereSubnetCIDR:       os.Getenv("BBL_VSPHERE_SUBNET_CIDR"),
 		VSphereVCenterIP:        os.Getenv("BBL_VSPHERE_VCENTER_IP"),
 		VSphereVCenterUser:      os.Getenv("BBL_VSPHERE_VCENTER_USER"),
 		VSphereVCenterPassword:  os.Getenv("BBL_VSPHERE_VCENTER_PASSWORD"),

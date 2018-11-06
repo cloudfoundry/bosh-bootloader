@@ -28,7 +28,7 @@ It does not create any networks, security groups, or load balancers on vSphere.
     export BBL_VSPHERE_VCENTER_RP
     export BBL_VSPHERE_NETWORK
     export BBL_VSPHERE_VCENTER_DS
-    export BBL_VSPHERE_SUBNET
+    export BBL_VSPHERE_SUBNET_CIDR
     export BBL_VSPHERE_VCENTER_DISKS
     export BBL_VSPHERE_VCENTER_TEMPLATES
     export BBL_VSPHERE_VCENTER_VMS
@@ -46,7 +46,7 @@ It does not create any networks, security groups, or load balancers on vSphere.
     $env:BBL_VSPHERE_VCENTER_RP=
     $env:BBL_VSPHERE_NETWORK=
     $env:BBL_VSPHERE_VCENTER_DS=
-    $env:BBL_VSPHERE_SUBNET=
+    $env:BBL_VSPHERE_SUBNET_CIDR=
     $env:BBL_VSPHERE_VCENTER_DISKS=
     $env:BBL_VSPHERE_VCENTER_TEMPLATES=
     $env:BBL_VSPHERE_VCENTER_VMS=

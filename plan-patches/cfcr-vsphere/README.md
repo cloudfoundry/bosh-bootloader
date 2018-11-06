@@ -2,7 +2,7 @@
 
 Steps to deploy cfcr with bbl:
 
-1. Pick a valid IP that's within your BBL_VSPHERE_SUBNET to be the k8s api IP.
+1. Pick a valid IP that's within your BBL_VSPHERE_SUBNET_CIDR to be the k8s api IP.
    IPs 10 or more above the base of your cidr should be safe, but this is highly dependent on if you're going to deploy anything else to this director.
 
    ```bash

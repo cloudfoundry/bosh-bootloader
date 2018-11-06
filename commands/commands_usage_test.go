@@ -42,7 +42,7 @@ var _ = Describe("Commands Usage", func() {
   --vsphere-vcenter-rp               vSphere vCenter Resource Pool    env: $BBL_VSPHERE_VCENTER_RP
   --vsphere-network                  vSphere Network                  env: $BBL_VSPHERE_NETWORK
   --vsphere-vcenter-ds               vSphere vCenter Datastore        env: $BBL_VSPHERE_VCENTER_DS
-  --vsphere-subnet                   vSphere Subnet                   env: $BBL_VSPHERE_SUBNET
+  --vsphere-subnet-cidr              vSphere Subnet CIDR              env: $BBL_VSPHERE_SUBNET_CIDR
   --vsphere-vcenter-disks            vSphere vCenter Disks            env: $BBL_VSPHERE_VCENTER_DISKS
   --vsphere-vcenter-templates        vSphere vCenter Templates        env: $BBL_VSPHERE_VCENTER_TEMPLATES
   --vsphere-vcenter-vms              vSphere vCenter VMs              env: $BBL_VSPHERE_VCENTER_VMS

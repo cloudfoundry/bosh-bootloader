@@ -143,8 +143,8 @@ func vsphere(state storage.VSphere) error {
 	if state.Network == "" {
 		return fmt.Errorf(CRED_ERROR, "--vsphere-network")
 	}
-	if state.Subnet == "" {
-		return fmt.Errorf(CRED_ERROR, "--vsphere-subnet")
+	if state.SubnetCIDR == "" {
+		return fmt.Errorf(CRED_ERROR, "--vsphere-subnet-cidr")
 	}
 	return nil
 }

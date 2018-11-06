@@ -18,7 +18,7 @@ var _ = Describe("InputGenerator", func() {
 			inputs, err := inputGenerator.Generate(storage.State{
 				EnvID: "banana",
 				VSphere: storage.VSphere{
-					Subnet:           "10.0.0.0/24",
+					SubnetCIDR:       "10.0.0.0/24",
 					Network:          "the-network",
 					VCenterCluster:   "the-cluster",
 					VCenterUser:      "the-user",
@@ -36,7 +36,7 @@ var _ = Describe("InputGenerator", func() {
 
 			Expect(inputs).To(Equal(map[string]interface{}{
 				"env_id":               "banana",
-				"vsphere_subnet":       "10.0.0.0/24",
+				"vsphere_subnet_cidr":  "10.0.0.0/24",
 				"jumpbox_ip":           "10.0.0.5",
 				"director_internal_ip": "10.0.0.6",
 				"internal_gw":          "10.0.0.1",

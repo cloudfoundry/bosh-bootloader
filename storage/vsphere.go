@@ -2,7 +2,7 @@ package storage
 
 type VSphere struct {
 	Network          string `json:"-"`
-	Subnet           string `json:"-"`
+	SubnetCIDR       string `json:"-"`
 	VCenterCluster   string `json:"-"`
 	VCenterUser      string `json:"-"`
 	VCenterPassword  string `json:"-"`

@@ -80,7 +80,7 @@ var _ = Describe("Store", func() {
 						VCenterRP:       "rp",
 						Network:         "network",
 						VCenterDS:       "ds",
-						Subnet:          "10.0.0.0/24",
+						SubnetCIDR:      "10.0.0.0/24",
 					},
 					OpenStack: storage.OpenStack{
 						InternalCidr:         "cidr",
