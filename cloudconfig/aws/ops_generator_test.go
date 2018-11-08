@@ -40,12 +40,11 @@ var _ = Describe("OpsGenerator", func() {
 		terraformManager.GetOutputsCall.Returns.Outputs = terraform.Outputs{Map: map[string]interface{}{
 			"internal_security_group":              "some-internal-security-group",
 			"cf_router_lb_name":                    "some-cf-router-lb-name",
-			"cf_router_lb_internal_security_group": "some-cf-router-lb-internal-security-group",
-			"cf_router_lb_security_group":          "some-cf-router-lb-security-group",
+			"cf_router_security_group":             "some-cf-router-lb-internal-security-group",
 			"cf_ssh_lb_name":                       "some-cf-ssh-lb-name",
-			"cf_ssh_lb_internal_security_group":    "some-cf-ssh-lb-internal-security-group",
+			"cf_ssh_security_group":                "some-cf-ssh-lb-internal-security-group",
 			"cf_tcp_lb_name":                       "some-cf-tcp-lb-name",
-			"cf_tcp_lb_internal_security_group":    "some-cf-tcp-lb-internal-security-group",
+			"cf_tcp_router_security_group":         "some-cf-tcp-lb-internal-security-group",
 			"concourse_lb_target_groups":           []string{"some-concourse-lb-target-group", "some-other-concourse-lb-target-group"},
 			"concourse_lb_internal_security_group": "some-concourse-lb-internal-security-group",
 			"internal_az_subnet_id_mapping": map[string]interface{}{
@@ -129,12 +128,11 @@ internal_security_group: some-internal-security-group
 iso_security_group_id: some-iso-seg-security-group
 iso_shared_security_group_id: some-iso-shared-security-group
 cf_router_lb_name: some-cf-router-lb-name
-cf_router_lb_internal_security_group: some-cf-router-lb-internal-security-group
-cf_router_lb_security_group: some-cf-router-lb-security-group
+cf_router_security_group: some-cf-router-lb-internal-security-group
 cf_ssh_lb_name: some-cf-ssh-lb-name
-cf_ssh_lb_internal_security_group: some-cf-ssh-lb-internal-security-group
+cf_ssh_security_group: some-cf-ssh-lb-internal-security-group
 cf_tcp_lb_name: some-cf-tcp-lb-name
-cf_tcp_lb_internal_security_group: some-cf-tcp-lb-internal-security-group
+cf_tcp_router_security_group: some-cf-tcp-lb-internal-security-group
 cf_iso_router_lb_name: some-cf-iso-seg-router-lb-name
 concourse_lb_target_groups: [some-concourse-lb-target-group, some-other-concourse-lb-target-group]
 concourse_lb_internal_security_group: some-concourse-lb-internal-security-group
@@ -197,11 +195,11 @@ iso_az_subnet_id_mapping:
 				Entry("when internal_az_subnet_id_mapping is missing", "internal_az_subnet_id_mapping", "cf"),
 				Entry("when internal_az_subnet_cidr_mapping is missing", "internal_az_subnet_cidr_mapping", "cf"),
 				Entry("when cf_router_lb_name is missing", "cf_router_lb_name", "cf"),
-				Entry("when cf_router_lb_internal_security_group is missing", "cf_router_lb_internal_security_group", "cf"),
+				Entry("when cf_router_security_group is missing", "cf_router_security_group", "cf"),
 				Entry("when cf_ssh_lb_name is missing", "cf_ssh_lb_name", "cf"),
-				Entry("when cf_ssh_lb_internal_security_group is missing", "cf_ssh_lb_internal_security_group", "cf"),
+				Entry("when cf_ssh_security_group is missing", "cf_ssh_security_group", "cf"),
 				Entry("when cf_tcp_lb_name", "cf_tcp_lb_name", "cf"),
-				Entry("when cf_tcp_lb_internal_security_group is missing", "cf_tcp_lb_internal_security_group", "cf"),
+				Entry("when cf_tcp_router_security_group is missing", "cf_tcp_router_security_group", "cf"),
 
 				Entry("when concourse_lb_target_groups is missing", "concourse_lb_target_groups", "concourse"),
 				Entry("when concourse_lb_internal_security_group is missing", "concourse_lb_internal_security_group", "concourse"),

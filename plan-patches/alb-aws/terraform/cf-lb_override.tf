@@ -79,7 +79,7 @@ resource "aws_lb_target_group" "alb_router_80" {
   }
 }
 
-resource "aws_security_group" "cf_router_lb_internal_security_group" {
+resource "aws_security_group" "cf_router_security_group" {
   name        = "${var.env_id}-cf-router-lb-internal-security-group"
   description = "CF Router Internal"
   vpc_id      = "${local.vpc_id}"

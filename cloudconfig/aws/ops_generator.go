@@ -103,11 +103,11 @@ func (o OpsGenerator) GenerateVars(state storage.State) (string, error) {
 		requiredOutputs = append(
 			requiredOutputs,
 			"cf_router_lb_name",
-			"cf_router_lb_internal_security_group",
+			"cf_router_security_group",
 			"cf_ssh_lb_name",
-			"cf_ssh_lb_internal_security_group",
+			"cf_ssh_security_group",
 			"cf_tcp_lb_name",
-			"cf_tcp_lb_internal_security_group",
+			"cf_tcp_router_security_group",
 		)
 	}
 
@@ -248,18 +248,38 @@ func (o OpsGenerator) generateOps(state storage.State) ([]op, error) {
 	switch state.LB.Type {
 	case "cf":
 		lbSecurityGroups := []map[string]string{
-			{"name": "cf-router-network-properties", "lb": "((cf_router_lb_name))", "group": "((cf_router_lb_internal_security_group))"},
-			{"name": "diego-ssh-proxy-network-properties", "lb": "((cf_ssh_lb_name))", "group": "((cf_ssh_lb_internal_security_group))"},
-			{"name": "cf-tcp-router-network-properties", "lb": "((cf_tcp_lb_name))", "group": "((cf_tcp_lb_internal_security_group))"},
-			{"name": "router-lb", "lb": "((cf_router_lb_name))", "group": "((cf_router_lb_internal_security_group))"},
-			{"name": "ssh-proxy-lb", "lb": "((cf_ssh_lb_name))", "group": "((cf_ssh_lb_internal_security_group))"},
+			{
+				"name":          "cf-router-network-properties",
+				"target_groups": "((cf_router_target_group_names))",
+				"group":         "((cf_router_security_group))",
+			},
+			{
+				"name":          "diego-ssh-proxy-network-properties",
+				"target_groups": "((cf_ssh_target_group_names))",
+				"group":         "((cf_ssh_security_group))",
+			},
+			{
+				"name":          "cf-tcp-router-network-properties",
+				"target_groups": "((cf_tcp_target_group_names))",
+				"group":         "((cf_tcp_router_security_group))",
+			},
+			{
+				"name":          "router-lb",
+				"target_groups": "((cf_router_target_group_names))",
+				"group":         "((cf_router_security_group))",
+			},
+			{
+				"name":          "ssh-proxy-lb",
+				"target_groups": "((cf_ssh_target_group_names))",
+				"group":         "((cf_ssh_security_group))",
+			},
 		}
 
 		for _, details := range lbSecurityGroups {
 			ops = append(ops, createOp("replace", "/vm_extensions/-", lb{
 				Name: details["name"],
 				CloudProperties: lbCloudProperties{
-					ELBs: []string{details["lb"]},
+					LBTargetGroups: details["target_groups"],
 					SecurityGroups: []string{
 						details["group"],
 						"((internal_security_group))",
