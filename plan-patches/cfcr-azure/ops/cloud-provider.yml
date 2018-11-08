@@ -6,20 +6,21 @@
     properties:
       cloud-provider:
         type: azure
-        azure:
-          cloud: ((azure_cloud_name))
-          subscription-id: ((subscription_id))
-          tenant-id: ((tenant_id))
-          service-principal-id: ((client_id))
-          service-principal-secret: ((client_secret))
-          location: ((cfcr_location))
-          resource-group-name: ((cfcr_resource_group_name))
-          vnet-resource-group-name: ((cfcr_vnet_resource_group_name))
-          vnet-name: ((cfcr_vnet_name))
-          subnet-name: ((cfcr_subnet_name))
-          use-instance-metadata: true
-          network-security-group-name: ((cfcr_master_security_group))
-          availability-set: ((primary_availability_set))
+      cloud-config:
+        aadClientId: ((client_id))
+        aadClientSecret: ((client_secret))
+        cloud: ((azure_cloud_name))
+        location: ((cfcr_location))
+        primaryAvailabilitySetName: ((primary_availability_set))
+        subscriptionId: ((subscription_id))
+        tenantId: ((tenant_id))
+        useInstanceMetadata: true
+        resourceGroup: ((cfcr_resource_group_name))
+        vnetResourceGroup: ((cfcr_vnet_resource_group_name))
+        vnetName: ((cfcr_vnet_name))
+        subnetName: ((cfcr_subnet_name))
+        securityGroupName: ((cfcr_master_security_group))
+        loadBalancerSku: standard
 
     provides:
       cloud-provider: {as: master-cloud-provider}
@@ -52,20 +53,21 @@
     properties:
       cloud-provider:
         type: azure
-        azure:
-          cloud: ((azure_cloud_name))
-          subscription-id: ((subscription_id))
-          tenant-id: ((tenant_id))
-          service-principal-id: ((client_id))
-          service-principal-secret: ((client_secret))
-          location: ((cfcr_location))
-          resource-group-name: ((cfcr_resource_group_name))
-          vnet-resource-group-name: ((cfcr_vnet_resource_group_name))
-          vnet-name: ((cfcr_vnet_name))
-          subnet-name: ((cfcr_subnet_name))
-          use-instance-metadata: true
-          network-security-group-name: ((cfcr_master_security_group))
-          availability-set: ((primary_availability_set))
+      cloud-config:
+        aadClientId: ((client_id))
+        aadClientSecret: ((client_secret))
+        cloud: ((azure_cloud_name))
+        location: ((cfcr_location))
+        primaryAvailabilitySetName: ((primary_availability_set))
+        subscriptionId: ((subscription_id))
+        tenantId: ((tenant_id))
+        useInstanceMetadata: true
+        resourceGroup: ((cfcr_resource_group_name))
+        vnetResourceGroup: ((cfcr_vnet_resource_group_name))
+        vnetName: ((cfcr_vnet_name))
+        subnetName: ((cfcr_subnet_name))
+        securityGroupName: ((cfcr_master_security_group))
+        loadBalancerSku: standard
 
     provides:
       cloud-provider: {as: worker-cloud-provider}
