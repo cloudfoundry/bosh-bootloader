@@ -278,7 +278,7 @@ resource "aws_lb_listener" "cf_tcp_router" {
 }
 
 resource "aws_lb_target_group" "cf_tcp_router" {
-  name     = "${var.short_env_id}-cf-tcp-lb-${1024 + count.index}"
+  name     = "${var.short_env_id}-tg-${1024 + count.index}"
   port     = "${1024 + count.index}"
   protocol = "TCP"
   vpc_id   = "${local.vpc_id}"

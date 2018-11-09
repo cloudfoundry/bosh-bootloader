@@ -2,7 +2,7 @@ resource "aws_lb" "alb_router" {
   name               = "alb-router"
   load_balancer_type = "application"
 
-  security_groups = ["${aws_security_group.cf_router_lb_security_group.id}"]
+  security_groups = ["${aws_security_group.cf_router.id}"]
   subnets         = ["${aws_subnet.lb_subnets.*.id}"]
 }
 
@@ -85,28 +85,28 @@ resource "aws_security_group" "cf_router_security_group" {
   vpc_id      = "${local.vpc_id}"
 
   ingress {
-    security_groups = ["${aws_security_group.cf_router_lb_security_group.id}"]
+    security_groups = ["${aws_security_group.cf_router.id}"]
     protocol        = "tcp"
     from_port       = 80
     to_port         = 80
   }
 
   ingress {
-    security_groups = ["${aws_security_group.cf_router_lb_security_group.id}"]
+    security_groups = ["${aws_security_group.cf_router.id}"]
     protocol        = "tcp"
     from_port       = 8080
     to_port         = 8080
   }
 
   ingress {
-    security_groups = ["${aws_security_group.cf_router_lb_security_group.id}"]
+    security_groups = ["${aws_security_group.cf_router.id}"]
     protocol        = "tcp"
     from_port       = 443
     to_port         = 443
   }
 
   ingress {
-    security_groups = ["${aws_security_group.cf_router_lb_security_group.id}"]
+    security_groups = ["${aws_security_group.cf_router.id}"]
     protocol        = "tcp"
     from_port       = 4443
     to_port         = 4443
