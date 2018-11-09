@@ -87,7 +87,7 @@ resource "aws_lb_listener" "iso_router_lb_4443" {
 
 resource "aws_lb_target_group" "iso_router_lb_80" {
   count = "${var.isolation_segments}"
-  name     = "${var.short_env_id}-iso-router-lb-80"
+  name     = "${var.short_env_id}-isotg-80"
   port     = 80
   protocol = "TCP"
   vpc_id   = "${local.vpc_id}"
@@ -99,7 +99,7 @@ resource "aws_lb_target_group" "iso_router_lb_80" {
 
 resource "aws_lb_target_group" "iso_router_lb_443" {
   count = "${var.isolation_segments}"
-  name     = "${var.short_env_id}-iso-router-lb-443"
+  name     = "${var.short_env_id}-isotg-443"
   port     = 443
   protocol = "TCP"
   vpc_id   = "${local.vpc_id}"
@@ -111,7 +111,7 @@ resource "aws_lb_target_group" "iso_router_lb_443" {
 
 resource "aws_lb_target_group" "iso_router_lb_4443" {
   count = "${var.isolation_segments}"
-  name     = "${var.short_env_id}-iso-router-lb-4443"
+  name     = "${var.short_env_id}-isotg-4443"
   port     = 4443
   protocol = "TCP"
   vpc_id   = "${local.vpc_id}"

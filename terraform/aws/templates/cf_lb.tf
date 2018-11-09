@@ -163,7 +163,7 @@ resource "aws_lb_listener" "cf_router_4443" {
 }
 
 resource "aws_lb_target_group" "cf_router_80" {
-  name     = "${var.short_env_id}-cf-router-lb-80"
+  name     = "${var.short_env_id}-routertg-80"
   port     = 80
   protocol = "TCP"
   vpc_id   = "${local.vpc_id}"
@@ -174,7 +174,7 @@ resource "aws_lb_target_group" "cf_router_80" {
 }
 
 resource "aws_lb_target_group" "cf_router_443" {
-  name     = "${var.short_env_id}-cf-router-lb-443"
+  name     = "${var.short_env_id}-routertg-443"
   port     = 443
   protocol = "TCP"
   vpc_id   = "${local.vpc_id}"
@@ -185,7 +185,7 @@ resource "aws_lb_target_group" "cf_router_443" {
 }
 
 resource "aws_lb_target_group" "cf_router_4443" {
-  name     = "${var.short_env_id}-cf-router-lb-4443"
+  name     = "${var.short_env_id}-routertg-4443"
   port     = 4443
   protocol = "TCP"
   vpc_id   = "${local.vpc_id}"
@@ -278,7 +278,7 @@ resource "aws_lb_listener" "cf_tcp_router" {
 }
 
 resource "aws_lb_target_group" "cf_tcp_router" {
-  name     = "${var.short_env_id}-tg-${1024 + count.index}"
+  name     = "${var.short_env_id}-tcptg-${1024 + count.index}"
   port     = "${1024 + count.index}"
   protocol = "TCP"
   vpc_id   = "${local.vpc_id}"
