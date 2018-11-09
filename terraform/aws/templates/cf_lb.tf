@@ -222,7 +222,7 @@ resource "aws_security_group" "cf_tcp_router" {
     cidr_blocks = ["0.0.0.0/0"]
     protocol        = "tcp"
     from_port       = 1024
-    to_port         = 1123
+    to_port         = 1033
   }
 
   ingress {
