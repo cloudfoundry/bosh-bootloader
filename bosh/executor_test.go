@@ -242,17 +242,9 @@ var _ = Describe("Executor", func() {
 					"--vars-store", fmt.Sprintf("%s/jumpbox-vars-store.yml", relativeVarsDir),
 					"--vars-file", fmt.Sprintf("%s/jumpbox-vars-file.yml", relativeVarsDir),
 					"-o", fmt.Sprintf("%s/openstack/cpi.yml", relativeDeploymentDir),
-					"-o", fmt.Sprintf("%s/openstack-keystone-v3-ops.yml", relativeDeploymentDir),
 					"-v", `openstack_username="${BBL_OPENSTACK_USERNAME}"`,
 					"-v", `openstack_password="${BBL_OPENSTACK_PASSWORD}"`,
 				}
-
-				By("writing the keystone v3 ops-file", func() {
-					opsfile, err := fs.ReadFile(fmt.Sprintf("%s/openstack-keystone-v3-ops.yml", deploymentDir))
-					Expect(err).NotTo(HaveOccurred())
-
-					Expect(string(opsfile)).To(ContainSubstring("/openstack/project?"))
-				})
 
 				By("writing the create-env args to a shell script", func() {
 					expectedScript := formatScript("create-env", stateDir, expectedArgs)
