@@ -227,12 +227,12 @@ resource "aws_security_group" "bosh_security_group" {
 }
 
 resource "aws_security_group_rule" "bosh_security_group_rule_tcp_ssh" {
-  security_group_id = "${aws_security_group.bosh_security_group.id}"
-  type              = "ingress"
-  protocol          = "tcp"
-  from_port         = 22
-  to_port           = 22
-  cidr_blocks       = ["${var.bosh_inbound_cidr}"]
+  security_group_id        = "${aws_security_group.bosh_security_group.id}"
+  type                     = "ingress"
+  protocol                 = "tcp"
+  from_port                = 22
+  to_port                  = 22
+  source_security_group_id = "${aws_security_group.jumpbox.id}"
 }
 
 resource "aws_security_group_rule" "bosh_security_group_rule_tcp_bosh_agent" {
