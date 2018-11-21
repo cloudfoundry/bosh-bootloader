@@ -43,9 +43,7 @@ $ brew install bbl
 
 ### Managing state
 
-The bbl state directory contains all of the files that were used to create your bosh director. This should be checked in
-to version control, so that you have all the information necessary to later destroy or update this environment at a later
-date.
+The bbl state directory contains all of the files that were used to create your bosh director. You will need the entire bbl state in order to update, delete, or run bosh commands against the environment, so you should keep it someone anyone on your team can access it. However, it is important to note that the bbl state directory contains very senstive IAAS credentials, so you should keep it somewhere you feel comfortable storing these credentials, such as an encrypted bucket.
 
  filename |  contents
 ------------ | -------------
