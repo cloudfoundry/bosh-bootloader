@@ -11,9 +11,9 @@
   value: ((kubernetes_master_host))
 
 - type: replace
-  path: /instance_groups/name=master/jobs/name=cloud-provider/properties/cloud-provider/cloud-config/Global/project-id
+  path: /instance_groups/name=master/jobs/name=cloud-provider/properties/cloud-config/Global/project-id
   value: ((gcp_project_id))
 
 - type: replace
-  path: /instance_groups/name=worker/jobs/name=cloud-provider/properties/cloud-provider/cloud-config/Global/project-id
+  path: /instance_groups/name=worker/jobs/name=cloud-provider/properties/cloud-config/Global/project-id
   value: ((gcp_project_id))
