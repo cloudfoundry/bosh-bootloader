@@ -118,8 +118,8 @@ func main() {
 	sshKeyGetter := bosh.NewSSHKeyGetter(stateStore, afs)
 	allProxyGetter := bosh.NewAllProxyGetter(sshKeyGetter, afs)
 	credhubGetter := bosh.NewCredhubGetter(stateStore, afs)
-	boshManager := bosh.NewManager(boshExecutor, logger, stateStore, sshKeyGetter, afs)
 	boshCLIProvider := bosh.NewCLIProvider(allProxyGetter, boshPath)
+	boshManager := bosh.NewManager(boshExecutor, logger, stateStore, sshKeyGetter, afs, boshCLIProvider)
 
 	configUpdater := bosh.NewConfigUpdater(boshCLIProvider)
 

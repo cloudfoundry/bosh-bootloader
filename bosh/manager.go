@@ -24,11 +24,12 @@ type managerFs interface {
 }
 
 type Manager struct {
-	executor     executor
-	logger       logger
-	stateStore   stateStore
-	sshKeyGetter sshKeyGetter
-	fs           managerFs
+	executor        executor
+	logger          logger
+	stateStore      stateStore
+	sshKeyGetter    sshKeyGetter
+	fs              managerFs
+	boshCLIProvider boshCLIProvider
 }
 
 type directorVars struct {
@@ -65,13 +66,14 @@ type sshKeyGetter interface {
 	Get(string) (string, error)
 }
 
-func NewManager(executor executor, logger logger, stateStore stateStore, sshKeyGetter sshKeyGetter, fs deleterFs) *Manager {
+func NewManager(executor executor, logger logger, stateStore stateStore, sshKeyGetter sshKeyGetter, fs deleterFs, boshCLIProvider boshCLIProvider) *Manager {
 	return &Manager{
-		executor:     executor,
-		logger:       logger,
-		stateStore:   stateStore,
-		sshKeyGetter: sshKeyGetter,
-		fs:           fs,
+		executor:        executor,
+		logger:          logger,
+		stateStore:      stateStore,
+		sshKeyGetter:    sshKeyGetter,
+		fs:              fs,
+		boshCLIProvider: boshCLIProvider,
 	}
 }
 
@@ -191,6 +193,23 @@ func (m *Manager) InitializeDirector(state storage.State) error {
 	}
 
 	return nil
+}
+
+func (m *Manager) CleanUpDirector(state storage.State) error {
+	boshCLI, err := m.boshCLIProvider.AuthenticatedCLI(
+		state.Jumpbox,
+		os.Stderr,
+		state.BOSH.DirectorAddress,
+		state.BOSH.DirectorUsername,
+		state.BOSH.DirectorPassword,
+		state.BOSH.DirectorSSLCA,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	return boshCLI.Run(nil, "", []string{"clean-up", "--all"})
 }
 
 func (m *Manager) CreateDirector(state storage.State, terraformOutputs terraform.Outputs) (storage.State, error) {
