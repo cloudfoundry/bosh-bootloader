@@ -346,7 +346,6 @@ var _ = Describe("Client", func() {
 			})
 		})
 
-
 		Context("when there are multiple nat instances", func() {
 			BeforeEach(func() {
 				ec2Client.DescribeInstancesCall.Returns.Output = &awsec2.DescribeInstancesOutput{

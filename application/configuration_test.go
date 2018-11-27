@@ -1,9 +1,9 @@
 package application_test
 
 import (
+	"github.com/cloudfoundry/bosh-bootloader/application"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/cloudfoundry/bosh-bootloader/application"
 )
 
 var _ = Describe("StringSlice", func() {
