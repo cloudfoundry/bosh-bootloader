@@ -12,7 +12,7 @@ import (
 	"github.com/onsi/gomega/gexec"
 )
 
-var _ = Describe("up", func() {
+var _ = Describe("up_and_down", func() {
 	var (
 		bbl     actors.BBL
 		boshcli actors.BOSHCLI
@@ -22,9 +22,10 @@ var _ = Describe("up", func() {
 		directorPassword string
 		caCertPath       string
 
-		stateDir   string
-		iaas       string
-		iaasHelper actors.IAASLBHelper
+		stateDir    string
+		iaas        string
+		stemcellURL string
+		iaasHelper  actors.IAASLBHelper
 	)
 
 	BeforeEach(func() {
@@ -34,6 +35,7 @@ var _ = Describe("up", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		iaas = configuration.IAAS
+		stemcellURL = configuration.StemcellURL
 		iaasHelper = actors.NewIAASLBHelper(iaas, configuration)
 		stateDir = configuration.StateFileDir
 
@@ -42,7 +44,7 @@ var _ = Describe("up", func() {
 	})
 
 	AfterEach(func() {
-		By("destroying the director and the jumpbox", func() {
+		By("ensure the director and the jumpbox are destroyed", func() {
 			session := bbl.Down()
 			Eventually(session, bblDownTimeout).Should(gexec.Exit(0))
 		})
@@ -89,7 +91,7 @@ var _ = Describe("up", func() {
 			iaasHelper.VerifyCloudConfigExtensions(vmExtensions)
 		})
 
-		By("varifying that the bosh dns runtime config was set", func() {
+		By("verifying that the bosh dns runtime config was set", func() {
 			_, err := boshcli.RuntimeConfig(directorAddress, caCertPath, directorUsername, directorPassword, "dns")
 			Expect(err).NotTo(HaveOccurred())
 		})
@@ -140,5 +142,30 @@ var _ = Describe("up", func() {
 		By("confirming that the load balancers no longer exist", func() {
 			iaasHelper.ConfirmNoLBsExist(bbl.PredefinedEnvID())
 		})
+
+		if stemcellURL != "" {
+			When("stemcells are uploaded and bbl down is called", func() {
+				err := boshcli.UploadStemcell(directorAddress, caCertPath, directorUsername, directorPassword, stemcellURL)
+				Expect(err).NotTo(HaveOccurred())
+
+				stemcellIDs, err := boshcli.Stemcells(directorAddress, caCertPath, directorUsername, directorPassword)
+				Expect(err).NotTo(HaveOccurred())
+
+				By("destroy director and the jumpbox", func() {
+					session := bbl.Down()
+					Eventually(session, bblDownTimeout).Should(gexec.Exit(0))
+				})
+
+				It("removes created stemcells from iaas", func() {
+					iaasHelper.ConfirmNoStemcellsExist(stemcellIDs)
+				})
+			})
+		} else {
+			By("destroy director and the jumpbox", func() {
+				session := bbl.Down()
+				Eventually(session, bblDownTimeout).Should(gexec.Exit(0))
+			})
+		}
+
 	})
 })

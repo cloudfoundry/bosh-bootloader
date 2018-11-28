@@ -22,3 +22,5 @@ func (v vSphereLBHelper) ConfirmNoLBsExist(envID string) {
 
 func (v vSphereLBHelper) VerifyBblLBOutput(stdout string) {
 }
+
+func (v vSphereLBHelper) ConfirmNoStemcellsExist(stemcellIDs []string) {}

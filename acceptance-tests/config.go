@@ -10,7 +10,8 @@ import (
 )
 
 type Config struct {
-	IAAS string
+	IAAS        string
+	StemcellURL string
 
 	AWSAccessKeyID     string
 	AWSSecretAccessKey string
@@ -92,7 +93,7 @@ func LoadConfig() (Config, error) {
 		config.StateFileDir = dir
 	}
 
-	fmt.Println("Using state-dir: %s", config.StateFileDir)
+	fmt.Printf("Using state-dir: %s", config.StateFileDir)
 
 	return config, nil
 }
@@ -199,6 +200,8 @@ func validateOpenStackCreds(config Config) error {
 func loadConfigFromEnvVars() Config {
 	return Config{
 		IAAS: os.Getenv("BBL_IAAS"),
+
+		StemcellURL: os.Getenv("STEMCELL_URL"),
 
 		AWSAccessKeyID:     os.Getenv("BBL_AWS_ACCESS_KEY_ID"),
 		AWSSecretAccessKey: os.Getenv("BBL_AWS_SECRET_ACCESS_KEY"),

@@ -93,3 +93,10 @@ func (g gcpLBHelper) VerifyBblLBOutput(stdout string) {
 	Expect(stdout).To(MatchRegexp("CF TCP Router LB:.*"))
 	Expect(stdout).To(MatchRegexp("CF WebSocket LB:.*"))
 }
+
+func (g gcpLBHelper) ConfirmNoStemcellsExist(stemcellIDs []string) {
+	for _, stemcellID := range stemcellIDs {
+		_, err := g.service.Images.Get(g.projectID, stemcellID).Do()
+		Expect(err).To(MatchError(MatchRegexp("googleapi: Error 404.*")))
+	}
+}
