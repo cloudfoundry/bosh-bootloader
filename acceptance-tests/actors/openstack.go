@@ -22,3 +22,5 @@ func (o openStackLBHelper) ConfirmNoLBsExist(envID string) {
 
 func (o openStackLBHelper) VerifyBblLBOutput(stdout string) {
 }
+
+func (o openStackLBHelper) ConfirmNoStemcellsExist(stemcellIDs []string) {}

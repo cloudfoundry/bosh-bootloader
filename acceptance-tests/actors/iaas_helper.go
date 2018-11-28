@@ -12,6 +12,7 @@ type IAASLBHelper interface {
 	ConfirmNoLBsExist(string)
 	VerifyBblLBOutput(string)
 	VerifyCloudConfigExtensions([]string)
+	ConfirmNoStemcellsExist([]string)
 }
 
 func NewIAASLBHelper(iaas string, configuration acceptance.Config) IAASLBHelper {
