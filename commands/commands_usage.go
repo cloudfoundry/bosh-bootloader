@@ -95,6 +95,7 @@ const (
 
   --jumpbox                Open a connection to the jumpbox
   --director               Open a connection to the director
+  --cmd                    Execute a command on the director (jumpbox not supported)
 `
 
 	RotateCommandUsage = "Rotates SSH key for the jumpbox user."
