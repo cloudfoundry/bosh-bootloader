@@ -20,18 +20,14 @@ var _ = Describe("Manager", func() {
 		manager       runtimeconfig.Manager
 		incomingState storage.State
 
+		fileIO      = &fakes.FileIO{}
 		dirProvider *fakes.DirProvider
 	)
 	BeforeEach(func() {
 		logger = &fakes.Logger{}
 		dirProvider = &fakes.DirProvider{}
-<<<<<<< HEAD
 		fileIO = &fakes.FileIO{}
 		configUpdater = &fakes.BOSHConfigUpdater{}
-=======
-		boshCLI = &fakes.BOSHCLI{}
-		boshClientProvider = &fakes.BOSHClientProvider{}
->>>>>>> bump-deployments-ci
 		incomingState = storage.State{
 			IAAS: "gcp",
 			BOSH: storage.BOSH{
