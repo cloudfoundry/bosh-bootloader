@@ -23,7 +23,16 @@ Steps to deploy CFCR with bbl:
    bosh upload-stemcell https://bosh.io/d/stemcells/bosh-aws-xen-hvm-ubuntu-xenial-go_agent?v=$(bosh int ${KD}/manifests/cfcr.yml --path=/stemcells/0/version)
    ```
 
-1. Deploy the cfcr manifest
+1. Apply custom cloud config
+   ```bash
+   bosh update-config --name cfcr \
+   ${KD}/manifests/cloud-config/iaas/aws/use-vm-extensions.yml \
+   --var deployment_name=cfcr \
+   --type cloud \
+   --vars-file <(bbl outputs)
+   ```
+
+1. Deploy the CFCR manifest
    ```bash
    bosh deploy -d cfcr ${KD}/manifests/cfcr.yml \
    -o ${KD}/manifests/ops-files/iaas/aws/cloud-provider.yml \
