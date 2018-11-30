@@ -6,7 +6,6 @@ import (
 
 	acceptance "github.com/cloudfoundry/bosh-bootloader/acceptance-tests"
 	"github.com/cloudfoundry/bosh-bootloader/acceptance-tests/actors"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
@@ -115,6 +114,13 @@ var _ = Describe("up_and_down", func() {
 			rotatedKey := bbl.SSHKey()
 			Expect(rotatedKey).NotTo(BeEmpty())
 			Expect(rotatedKey).NotTo(Equal(sshKey))
+		})
+
+		By("resetting the correct creds", func() {
+			directorAddress = bbl.DirectorAddress()
+			directorUsername = bbl.DirectorUsername()
+			directorPassword = bbl.DirectorPassword()
+			caCertPath = bbl.SaveDirectorCA()
 		})
 
 		By("checking bbl up is idempotent", func() {
