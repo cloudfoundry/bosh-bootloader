@@ -9,11 +9,9 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/cloudfoundry/bosh-bootloader/terraform"
-
-	"github.com/pivotal-cf-experimental/gomegamatchers"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/pivotal-cf-experimental/gomegamatchers"
 )
 
 var _ = Describe("Manager", func() {
@@ -391,6 +389,15 @@ director_ssl:
 
 			Expect(boshCLI.RunCall.CallCount).To(Equal(1))
 			Expect(boshCLI.RunCall.Receives.Args).To(Equal([]string{"clean-up", "--all"}))
+		})
+
+		It("logs that it is cleaning up the director", func() {
+			err := boshManager.CleanUpDirector(storage.State{})
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(logger.StepCall.Messages).To(gomegamatchers.ContainSequence([]string{
+				"cleaning up leftover resources",
+			}))
 		})
 
 		Context("when an error occurs", func() {

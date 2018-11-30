@@ -6,11 +6,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	yaml "gopkg.in/yaml.v2"
-
 	"github.com/cloudfoundry/bosh-bootloader/fileio"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/cloudfoundry/bosh-bootloader/terraform"
+	yaml "gopkg.in/yaml.v2"
 )
 
 var (
@@ -196,6 +195,8 @@ func (m *Manager) InitializeDirector(state storage.State) error {
 }
 
 func (m *Manager) CleanUpDirector(state storage.State) error {
+	m.logger.Step("cleaning up leftover resources")
+
 	boshCLI, err := m.boshCLIProvider.AuthenticatedCLI(
 		state.Jumpbox,
 		os.Stderr,
