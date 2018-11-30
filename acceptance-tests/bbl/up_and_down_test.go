@@ -117,6 +117,7 @@ var _ = Describe("up_and_down", func() {
 		})
 
 		By("resetting the correct creds", func() {
+			bbl.ExportBoshAllProxy()
 			directorAddress = bbl.DirectorAddress()
 			directorUsername = bbl.DirectorUsername()
 			directorPassword = bbl.DirectorPassword()
@@ -162,7 +163,7 @@ var _ = Describe("up_and_down", func() {
 					Eventually(session, bblDownTimeout).Should(gexec.Exit(0))
 				})
 
-				It("removes created stemcells from iaas", func() {
+				By("removes created stemcells from iaas", func() {
 					iaasHelper.ConfirmNoStemcellsExist(stemcellIDs)
 				})
 			})
