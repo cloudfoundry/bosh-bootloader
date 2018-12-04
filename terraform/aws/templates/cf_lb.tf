@@ -1,6 +1,6 @@
 # CF SSH
 resource "aws_security_group" "cf_ssh" {
-  name        = "${var.env_id}-cf-ssh-lb-internal-security-group"
+  name        = "${var.env_id}-cf-ssh-lb-security-group"
   description = "CF SSH Internal"
   vpc_id      = "${local.vpc_id}"
 
@@ -19,7 +19,7 @@ resource "aws_security_group" "cf_ssh" {
   }
 
   tags {
-    Name = "${var.env_id}-cf-ssh-lb-internal-security-group"
+    Name = "${var.env_id}-cf-ssh-lb-security-group"
   }
 
   lifecycle {
@@ -57,7 +57,7 @@ resource "aws_lb_target_group" "cf_ssh" {
   vpc_id   = "${local.vpc_id}"
 
   health_check {
-    protocol            = "TCP"
+    protocol = "TCP"
   }
 }
 
@@ -76,7 +76,7 @@ output "cf_ssh_target_group_names" {
 # CF Router
 
 resource "aws_security_group" "cf_router" {
-  name        = "${var.env_id}-cf-router-lb-internal-security-group"
+  name        = "${var.env_id}-cf-router-lb-security-group"
   description = "CF Router Internal"
   vpc_id      = "${local.vpc_id}"
 
@@ -109,7 +109,7 @@ resource "aws_security_group" "cf_router" {
   }
 
   tags {
-    Name = "${var.env_id}-cf-router-lb-internal-security-group"
+    Name = "${var.env_id}-cf-router-lb-security-group"
   }
 
   lifecycle {
@@ -214,15 +214,15 @@ output "cf_router_target_group_names" {
 # CF TCP Router
 
 resource "aws_security_group" "cf_tcp_router" {
-  name        = "${var.env_id}-cf-tcp-lb-internal-security-group"
+  name        = "${var.env_id}-cf-tcp-lb-security-group"
   description = "CF TCP Internal"
   vpc_id      = "${local.vpc_id}"
 
   ingress {
     cidr_blocks = ["0.0.0.0/0"]
-    protocol        = "tcp"
-    from_port       = 1024
-    to_port         = 1033
+    protocol    = "tcp"
+    from_port   = 1024
+    to_port     = 1033
   }
 
   ingress {
@@ -240,7 +240,7 @@ resource "aws_security_group" "cf_tcp_router" {
   }
 
   tags {
-    Name = "${var.env_id}-cf-tcp-lb-internal-security-group"
+    Name = "${var.env_id}-cf-tcp-lb-security-group"
   }
 
   lifecycle {
