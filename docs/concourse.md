@@ -52,7 +52,6 @@ bosh upload-stemcell "${STEMCELL_URL}"
 
 ### 3. Customize & Deploy
 
-#### On Azure and GCP
 
 ```
 git clone https://github.com/concourse/concourse-bosh-deployment.git
@@ -96,70 +95,6 @@ EOL
 popd
 ```
 
-#### On AWS
-
-```
-git clone https://github.com/concourse/concourse-bosh-deployment.git
-
-pushd concourse-bosh-deployment/cluster
-
-    export USERNAME="username"
-    export PASSWORD="super-secure-password"
-
-    cat > ../../vars/concourse-vars-file.yml <<EOL
-external_host: "${EXTERNAL_HOST}"
-external_url: "https://${EXTERNAL_HOST}"
-local_user:
-  username: "${USERNAME}"
-  password: "${PASSWORD}"
-network_name: 'private'
-web_instances: 1
-web_network_name: 'private'
-web_vm_type: 'default'
-web_network_vm_extension: 'lb'
-db_vm_type: 'default'
-db_persistent_disk_type: '1GB'
-worker_instances: 2
-worker_vm_type: 'default'
-worker_ephemeral_disk: '50GB_ephemeral_disk'
-deployment_name: 'concourse'
-EOL
-
-  cat > ../../vars/aws-tls-vars.yml <<EOL
-- type: replace
-  path: /variables/-
-  value:
-    name: atc_ca
-    type: certificate
-    options:
-      is_ca: true
-      common_name: atcCA
-
-- type: replace
-  path: /variables/-
-  value:
-    name: atc_tls
-    type: certificate
-    options:
-      ca: atc_ca
-      alternative_names: [((external_host))]
-      organization: atcOrg
-EOL
-
-  bosh deploy -d concourse concourse.yml \
-    -l ../versions.yml \
-    -l ../../vars/concourse-vars-file.yml \
-    -o operations/basic-auth.yml \
-    -o operations/privileged-http.yml \
-    -o operations/privileged-https.yml \
-    -o operations/tls.yml \
-    -o ../../vars/aws-tls-vars.yml \
-    -o operations/web-network-extension.yml \
-    -o operations/scale.yml \
-    -o operations/worker-ephemeral-disk.yml
- 
-popd
-```
 
 > Note: do check it out [here](https://github.com/concourse/concourse-bosh-deployment/tree/master/cluster/operations) for tons of operations files by which one can tune / customize the Concourse cluster.
 
