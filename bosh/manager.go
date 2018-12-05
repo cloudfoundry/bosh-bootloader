@@ -195,7 +195,7 @@ func (m *Manager) InitializeDirector(state storage.State) error {
 }
 
 func (m *Manager) CleanUpDirector(state storage.State) error {
-	m.logger.Step("cleaning up leftover resources")
+	m.logger.Step("cleaning up director resources")
 
 	boshCLI, err := m.boshCLIProvider.AuthenticatedCLI(
 		state.Jumpbox,
