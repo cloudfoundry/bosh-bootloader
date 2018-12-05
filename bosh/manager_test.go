@@ -161,7 +161,7 @@ director_ssl:
 					DirectorSSLCA:          "some-ca",
 					DirectorSSLCertificate: "some-certificate",
 					DirectorSSLPrivateKey:  "some-private-key",
-					State:                  nil,
+					State: nil,
 				}))
 			})
 
@@ -396,7 +396,7 @@ director_ssl:
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(logger.StepCall.Messages).To(gomegamatchers.ContainSequence([]string{
-				"cleaning up leftover resources",
+				"cleaning up director resources",
 			}))
 		})
 
