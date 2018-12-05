@@ -1,5 +1,9 @@
 ## acm-aws
 
+This plan patch is no longer supported, bbl now uses Network Load Balancers on AWS.
+They don't support ACM to issue load balancers. For this to work you'd need to modify
+this plan patch to override the Load Balancers to use Application Load Balancers.
+
 This is a patch for using AWS Certificate Manager to issue load balancer TLS certs.
 
 First you're going to need a Route53 Zone for your system domain. ACM will verify that you own the domain
