@@ -138,7 +138,6 @@ var _ = Describe("Store", func() {
 				"iaas": "aws",
 				"id": "01020304-0506-0708-0910-111213141516",
 				"envID": "some-env-id",
-				"noDirector": false,
 				"aws": {
 					"region": "some-region"
 				},

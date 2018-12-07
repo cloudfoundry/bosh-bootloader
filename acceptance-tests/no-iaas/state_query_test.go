@@ -12,12 +12,12 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("state query against a bbl 5.1.0 state file", func() {
+var _ = Describe("state query against a bbl 6.10.46 state file", func() {
 	var bbl actors.BBL
 
 	BeforeEach(func() {
 		stateDir, err := ioutil.TempDir("", "")
-		ioutil.WriteFile(filepath.Join(stateDir, "bbl-state.json"), []byte(BBL_STATE_5_1_0), storage.StateMode)
+		ioutil.WriteFile(filepath.Join(stateDir, "bbl-state.json"), []byte(BBL_STATE_6_10_46), storage.StateMode)
 		Expect(err).NotTo(HaveOccurred())
 		bbl = actors.NewBBL(stateDir, pathToBBL, acceptance.Config{}, "no-env", false)
 	})
@@ -57,7 +57,7 @@ CF WebSocket LB: 104.196.197.242`))
 
 	It("bbl env-id", func() {
 		stdout := bbl.EnvID()
-		Expect(stdout).To(Equal("some-env-bbl5"))
+		Expect(stdout).To(Equal("some-env-bbl6"))
 	})
 
 	It("bbl latest-error", func() {
@@ -87,12 +87,11 @@ CF WebSocket LB: 104.196.197.242`))
 	})
 })
 
-const BBL_STATE_5_1_0 = `
+const BBL_STATE_6_10_46 = `
 {
-	"version": 12,
+	"version": 14,
 	"iaas": "gcp",
-	"id": "20de3158-2e92-4a2c-6364-c05fa4907b85",
-	"noDirector": false,
+	"id": "e02be31f-0a0a-402e-4d73-de1f955be098",
 	"aws": {
 		"region": ""
 	},
@@ -119,7 +118,7 @@ const BBL_STATE_5_1_0 = `
 		"state": {}
 	},
 	"bosh": {
-		"directorName": "bosh-some-env-bbl5",
+		"directorName": "bosh-some-env-bbl6",
 		"directorUsername": "admin",
 		"directorPassword": "some-password",
 		"directorAddress": "https://10.0.0.6:25555",
@@ -131,8 +130,8 @@ const BBL_STATE_5_1_0 = `
 		"manifest": "some-manifest",
 		"userOpsFile": ""
 	},
-	"envID": "some-env-bbl5",
-	"tfState": "{\n    \"version\": 3,\n    \"terraform_version\": \"0.10.7\",\n    \"serial\": 2,\n    \"lineage\": \"\",\n    \"modules\": [\n        {\n            \"path\": [\n                \"root\"\n            ],\n            \"outputs\": {\n                \"bosh_director_tag_name\": {\n                    \"sensitive\": false,\n                    \"type\": \"string\",\n                    \"value\": \"some-env-bbl5-bosh-director\"\n                },\n                \"bosh_open_tag_name\": {\n                    \"sensitive\": false,\n                    \"type\": \"string\",\n                    \"value\": \"some-env-bbl5-bosh-open\"\n                },\n                \"credhub_lb_ip\": {\n                    \"sensitive\": false,\n                    \"type\": \"string\",\n                    \"value\": \"35.196.150.246\"\n                },\n                \"credhub_target_pool\": {\n                    \"sensitive\": false,\n                    \"type\": \"string\",\n                    \"value\": \"some-env-bbl5-credhub\"\n                },\n                \"credhub_target_tags\": {\n                    \"sensitive\": false,\n                    \"type\": \"list\",\n                    \"value\": [\n                        \"some-env-bbl5-credhub\"\n                    ]\n                },\n                \"director_address\": {\n                    \"sensitive\": false,\n                    \"type\": \"string\",\n                    \"value\": \"https://35.185.125.178:25555\"\n                },\n                \"external_ip\": {\n                    \"sensitive\": false,\n                    \"type\": \"string\",\n                    \"value\": \"35.185.60.196\"\n                },\n                \"internal_tag_name\": {\n                    \"sensitive\": false,\n                    \"type\": \"string\",\n                    \"value\": \"some-env-bbl5-internal\"\n                },\n                \"jumpbox_tag_name\": {\n                    \"sensitive\": false,\n                    \"type\": \"string\",\n                    \"value\": \"some-env-bbl5-jumpbox\"\n                },\n                \"jumpbox_url\": {\n                    \"sensitive\": false,\n                    \"type\": \"string\",\n                    \"value\": \"35.185.60.196:22\"\n                },\n                \"network_name\": {\n                    \"sensitive\": false,\n                    \"type\": \"string\",\n                    \"value\": \"some-env-bbl5-network\"\n                },\n                \"router_backend_service\": {\n                    \"sensitive\": false,\n                    \"type\": \"string\",\n                    \"value\": \"some-env-bbl5-router-lb\"\n                },\n                \"router_lb_ip\": {\n                    \"sensitive\": false,\n                    \"type\": \"string\",\n                    \"value\": \"35.201.97.214\"\n                },\n                \"ssh_proxy_lb_ip\": {\n                    \"sensitive\": false,\n                    \"type\": \"string\",\n                    \"value\": \"104.196.181.208\"\n                },\n                \"ssh_proxy_target_pool\": {\n                    \"sensitive\": false,\n                    \"type\": \"string\",\n                    \"value\": \"some-env-bbl5-cf-ssh-proxy\"\n                },\n                \"subnetwork_name\": {\n                    \"sensitive\": false,\n                    \"type\": \"string\",\n                    \"value\": \"some-env-bbl5-subnet\"\n                },\n                \"tcp_router_lb_ip\": {\n                    \"sensitive\": false,\n                    \"type\": \"string\",\n                    \"value\": \"35.185.98.78\"\n                },\n                \"tcp_router_target_pool\": {\n                    \"sensitive\": false,\n                    \"type\": \"string\",\n                    \"value\": \"some-env-bbl5-cf-tcp-router\"\n                },\n                \"ws_lb_ip\": {\n                    \"sensitive\": false,\n                    \"type\": \"string\",\n                    \"value\": \"104.196.197.242\"\n                },\n                \"ws_target_pool\": {\n                    \"sensitive\": false,\n                    \"type\": \"string\",\n                    \"value\": \"some-env-bbl5-cf-ws\"\n                }\n            },\n            \"resources\": {},\n            \"depends_on\": []\n        }\n    ]\n}\n",
+	"envID": "some-env-bbl6",
+	"tfState": "{\n    \"version\": 3,\n    \"terraform_version\": \"0.10.7\",\n    \"serial\": 2,\n    \"lineage\": \"\",\n    \"modules\": [\n        {\n            \"path\": [\n                \"root\"\n            ],\n            \"outputs\": {\n                \"bosh_director_tag_name\": {\n                    \"sensitive\": false,\n                    \"type\": \"string\",\n                    \"value\": \"some-env-bbl6-bosh-director\"\n                },\n                \"bosh_open_tag_name\": {\n                    \"sensitive\": false,\n                    \"type\": \"string\",\n                    \"value\": \"some-env-bbl6-bosh-open\"\n                },\n                \"credhub_lb_ip\": {\n                    \"sensitive\": false,\n                    \"type\": \"string\",\n                    \"value\": \"35.196.150.246\"\n                },\n                \"credhub_target_pool\": {\n                    \"sensitive\": false,\n                    \"type\": \"string\",\n                    \"value\": \"some-env-bbl6-credhub\"\n                },\n                \"credhub_target_tags\": {\n                    \"sensitive\": false,\n                    \"type\": \"list\",\n                    \"value\": [\n                        \"some-env-bbl6-credhub\"\n                    ]\n                },\n                \"director_address\": {\n                    \"sensitive\": false,\n                    \"type\": \"string\",\n                    \"value\": \"https://35.185.125.178:25555\"\n                },\n                \"external_ip\": {\n                    \"sensitive\": false,\n                    \"type\": \"string\",\n                    \"value\": \"35.185.60.196\"\n                },\n                \"internal_tag_name\": {\n                    \"sensitive\": false,\n                    \"type\": \"string\",\n                    \"value\": \"some-env-bbl6-internal\"\n                },\n                \"jumpbox_tag_name\": {\n                    \"sensitive\": false,\n                    \"type\": \"string\",\n                    \"value\": \"some-env-bbl6-jumpbox\"\n                },\n                \"jumpbox_url\": {\n                    \"sensitive\": false,\n                    \"type\": \"string\",\n                    \"value\": \"35.185.60.196:22\"\n                },\n                \"network_name\": {\n                    \"sensitive\": false,\n                    \"type\": \"string\",\n                    \"value\": \"some-env-bbl6-network\"\n                },\n                \"router_backend_service\": {\n                    \"sensitive\": false,\n                    \"type\": \"string\",\n                    \"value\": \"some-env-bbl6-router-lb\"\n                },\n                \"router_lb_ip\": {\n                    \"sensitive\": false,\n                    \"type\": \"string\",\n                    \"value\": \"35.201.97.214\"\n                },\n                \"ssh_proxy_lb_ip\": {\n                    \"sensitive\": false,\n                    \"type\": \"string\",\n                    \"value\": \"104.196.181.208\"\n                },\n                \"ssh_proxy_target_pool\": {\n                    \"sensitive\": false,\n                    \"type\": \"string\",\n                    \"value\": \"some-env-bbl6-cf-ssh-proxy\"\n                },\n                \"subnetwork_name\": {\n                    \"sensitive\": false,\n                    \"type\": \"string\",\n                    \"value\": \"some-env-bbl6-subnet\"\n                },\n                \"tcp_router_lb_ip\": {\n                    \"sensitive\": false,\n                    \"type\": \"string\",\n                    \"value\": \"35.185.98.78\"\n                },\n                \"tcp_router_target_pool\": {\n                    \"sensitive\": false,\n                    \"type\": \"string\",\n                    \"value\": \"some-env-bbl6-cf-tcp-router\"\n                },\n                \"ws_lb_ip\": {\n                    \"sensitive\": false,\n                    \"type\": \"string\",\n                    \"value\": \"104.196.197.242\"\n                },\n                \"ws_target_pool\": {\n                    \"sensitive\": false,\n                    \"type\": \"string\",\n                    \"value\": \"some-env-bbl6-cf-ws\"\n                }\n            },\n            \"resources\": {},\n            \"depends_on\": []\n        }\n    ]\n}\n",
 	"lb": {
 		"type": "cf",
 		"cert": "-----BEGIN CERTIFICATE-----\nsome-lb-cert\n-----END CERTIFICATE-----\n",

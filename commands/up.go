@@ -53,8 +53,6 @@ func (u Up) Execute(args []string, state storage.State) error {
 		return handleTerraformError(err, state, u.stateStore)
 	}
 
-	state.NoDirector = false
-
 	err = u.stateStore.Set(state)
 	if err != nil {
 		return fmt.Errorf("Save state after terraform apply: %s", err)

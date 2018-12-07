@@ -6,7 +6,6 @@ type State struct {
 	IAAS           string    `json:"iaas"`
 	ID             string    `json:"id"`
 	EnvID          string    `json:"envID"`
-	NoDirector     bool      `json:"noDirector"`
 	AWS            AWS       `json:"aws,omitempty"`
 	Azure          Azure     `json:"azure,omitempty"`
 	GCP            GCP       `json:"gcp,omitempty"`

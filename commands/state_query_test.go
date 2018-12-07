@@ -41,29 +41,6 @@ var _ = Describe("StateQuery", func() {
 				Expect(err).To(MatchError("state validator failed"))
 			})
 		})
-
-		Context("bbl does not manage the bosh director", func() {
-			var state storage.State
-
-			BeforeEach(func() {
-				state = storage.State{
-					EnvID:      "some-env-id",
-					NoDirector: true,
-				}
-			})
-
-			DescribeTable("prints out the director information",
-				func(propertyName string) {
-					command := commands.NewStateQuery(fakeLogger, fakeStateValidator, terraformManager, propertyName)
-
-					err := command.CheckFastFails([]string{}, state)
-					Expect(err).To(MatchError("Error BBL does not manage this director."))
-				},
-				Entry("director-username", "director username"),
-				Entry("director-password", "director password"),
-				Entry("director-ssl-ca", "director ca cert"),
-			)
-		})
 	})
 
 	Describe("Execute", func() {
@@ -115,51 +92,10 @@ var _ = Describe("StateQuery", func() {
 			)
 		})
 
-		Context("bbl does not manage the bosh director", func() {
-			var state storage.State
-
-			BeforeEach(func() {
-				state = storage.State{
-					EnvID:      "some-env-id",
-					NoDirector: true,
-				}
-			})
-
-			It("prints the env id", func() {
-				command := commands.NewStateQuery(fakeLogger, fakeStateValidator, terraformManager, "environment id")
-
-				err := command.Execute([]string{}, state)
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(fakeLogger.PrintlnCall.Receives.Message).To(Equal("some-env-id"))
-			})
-
-			It("prints the eip as the director-address", func() {
-				terraformManager.GetOutputsCall.Returns.Outputs = terraform.Outputs{
-					Map: map[string]interface{}{"external_ip": "some-external-ip"},
-				}
-
-				command := commands.NewStateQuery(fakeLogger, fakeStateValidator, terraformManager, "director address")
-				err := command.Execute([]string{}, state)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(fakeLogger.PrintlnCall.Receives.Message).To(Equal("https://some-external-ip:25555"))
-			})
-		})
-
 		Context("failure cases", func() {
 			Context("when the terraform output provider fails", func() {
 				BeforeEach(func() {
 					terraformManager.GetOutputsCall.Returns.Error = errors.New("failed to get terraform output")
-				})
-
-				It("director-address returns an error for no-director environment", func() {
-					command := commands.NewStateQuery(fakeLogger, fakeStateValidator, terraformManager, "director address")
-
-					err := command.Execute([]string{}, storage.State{
-						IAAS:       "gcp",
-						NoDirector: true,
-					})
-					Expect(err).To(MatchError("failed to get terraform output"))
 				})
 
 				It("jumpbox-address returns an error", func() {

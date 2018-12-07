@@ -7,7 +7,6 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/renderers"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
-	"github.com/cloudfoundry/bosh-bootloader/terraform"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -122,38 +121,7 @@ var _ = Describe("PrintEnv", func() {
 			})
 		})
 
-		Context("when there is no director", func() {
-			BeforeEach(func() {
-				terraformManager.GetOutputsCall.Returns.Outputs = terraform.Outputs{
-					Map: map[string]interface{}{"external_ip": "some-external-ip"},
-				}
-			})
-
-			It("prints only the BOSH_ENVIRONMENT", func() {
-				err := printEnv.Execute([]string{}, storage.State{
-					NoDirector: true,
-				})
-				Expect(err).NotTo(HaveOccurred())
-
-				Expect(terraformManager.GetOutputsCall.CallCount).To(Equal(1))
-
-				Expect(logger.PrintlnCall.Messages).To(ContainElement("export BOSH_ENVIRONMENT=https://some-external-ip:25555"))
-				Expect(logger.PrintlnCall.Messages).NotTo(ContainElement("export BOSH_CLIENT=some-director-username"))
-			})
-		})
-
 		Context("failure cases", func() {
-			Context("when terraform manager get outputs fails", func() {
-				BeforeEach(func() {
-					terraformManager.GetOutputsCall.Returns.Error = errors.New("failed to get terraform output")
-				})
-
-				It("returns an error", func() {
-					err := printEnv.Execute([]string{}, storage.State{NoDirector: true})
-					Expect(err).To(MatchError("failed to get terraform output"))
-				})
-			})
-
 			Context("when the allproxy getter fails to get a private key", func() {
 				BeforeEach(func() {
 					allProxyGetter.GeneratePrivateKeyCall.Returns.Error = errors.New("papaya")

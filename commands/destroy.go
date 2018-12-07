@@ -168,11 +168,6 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
 }
 
 func (d Destroy) deleteBOSH(state storage.State, terraformOutputs terraform.Outputs) (storage.State, error) {
-	if state.NoDirector {
-		d.logger.Println("No BOSH director, skipping...")
-		return state, nil
-	}
-
 	err := d.boshManager.CleanUpDirector(state)
 	if err != nil {
 		return state, err

@@ -1,8 +1,6 @@
 package commands
 
 import (
-	"fmt"
-
 	"github.com/cloudfoundry/bosh-bootloader/fileio"
 	"github.com/cloudfoundry/bosh-bootloader/flags"
 	"github.com/cloudfoundry/bosh-bootloader/renderers"
@@ -104,17 +102,6 @@ func (p PrintEnv) Execute(args []string, state storage.State) error {
 	renderer, err := p.rendererFactory.Create(shell)
 	if err != nil {
 		return err
-	}
-
-	if state.NoDirector {
-		terraformOutputs, err := p.terraformManager.GetOutputs()
-		if err != nil {
-			return err
-		}
-		externalIP := terraformOutputs.GetString("external_ip")
-		variables["BOSH_ENVIRONMENT"] = fmt.Sprintf("https://%s:25555", externalIP)
-		p.renderVariables(renderer, variables)
-		return nil
 	}
 
 	variables["BOSH_CLIENT"] = state.BOSH.DirectorUsername

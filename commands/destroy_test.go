@@ -467,20 +467,6 @@ var _ = Describe("Destroy", func() {
 					})
 				})
 			})
-
-			Context("reentrance", func() {
-				Context("when NoDirector is true", func() {
-					It("does not attempt to delete the bosh director", func() {
-						state.NoDirector = true
-						err := destroy.Execute([]string{}, state)
-						Expect(err).NotTo(HaveOccurred())
-
-						Expect(logger.PrintlnCall.Receives.Message).To(Equal("No BOSH director, skipping..."))
-						Expect(logger.StepCall.Messages).NotTo(ContainElement("destroying bosh director"))
-						Expect(boshManager.DeleteDirectorCall.CallCount).To(Equal(0))
-					})
-				})
-			})
 		})
 
 		Context("failure cases", func() {
