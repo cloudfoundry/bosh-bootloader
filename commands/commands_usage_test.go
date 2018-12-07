@@ -132,6 +132,7 @@ var _ = Describe("Commands Usage", func() {
 
   --jumpbox                Open a connection to the jumpbox
   --director               Open a connection to the director
+  --cmd                    Execute a command on the director (jumpbox not supported)
 `))
 			})
 		})
