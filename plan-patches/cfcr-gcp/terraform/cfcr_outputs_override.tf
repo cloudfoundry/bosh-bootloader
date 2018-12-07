@@ -14,6 +14,6 @@ output "kubernetes_master_host" {
   value = "${var.kubernetes_master_host}"
 }
 
-output "gcp_project_id" {
+output "project_id" {
   value = "${var.project_id}"
 }

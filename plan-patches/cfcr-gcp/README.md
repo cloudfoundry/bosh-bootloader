@@ -40,7 +40,7 @@ Steps to deploy cfcr with bbl:
    ```
    bosh deploy -d cfcr ${KD}/manifests/cfcr.yml \
    -o ${KD}/manifests/ops-files/iaas/gcp/cloud-provider.yml \
-   -o cfcr-ops.yml -v deployment_name=cfcr \
+   -v deployment_name=cfcr \
    -l <(bbl outputs)
    ```
 
