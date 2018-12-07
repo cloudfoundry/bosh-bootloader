@@ -39,17 +39,17 @@ Steps to deploy cf with bbl:
 6. Deploy the cfcr manifest.
 
    Notes: if you only want to do a test, use:
-            -o ./ops/small-vm.yml \
+            -o ${KD}/manifests/ops-files/misc/small-vm.yml \
           if you want to preview the manifest before apply it. use the "bosh interpolate"
 
     ```bash
     bosh -n -d ${deployment_name} deploy ${KD}/manifests/cfcr.yml \
     -o ${KD}/manifests/ops-files/misc/single-master.yml \
+    -o ${KD}/manifests/ops-files/misc/single-worker.yml \
     -o ${KD}/manifests/ops-files/add-hostname-to-master-certificate.yml \
     -o ${KD}/manifests/ops-files/use-runtime-config-bosh-dns.yml \
     -o ${KD}/manifests/ops-files/rename.yml \
     -o ./ops/use-vm-extensions.yml \
-    -o ./ops/single-worker.yml \
     -o ./ops/use-cfcr-subnet.yml \
     -o ./ops/cloud-provider.yml \
     -v deployment_name=${deployment_name} \

@@ -9,7 +9,7 @@ bosh create-env \
   -o  ${BBL_STATE_DIR}/bosh-deployment/jumpbox-user.yml \
   -o  ${BBL_STATE_DIR}/bosh-deployment/uaa.yml \
   -o  ${BBL_STATE_DIR}/bosh-deployment/credhub.yml \
-  -o  ${BBL_STATE_DIR}/ops/use-github-cpi.yml \
+  -o  ${KD}/manifests/ops-files/use-github-cpi.yml \
   -v  subscription_id="${BBL_AZURE_SUBSCRIPTION_ID}" \
   -v  client_id="${BBL_AZURE_CLIENT_ID}" \
   -v  client_secret="${BBL_AZURE_CLIENT_SECRET}" \
