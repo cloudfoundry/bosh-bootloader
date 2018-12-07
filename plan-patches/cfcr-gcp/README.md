@@ -22,13 +22,6 @@ Steps to deploy cfcr with bbl:
     eval "$(bbl print-env)"
     ```
 
-1. Upload the desired kubo-release from the github repo: https://github.com/cloudfoundry-incubator/kubo-release/releases.
-   ```
-   bosh upload-release <github-kubo-release-link>
-   ```
-
-1. `bosh upload-stemcell https://bosh.io/d/stemcells/bosh-google-kvm-ubuntu-xenial-go_agent`
-
 1. Export KD as your path to kubo-deployment so you can copy-paste from below if you so desire.
    Be careful to check out the manifest that matches the kubo-release you downloaded above.
    ```
@@ -36,20 +29,13 @@ Steps to deploy cfcr with bbl:
    export KD=$(pwd)/kubo-deployment
    ```
 
+1. `bosh upload-stemcell https://bosh.io/d/stemcells/bosh-google-kvm-ubuntu-xenial-go_agent?v=$(bosh int ${KD}/manifests/cfcr.yml --path=/stemcells/0/version)`
+
 1. Deploy the cfcr manifest.
    ```
    bosh deploy -d cfcr ${KD}/manifests/cfcr.yml \
    -o ${KD}/manifests/ops-files/iaas/gcp/cloud-provider.yml \
    -v deployment_name=cfcr \
-   -l <(bbl outputs)
-   ```
-
-   If you'd like to use compiled releases to speed up your deployment and worry a bit less about matching release+manifest versions check out [cfcr-compiled-deployment](https://github.com/starkandwayne/cfcr-compiled-deployment).
-   ```
-   export CFCRC=~/go/src/github.com/starkandwayne/cfcr-compiled-deployment
-   bosh deploy -d cfcr ${CFCRC}/cfcr.yml \
-   -o ${CFCRC}/ops-files/iaas/gcp/cloud-provider.yml \
-   -o cfcr-ops.yml -v deployment_name=cfcr \
    -l <(bbl outputs)
    ```
 
@@ -72,4 +58,3 @@ Steps to deploy cfcr with bbl:
    export external_ip=$(kubectl get service/kubernetes-bootcamp -o jsonpath={.status.loadBalancer.ingress[0].ip})
    curl http://${external_ip}:8080
    ```
-
