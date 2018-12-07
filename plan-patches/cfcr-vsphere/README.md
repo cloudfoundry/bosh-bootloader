@@ -26,10 +26,6 @@ Steps to deploy cfcr with bbl:
     eval "$(bbl print-env)"
     ```
 
-1. `bosh upload-release https://storage.googleapis.com/kubo-public/kubo-release-latest.tgz`
-
-1. `bosh upload-stemcell https://bosh.io/d/stemcells/bosh-vsphere-esxi-ubuntu-xenial-go_agent`
-
 1. export KD as your path to kubo-deployment so you can copy-paste from below if you so desire.
    be careful to check out the manifest that matches the kubo-release you downloaded above.
 
@@ -37,7 +33,9 @@ Steps to deploy cfcr with bbl:
    git clone git@github.com:cloudfoundry-incubator/kubo-deployment.git
    export KD=$(pwd)/kubo-deployment
    ```
-   
+
+1. `bosh upload-stemcell https://bosh.io/d/stemcells/bosh-vsphere-esxi-ubuntu-xenial-go_agent?v=$(bosh int ${KD}/manifests/cfcr.yml --path=/stemcells/0/version)`
+
 1. Update the cloud config to enable disk UUID:
 
    ```bash
@@ -54,7 +52,6 @@ Steps to deploy cfcr with bbl:
    -o ${KD}/manifests/ops-files/add-hostname-to-master-certificate.yml \
    -o ${KD}/manifests/ops-files/iaas/vsphere/set-working-dir-no-rp.yml \
    -o ${KD}/manifests/ops-files/iaas/vsphere/use-vm-extensions.yml \
-   -o ${KD}/manifests/ops-files/use-runtime-config-bosh-dns.yml \
    -v kubernetes_master_host="${kubernetes_master_host}" \
    -v api-hostname="${kubernetes_master_host}" \
    -l <(bbl outputs)

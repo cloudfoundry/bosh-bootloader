@@ -30,17 +30,14 @@ Steps to deploy cfcr with bbl:
     eval "$(bbl print-env)"
     ```
 
-1. `bosh upload-release https://storage.googleapis.com/kubo-public/kubo-release-latest.tgz`
-   > Note: this is a development release, if you want a stable one you should tagged kubo-release tarball links off github. We tested against v0.16.0.
-
-1. `bosh upload-stemcell https://bosh.io/stemcells/bosh-openstack-esxi-ubuntu-trusty-go_agent`
-
 1. Export `KD` as your path to `kubo-deployment` so you can copy-paste from below if you so desire.
    be careful to check out the manifest that matches the kubo-release you uploaded above.
    ```
    git clone git@github.com:cloudfoundry-incubator/kubo-deployment.git
    export KD=$(pwd)/kubo-deployment
    ```
+
+1. `bosh upload-stemcell https://bosh.io/stemcells/bosh-openstack-esxi-ubuntu-trusty-go_agent?v=$(bosh int ${KD}/manifests/cfcr.yml --path=/stemcells/0/version)`
 
 1. Deploy the cfcr manifest. Since openstack can't provision load balancers for
 us, we're going to deploy with a single master with a set static IP.
