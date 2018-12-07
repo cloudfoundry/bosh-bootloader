@@ -45,7 +45,7 @@ Steps to deploy cf with bbl:
     ```bash
     bosh -n -d ${deployment_name} deploy ${KD}/manifests/cfcr.yml \
     -o ${KD}/manifests/ops-files/misc/single-master.yml \
-    -o ${KD}/manifests/ops-files/misc/single-worker.yml \
+    -o ${KD}/manifests/ops-files/worker-count.yml \
     -o ${KD}/manifests/ops-files/add-hostname-to-master-certificate.yml \
     -o ${KD}/manifests/ops-files/use-runtime-config-bosh-dns.yml \
     -o ${KD}/manifests/ops-files/rename.yml \
@@ -54,6 +54,7 @@ Steps to deploy cf with bbl:
     -o ./ops/cloud-provider.yml \
     -v deployment_name=${deployment_name} \
     -v cfcr_location=${BBL_AZURE_REGION} \
+    -v worker_count=1 \
     -l <(bbl outputs)
 
     bosh -d ${deployment_name} run-errand apply-specs
