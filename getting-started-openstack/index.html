@@ -237,8 +237,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../concourse/" title="Generic Steps for Concourse Deployment" class="md-nav__link">
-      Generic Steps for Concourse Deployment
+    <a href="../concourse/" title="Concourse" class="md-nav__link">
+      Concourse
     </a>
   </li>
 
@@ -414,6 +414,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../releasing-bbl/" title="Releasing bbl" class="md-nav__link">
+      Releasing bbl
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
     <a href="../upgrade/" title="Upgrade" class="md-nav__link">
       Upgrade
     </a>
@@ -487,7 +499,8 @@ any instances BOSH deploys</li>
 <p>It does not create any networks, security groups, or load balancers on OpenStack.</p>
 <h2 id="create-a-jumpbox-and-a-bosh-director">Create a Jumpbox and a BOSH Director</h2>
 <ol>
-<li>Export environment variables.
+<li>
+<p>Export environment variables.
     <code>export BBL_IAAS=openstack
     export BBL_OPENSTACK_INTERNAL_CIDR=
     export BBL_OPENSTACK_EXTERNAL_IP=
@@ -501,9 +514,25 @@ any instances BOSH deploys</li>
     export BBL_OPENSTACK_PROJECT=
     export BBL_OPENSTACK_DOMAIN=
     export BBL_OPENSTACK_REGION=
-    export BBL_OPENSTACK_PRIVATE_KEY=</code></li>
-<li>Create jumpbox and bosh director.
-    <code>bbl up</code></li>
+    export BBL_OPENSTACK_PRIVATE_KEY=</code></p>
+<p><code>powershell
+$env:BBL_IAAS="openstack"
+$env:BBL_OPENSTACK_INTERNAL_CIDR=
+$env:BBL_OPENSTACK_EXTERNAL_IP=
+$env:BBL_OPENSTACK_AUTH_URL=
+$env:BBL_OPENSTACK_AZ=
+$env:BBL_OPENSTACK_DEFAULT_KEY_NAME=
+$env:BBL_OPENSTACK_DEFAULT_SECURITY_GROUP=
+$env:BBL_OPENSTACK_NETWORK_ID=
+$env:BBL_OPENSTACK_PASSWORD=
+$env:BBL_OPENSTACK_USERNAME=
+$env:BBL_OPENSTACK_PROJECT=
+$env:BBL_OPENSTACK_DOMAIN=
+$env:BBL_OPENSTACK_REGION=
+$env:BBL_OPENSTACK_PRIVATE_KEY=</code>
+1. Create jumpbox and bosh director.
+<code>bbl up</code></p>
+</li>
 </ol>
 <h2 id="next-steps">Next Steps</h2>
 <ul>

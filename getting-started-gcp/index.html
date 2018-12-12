@@ -237,8 +237,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../concourse/" title="Generic Steps for Concourse Deployment" class="md-nav__link">
-      Generic Steps for Concourse Deployment
+    <a href="../concourse/" title="Concourse" class="md-nav__link">
+      Concourse
     </a>
   </li>
 
@@ -421,6 +421,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../releasing-bbl/" title="Releasing bbl" class="md-nav__link">
+      Releasing bbl
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
     <a href="../upgrade/" title="Upgrade" class="md-nav__link">
       Upgrade
     </a>
@@ -508,12 +520,19 @@ gcloud projects add-iam-policy-binding &lt;project id&gt; --member='serviceAccou
 
 <h2 id="pave-infrastructure-create-a-jumpbox-and-create-a-bosh-director">Pave Infrastructure, Create a Jumpbox, and Create a BOSH Director</h2>
 <ol>
-<li>Export environment variables.
+<li>
+<p>Export environment variables.
     <code>export BBL_IAAS=gcp
     export BBL_GCP_REGION=
-    export BBL_GCP_SERVICE_ACCOUNT_KEY=</code></li>
-<li>Create infrastructure, jumpbox, and bosh director.
-    <code>bbl up</code></li>
+    export BBL_GCP_SERVICE_ACCOUNT_KEY=</code></p>
+<p>or powershell:</p>
+<p><code>powershell
+$env:BBL_IAAS="gcp"
+$env:BBL_GCP_REGION=
+$env:BBL_GCP_SERVICE_ACCOUNT_KEY=</code>
+1. Create infrastructure, jumpbox, and bosh director.
+<code>bbl up</code></p>
+</li>
 </ol>
 <h2 id="next-steps">Next Steps</h2>
 <ul>

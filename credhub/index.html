@@ -237,8 +237,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../concourse/" title="Generic Steps for Concourse Deployment" class="md-nav__link">
-      Generic Steps for Concourse Deployment
+    <a href="../concourse/" title="Concourse" class="md-nav__link">
+      Concourse
     </a>
   </li>
 
@@ -454,6 +454,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../releasing-bbl/" title="Releasing bbl" class="md-nav__link">
+      Releasing bbl
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
     <a href="../upgrade/" title="Upgrade" class="md-nav__link">
       Upgrade
     </a>
@@ -569,7 +581,7 @@
 </li>
 <li>
 <p>Get credentials</p>
-<p><code>http_proxy=socks5://localhost:5000 credhub find -n 'cf_admin_password'</code></p>
+<p><code>credhub find -n 'cf_admin_password'</code></p>
 <p>The CredHub CLI will parse <code>CREDHUB_PROXY</code> and determines from the <code>ssh+socks5://</code> scheme that it should proxy throuhg a jumpbox via a tunnel of its own making.</p>
 </li>
 </ol>
@@ -621,7 +633,7 @@ ssh -4 -D 5000 -fNC jumpbox@`bbl jumpbox-address` -i /tmp/jumpbox.key</code></p>
     <div class="md-footer-nav">
       <nav class="md-footer-nav__inner md-grid">
         
-          <a href="../concourse/" title="Generic Steps for Concourse Deployment" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+          <a href="../concourse/" title="Concourse" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
             <div class="md-flex__cell md-flex__cell--shrink">
               <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
             </div>
@@ -630,7 +642,7 @@ ssh -4 -D 5000 -fNC jumpbox@`bbl jumpbox-address` -i /tmp/jumpbox.key</code></p>
                 <span class="md-footer-nav__direction">
                   Previous
                 </span>
-                Generic Steps for Concourse Deployment
+                Concourse
               </span>
             </div>
           </a>

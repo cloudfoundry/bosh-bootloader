@@ -237,8 +237,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../concourse/" title="Generic Steps for Concourse Deployment" class="md-nav__link">
-      Generic Steps for Concourse Deployment
+    <a href="../concourse/" title="Concourse" class="md-nav__link">
+      Concourse
     </a>
   </li>
 
@@ -421,6 +421,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../releasing-bbl/" title="Releasing bbl" class="md-nav__link">
+      Releasing bbl
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
     <a href="../upgrade/" title="Upgrade" class="md-nav__link">
       Upgrade
     </a>
@@ -507,15 +519,27 @@ your tenant id, the client id, and the client secret.</p>
 it can interact with Azure.</p>
 <h2 id="pave-infrastructure-create-a-jumpbox-and-create-a-bosh-director">Pave Infrastructure, Create a Jumpbox, and Create a BOSH Director</h2>
 <ol>
-<li>Export environment variables.
+<li>
+<p>Export environment variables.
     <code>export BBL_IAAS=azure
     export BBL_AZURE_CLIENT_ID=
     export BBL_AZURE_CLIENT_SECRET=
     export BBL_AZURE_REGION=
     export BBL_AZURE_SUBSCRIPTION_ID=
-    export BBL_AZURE_TENANT_ID=</code></li>
-<li>Create infrastructure, jumpbox, and bosh director.
-    <code>bbl up</code></li>
+    export BBL_AZURE_TENANT_ID=</code></p>
+<p>or powershell:</p>
+<p><code>powershell
+$env:BBL_IAAS="azure"
+$env:BBL_AZURE_CLIENT_ID=
+$env:BBL_AZURE_CLIENT_SECRET=
+$env:BBL_AZURE_REGION=
+$env:BBL_AZURE_SUBSCRIPTION_ID=
+$env:BBL_AZURE_TENANT_ID=</code></p>
+</li>
+<li>
+<p>Create infrastructure, jumpbox, and bosh director.
+    <code>bbl up</code></p>
+</li>
 </ol>
 <h2 id="next-steps">Next Steps</h2>
 <ul>

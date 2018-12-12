@@ -247,8 +247,8 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#map-terraform-outputs-to-bosh-cloud-config-vars" title="Map TErraform outputs to BOSH cloud-config vars" class="md-nav__link">
-    Map TErraform outputs to BOSH cloud-config vars
+  <a href="#map-terraform-outputs-to-bosh-cloud-config-vars" title="Map Terraform outputs to BOSH cloud-config vars" class="md-nav__link">
+    Map Terraform outputs to BOSH cloud-config vars
   </a>
   
 </li>
@@ -330,8 +330,8 @@
 
 
   <li class="md-nav__item">
-    <a href="concourse/" title="Generic Steps for Concourse Deployment" class="md-nav__link">
-      Generic Steps for Concourse Deployment
+    <a href="concourse/" title="Concourse" class="md-nav__link">
+      Concourse
     </a>
   </li>
 
@@ -462,6 +462,18 @@
 
 
   <li class="md-nav__item">
+    <a href="releasing-bbl/" title="Releasing bbl" class="md-nav__link">
+      Releasing bbl
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
     <a href="upgrade/" title="Upgrade" class="md-nav__link">
       Upgrade
     </a>
@@ -532,8 +544,8 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#map-terraform-outputs-to-bosh-cloud-config-vars" title="Map TErraform outputs to BOSH cloud-config vars" class="md-nav__link">
-    Map TErraform outputs to BOSH cloud-config vars
+  <a href="#map-terraform-outputs-to-bosh-cloud-config-vars" title="Map Terraform outputs to BOSH cloud-config vars" class="md-nav__link">
+    Map Terraform outputs to BOSH cloud-config vars
   </a>
   
 </li>
@@ -573,7 +585,7 @@ utility for standing up a <a href="https://cloudfoundry.org/">CloudFoundry</a> o
 on an IaaS.</p>
 <p><code>bbl</code> currently supports AWS, GCP, Microsoft Azure, Openstack and vSphere.</p>
 <ul>
-<li><a href="https://wings.concourse-ci.org/teams/cf-infrastructure/pipelines/bosh-bootloader">CI</a></li>
+<li><a href="https://infra.ci.cf-app.com/teams/main/pipelines/bosh-bootloader/">CI</a></li>
 <li><a href="https://www.pivotaltracker.com/n/projects/1488988">Tracker</a></li>
 </ul>
 <h2 id="what-bbl-does">What <code>bbl</code> does</h2>
@@ -594,7 +606,7 @@ and <code>vars/director-vars-file.yml</code>.</p>
 files within the state directory.</p>
 <h3 id="generate-cloud-config-template">Generate cloud-config template</h3>
 <p>After the director VM comes up, <code>bbl</code> generates a base cloud-config, based on the IAAS, IAAS region, and chosen load balancer type.</p>
-<h3 id="map-terraform-outputs-to-bosh-cloud-config-vars">Map TErraform outputs to BOSH cloud-config vars</h3>
+<h3 id="map-terraform-outputs-to-bosh-cloud-config-vars">Map Terraform outputs to BOSH cloud-config vars</h3>
 <p>Having generated a base cloud-config template, <code>bbl</code> maps Terraform outputs to cloud-config variables. These variables include network and subnetwork names,
 security groups or tags, and CIDR ranges, as well as load balancer target pool names.</p>
 <h3 id="update-cloud-config-director">Update cloud-config (director)</h3>

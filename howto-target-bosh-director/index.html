@@ -237,8 +237,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../concourse/" title="Generic Steps for Concourse Deployment" class="md-nav__link">
-      Generic Steps for Concourse Deployment
+    <a href="../concourse/" title="Concourse" class="md-nav__link">
+      Concourse
     </a>
   </li>
 
@@ -414,6 +414,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../releasing-bbl/" title="Releasing bbl" class="md-nav__link">
+      Releasing bbl
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
     <a href="../upgrade/" title="Upgrade" class="md-nav__link">
       Upgrade
     </a>
@@ -476,6 +488,10 @@
 <pre><code>eval &quot;$(bbl print-env)&quot;
 </code></pre>
 
+<p>or powershell:</p>
+<pre><code class="powershell">iex $(bbl print-env | Out-String)
+</code></pre>
+
 <h2 id="alternatives-to-bbl-print-env">Alternatives to <code>bbl print-env</code></h2>
 <p>Separate commands are available for the <code>bbl print-env</code> fields:</p>
 <pre><code>$ bbl director-address
@@ -499,12 +515,23 @@ MIIDtzCCAp+gAwIBAgIJAIPgaUgWRCE8MA0GCSqGSIb3DQEBBQUAMEUxCzAJBgNV
 $ export BOSH_CA_CERT=bosh.crt
 </code></pre>
 
+<pre><code class="powershell">bbl director-ca-cert | Out-File bosh.crt
+$env:BOSH_CA_CERT=&quot;bosh.crt&quot;
+</code></pre>
+
 <p>To login:</p>
 <pre><code>$ export BOSH_ENVIRONMENT=$(bbl director-address)
 $ bosh alias-env &lt;INSERT TARGET NAME&gt;
 $ bosh log-in
 Username: user-d3783rk
 Password: p-23dah71sk1
+</code></pre>
+
+<p>or powershell:</p>
+<pre><code class="powershell">$env:TARGET_NAME=&quot;example-name&quot; # Assigns a name to the created environment for easier access.
+$env:BOSH_ENVIRONMENT=$(bbl director-address)
+bosh alias-env $env:TARGET_NAME
+bosh log-in
 </code></pre>
 
 <p>Now you're ready to deploy software with BOSH.</p>
