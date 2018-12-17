@@ -148,6 +148,7 @@ func NewLeftovers(logger logger, keyPath string) (Leftovers, error) {
 			compute.NewDisks(client, logger, zones),
 			compute.NewVpnTunnels(client, logger, regions),
 			compute.NewTargetVpnGateways(client, logger, regions),
+			compute.NewRoutes(client, logger),
 			compute.NewSubnetworks(client, logger, regions),
 			compute.NewNetworks(client, logger),
 			compute.NewAddresses(client, logger, regions),
@@ -211,7 +212,7 @@ func (l Leftovers) Delete(filter string) error {
 	return l.asyncDeleter.Run(deletables)
 }
 
-// DeleteType will collect all resources of the provied type that contain
+// DeleteType will collect all resources of the provided type that contain
 // the provided filter in the resource's identifier, prompt
 // you to confirm deletion (if enabled), and delete those
 // that are selected.
