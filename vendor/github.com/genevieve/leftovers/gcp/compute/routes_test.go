@@ -2,6 +2,7 @@ package compute_test
 
 import (
 	"errors"
+
 	"github.com/genevieve/leftovers/gcp/compute"
 	"github.com/genevieve/leftovers/gcp/compute/fakes"
 	. "github.com/onsi/ginkgo"
@@ -56,6 +57,22 @@ var _ = Describe("Routes", func() {
 			It("returns the error", func() {
 				_, err := routes.List(filter)
 				Expect(err).To(MatchError("List Routes: some error"))
+			})
+		})
+
+		Context("when the route name contains the word 'default'", func() {
+			BeforeEach(func() {
+				client.ListRoutesCall.Returns.Output = []*gcpcompute.Route{{
+					Name: "default-route",
+				}}
+			})
+
+			It("does not add it to the list", func() {
+				list, err := routes.List("")
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(0))
+				Expect(list).To(HaveLen(0))
 			})
 		})
 

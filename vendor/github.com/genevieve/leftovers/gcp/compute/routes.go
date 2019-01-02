@@ -35,7 +35,7 @@ func (r Routes) List(filter string) ([]common.Deletable, error) {
 	for _, route := range routes {
 		resource := NewRoute(r.client, route.Name)
 
-		if !strings.Contains(route.Name, filter) {
+		if !strings.Contains(route.Name, filter) || strings.Contains(route.Name, "default") {
 			continue
 		}
 
