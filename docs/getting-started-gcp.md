@@ -39,6 +39,11 @@ gcloud projects add-iam-policy-binding <project id> --member='serviceAccount:<se
     $env:BBL_GCP_REGION=
     $env:BBL_GCP_SERVICE_ACCOUNT_KEY=
     ```
+1. Create an empty directory to use as your bbl state directory.
+    ```
+    mkdir some-bbl-state-dir
+    cd some-bbl-state-dir
+    ```
 1. Create infrastructure, jumpbox, and bosh director.
     ```
     bbl up
