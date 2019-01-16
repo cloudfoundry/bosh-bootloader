@@ -93,7 +93,7 @@ func LoadConfig() (Config, error) {
 		config.StateFileDir = dir
 	}
 
-	fmt.Printf("Using state-dir: %s", config.StateFileDir)
+	fmt.Printf("Using state-dir: %s\n", config.StateFileDir)
 
 	return config, nil
 }
