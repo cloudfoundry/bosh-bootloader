@@ -7,16 +7,11 @@ Prerequisites:
 
 Steps to deploy cfcr with bbl:
 
-1. Supply a kubernetes master host. Your k8s api will be at this hostname.
-    ```
-    export kubernetes_master_host=cfcr.your-domain-here.biz
-    ```
 1. Follow the normal steps to bbl up with a patch
     ```
     mkdir banana-env && cd banana-env
     bbl plan --name banana-env
     cp -r bosh-bootloader/plan-patches/cfcr-gcp/. .
-    echo kubernetes_master_host=\"${kubernetes_master_host}\" > vars/cfcr.tfvars
     bbl up
 
     eval "$(bbl print-env)"
@@ -35,6 +30,8 @@ Steps to deploy cfcr with bbl:
    ```
    bosh deploy -d cfcr ${KD}/manifests/cfcr.yml \
    -o ${KD}/manifests/ops-files/iaas/gcp/cloud-provider.yml \
+   -o ${KD}/manifests/ops-files/use-vm-extensions.yml \
+   -o ${KD}/manifests/ops-files/add-hostname-to-master-certificate.yml \
    -v deployment_name=cfcr \
    -l <(bbl outputs)
    ```
@@ -43,14 +40,14 @@ Steps to deploy cfcr with bbl:
    ```
    credhub login
    export director_name=$(bosh int <(bbl outputs) --path=/director_name)
-   
-   ${KD}/bin/set_kubeconfig ${director_name}/cfcr https://${kubernetes_master_host}:8443
+
+   ${KD}/bin/set_kubeconfig ${director_name}/cfcr https://$(bosh int <(bbl outputs) --path /api-hostname):8443
    ```
 
  - Run `kubectl get nodes` to ensure kubectl was configured correctly
  - create, scale, and expose apps with the kubernetes bootcamp docker image:
-   ```
-   kubectl run kubernetes-bootcamp --image=docker.io/jocatalin/kubernetes-bootcamp:v1 --port=8080
+   ```bash
+   kubectl run kubernetes-bootcamp --image=gcr.io/google-samples/kubernetes-bootcamp:v1 --port=8080
    kubectl get pods
    kubectl expose deployment/kubernetes-bootcamp --type="LoadBalancer"
    kubectl get services

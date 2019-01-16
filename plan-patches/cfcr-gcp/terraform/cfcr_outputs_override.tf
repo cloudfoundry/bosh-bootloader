@@ -10,8 +10,8 @@ output "cfcr_worker_service_account_address" {
   value = "${google_service_account.worker.email}"
 }
 
-output "kubernetes_master_host" {
-  value = "${var.kubernetes_master_host}"
+output "api-hostname" {
+  value = "${google_compute_address.cfcr_tcp.address}"
 }
 
 output "project_id" {
