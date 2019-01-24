@@ -55,30 +55,21 @@ func (s ServiceAccount) removeBindings() error {
 		return fmt.Errorf("Get Project IAM Policy: %s", err)
 	}
 
-	toRemove := []binding{}
+	for j := len(p.Bindings) - 1; j >= 0; j-- {
+		b := p.Bindings[j]
 
-	for j, b := range p.Bindings {
 		for i, m := range b.Members {
 			if strings.Contains(m, s.email) {
-				toRemove = append(toRemove, binding{
-					ServiceAccount: s.email,
-					Member:         m,
-					Role:           b.Role,
-				})
-
 				// Remove this member from the binding
 				b.Members = append(b.Members[:i], b.Members[i+1:]...)
 			}
 		}
 
 		if len(b.Members) == 0 {
-			// If there are no more members for the role, remove the whole binding
 			p.Bindings = append(p.Bindings[:j], p.Bindings[j+1:]...)
+		} else {
+			p.Bindings[j] = b
 		}
-	}
-
-	for _, binding := range toRemove {
-		s.logger.Printf("gcloud iam service-accounts remove-iam-policy-binding %s --member %s --role %s\n", binding.ServiceAccount, binding.Member, binding.Role)
 	}
 
 	_, err = s.client.SetProjectIamPolicy(p)

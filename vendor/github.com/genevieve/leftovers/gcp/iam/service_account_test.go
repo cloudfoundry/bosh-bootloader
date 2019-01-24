@@ -67,11 +67,6 @@ var _ = Describe("ServiceAccount", func() {
 				err := serviceAccount.Delete()
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(logger.PrintfCall.Receives.Message).To(Equal("gcloud iam service-accounts remove-iam-policy-binding %s --member %s --role %s\n"))
-				Expect(logger.PrintfCall.Receives.Arguments[0]).To(Equal("banana@example.com"))
-				Expect(logger.PrintfCall.Receives.Arguments[1]).To(Equal("serviceAccount:banana@example.com"))
-				Expect(logger.PrintfCall.Receives.Arguments[2]).To(Equal("roles/some-role"))
-
 				Expect(client.SetProjectIamPolicyCall.CallCount).To(Equal(1))
 				Expect(client.SetProjectIamPolicyCall.Receives.Input).To(Equal(updatedPolicy))
 			})
@@ -107,6 +102,14 @@ var _ = Describe("ServiceAccount", func() {
 								Members: []string{"user:apple", "serviceAccount:banana@example.com"},
 								Role:    "roles/some-other-role",
 							},
+							{
+								Members: []string{"serviceAccount:kiwi@example.com"},
+								Role:    "roles/some-third-role",
+							},
+							{
+								Members: []string{"serviceAccount:banana@example.com"},
+								Role:    "roles/some-fourth-role",
+							},
 						},
 					}
 					updatedPolicy = &gcpcrm.Policy{
@@ -114,6 +117,10 @@ var _ = Describe("ServiceAccount", func() {
 							{
 								Members: []string{"user:apple"},
 								Role:    "roles/some-other-role",
+							},
+							{
+								Members: []string{"serviceAccount:kiwi@example.com"},
+								Role:    "roles/some-third-role",
 							},
 						},
 					}
