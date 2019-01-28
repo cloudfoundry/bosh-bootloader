@@ -250,7 +250,7 @@ func vendorGithubComCloudfoundryJumpboxDeploymentEnvrc() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/jumpbox-deployment/.envrc", size: 24, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/jumpbox-deployment/.envrc", size: 24, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -270,7 +270,7 @@ func vendorGithubComCloudfoundryJumpboxDeploymentGitignore() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/jumpbox-deployment/.gitignore", size: 7, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/jumpbox-deployment/.gitignore", size: 7, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -290,12 +290,12 @@ func vendorGithubComCloudfoundryJumpboxDeploymentReadmeMd() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/jumpbox-deployment/README.md", size: 2330, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/jumpbox-deployment/README.md", size: 2330, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
 
-var _vendorGithubComCloudfoundryJumpboxDeploymentAwsCpiYml = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x94\x52\xcb\x6e\xc3\x2a\x10\xdd\xe7\x2b\x58\x26\x0b\x07\x1b\xfb\x36\x89\xa5\xaa\x9f\x82\xc6\x30\x89\x51\x31\x20\x06\x9c\xa6\x5f\x7f\xe5\x47\x6f\xa2\x48\x6d\x74\x77\x70\x98\xe1\x3c\x74\x0a\x16\x20\xf5\x2d\xe3\x11\x2d\x02\x21\xf1\x62\xc3\x58\xba\x05\x6c\x59\xc4\x60\x41\xe1\x86\xb1\x11\x6c\xc6\x76\xc3\x18\x63\x0e\x06\x6c\x59\xe7\xa9\x2f\xe0\x4a\x85\x0a\x66\x86\xa9\x87\xaa\x65\x27\x5d\x8a\x4a\xd4\xcd\xf1\x78\xaa\x4e\x50\x8b\x7f\xce\x15\xea\xe6\x5c\x37\xa7\xf2\x54\xaa\x46\xe3\x5b\xd5\x88\xfa\x50\xcf\x2b\x39\xda\x96\xf5\x29\x05\x6a\x39\x9f\x3e\xdc\x1b\xcf\x35\xbf\x98\xd4\xe7\x6e\xaf\xfc\xc0\x95\xf5\x59\x9f\x7d\x76\x3a\xde\xf8\x23\x65\xb1\xaa\xfd\x18\xdf\x0f\xf5\xe6\xc1\x03\xf9\x1c\x15\xca\xe0\xbd\x25\x3e\x49\x7d\x1f\x07\xe2\x94\x70\x50\x68\xed\xc7\xdf\xd6\x16\x0f\x02\x6b\x78\x7b\xab\x0f\x35\xd4\x95\x38\x6a\x38\xeb\x43\xd7\x9c\x55\x75\xd2\xc7\xba\x11\x87\xba\x3a\x76\xb5\x10\xa8\xfe\xf2\xf0\x43\x48\x77\xd5\x5f\xe8\x8a\x7e\x1c\x8a\xdc\x65\x97\xf2\x74\x35\x60\x8b\x8b\x97\x70\x41\x97\x3e\xc6\xf7\xea\x50\xee\x45\xf5\xda\xcc\x1c\x8a\x0c\xd1\x07\x8c\xc9\x20\xbd\x30\x05\x23\x18\x0b\x9d\xb1\x26\xdd\xe4\xb7\x77\xd8\xb2\xed\x16\xbe\x77\xbb\xf9\x15\x43\x8f\x03\x46\xb0\x52\x1b\xfa\x5c\x36\x18\x23\xf3\x8d\x2d\x13\x65\x59\x96\x2b\xb2\x10\x5c\x82\x98\xef\xc6\x51\x02\xa7\x50\x2e\x70\x12\xfb\xc1\xa8\xe8\xef\xda\x1d\xa6\xab\x8f\x9f\xab\xea\x10\xcd\x08\x09\x39\xe5\xce\x61\x22\x5e\xfe\x5f\x0f\xcb\xe2\x24\x7c\x39\x49\xa3\x77\xbb\x3b\xdb\x7f\xbf\x8d\x46\x63\xe4\x09\x87\x60\x21\xe1\x8b\x4f\x97\x22\xc3\x95\xe4\x4f\x87\xd7\x52\x3d\xb5\xfb\x37\x1a\xa2\x5e\xa6\xec\x1c\xbe\xaa\x55\xef\x69\xd6\x8e\x5f\x09\xa3\x03\x2b\x4d\x58\xd3\x0f\x3e\xa6\x96\x89\x25\xd4\x35\x25\xf9\x89\xb7\x69\xfa\xe1\xba\x4e\x67\xc2\xd8\xb2\x51\x41\xf8\x55\xd3\x3d\x51\x0e\xd7\x97\xcd\x50\x0a\x89\x26\x02\x69\xf4\xdc\x8a\x47\x60\x25\xd5\x78\x86\x6c\xd3\x0c\x2e\x89\x6d\xb7\xcf\xd8\xd3\x28\xa1\xca\x71\x6a\xdb\x25\xfa\x1c\xe8\x71\xe3\xe9\x69\x5d\x8c\x78\x31\xde\x4d\x73\xcb\x69\x85\x09\x55\xc4\x24\xef\xaa\xe6\x02\x3c\x83\xbb\xdd\xe6\xdf\x00\x00\x00\xff\xff\x80\x4c\x0d\xb2\xc4\x04\x00\x00")
+var _vendorGithubComCloudfoundryJumpboxDeploymentAwsCpiYml = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x94\x52\xc9\x6e\xf3\x2c\x14\xdd\xe7\x29\x58\x26\x0b\x07\x4f\x8d\x07\xa9\xea\xa3\x20\x0c\xd7\x36\x2a\x06\xc4\x05\xa7\xe9\xd3\xff\xf2\xd0\x3f\x51\xa4\x36\xfa\x76\x70\xb8\x97\x33\xe8\x24\xc4\xf1\x30\xb6\x84\x7a\xd0\xc0\x11\x90\x26\x07\x42\xc2\xcd\x41\x4b\x3c\x38\xcd\x05\x1c\x08\x99\xb9\x8e\xd0\x1e\x08\x21\xc4\xf0\x09\x5a\xd2\x59\x1c\x13\x7e\xc5\x44\x38\xb5\xc2\x38\xf2\xac\x25\x8d\x4c\xf3\x2c\x2f\xca\xba\x6e\xb2\x86\x17\xf9\x5b\x9f\x81\x2c\xfb\xa2\x6c\xd2\x26\x15\xa5\x84\x4b\x56\xe6\x45\x55\xac\x2b\xd1\xeb\x96\x8c\x21\x38\x6c\x29\x5d\x3e\x3c\x2b\x4b\x25\x1d\x54\x18\x63\x77\x16\x76\xa2\x42\xdb\x28\x7b\x1b\x8d\xf4\x37\xfa\x48\x99\xec\x6a\x3f\xe6\xf7\xaa\x38\x3c\x78\x40\x1b\xbd\x00\xe6\xac\xd5\x48\x17\xa9\xef\xf3\x84\x14\x03\x4c\x02\xb4\xfe\xf8\xdb\xda\xee\xa1\xc8\xb3\xa2\xea\x7b\x59\xd5\x85\x28\xba\xac\xbc\x34\xb2\x7e\x7b\xcb\x64\xda\x5f\x8a\x4b\x53\xf5\x55\xdf\xd7\x75\xfe\xa7\x87\x1f\x42\xbc\xab\xfe\x02\x93\x8c\xf3\x94\xc4\x2e\x9a\x10\x97\xab\xe2\x3a\x19\x2c\xe3\x03\x98\xf0\x31\xbf\x67\x55\x7a\xce\xcb\xd7\x66\xd6\x50\x98\xf3\xd6\x81\x0f\x0a\xf0\x85\x29\x3e\x73\xa5\x79\xa7\xb4\x0a\x37\xf6\x6d\x0d\xb4\xe4\x78\xe4\xdf\xa7\xd3\xfa\x0a\x6e\x84\x09\x3c\xd7\x4c\x2a\xfc\xdc\x36\x08\x41\xf5\x0d\x2d\xc9\xd3\x34\x4d\x77\x64\x23\x18\x5c\xbe\xde\x95\xc1\xc0\x8d\x00\xb6\xc1\x21\x3f\x4f\x4a\x78\x7b\xd7\x6e\x20\x5c\xad\xff\xdc\x55\x3b\xaf\x66\x1e\x80\x62\xec\x0c\x04\xa4\xe9\xbf\x7a\xd8\x16\x17\xe1\xdb\x89\x29\x79\x3a\xdd\xd9\xfe\xff\x6d\x56\x12\x3c\x0d\x30\x39\xcd\x03\xbc\xf8\x74\x2b\x32\xbf\x22\xfb\xe9\xf0\x5e\xaa\xa7\x76\xff\x46\x83\x38\xb2\x10\x8d\x81\x57\xb5\x1a\x2d\xae\xda\xe1\x2b\x80\x37\x5c\x33\xe5\xf6\xf4\x9d\xf5\xa1\x25\xf9\x16\xea\x9e\x12\xfb\x84\xdb\x32\xfd\x70\xdd\xa7\x23\x82\x6f\xc9\x2c\xb8\xfb\x55\xd3\x3d\x51\xca\xaf\x2f\x9b\x21\x04\x20\x2e\x04\x4c\xc9\xb5\x15\x8f\xc0\x4e\x2a\xa1\xe7\x51\x87\x15\xdc\x12\x3b\x1e\x9f\xb1\xa7\x51\x04\x11\xfd\xd2\xb6\xc1\xdb\xe8\xf0\x71\xe3\xe9\x69\x5f\xf4\x30\x28\x6b\x96\xb9\xed\xb4\xc3\x08\xc2\x43\x60\x77\x55\x6b\x01\x9e\xc1\xd3\xe9\xf0\x5f\x00\x00\x00\xff\xff\x05\xbb\x09\xa8\xc4\x04\x00\x00")
 
 func vendorGithubComCloudfoundryJumpboxDeploymentAwsCpiYmlBytes() ([]byte, error) {
 	return bindataRead(
@@ -310,7 +310,7 @@ func vendorGithubComCloudfoundryJumpboxDeploymentAwsCpiYml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/jumpbox-deployment/aws/cpi.yml", size: 1220, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/jumpbox-deployment/aws/cpi.yml", size: 1220, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -330,7 +330,7 @@ func vendorGithubComCloudfoundryJumpboxDeploymentAzureCpiYml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/jumpbox-deployment/azure/cpi.yml", size: 1561, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/jumpbox-deployment/azure/cpi.yml", size: 1561, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -350,7 +350,7 @@ func vendorGithubComCloudfoundryJumpboxDeploymentCiConfigure() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/jumpbox-deployment/ci/configure", size: 110, mode: os.FileMode(493), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/jumpbox-deployment/ci/configure", size: 110, mode: os.FileMode(493), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -370,7 +370,7 @@ func vendorGithubComCloudfoundryJumpboxDeploymentCiPipelineYml() (*asset, error)
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/jumpbox-deployment/ci/pipeline.yml", size: 3726, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/jumpbox-deployment/ci/pipeline.yml", size: 3726, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -390,7 +390,7 @@ func vendorGithubComCloudfoundryJumpboxDeploymentCiTasksBumpCpiSh() (*asset, err
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/jumpbox-deployment/ci/tasks/bump-cpi.sh", size: 1475, mode: os.FileMode(493), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/jumpbox-deployment/ci/tasks/bump-cpi.sh", size: 1475, mode: os.FileMode(493), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -410,7 +410,7 @@ func vendorGithubComCloudfoundryJumpboxDeploymentCiTasksBumpCpiYml() (*asset, er
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/jumpbox-deployment/ci/tasks/bump-cpi.yml", size: 339, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/jumpbox-deployment/ci/tasks/bump-cpi.yml", size: 339, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -430,7 +430,7 @@ func vendorGithubComCloudfoundryJumpboxDeploymentCiTasksBumpStemcellSh() (*asset
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/jumpbox-deployment/ci/tasks/bump-stemcell.sh", size: 1495, mode: os.FileMode(493), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/jumpbox-deployment/ci/tasks/bump-stemcell.sh", size: 1495, mode: os.FileMode(493), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -450,7 +450,7 @@ func vendorGithubComCloudfoundryJumpboxDeploymentCiTasksBumpStemcellYml() (*asse
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/jumpbox-deployment/ci/tasks/bump-stemcell.yml", size: 346, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/jumpbox-deployment/ci/tasks/bump-stemcell.yml", size: 346, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -470,7 +470,7 @@ func vendorGithubComCloudfoundryJumpboxDeploymentCiTasksUnitTestSh() (*asset, er
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/jumpbox-deployment/ci/tasks/unit-test.sh", size: 119, mode: os.FileMode(493), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/jumpbox-deployment/ci/tasks/unit-test.sh", size: 119, mode: os.FileMode(493), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -490,12 +490,12 @@ func vendorGithubComCloudfoundryJumpboxDeploymentCiTasksUnitTestYml() (*asset, e
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/jumpbox-deployment/ci/tasks/unit-test.yml", size: 205, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/jumpbox-deployment/ci/tasks/unit-test.yml", size: 205, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
 
-var _vendorGithubComCloudfoundryJumpboxDeploymentGcpCpiYml = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x94\x93\xcb\x92\xa3\x20\x14\x86\xf7\x79\x0a\x96\xc9\x42\x11\xe3\x25\xb1\x2a\x95\x47\xa1\xb8\x9c\x28\x1d\x04\x0a\xd0\x99\xf4\xd3\x4f\x79\xe9\x4e\xba\xa7\x26\x99\x5e\xa1\xfe\xe7\x9c\xff\xff\x04\x12\xe4\x58\xec\x1a\x84\x3d\x68\x60\x01\x02\x4e\x36\x08\xc5\x9b\x83\x06\x79\x70\x9a\x09\xd8\x20\x34\x32\x3d\x40\xb3\x41\x08\x21\xc3\x7a\x68\x10\xb7\xa1\x4b\x5a\x6b\x5b\x0d\x89\x70\x6a\x56\x42\xc7\x48\x83\x8e\x84\xb0\xe2\x50\x57\x85\xe4\x3c\x2f\x44\x99\x31\x90\xb2\x80\x7d\x76\x2c\x25\xa9\xb2\xbd\xdc\x1f\x4a\x20\xfb\x72\x6e\x19\xbc\x6e\x50\x17\xa3\x0b\x0d\xc6\xd3\xcc\x54\x59\x2c\x71\xab\x62\x37\xf0\x54\xd8\x1e\x0b\x6d\x07\x79\xb1\x83\x91\xfe\x86\xbf\xb9\x26\x6b\xe6\xf3\x78\xca\xeb\x34\x4b\xc9\xe6\x81\x26\xd8\xc1\x0b\xa0\xce\x5a\x1d\xf0\x14\xfa\x34\xf6\x01\x87\x08\xbd\x00\xad\xcf\xcf\x21\x17\x94\x0a\xea\x43\x56\x91\x82\x91\xf2\x78\xa9\xf8\x9e\x93\x5a\x92\x43\x7e\xa9\x2f\x50\x8b\x8a\x71\xc1\x40\x1c\x0b\x5e\x3c\x43\xf9\x30\x0c\x5f\xc2\x5f\xc7\x3e\x19\xf8\x60\xe2\x90\xfc\x06\xa3\x98\x4e\x5a\x4b\x59\x0b\x26\x9e\xc7\x13\xa9\xb3\x34\xff\x0f\x96\xf9\xd7\x50\xe7\xad\x03\x1f\x15\x84\x17\x4c\x3d\x13\x9d\x32\x40\x97\x12\x43\x92\x10\x99\x91\xcc\xcb\x84\xcc\xba\xb7\x36\x52\xa9\xc2\x95\x06\xf5\x0e\xb4\xe5\x0d\xca\xb3\x6f\xca\xd2\xeb\xe4\x67\xef\xac\xbf\x5b\x03\x0d\xda\x6e\xa7\x75\xb7\xbb\x07\x37\x10\x7f\x59\x7f\x5d\x23\x3b\xaf\x46\x16\x01\x87\x81\x1b\x88\x01\x67\x3f\x05\x58\xc7\xd1\xe5\x04\x6e\xb7\xeb\xfb\x6e\xb7\x6c\xd9\x3c\xf6\x4b\xc1\xfd\xd3\x5a\x13\x59\x1b\x26\x61\x5a\x1f\x83\x7e\x06\x19\x95\x04\x8f\x23\xf4\x4e\xb3\x08\xaf\xf2\xcc\x36\xcb\x8e\xd2\x8f\x4b\xb0\x1e\xc9\xbf\x6f\xc8\xbf\xcc\xee\xf8\x78\xa9\x7e\xe1\xfa\x16\xac\xa1\x57\xb8\x4d\x1c\xad\x70\x54\x78\x90\x60\xa2\x62\x3a\xd0\x49\x5b\x51\x9d\xb7\x6f\x20\xe2\x54\xb5\x3e\x52\x25\x9f\x30\x3f\xc4\x30\xd1\x3d\x8b\x90\x20\x52\x1d\xd3\xbc\x2c\xd2\x75\xdd\xfc\x09\x00\x00\xff\xff\x76\x61\x36\x39\x44\x04\x00\x00")
+var _vendorGithubComCloudfoundryJumpboxDeploymentGcpCpiYml = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x94\x93\xcb\x92\xa3\x20\x14\x86\xf7\x79\x0a\x96\xc9\x42\xc1\x5b\x6c\xad\x4a\xe5\x51\x28\x2e\x27\x4a\x07\x81\x02\x74\x26\xfd\xf4\x53\x5e\xba\x93\xee\xa9\x49\x6a\x56\xa8\xff\x39\xe7\xff\x3f\x81\x04\x39\x16\xfb\x16\x61\x0f\x1a\x58\x80\x80\x93\x1d\x42\xf1\xe6\xa0\x45\x1e\x9c\x66\x02\x76\x08\x4d\x4c\x8f\xd0\xee\x10\x42\xc8\xb0\x01\x5a\xc4\x6d\xe8\x93\xce\xda\x4e\x43\x22\x9c\x5a\x94\xd0\xb3\xac\x45\x4d\x96\xb1\xf2\xad\x3e\x96\x92\xf3\xbc\x14\x15\x61\x20\x65\x09\x05\x69\x2a\x99\x1d\x49\x21\x8b\xb7\x0a\xb2\xa2\x5a\x5a\x46\xaf\x5b\xd4\xc7\xe8\x42\x8b\xf1\x3c\x33\x55\x16\x4b\xdc\xa9\xd8\x8f\x3c\x15\x76\xc0\x42\xdb\x51\x5e\xec\x68\xa4\xbf\xe1\x1f\xae\xc9\x96\xf9\x3c\x9d\xf2\x3a\x25\x69\xb6\x7b\xa0\x09\x76\xf4\x02\xa8\xb3\x56\x07\x3c\x87\x3e\x4d\x43\xc0\x21\xc2\x20\x40\xeb\xf3\x73\xc8\x15\x45\x12\x4e\xf2\xba\xe1\xbc\x29\x8a\xaa\xce\x45\x5d\x5f\xf8\xa5\x26\x35\x6b\x44\x2e\x24\xe3\x6f\xa2\x94\x92\x1c\xe1\x19\xca\xa7\x61\xf8\x16\xfe\x3a\x0d\xc9\xc8\x47\x13\xc7\xe4\x37\x18\xc5\x74\xd2\x59\xca\x3a\x30\xf1\x3c\x9d\xb2\x9a\xa4\x79\xf9\x9a\x65\xf9\x35\xd4\x79\xeb\xc0\x47\x05\xe1\x05\xd3\xc0\x44\xaf\x0c\xd0\xb5\xc4\x64\x49\x88\xcc\x48\xe6\x65\x92\x2d\xba\xb7\x36\x52\xa9\xc2\x95\x06\xf5\x01\xb4\xe3\x2d\xca\xc9\x0f\x65\xed\x75\xf2\xab\x77\xd1\x3f\xac\x81\x16\xed\xf7\xf3\x7a\x38\xdc\x83\x1b\x88\xbf\xac\xbf\x6e\x91\x9d\x57\x13\x8b\x80\xc3\xc8\x0d\xc4\x80\xc9\xff\x02\x6c\xe3\xe8\x7a\x02\xf7\xfb\xed\xfd\x70\x58\xb7\x6c\x19\xfb\xad\xe0\xfe\x69\xab\x89\xac\x0b\xb3\x30\xaf\x8f\x41\xbf\x82\x4c\x4a\x82\xc7\x11\x06\xa7\x59\x84\x57\x79\x16\x9b\x75\x47\xe9\xe7\x25\xd8\x8e\xe4\xdf\x37\xe4\x5f\x66\x77\x7c\xbc\x56\xbf\x70\x7d\x0f\xd6\xd0\x2b\xdc\x66\x8e\x4e\x38\x2a\x3c\x48\x30\x51\x31\x1d\xe8\xac\x6d\xa8\xce\xdb\x77\x10\x71\xae\xda\x1e\xa9\x92\x4f\x98\x1f\x62\x98\xe8\x9e\x45\x48\x50\x76\x6c\xd2\xbc\x2a\xd3\x6d\xdd\xfd\x09\x00\x00\xff\xff\x52\xe0\xca\xb7\x44\x04\x00\x00")
 
 func vendorGithubComCloudfoundryJumpboxDeploymentGcpCpiYmlBytes() ([]byte, error) {
 	return bindataRead(
@@ -510,7 +510,7 @@ func vendorGithubComCloudfoundryJumpboxDeploymentGcpCpiYml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/jumpbox-deployment/gcp/cpi.yml", size: 1092, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/jumpbox-deployment/gcp/cpi.yml", size: 1092, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -530,7 +530,7 @@ func vendorGithubComCloudfoundryJumpboxDeploymentJumpboxYml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/jumpbox-deployment/jumpbox.yml", size: 1315, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/jumpbox-deployment/jumpbox.yml", size: 1315, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -550,7 +550,7 @@ func vendorGithubComCloudfoundryJumpboxDeploymentNoExternalIpRegistryYml() (*ass
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/jumpbox-deployment/no-external-ip-registry.yml", size: 273, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/jumpbox-deployment/no-external-ip-registry.yml", size: 273, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -570,12 +570,12 @@ func vendorGithubComCloudfoundryJumpboxDeploymentNoExternalIpYml() (*asset, erro
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/jumpbox-deployment/no-external-ip.yml", size: 191, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/jumpbox-deployment/no-external-ip.yml", size: 191, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
 
-var _vendorGithubComCloudfoundryJumpboxDeploymentOpenstackCpiYml = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x94\x52\xcb\x72\xe2\x38\x14\xdd\xf3\x15\x5a\xc2\xc2\xc8\x06\x0c\x19\x57\xa5\xf2\x29\xaa\x6b\xe9\x1a\x6b\x90\x25\x95\x74\xe5\x84\x7c\xfd\x94\x5f\x81\xa1\x3b\xa1\x7b\x27\xdf\xd7\x79\xf8\x64\xcc\x03\xb5\x15\xe3\x01\x0d\x42\xc4\xc8\xb3\x15\x63\x74\xf5\x58\xb1\x80\xde\x80\xc4\x15\x63\x3d\x98\x84\xd5\x8a\x31\xc6\x2c\x74\x58\xb1\xda\xc5\x36\x73\x1e\x6d\x24\x90\x97\x4c\x7a\x3d\x36\x63\x0b\x45\xc5\x0a\x75\x2c\xeb\xfa\x58\xe6\x3b\x09\x07\x84\x46\xe1\x5e\x9e\x1a\xc4\xbc\x51\xe5\xcb\x41\x96\xaa\x91\x79\xbd\x2f\xeb\x71\x25\x05\x53\xb1\x96\xc8\xc7\x8a\xf3\xe1\xec\x56\x3b\xae\xf8\x59\x53\x9b\xea\xad\x74\x1d\x97\xc6\x25\xd5\xb8\x64\x55\xb8\xf2\x5f\x81\xb3\x99\xf9\x5b\xff\x7a\x28\x56\x77\x7a\xa2\x4b\x41\xa2\xf0\xce\x99\xc8\x07\xda\xaf\x7d\x17\x79\x24\xec\x24\x1a\xf3\xf6\xb3\xcc\x49\x89\x02\x79\xcc\xeb\x22\x87\x17\xf5\x72\x38\xed\x0b\x95\xc3\xe1\x54\xec\x4e\x45\x53\x94\xf9\xfe\x9f\xb2\x91\xc7\xba\x3c\x14\xf8\x93\x92\x05\x30\x3e\x72\xbf\xf4\x5d\x96\xea\x64\x29\x65\x1f\x68\x35\x98\xec\xec\x04\x9c\xd1\xd2\x5b\xff\x5a\x9c\xf2\xed\xee\x0f\xe4\x8c\xe6\x08\x1f\x9c\xc7\x40\x1a\xe3\x13\x59\xd0\x83\x36\x50\x6b\xa3\xe9\x2a\x3e\x9d\xc5\x8a\xad\xd7\xf0\xb9\xd9\x8c\x5d\x3d\x30\xb3\x12\xc5\x74\xa1\x2b\xb6\xb1\x03\x63\x6e\x2c\x2c\xd2\xbb\x0b\x97\x19\xdf\x07\xdd\x03\x21\x8f\xa9\xb6\x48\x91\xe7\x7f\xcb\xc6\x22\x09\xad\x06\x0a\xd3\x6b\xb3\xb9\x41\x7d\x9d\xea\xb5\xc2\xc0\x09\x3b\x6f\x80\xf0\xd9\xc5\x31\x9d\x5f\x1e\x8b\x25\x98\x73\x46\x7e\x1b\xdc\xef\x20\x63\x6c\x05\x25\x6b\xf1\x59\x56\x5a\x17\x69\x10\x81\x1f\x84\xc1\x82\x11\xda\xcf\x86\x7a\x17\xa8\x62\xbb\xdd\xf4\x31\xd9\x25\x2e\x78\x1d\xa6\xef\x3e\xe7\xe9\x14\x31\x54\xac\x97\xe0\xbf\xe5\x74\xb3\x96\x7f\x89\x78\xf6\xcb\xbd\x5e\x20\x6f\xbe\x78\x88\xf1\xdd\x05\x35\x23\x43\xa2\x56\x8c\xf9\x5d\xaf\x97\xf7\xdc\x52\xd8\x40\x32\x34\x9c\x10\x93\xbb\xeb\xf5\x63\xed\x61\x34\xa2\x4c\x61\x08\xd8\x39\xb8\xe4\xe3\xfd\xc6\x43\x6b\x59\x74\x1d\x68\xfb\x7f\x86\x53\x6d\x1e\x68\x53\x07\x56\x04\x04\x05\xb5\x41\xd1\x77\x23\x6c\xac\x18\x85\x84\xb3\xb9\xee\x5f\x94\xf4\xa0\x72\x2a\xce\x47\x02\x9e\xb5\x1b\x51\xa6\xd7\x9d\xeb\x8b\xb0\xdb\xea\x52\xdd\x6c\x56\xff\x05\x00\x00\xff\xff\x1d\xa8\xfc\x95\x23\x05\x00\x00")
+var _vendorGithubComCloudfoundryJumpboxDeploymentOpenstackCpiYml = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x94\x52\xcb\x92\xa2\x30\x14\xdd\xfb\x15\x59\xea\x02\x03\x28\x8a\x54\x75\xf5\xa7\xa4\x6e\xc2\x45\x32\x86\x24\x95\x07\xdd\xf6\xd7\x4f\xf1\x52\xc7\x99\x6e\x6b\x76\xe1\xbe\xce\x83\x93\x10\x0b\xa1\xad\x08\x75\xa8\x10\x3c\x7a\x9a\xac\x08\x09\x57\x8b\x15\x71\x68\x15\x08\x5c\x11\xd2\x83\x8a\x58\xad\x08\x21\x44\x43\x87\x15\xe1\xc6\xb7\x89\xb1\xa8\x7d\x00\x71\x49\x84\x95\x63\xd3\xb7\x90\x55\x64\x97\x41\x5a\xd4\xbb\x1d\x6f\x9a\x83\xd8\x67\x0d\xcf\xf2\x06\x39\x2f\x20\x2b\x8e\x5c\x9c\x78\x51\x8a\x53\x51\xe4\xc7\x71\x25\x3a\x55\x91\x36\x04\xeb\x2b\x4a\x87\xb3\x5b\x69\x68\x4d\xcf\x32\xb4\x91\x6f\x85\xe9\xa8\x50\x26\xd6\x8d\x89\xba\x76\x57\xfa\x37\x70\x32\x33\x7f\xef\xdf\xf6\xf9\xea\x41\x8f\x37\xd1\x09\x64\xd6\x18\xe5\xe9\x40\xfb\xad\xef\x3c\xf5\x01\x3b\x81\x4a\xbd\xff\x2c\x73\x52\x82\x79\xb9\x4f\x4f\x29\x9e\x40\xf0\xa2\xcc\x8b\x5d\xba\x6f\x4e\x19\xa6\xc7\x72\x87\x79\x59\xef\xca\xc3\xfe\x00\x1c\x0e\x3f\x29\x59\x00\xfd\x33\xf7\x4b\xdf\x25\x91\x47\x1d\x62\xf2\x89\x5a\x82\x4a\xce\x86\xc1\x19\x75\x78\xef\xdf\xb2\x63\xba\xcd\xf7\xaf\xe5\x8c\xe6\x30\xeb\x8c\x45\x17\x24\xfa\x17\xb2\xa0\x07\xa9\x80\x4b\x25\xc3\x95\x7d\x19\x8d\x15\x59\xaf\xe1\x6b\xb3\x19\xbb\x72\x60\xa6\x05\xb2\xe9\x42\x97\x6d\x7d\x07\x4a\xdd\x59\x68\x0c\x1f\xc6\x5d\x66\x7c\xeb\x64\x0f\x01\xa9\x8f\x5c\x63\xf0\x34\xfd\x5f\x36\x1a\x03\x93\xf5\x40\x61\x7a\x6d\x36\x77\xa8\xdb\xa9\x5e\xd6\xe8\x68\xc0\xce\x2a\x08\xf8\xea\xe2\x98\xce\x9b\xc7\x6c\x09\xe6\x9c\x91\x7f\x06\xf7\x3b\x48\xef\x5b\x16\xa2\xd6\xf8\x2a\x2b\xad\xf1\x61\x10\x81\x9f\x01\x9d\x06\xc5\xa4\x9d\x0d\xb5\xc6\x85\x8a\xe4\xf9\xf4\x31\xd9\xc5\x2e\x78\x1d\xa6\x1f\x3e\xe7\xe9\xe8\xd1\x55\xa4\x17\x60\xbf\xe5\x74\xb7\x96\xde\x44\xbc\xfa\xe5\x56\x2e\x90\x77\x5f\x2c\x78\xff\x61\x5c\x3d\x23\x43\x0c\x2d\x1b\xf3\xbb\x5e\x2f\xef\xb9\x55\x63\x03\x51\x85\xe1\x04\x9b\xdc\x5d\xaf\x9f\x6b\x4f\xa3\x1e\x45\x74\x43\xc0\xce\xce\x44\xeb\x1f\x37\x9e\x5a\xcb\xa2\xe9\x40\xea\x3f\x19\x4e\xb5\x79\xa0\x8d\x1d\x68\xe6\x10\x6a\xe0\x0a\x59\xdf\x8d\xb0\xbe\x22\xc1\x45\x9c\xcd\x35\xbf\x50\x84\x27\x95\x53\x71\x3e\xe2\xf0\x2c\xcd\x88\x32\xbd\x1e\x5c\x5f\x84\xdd\x57\x97\xea\x66\xb3\xfa\x1d\x00\x00\xff\xff\xd4\x09\xd5\xb8\x23\x05\x00\x00")
 
 func vendorGithubComCloudfoundryJumpboxDeploymentOpenstackCpiYmlBytes() ([]byte, error) {
 	return bindataRead(
@@ -590,7 +590,7 @@ func vendorGithubComCloudfoundryJumpboxDeploymentOpenstackCpiYml() (*asset, erro
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/jumpbox-deployment/openstack/cpi.yml", size: 1315, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/jumpbox-deployment/openstack/cpi.yml", size: 1315, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -610,12 +610,12 @@ func vendorGithubComCloudfoundryJumpboxDeploymentScriptsTest() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/jumpbox-deployment/scripts/test", size: 3322, mode: os.FileMode(493), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/jumpbox-deployment/scripts/test", size: 3322, mode: os.FileMode(493), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
 
-var _vendorGithubComCloudfoundryJumpboxDeploymentVsphereCpiYml = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x94\x52\xc1\x6e\xa3\x30\x10\xbd\xe7\x2b\x7c\x2c\x07\x62\x9b\x40\xb2\x41\x8a\xf2\x29\xc8\xd8\x43\xb0\x62\xb0\xe5\xb1\x69\xab\xd5\xfe\xfb\x8a\x00\x21\x5d\x75\x9b\xf6\xe6\x99\xf7\x66\xde\xbc\xf1\xa4\xc4\x89\xd0\x96\x84\x7a\x30\x20\x10\x90\xa6\x1b\x42\xc2\xbb\x83\x92\x78\x70\x46\x48\xd8\x10\x32\x08\x13\xa1\xdc\x10\x42\x48\x2f\x3a\x28\x49\x6d\xb1\x4d\x07\x74\x2d\x78\x48\xa5\xd3\x37\x08\x5b\xc1\x4b\x72\xd8\x35\xb9\x54\x3c\x07\x68\x0e\x05\xb0\xdd\x41\xed\xa5\x28\x8a\x1d\xc0\x7e\xa7\x7e\xd5\x45\xc1\xf6\x59\xc3\x44\x7d\x2b\x89\xde\x94\xa4\x0d\xc1\x61\x49\xe9\xd8\x74\xab\x2d\x55\xf4\xa2\x43\x1b\xeb\xad\xb4\x1d\x95\xc6\x46\xd5\xd8\xd8\x2b\xff\x4e\xff\x95\x4d\xe7\xa9\xcf\xc3\xa9\xc8\x36\x0f\x5e\xd0\x46\x2f\xa1\x72\xd6\x1a\xa4\xe3\xc8\xa7\xa1\x43\x8a\x01\x3a\x09\xc6\x9c\xbf\xb6\x38\xf9\xc8\x8f\x9c\xe5\x8c\x17\x4d\x9d\x65\x47\x09\x5c\x34\xc5\x3e\x3b\xd6\x02\x0e\x47\xc1\xf7\xbb\x9c\x17\x90\x29\x2e\xb3\xaf\x7c\x2c\x82\xf8\x71\x72\xc0\x37\x9d\xc6\x3a\xf6\x21\xa6\x6f\xd0\x6b\x61\xd2\x8b\xad\xc4\x05\xfa\x70\x1e\x4e\xfc\xc0\xb6\x19\x7f\xee\xe6\xb6\x99\xca\x79\xeb\xc0\x07\x0d\xf8\xc4\x95\x74\xb1\x24\xfc\xf6\x54\x1a\xaf\x25\xc9\x18\x63\xec\x16\x7b\xd1\x95\x84\xb3\x2c\x5f\x45\x7b\x08\xaf\xd6\x5f\x67\x39\xe7\xf5\x20\x02\x50\x8c\x75\x0f\x01\x29\xfb\xa9\xf8\x74\x35\x2f\x2f\x73\xdb\x6a\x8c\x93\x64\x95\xbb\xb7\x1b\xb4\x02\x4f\x03\x74\xce\x88\x00\xdf\xea\x3a\x6f\xb5\x5a\xce\x70\xbe\x89\x4f\x8e\xf4\x7f\x72\xab\x0d\x3a\x48\xe8\x03\xf8\x27\xc2\x42\x29\x0f\x88\xa3\xa3\xb9\xa0\xd2\x2e\x49\xa6\xe5\x8a\x20\xa6\x1c\x4e\xe4\x94\x48\x13\x71\x8d\xc7\xcc\x5a\x37\x63\x49\x52\x92\xdf\x7f\x66\x7c\x6c\x81\xc1\x7a\xa8\x9c\x08\x01\x7c\xff\x28\xa4\x70\x16\x9a\xfe\xb1\x9a\x2c\x3d\xe0\x1a\xaf\x2b\x65\x59\xfc\x1d\x95\x77\xc8\x81\x47\x8d\x01\xfa\x50\x7d\x57\x70\xf9\x97\xaa\xb1\x46\x81\x7f\x64\x2d\xd0\x4a\x1e\xba\x4f\x68\x43\xb7\x10\x9c\x40\x7c\xb5\x5e\x3d\xa2\x4b\x6e\xa6\x44\xfc\x58\x3c\xc6\x49\xb2\xf9\x1b\x00\x00\xff\xff\xe9\xdc\xfa\xe2\xb4\x04\x00\x00")
+var _vendorGithubComCloudfoundryJumpboxDeploymentVsphereCpiYml = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\x94\x52\x4d\x6f\xa3\x30\x10\xbd\xe7\x57\xf8\x58\x0e\xd4\xe6\x2b\xb4\x48\x51\x7e\x0a\x32\xf6\x10\xac\x18\x6c\x79\x6c\xda\x6a\xb5\xff\x7d\x45\x80\x40\x57\xdd\xa6\x7b\xf3\xcc\x7b\x33\x6f\xde\x78\x62\x62\xb9\xef\x2a\x42\x1d\x68\xe0\x08\x48\xe3\x03\x21\xfe\xc3\x42\x45\x1c\x58\xcd\x05\x1c\x08\x19\xb9\x0e\x50\x1d\x08\x21\x64\xe0\x3d\x54\xa4\x31\xd8\xc5\x23\xda\x0e\x1c\xc4\xc2\xaa\x1b\x84\x1d\x4f\x2a\x52\x66\x6d\x2e\x64\x92\x03\xb4\x65\x01\x2c\x2b\xe5\x51\xf0\xa2\xc8\x00\x8e\x99\x7c\x69\x8a\x82\x1d\xd3\x96\xf1\xe6\x56\x12\x9c\xae\x48\xe7\xbd\xc5\x8a\xd2\xa9\xe9\xb3\x32\x54\xd2\x8b\xf2\x5d\x68\x9e\x85\xe9\xa9\xd0\x26\xc8\xd6\x84\x41\xba\x0f\xfa\xb7\x6c\xbc\x4c\x7d\x1e\x4f\x45\x7a\xd8\x79\x41\x13\x9c\x80\xda\x1a\xa3\x91\x4e\x23\x9f\xc6\x1e\x29\x7a\xe8\x05\x68\x7d\xfe\xde\xe2\xec\x43\x64\xaf\xfc\x25\xcf\x44\x2e\xda\x57\xce\x9a\x94\x35\x00\x49\x5a\x1e\x59\x9b\x66\x79\xca\x52\x28\xd2\x32\x6d\xca\x6f\x7d\xac\x82\xf8\x79\x72\xc0\x77\x15\x87\x26\x0c\x3e\xc4\xef\x30\x28\xae\xe3\x8b\xa9\xf9\x05\x06\x7f\x1e\x4f\x49\xc9\x9e\xd3\xfc\xb1\x9b\xdb\x66\x6a\xeb\x8c\x05\xe7\x15\xe0\x03\x57\xc2\x86\x8a\x24\xb7\xa7\x54\x78\xad\x48\xca\x18\x63\xb7\xd8\xf1\xbe\x22\x09\xdb\x8b\x0e\xe0\xdf\x8c\xbb\x2e\x72\xd6\xa9\x91\x7b\xa0\x18\x9a\x01\x3c\x52\xf6\xbf\xe2\xf3\xd5\x3c\x3d\x2d\x6d\xeb\x29\x8e\xa2\x4d\xee\xde\x6e\x54\x12\x1c\xf5\xd0\x5b\xcd\x3d\xfc\xa8\xeb\xb2\xd5\x7a\x3d\xc3\xe5\x26\xbe\x38\xd2\x7f\xc9\x6d\x36\xe8\x28\x60\xf0\xe0\x1e\x08\x73\x29\x1d\x20\x4e\x8e\x96\x82\x5a\xd9\x28\x9a\x97\xcb\x3d\x9f\x73\x38\x93\x63\x22\x74\xc0\x2d\x9e\x32\x5b\xdd\x82\x45\x51\x45\x7e\xfd\x5e\xf0\xa9\x05\x7a\xe3\xa0\xb6\xdc\x7b\x70\xc3\x5e\x48\xe2\x22\x34\xff\x63\x3d\x5b\xda\xe1\x0a\xaf\x1b\x65\x5d\xfc\x1d\x15\x77\xc8\x82\x43\x85\x1e\x06\x5f\xff\x54\x70\xfd\x97\xba\x35\x5a\x82\xdb\xb3\x56\x68\x23\x8f\xfd\x17\xb4\xb1\x5f\x09\x96\x23\xbe\x19\x27\xf7\xe8\x9a\x5b\x28\x01\x3f\x17\x4f\x71\x14\x1d\xfe\x04\x00\x00\xff\xff\x39\x4f\xd3\xae\xb4\x04\x00\x00")
 
 func vendorGithubComCloudfoundryJumpboxDeploymentVsphereCpiYmlBytes() ([]byte, error) {
 	return bindataRead(
@@ -630,7 +630,7 @@ func vendorGithubComCloudfoundryJumpboxDeploymentVsphereCpiYml() (*asset, error)
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/jumpbox-deployment/vsphere/cpi.yml", size: 1204, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/jumpbox-deployment/vsphere/cpi.yml", size: 1204, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -650,7 +650,7 @@ func vendorGithubComCloudfoundryJumpboxDeploymentVsphereResourcePoolYml() (*asse
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/jumpbox-deployment/vsphere/resource-pool.yml", size: 165, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/jumpbox-deployment/vsphere/resource-pool.yml", size: 165, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -670,7 +670,7 @@ func vendorGithubComCloudfoundryBoshDeploymentGitignore() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/.gitignore", size: 21, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/.gitignore", size: 21, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -690,7 +690,7 @@ func vendorGithubComCloudfoundryBoshDeploymentLicense() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/LICENSE", size: 11357, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/LICENSE", size: 11357, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -710,7 +710,7 @@ func vendorGithubComCloudfoundryBoshDeploymentNotice() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/NOTICE", size: 474, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/NOTICE", size: 474, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -730,7 +730,7 @@ func vendorGithubComCloudfoundryBoshDeploymentReadmeMd() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/README.md", size: 3664, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/README.md", size: 3664, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -750,7 +750,7 @@ func vendorGithubComCloudfoundryBoshDeploymentAwsCliIamInstanceProfileYml() (*as
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/aws/cli-iam-instance-profile.yml", size: 245, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/aws/cli-iam-instance-profile.yml", size: 245, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -770,7 +770,7 @@ func vendorGithubComCloudfoundryBoshDeploymentAwsCloudConfigYml() (*asset, error
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/aws/cloud-config.yml", size: 842, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/aws/cloud-config.yml", size: 842, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -790,7 +790,7 @@ func vendorGithubComCloudfoundryBoshDeploymentAwsCpiYml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/aws/cpi.yml", size: 2313, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/aws/cpi.yml", size: 2313, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -810,7 +810,7 @@ func vendorGithubComCloudfoundryBoshDeploymentAwsEncryptedDiskYml() (*asset, err
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/aws/encrypted-disk.yml", size: 371, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/aws/encrypted-disk.yml", size: 371, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -830,7 +830,7 @@ func vendorGithubComCloudfoundryBoshDeploymentAwsIamInstanceProfileYml() (*asset
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/aws/iam-instance-profile.yml", size: 401, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/aws/iam-instance-profile.yml", size: 401, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -850,7 +850,7 @@ func vendorGithubComCloudfoundryBoshDeploymentAwsS3BbrYml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/aws/s3-bbr.yml", size: 519, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/aws/s3-bbr.yml", size: 519, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -870,7 +870,7 @@ func vendorGithubComCloudfoundryBoshDeploymentAwsS3BlobstoreYml() (*asset, error
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/aws/s3-blobstore.yml", size: 704, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/aws/s3-blobstore.yml", size: 704, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -890,7 +890,7 @@ func vendorGithubComCloudfoundryBoshDeploymentAzureCloudConfigYml() (*asset, err
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/azure/cloud-config.yml", size: 729, mode: os.FileMode(493), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/azure/cloud-config.yml", size: 729, mode: os.FileMode(493), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -910,7 +910,7 @@ func vendorGithubComCloudfoundryBoshDeploymentAzureCpiSecondaryYml() (*asset, er
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/azure/cpi-secondary.yml", size: 848, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/azure/cpi-secondary.yml", size: 848, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -930,7 +930,7 @@ func vendorGithubComCloudfoundryBoshDeploymentAzureCpiYml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/azure/cpi.yml", size: 2475, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/azure/cpi.yml", size: 2475, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -950,7 +950,7 @@ func vendorGithubComCloudfoundryBoshDeploymentAzureCustomEnvironmentYml() (*asse
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/azure/custom-environment.yml", size: 204, mode: os.FileMode(493), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/azure/custom-environment.yml", size: 204, mode: os.FileMode(493), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -970,7 +970,7 @@ func vendorGithubComCloudfoundryBoshDeploymentAzureUseManagedDisksYml() (*asset,
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/azure/use-managed-disks.yml", size: 363, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/azure/use-managed-disks.yml", size: 363, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -990,7 +990,7 @@ func vendorGithubComCloudfoundryBoshDeploymentBbrYml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/bbr.yml", size: 467, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/bbr.yml", size: 467, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -1010,7 +1010,7 @@ func vendorGithubComCloudfoundryBoshDeploymentBoshLiteDockerYml() (*asset, error
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/bosh-lite-docker.yml", size: 2552, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/bosh-lite-docker.yml", size: 2552, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -1030,7 +1030,7 @@ func vendorGithubComCloudfoundryBoshDeploymentBoshLiteGrootfsYml() (*asset, erro
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/bosh-lite-grootfs.yml", size: 100, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/bosh-lite-grootfs.yml", size: 100, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -1050,7 +1050,7 @@ func vendorGithubComCloudfoundryBoshDeploymentBoshLiteRuncYml() (*asset, error) 
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/bosh-lite-runc.yml", size: 100, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/bosh-lite-runc.yml", size: 100, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -1070,12 +1070,12 @@ func vendorGithubComCloudfoundryBoshDeploymentBoshLiteYml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/bosh-lite.yml", size: 2762, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/bosh-lite.yml", size: 2762, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
 
-var _vendorGithubComCloudfoundryBoshDeploymentBoshYml = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xcc\x58\xcb\x92\x9b\xbc\x12\xde\xf3\x14\xaa\x59\xfc\xb1\x53\x01\x03\xbe\xb3\x3a\xef\x91\x4a\xa9\x1a\xd1\x36\x9c\x00\xa2\x24\xe1\xc9\x24\x95\x77\x3f\x25\x71\x13\x17\x3b\x9e\x93\x59\xfc\x95\x85\x43\x77\xab\xf5\xf5\xbd\x35\xae\xeb\x3a\x25\x14\x18\x91\x98\xcb\xd4\x71\x04\xe6\x08\x12\x65\xe4\xb8\xc4\xa2\x13\x72\x43\x21\x33\x5e\x46\xe4\x25\x3c\x9c\xbc\x9d\xe7\xbf\x38\x84\xd4\x22\x8f\x48\xaa\x54\x25\xa3\xcd\x46\x6e\x3d\x28\xe0\x27\x2f\xe1\x55\x7a\x8c\x17\x1b\x7d\xd2\x65\xbc\xa8\xb2\x1c\x13\xb7\xd5\xec\x2a\x10\x31\xe4\xb9\x6c\xd8\xad\x32\xb7\x8e\xeb\x52\xd5\xee\x0f\x2c\x33\xc8\xdd\xe0\xe8\x7b\x41\xe8\x86\x7e\x70\x0a\xc2\x20\x70\x43\x7f\xbf\xdb\x1f\xdc\x5d\xb8\xdd\x9f\x83\xe3\x76\xdf\x73\x42\x7f\xbf\xf7\x43\x4f\x5d\x7f\x3a\x84\xc8\x14\x82\x88\x30\x44\x9f\xe1\xe5\x18\xe0\x2e\x38\x06\xa7\x18\xcf\x88\x87\xdd\xe1\x72\xde\x86\x80\x6c\x7b\xdc\x9f\x7c\xf0\x43\xdf\x1f\x0c\xac\x8a\x91\x7d\xfa\x6a\x6f\xfb\xf7\xe6\x55\x85\xdb\xa8\x5a\x30\xee\xdc\x58\x10\x84\x07\x37\xdc\xee\x76\xe1\xd9\x3d\x1e\x8e\xc7\x30\xd8\x06\x3d\x43\xd3\xb7\x87\x91\x69\x01\x63\x47\xff\x7c\xd9\xc5\x78\xb8\xc4\x21\xb2\x23\xc2\x36\xf4\xf7\xc9\x29\x40\x06\xc9\xd1\xdf\x9e\xe1\x7c\x3c\xc7\x3b\x1d\x46\xc9\x6b\xc1\x90\x56\x9c\xe7\x56\x30\x6f\x85\x74\x08\x29\x51\xbd\x72\xf1\x3d\x22\x09\x5e\xa0\xce\x95\x43\x08\x96\xb7\xc8\x21\x84\x98\x70\x37\xff\x23\xa4\x02\x29\x5f\xb9\x48\x22\xf2\xe9\xf3\xa7\x96\x56\xc4\xb5\xec\xf8\x84\x30\x14\x2a\x22\xab\x95\xa6\xd2\x98\x73\x25\x95\x80\x8a\x4a\x99\xaf\xd7\x8e\x93\x64\xf2\xfb\x14\x81\xa6\x69\x0c\x86\x27\xb3\x9f\x18\x91\xc3\x9e\xee\xb7\x07\xc7\x69\x61\xd9\xc2\x3d\x3e\xf5\x56\x61\x44\x0a\x28\x6b\xc8\xb5\x3f\xea\xb8\x44\x65\x80\xb8\x44\x40\x79\x45\x8d\x22\x2b\x15\x8a\x12\x72\xca\xb2\x44\xac\xd7\x06\xe5\x15\x14\xbe\xc2\xdb\x88\x7d\x7d\x6d\x99\x52\x81\xca\x58\x44\xbe\x5a\xcc\xac\x5a\xaf\xbf\x19\x6e\x52\xca\x88\x7c\x3d\x79\xe6\xdf\x37\xc7\xc9\x4a\xa9\xa0\x64\x48\xaf\x82\xd7\xd5\xbc\x44\x3a\xbe\x8c\x48\xe0\x10\xf2\x5f\x1e\xb7\x00\x7f\xf5\x89\xf6\x85\xb4\x79\x62\xbe\x7e\xdb\xdc\x12\x94\xb4\xd9\x5c\xa6\x23\x7e\xc5\xa5\xba\x0a\x94\xee\xd9\xdb\x3d\x92\x8b\x73\x1e\x4b\xc5\x05\x3e\x12\x4a\x32\x81\x4c\x71\xf1\x48\x26\x45\xc8\x55\x4a\x0b\x5e\x66\xcb\x92\xa3\x24\xeb\x72\xab\xd2\x75\x24\x15\x96\x8a\xf6\xe1\x1f\xa2\x3e\x84\x58\x5f\x34\x0d\x72\x17\x10\x9a\x55\x72\x39\x28\x95\xe0\x15\x0a\x95\x61\x9b\x83\x70\xc5\x52\x45\x76\x6a\x1a\x3f\x46\x9b\x8d\xf9\x59\xad\xf4\x0f\xed\xf2\x78\xbd\xfe\xcf\x44\x67\xb4\x0b\xc3\xb0\x3d\xde\x97\xc0\xb4\x0c\xcc\x77\xe7\x55\x69\x53\x5d\x0d\xe8\x96\x25\x28\x22\x92\xc0\xcd\xe2\x10\xc2\x2b\x95\xf1\x72\x24\xde\xdc\x92\x54\x3c\x2b\xd5\xd0\x58\xa6\x90\xc2\x7d\xb8\xf7\x27\xa7\x6a\xa9\xaf\x30\xd6\x4e\x38\x43\x8d\xae\x56\x3d\x48\x6a\x24\x2d\xbb\x27\x87\x54\x3e\xc3\xd5\xd6\xf2\x8c\x4a\x08\x83\xb1\x6e\x06\x9e\x16\xcd\x2e\x19\x03\x85\xad\x6e\xe3\xee\xf6\x30\x24\x89\x40\x29\x47\x25\xa7\x2d\x73\x6c\x5b\xf4\x81\x59\x9b\x99\xc5\xcb\x59\xc0\xdb\xe0\x31\x82\x12\xc5\x0d\x05\x55\xb9\xf4\x18\x58\x56\xb2\x3c\xd3\xf6\x33\xb0\xed\xb1\x40\xf7\x0a\x16\x6d\x69\x51\x89\xec\x06\x0a\xe9\x77\x7c\xb3\xc5\x2d\xb2\x25\xde\x00\xf9\xd3\x6d\x36\xdc\x77\xdc\x6a\x1d\x5b\xbe\xbd\xab\xe6\x3f\x5a\x6b\xdc\x22\x69\x27\xff\x6e\x24\x8b\x0a\x96\x31\x8d\xbb\xc7\xb3\xc8\xc6\xa7\xfe\x6f\x7c\x0b\x6a\xe6\x28\xbb\x86\x1a\x91\x7f\x92\xb8\x55\x9c\x9b\xd6\x45\xfb\x0c\x0e\xc2\xa3\xe7\x7b\xbe\x17\xb4\xfc\x94\x4b\x35\xa7\x36\x19\xdd\xe9\x5b\xc8\xea\x8e\x35\xcf\xec\x04\x14\xc4\x7d\x57\xed\x0b\x08\x2a\x35\x53\xd9\x57\xe0\x93\x75\x56\x71\x3d\x9b\xed\x6e\xb2\xd4\xac\xe6\xb9\xd3\x58\xd3\xd1\x7b\xf2\x72\xa3\xe9\x33\x61\x66\xd9\xa8\x35\x2f\x77\xb0\x77\xf5\xae\x71\x0f\x98\xf4\xaa\xa7\x7a\xd4\x62\xfa\x0d\x67\xde\x5f\x9d\x8b\x67\xe7\x89\x36\x75\xf1\xdd\xec\x6a\xe6\xe1\x6a\xd5\x3b\x55\x13\x86\x54\x89\x23\xf2\xb9\xcf\xd4\x4b\x5e\xcb\x94\x82\xa8\x22\xa2\x44\x8d\xfd\x0c\x83\x38\xd7\x03\x59\x2a\x9a\x60\x95\xf3\xb7\x11\xfb\x8a\x25\x0a\x0d\xee\x56\xf4\x0e\x96\x4b\x0a\x12\x4c\x8c\xf5\x09\xd5\x13\xb9\x96\x54\x4f\x6d\x1d\xc0\xb9\xa8\x29\xbc\x04\xf3\xec\x86\x02\x13\xaa\xb0\xa8\x72\x50\x38\x56\xdb\x1c\x97\x11\xd9\x75\x85\xc6\x19\xe4\x34\xb1\xe7\x63\xa3\x2f\x19\xdf\x71\xd3\xf5\x3c\xc8\x08\x64\x5c\x24\xb4\x25\xdb\x92\x52\xe6\x83\x58\x1b\x9f\xde\x8f\x52\xe6\x77\xda\x54\xb7\xc0\x8e\x44\x97\xc2\xaf\xf3\x97\x16\x50\xc2\x15\x8b\x51\x62\x0f\x45\x65\x6c\xea\xe9\xe6\xcb\xce\x51\xad\x61\xb2\x3d\x34\x01\x87\xa4\xc8\xca\xd1\xe0\xb5\x0b\xc3\x70\x97\x47\x79\xa7\x20\x2d\xee\x9e\x4e\x8b\xe9\xd1\xb4\x88\x26\xa5\x4f\x81\x31\x5e\xcf\x8b\xd5\x52\xfb\x58\xa5\x71\x24\xd0\x65\x5f\x0e\x73\x59\xa0\xac\x45\xcb\x9a\x07\xbb\x54\x55\x44\xfe\x29\x55\xe5\x34\xa6\xa9\xac\xc0\xc0\xbb\x72\x7e\xcd\x51\xbf\xb7\x2c\x72\xb8\x4c\xde\x2e\x93\x77\x36\xd9\x61\x39\xaf\x13\xda\x07\xcd\xe9\xd6\xc6\x6e\x1b\x33\x5f\xb3\x07\xcd\x83\x0d\xf2\x70\x3a\x9c\x9c\x3f\xbc\x84\xee\x2d\xae\xe4\x57\x73\xf9\xcb\xd3\xb7\xfb\xa6\x61\xf8\xe6\xd6\x97\xdf\x93\xb9\x40\x7e\x4d\x92\xf1\x0b\xa9\x40\xa5\x11\xd9\xdc\x40\x6c\x6e\x0c\xaa\x4d\x91\x31\xc1\xa9\x9e\x35\x1b\x3d\x7a\x36\x0c\x58\x8a\xbf\x87\x00\x7c\xd6\x01\x70\x6e\x20\x32\x1d\x1f\xeb\x8d\x33\x4e\xc3\xfe\x45\xd6\x13\xfa\xb7\xd0\xfd\xd1\xf0\xcc\xa1\x71\xf3\xbf\x7f\xc2\x4a\xc2\xfb\x42\x77\xdc\x78\xff\xc0\x68\xfb\xbc\x2f\x36\x1b\xe7\x73\xd1\xe9\x13\x96\x32\xe8\x85\xac\xf6\xe2\x4c\xde\x09\x99\xde\x31\xad\xa2\x60\xbc\x28\x78\x49\x1b\x55\x0c\x9c\x7b\xa6\x49\x99\x3f\xa3\x5e\xeb\x1e\x01\x9a\xdc\xb0\xb4\x48\x40\x6e\x28\x2a\xbb\xa1\x91\x5a\x7c\x99\x59\xcf\xfb\xa1\xf6\xff\x1d\x88\xda\xc5\xfd\xaf\xbd\xdf\xa2\xf4\xb4\x3e\x97\x81\x67\xfe\xfc\xd3\x5d\x3a\xb9\x6e\x58\x07\x9e\xf5\xc1\x80\xf2\xc1\xb5\x93\x3b\x9f\xf6\x85\x99\xa4\x3f\x14\x96\x09\x26\x7a\xfe\xd1\x5a\xc2\xb5\x5d\x23\xdd\xf6\xed\x42\xa1\x56\xe9\xd4\x6b\x0b\xeb\xfe\x87\x19\xd4\x29\x5d\x30\xea\x3e\xd6\xf6\x61\xf7\x00\xeb\x7c\xf5\xff\x30\xc4\x69\xf1\xf7\x58\xed\x15\xf5\xc3\x52\xb2\x57\xfa\x20\x2f\x97\x76\xd5\x67\x3d\x33\x01\xfd\x51\x25\xfa\xbf\x00\x00\x00\xff\xff\x27\x68\x1e\x6b\x7c\x16\x00\x00")
+var _vendorGithubComCloudfoundryBoshDeploymentBoshYml = []byte("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff\xcc\x58\xcb\x92\x9b\xbc\x12\xde\xf3\x14\xaa\x59\xfc\xb1\x53\x01\x73\xf1\x95\xd5\x79\x8f\x54\x4a\xd5\x48\x6d\x9b\x13\x40\x94\x24\x3c\x99\xa4\xf2\xee\xa7\x24\x03\x16\x17\x3b\x9e\x93\x59\xfc\x95\x85\x43\x77\xab\xf5\xf5\xbd\x35\xbe\xef\x7b\x15\x94\x98\x92\x4c\xa8\xb3\xe7\x49\x2c\x10\x14\xaa\xd4\xf3\x89\x43\x27\xe4\x82\x52\xe5\xa2\x4a\xc9\x4b\xbc\xdd\x07\x9b\x20\x7c\xf1\x08\x69\x64\x91\x92\xb3\xd6\xb5\x4a\x57\x2b\x95\x04\x50\xc2\x4f\x51\xc1\xab\x0a\x98\x28\x57\xe6\xa4\xcf\x44\x59\xe7\x05\x72\xbf\xd5\xec\x6b\x90\x19\x14\x85\xba\xb2\x5b\x65\x7e\x93\x35\x95\x6e\xfc\x1f\x58\xe5\x50\xf8\xd1\x2e\x0c\xe2\xc8\x8f\xc3\xe8\x10\x46\xd1\xde\x8f\x93\x64\xb3\x8e\xfd\x78\x1f\x47\x51\x7c\x48\x0e\x3d\xc7\x32\xf6\x81\x3e\xfd\xf4\x08\x51\x67\x88\x52\x72\x3c\x6e\x0e\xc7\x0c\x77\x90\x64\x49\x7c\x48\x42\x88\x59\xb6\xde\x1c\x8f\x09\xf2\x88\x27\x90\x84\x18\x6e\x0e\xeb\x38\xbc\x19\x58\x97\x03\xfb\xc2\x20\x8a\x83\xe4\xef\xcd\xab\x4b\xff\xaa\x6a\xc6\x38\x6b\xc1\x3e\x8a\xe2\xad\x1f\x27\xeb\x75\x7c\xf0\x77\xdb\xdd\x2e\x8e\x92\xa8\x67\x18\x7a\xb2\x1d\x98\x16\x31\xb6\x0b\x0f\xc7\x75\x86\xdb\x63\x16\x23\xdb\x21\x24\x71\xb8\xe1\xfb\x08\x19\xf0\x5d\x98\x1c\xe0\xb0\x3b\x64\x6b\x13\x46\x25\x1a\xc9\x90\xd6\x42\x14\x4e\x30\x2f\xa5\xf2\x08\xa9\x50\xbf\x0a\xf9\x3d\x25\x1c\x8f\xd0\x14\xda\x23\x04\xab\x4b\xea\x11\x42\x6c\xb8\xaf\xff\x23\xa4\x06\xa5\x5e\x85\xe4\x29\xf9\xf4\xf9\x53\x4b\x2b\xb3\x46\x75\x7c\x42\x18\x4a\x9d\x92\xc5\xc2\x50\x69\x26\x84\x56\x5a\x42\x4d\x95\x2a\x96\x4b\xcf\xe3\xb9\xfa\x3e\x46\x60\x68\x06\x83\xe5\xa9\xfc\x27\xa6\x64\xbb\xa1\x9b\x64\xeb\x79\x2d\x2c\x57\xb8\xc7\xa7\xdf\x6a\x4c\x49\x09\x55\x03\x85\xf1\x47\x93\x55\xa8\x2d\x10\x9f\x48\xa8\x4e\x68\x50\xe4\x95\x46\x59\x41\x41\x59\xce\xe5\x72\x69\x51\x9e\x40\xe3\x2b\xbc\x0d\xd8\xa7\xd7\x96\xa9\x34\xe8\x9c\xa5\xe4\xab\xc3\xcc\xeb\xe5\xf2\x9b\xe5\xf2\x4a\xa5\xe4\xeb\x3e\xb0\xff\xbe\x79\x5e\x5e\x29\x0d\x15\x43\x7a\x92\xa2\xa9\xa7\x25\xd2\xf1\x55\x4a\x22\x8f\x90\xff\x8a\xac\x05\xf8\xab\x4f\xb4\x2f\xa4\xcd\x13\xfb\xf5\xdb\xe5\x56\xa0\x95\xcb\x16\xea\x3c\xe0\xd7\x42\xe9\x93\x44\xe5\x1f\x82\xf5\x23\xb9\xac\x10\x99\xd2\x42\xe2\x23\x21\x9e\x4b\x64\x5a\xc8\x47\x32\x67\x84\x42\x9f\x69\x29\xaa\x7c\x5e\x72\x90\x64\x5d\x6e\xd5\xa6\x8e\x94\xc6\x4a\xd3\x3e\xfc\xb7\xa8\xdf\x42\x6c\x2e\x1a\x07\xb9\x0b\x08\xcd\x6b\x35\x1f\x94\x5a\x8a\x1a\xa5\xce\xb1\xcd\x41\x38\x61\xa5\x53\x37\x35\xad\x1f\xd3\xd5\xca\xfe\x2c\x16\xe6\x87\x76\x79\xbc\x5c\xfe\x67\xa4\x33\x5d\xc7\x71\xdc\x1e\xef\x4b\x60\x5c\x06\xf6\xbb\xf3\xaa\x72\xa9\xbe\x01\x74\xc9\x39\xca\x94\x70\xb8\x38\x1c\x42\x44\xad\x73\x51\x0d\xc4\xaf\xb7\xf0\x5a\xe4\x95\xbe\x35\x96\x31\xa4\x78\x13\x6f\xc2\xd1\xa9\x46\x99\x2b\xac\xb5\x23\xce\xad\x46\x17\x8b\x1e\x24\xb5\x92\x8e\xdd\xa3\x43\xba\x98\xe0\x6a\x6b\x79\x42\x25\x84\xc1\x50\x37\x83\xc0\x88\xe6\xc7\x9c\x81\xc6\x56\xb7\x75\x77\x7b\x18\x38\x97\xa8\xd4\xa0\xe4\x8c\x65\x9e\x6b\x8b\x39\x30\x69\x33\x93\x78\x79\x33\x78\xaf\x78\xac\xa0\x42\x79\x41\x49\x75\xa1\x02\x06\x8e\x95\xac\xc8\x8d\xfd\x0c\x5c\x7b\x1c\xd0\xbd\x82\x59\x5b\x5a\x54\x32\xbf\x80\x46\xfa\x1d\xdf\x5c\x71\x87\xec\x88\x5f\x81\xfc\xe9\x36\x17\xee\x3b\x6e\x75\x8e\xcd\xdf\xde\x55\xf3\x1f\xad\xb5\x6e\x51\xb4\x93\x7f\x37\x92\x59\x05\xf3\x98\x86\xdd\xe3\x59\x64\xc3\x53\xff\x37\xbe\x19\x35\x53\x94\x5d\x43\x4d\xc9\x3f\x3c\x6b\x15\x17\xb6\x75\xd1\x3e\x83\xa3\x78\x17\x84\x41\x18\x44\x2d\xff\x2c\x94\x9e\x52\xaf\x19\xdd\xe9\x9b\xc9\xea\x8e\x35\xcd\x6c\x0e\x1a\xb2\xbe\xab\xf6\x05\x04\xb5\x9e\xa8\xec\x2b\xf0\xc9\x3a\xab\x85\x99\xcd\x6e\x37\x99\x6b\x56\xd3\xdc\xb9\x5a\xd3\xd1\x7b\xf2\x7c\xa3\xe9\x33\x61\x62\xd9\xa0\x35\xcf\x77\xb0\x77\xf5\xae\x61\x0f\x18\xf5\xaa\xa7\x7a\xd4\x6c\xfa\xdd\xce\xbc\xbf\x3a\x67\xcf\x4e\x13\x6d\xec\xe2\xbb\xd9\x75\x9d\x87\x8b\x45\xef\x54\x43\xb8\xa5\x4a\x96\x92\xcf\x7d\xa6\x1e\x8b\x46\x9d\x29\xc8\x3a\x25\x5a\x36\xd8\xcf\x30\xc8\x0a\x33\x90\x95\xa6\x1c\xeb\x42\xbc\x0d\xd8\x27\xac\x50\x1a\x70\x97\xb2\x77\xb0\x9a\x53\xc0\x91\x5b\xeb\x39\x35\x13\xb9\x51\xd4\x4c\x6d\x13\xc0\xa9\xa8\x2d\x3c\x8e\x45\x7e\x41\x89\x9c\x6a\x2c\xeb\x02\x34\x0e\xd5\x5e\x8f\xab\x94\xac\xbb\x42\x13\x0c\x0a\xca\xdd\xf9\x78\xd5\xc7\x87\x77\x5c\x4c\x3d\xdf\x64\x24\x32\x21\x39\x6d\xc9\xae\xa4\x52\xc5\x4d\xac\x8d\x4f\xef\x47\xa5\x8a\x3b\x6d\xaa\x5b\x60\x07\xa2\x73\xe1\x37\xf9\x4b\x4b\xa8\xe0\x84\xe5\x20\xb1\x6f\x45\x65\x6d\xea\xe9\xf6\xcb\xcd\x51\xa3\x61\xb4\x3d\x5c\x03\x0e\xbc\xcc\xab\xc1\xe0\x75\x0b\xc3\x72\xe7\x47\x79\xa7\xe0\x5c\xde\x3d\x7d\x2e\xc7\x47\xcf\x65\x3a\x2a\x7d\x0a\x8c\x89\x66\x5a\xac\x8e\xda\xc7\x2a\xad\x23\x81\xce\xfb\xf2\x36\x97\x25\xaa\x46\xb6\xac\x69\xb0\x2b\x5d\xa7\xe4\x9f\x4a\xd7\xde\xd5\x34\x9d\x97\x18\x05\x27\x21\x4e\x05\x9a\xf7\x96\x43\x8e\xe7\xc9\xc9\x3c\x79\xed\x92\x3d\x56\x88\x86\xd3\x3e\x68\x5e\xb7\x36\x76\xdb\x98\xfd\x9a\x3c\x68\x1e\x6c\x90\xdb\xfd\x76\xef\xfd\xe1\x25\x74\x6f\x71\x25\xbf\xae\x97\xbf\x3c\x7d\x7b\x68\x1b\x46\x68\x6f\x7d\xf9\x3d\x9a\x0b\xe4\xd7\x28\x19\xbf\x90\x1a\xf4\x39\x25\xab\x0b\xc8\xd5\x85\x41\xbd\x2a\x73\x26\x05\x35\xb3\x66\x65\x46\xcf\x8a\x01\x3b\xe3\xef\x5b\x00\x3e\x9b\x00\x78\x17\x90\xb9\x89\x8f\xf3\xc6\x19\xa6\x61\xff\x22\xeb\x09\xfd\x5b\xe8\xfe\x68\x78\xe6\xd0\xb0\xf9\xdf\x3f\xe1\x24\xe1\x7d\xa1\x3b\x6e\xbc\x7f\x60\xb0\x7d\xde\x17\x9b\x8c\xf3\xa9\xe8\xf8\x09\x4b\x19\xf4\x42\x4e\x7b\xf1\x46\xef\x84\xdc\xec\x98\x4e\x51\x30\x51\x96\xa2\xa2\x57\x55\x0c\xbc\x7b\xa6\x29\x55\x3c\xa3\xde\xe8\x1e\x00\x1a\xdd\x30\xb7\x48\x40\x61\x29\x3a\xbf\xa0\x95\x9a\x7d\x99\x39\xcf\xfb\x5b\xed\xff\x3b\x10\xb5\x8b\xfb\x5f\x7b\xbf\x45\x19\x18\x7d\x3e\x83\xc0\xfe\xf9\xa7\xbb\x74\x74\xdd\x6d\x1d\x78\xd6\x07\x37\x94\x0f\xae\x1d\xdd\xf9\xb4\x2f\xec\x24\xfd\xa1\xb1\xe2\xc8\xcd\xfc\xa3\x8d\x82\x53\xbb\x46\xfa\xed\xdb\x85\x42\xa3\xcf\x63\xaf\xcd\xac\xfb\x1f\x66\x50\xa7\x74\xc6\xa8\xfb\x58\xdb\x87\xdd\x03\xac\xd3\xd5\xff\xc3\x10\x9f\xcb\xbf\xc7\xea\xae\xa8\x1f\x96\x92\xbd\xd2\x07\x79\x39\xb7\xab\x3e\xeb\x99\x11\xe8\x8f\x2a\xd1\xff\x05\x00\x00\xff\xff\x17\xea\x15\xb3\x7c\x16\x00\x00")
 
 func vendorGithubComCloudfoundryBoshDeploymentBoshYmlBytes() ([]byte, error) {
 	return bindataRead(
@@ -1090,7 +1090,7 @@ func vendorGithubComCloudfoundryBoshDeploymentBoshYml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/bosh.yml", size: 5756, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/bosh.yml", size: 5756, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -1110,7 +1110,7 @@ func vendorGithubComCloudfoundryBoshDeploymentCiAssetsBoshLiteGcpCreateDirectorS
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/ci/assets/bosh-lite-gcp/create-director.sh", size: 794, mode: os.FileMode(493), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/ci/assets/bosh-lite-gcp/create-director.sh", size: 794, mode: os.FileMode(493), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -1130,7 +1130,7 @@ func vendorGithubComCloudfoundryBoshDeploymentCiBoshAlphaCompiledReleasesConfigu
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/ci/bosh-alpha-compiled-releases/configure.sh", size: 205, mode: os.FileMode(493), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/ci/bosh-alpha-compiled-releases/configure.sh", size: 205, mode: os.FileMode(493), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -1150,7 +1150,7 @@ func vendorGithubComCloudfoundryBoshDeploymentCiBoshAlphaCompiledReleasesPipelin
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/ci/bosh-alpha-compiled-releases/pipeline.yml", size: 1341, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/ci/bosh-alpha-compiled-releases/pipeline.yml", size: 1341, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -1170,7 +1170,7 @@ func vendorGithubComCloudfoundryBoshDeploymentCiBoshAlphaCompiledReleasesTasksBu
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/ci/bosh-alpha-compiled-releases/tasks/build-release.sh", size: 105, mode: os.FileMode(493), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/ci/bosh-alpha-compiled-releases/tasks/build-release.sh", size: 105, mode: os.FileMode(493), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -1190,7 +1190,7 @@ func vendorGithubComCloudfoundryBoshDeploymentCiBoshAlphaCompiledReleasesTasksBu
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/ci/bosh-alpha-compiled-releases/tasks/build-release.yml", size: 280, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/ci/bosh-alpha-compiled-releases/tasks/build-release.yml", size: 280, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -1210,7 +1210,7 @@ func vendorGithubComCloudfoundryBoshDeploymentCiCompiledReleasesConfigureSh() (*
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/ci/compiled-releases/configure.sh", size: 1485, mode: os.FileMode(493), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/ci/compiled-releases/configure.sh", size: 1485, mode: os.FileMode(493), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -1230,7 +1230,7 @@ func vendorGithubComCloudfoundryBoshDeploymentCiCompiledReleasesPipeline3586Yml(
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/ci/compiled-releases/pipeline-3586.yml", size: 9623, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/ci/compiled-releases/pipeline-3586.yml", size: 9623, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -1250,7 +1250,7 @@ func vendorGithubComCloudfoundryBoshDeploymentCiCompiledReleasesPipelineXenial97
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/ci/compiled-releases/pipeline-xenial-97.yml", size: 1211, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/ci/compiled-releases/pipeline-xenial-97.yml", size: 1211, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -1270,7 +1270,7 @@ func vendorGithubComCloudfoundryBoshDeploymentCiCompiledReleasesTasksExportRelea
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/ci/compiled-releases/tasks/export-release.sh", size: 1326, mode: os.FileMode(493), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/ci/compiled-releases/tasks/export-release.sh", size: 1326, mode: os.FileMode(493), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -1290,7 +1290,7 @@ func vendorGithubComCloudfoundryBoshDeploymentCiCompiledReleasesTasksExportRelea
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/ci/compiled-releases/tasks/export-release.yml", size: 290, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/ci/compiled-releases/tasks/export-release.yml", size: 290, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -1310,7 +1310,7 @@ func vendorGithubComCloudfoundryBoshDeploymentCiConfigureSh() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/ci/configure.sh", size: 255, mode: os.FileMode(493), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/ci/configure.sh", size: 255, mode: os.FileMode(493), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -1330,7 +1330,7 @@ func vendorGithubComCloudfoundryBoshDeploymentCiPipelineYml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/ci/pipeline.yml", size: 8306, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/ci/pipeline.yml", size: 8306, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -1350,7 +1350,7 @@ func vendorGithubComCloudfoundryBoshDeploymentCiTasksTestBoshLiteGcpSh() (*asset
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/ci/tasks/test-bosh-lite-gcp.sh", size: 1230, mode: os.FileMode(493), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/ci/tasks/test-bosh-lite-gcp.sh", size: 1230, mode: os.FileMode(493), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -1370,7 +1370,7 @@ func vendorGithubComCloudfoundryBoshDeploymentCiTasksTestBoshLiteGcpYml() (*asse
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/ci/tasks/test-bosh-lite-gcp.yml", size: 341, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/ci/tasks/test-bosh-lite-gcp.yml", size: 341, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -1390,7 +1390,7 @@ func vendorGithubComCloudfoundryBoshDeploymentCiTasksTestSmokeSh() (*asset, erro
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/ci/tasks/test-smoke.sh", size: 69, mode: os.FileMode(493), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/ci/tasks/test-smoke.sh", size: 69, mode: os.FileMode(493), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -1410,7 +1410,7 @@ func vendorGithubComCloudfoundryBoshDeploymentCiTasksTestSmokeYml() (*asset, err
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/ci/tasks/test-smoke.yml", size: 194, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/ci/tasks/test-smoke.yml", size: 194, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -1430,7 +1430,7 @@ func vendorGithubComCloudfoundryBoshDeploymentCiTasksUseLatestReleaseSh() (*asse
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/ci/tasks/use-latest-release.sh", size: 1097, mode: os.FileMode(493), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/ci/tasks/use-latest-release.sh", size: 1097, mode: os.FileMode(493), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -1450,7 +1450,7 @@ func vendorGithubComCloudfoundryBoshDeploymentCiTasksUseLatestReleaseYml() (*ass
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/ci/tasks/use-latest-release.yml", size: 313, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/ci/tasks/use-latest-release.yml", size: 313, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -1470,7 +1470,7 @@ func vendorGithubComCloudfoundryBoshDeploymentCredhubYml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/credhub.yml", size: 3902, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/credhub.yml", size: 3902, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -1490,7 +1490,7 @@ func vendorGithubComCloudfoundryBoshDeploymentDockerCloudConfigYml() (*asset, er
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/docker/cloud-config.yml", size: 593, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/docker/cloud-config.yml", size: 593, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -1510,7 +1510,7 @@ func vendorGithubComCloudfoundryBoshDeploymentDockerCpiSecondaryYml() (*asset, e
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/docker/cpi-secondary.yml", size: 861, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/docker/cpi-secondary.yml", size: 861, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -1530,7 +1530,7 @@ func vendorGithubComCloudfoundryBoshDeploymentDockerCpiYml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/docker/cpi.yml", size: 1914, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/docker/cpi.yml", size: 1914, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -1550,7 +1550,7 @@ func vendorGithubComCloudfoundryBoshDeploymentDockerIpv6CpiYml() (*asset, error)
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/docker/ipv6/cpi.yml", size: 297, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/docker/ipv6/cpi.yml", size: 297, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -1570,7 +1570,7 @@ func vendorGithubComCloudfoundryBoshDeploymentDockerUnixSockYml() (*asset, error
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/docker/unix-sock.yml", size: 487, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/docker/unix-sock.yml", size: 487, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -1590,7 +1590,7 @@ func vendorGithubComCloudfoundryBoshDeploymentDocsBoshLiteOnVboxMd() (*asset, er
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/docs/bosh-lite-on-vbox.md", size: 84, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/docs/bosh-lite-on-vbox.md", size: 84, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -1610,7 +1610,7 @@ func vendorGithubComCloudfoundryBoshDeploymentDocsJumpboxUserMd() (*asset, error
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/docs/jumpbox-user.md", size: 71, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/docs/jumpbox-user.md", size: 71, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -1630,7 +1630,7 @@ func vendorGithubComCloudfoundryBoshDeploymentExperimentalBlobstoreHttpsBoshLite
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/experimental/blobstore-https-bosh-lite.yml", size: 0, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/experimental/blobstore-https-bosh-lite.yml", size: 0, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -1650,7 +1650,7 @@ func vendorGithubComCloudfoundryBoshDeploymentExperimentalBlobstoreHttpsYml() (*
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/experimental/blobstore-https.yml", size: 0, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/experimental/blobstore-https.yml", size: 0, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -1670,7 +1670,7 @@ func vendorGithubComCloudfoundryBoshDeploymentExperimentalBpmYml() (*asset, erro
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/experimental/bpm.yml", size: 0, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/experimental/bpm.yml", size: 0, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -1690,7 +1690,7 @@ func vendorGithubComCloudfoundryBoshDeploymentExperimentalDbEnableMutualTlsYml()
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/experimental/db-enable-mutual-tls.yml", size: 402, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/experimental/db-enable-mutual-tls.yml", size: 402, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -1710,7 +1710,7 @@ func vendorGithubComCloudfoundryBoshDeploymentExperimentalDbEnableTlsYml() (*ass
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/experimental/db-enable-tls.yml", size: 137, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/experimental/db-enable-tls.yml", size: 137, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -1730,7 +1730,7 @@ func vendorGithubComCloudfoundryBoshDeploymentExperimentalDbGcpPostgresConnectio
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/experimental/db-gcp-postgres-connection-options.yml", size: 508, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/experimental/db-gcp-postgres-connection-options.yml", size: 508, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -1750,7 +1750,7 @@ func vendorGithubComCloudfoundryBoshDeploymentExperimentalDbMysqlConnectionOptio
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/experimental/db-mysql-connection-options.yml", size: 342, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/experimental/db-mysql-connection-options.yml", size: 342, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -1770,7 +1770,7 @@ func vendorGithubComCloudfoundryBoshDeploymentExperimentalDbPostgresConnectionOp
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/experimental/db-postgres-connection-options.yml", size: 363, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/experimental/db-postgres-connection-options.yml", size: 363, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -1790,7 +1790,7 @@ func vendorGithubComCloudfoundryBoshDeploymentExperimentalDnsAddonWithApiCertifi
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/experimental/dns-addon-with-api-certificates.yml", size: 949, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/experimental/dns-addon-with-api-certificates.yml", size: 949, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -1810,7 +1810,7 @@ func vendorGithubComCloudfoundryBoshDeploymentExperimentalLocalBoshReleaseTarbal
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/experimental/local-bosh-release-tarball.yml", size: 173, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/experimental/local-bosh-release-tarball.yml", size: 173, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -1830,7 +1830,7 @@ func vendorGithubComCloudfoundryBoshDeploymentExperimentalNtpAgentEnvYml() (*ass
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/experimental/ntp-agent-env.yml", size: 182, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/experimental/ntp-agent-env.yml", size: 182, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -1850,7 +1850,7 @@ func vendorGithubComCloudfoundryBoshDeploymentExperimentalPostgres10Yml() (*asse
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/experimental/postgres-10.yml", size: 319, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/experimental/postgres-10.yml", size: 319, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -1870,7 +1870,7 @@ func vendorGithubComCloudfoundryBoshDeploymentExperimentalRegistryDbEnableTlsYml
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/experimental/registry-db-enable-tls.yml", size: 136, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/experimental/registry-db-enable-tls.yml", size: 136, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -1890,7 +1890,7 @@ func vendorGithubComCloudfoundryBoshDeploymentExperimentalRemoveRegistryYml() (*
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/experimental/remove-registry.yml", size: 372, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/experimental/remove-registry.yml", size: 372, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -1910,7 +1910,7 @@ func vendorGithubComCloudfoundryBoshDeploymentExternalIpNotRecommendedUaaYml() (
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/external-ip-not-recommended-uaa.yml", size: 573, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/external-ip-not-recommended-uaa.yml", size: 573, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -1930,7 +1930,7 @@ func vendorGithubComCloudfoundryBoshDeploymentExternalIpNotRecommendedYml() (*as
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/external-ip-not-recommended.yml", size: 902, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/external-ip-not-recommended.yml", size: 902, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -1950,7 +1950,7 @@ func vendorGithubComCloudfoundryBoshDeploymentExternalIpWithRegistryNotRecommend
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/external-ip-with-registry-not-recommended.yml", size: 984, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/external-ip-with-registry-not-recommended.yml", size: 984, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -1970,7 +1970,7 @@ func vendorGithubComCloudfoundryBoshDeploymentGcpBoshLiteVmTypeYml() (*asset, er
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/gcp/bosh-lite-vm-type.yml", size: 145, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/gcp/bosh-lite-vm-type.yml", size: 145, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -1990,7 +1990,7 @@ func vendorGithubComCloudfoundryBoshDeploymentGcpCloudConfigYml() (*asset, error
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/gcp/cloud-config.yml", size: 914, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/gcp/cloud-config.yml", size: 914, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2010,7 +2010,7 @@ func vendorGithubComCloudfoundryBoshDeploymentGcpCpiYml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/gcp/cpi.yml", size: 1668, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/gcp/cpi.yml", size: 1668, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2030,7 +2030,7 @@ func vendorGithubComCloudfoundryBoshDeploymentGcpGcsBlobstoreYml() (*asset, erro
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/gcp/gcs-blobstore.yml", size: 638, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/gcp/gcs-blobstore.yml", size: 638, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2050,7 +2050,7 @@ func vendorGithubComCloudfoundryBoshDeploymentGcpServiceAccountYml() (*asset, er
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/gcp/service-account.yml", size: 257, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/gcp/service-account.yml", size: 257, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2070,7 +2070,7 @@ func vendorGithubComCloudfoundryBoshDeploymentHmDatadogYml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/hm/datadog.yml", size: 317, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/hm/datadog.yml", size: 317, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2090,7 +2090,7 @@ func vendorGithubComCloudfoundryBoshDeploymentHmDisableYml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/hm/disable.yml", size: 140, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/hm/disable.yml", size: 140, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2110,7 +2110,7 @@ func vendorGithubComCloudfoundryBoshDeploymentHmGraphiteYml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/hm/graphite.yml", size: 280, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/hm/graphite.yml", size: 280, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2130,7 +2130,7 @@ func vendorGithubComCloudfoundryBoshDeploymentJumpboxUserYml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/jumpbox-user.yml", size: 626, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/jumpbox-user.yml", size: 626, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2150,7 +2150,7 @@ func vendorGithubComCloudfoundryBoshDeploymentLocalBoshReleaseTarballYml() (*ass
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/local-bosh-release-tarball.yml", size: 253, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/local-bosh-release-tarball.yml", size: 253, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2170,7 +2170,7 @@ func vendorGithubComCloudfoundryBoshDeploymentLocalBoshReleaseYml() (*asset, err
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/local-bosh-release.yml", size: 253, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/local-bosh-release.yml", size: 253, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2190,7 +2190,7 @@ func vendorGithubComCloudfoundryBoshDeploymentLocalDnsYml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/local-dns.yml", size: 95, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/local-dns.yml", size: 95, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2210,7 +2210,7 @@ func vendorGithubComCloudfoundryBoshDeploymentMiscBlobstoreDisableTlsYml() (*ass
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/misc/blobstore-disable-tls.yml", size: 156, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/misc/blobstore-disable-tls.yml", size: 156, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2230,7 +2230,7 @@ func vendorGithubComCloudfoundryBoshDeploymentMiscBlobstoreTlsYml() (*asset, err
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/misc/blobstore-tls.yml", size: 98, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/misc/blobstore-tls.yml", size: 98, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2250,7 +2250,7 @@ func vendorGithubComCloudfoundryBoshDeploymentMiscBoshDevYml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/misc/bosh-dev.yml", size: 1146, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/misc/bosh-dev.yml", size: 1146, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2270,7 +2270,7 @@ func vendorGithubComCloudfoundryBoshDeploymentMiscConfigServerYml() (*asset, err
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/misc/config-server.yml", size: 1933, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/misc/config-server.yml", size: 1933, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2290,7 +2290,7 @@ func vendorGithubComCloudfoundryBoshDeploymentMiscCpiResizeDiskYml() (*asset, er
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/misc/cpi-resize-disk.yml", size: 113, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/misc/cpi-resize-disk.yml", size: 113, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2310,7 +2310,7 @@ func vendorGithubComCloudfoundryBoshDeploymentMiscCpiSecondaryRegistryYml() (*as
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/misc/cpi-secondary-registry.yml", size: 706, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/misc/cpi-secondary-registry.yml", size: 706, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2330,7 +2330,7 @@ func vendorGithubComCloudfoundryBoshDeploymentMiscDnsYml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/misc/dns.yml", size: 87, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/misc/dns.yml", size: 87, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2350,7 +2350,7 @@ func vendorGithubComCloudfoundryBoshDeploymentMiscExternalDbYml() (*asset, error
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/misc/external-db.yml", size: 721, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/misc/external-db.yml", size: 721, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2370,7 +2370,7 @@ func vendorGithubComCloudfoundryBoshDeploymentMiscExternalIpNotRecommendedMbusOn
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/misc/external-ip-not-recommended/mbus-only.yml", size: 433, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/misc/external-ip-not-recommended/mbus-only.yml", size: 433, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2390,7 +2390,7 @@ func vendorGithubComCloudfoundryBoshDeploymentMiscIpv6BoshYml() (*asset, error) 
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/misc/ipv6/bosh.yml", size: 828, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/misc/ipv6/bosh.yml", size: 828, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2410,7 +2410,7 @@ func vendorGithubComCloudfoundryBoshDeploymentMiscIpv6CredhubYml() (*asset, erro
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/misc/ipv6/credhub.yml", size: 426, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/misc/ipv6/credhub.yml", size: 426, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2430,7 +2430,7 @@ func vendorGithubComCloudfoundryBoshDeploymentMiscIpv6UaaYml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/misc/ipv6/uaa.yml", size: 265, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/misc/ipv6/uaa.yml", size: 265, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2450,7 +2450,7 @@ func vendorGithubComCloudfoundryBoshDeploymentMiscNatsStrictTlsYml() (*asset, er
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/misc/nats-strict-tls.yml", size: 103, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/misc/nats-strict-tls.yml", size: 103, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2470,7 +2470,7 @@ func vendorGithubComCloudfoundryBoshDeploymentMiscNoInternetAccessBpmYml() (*ass
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/misc/no-internet-access/bpm.yml", size: 201, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/misc/no-internet-access/bpm.yml", size: 201, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2490,7 +2490,7 @@ func vendorGithubComCloudfoundryBoshDeploymentMiscNoInternetAccessCredhubYml() (
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/misc/no-internet-access/credhub.yml", size: 216, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/misc/no-internet-access/credhub.yml", size: 216, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2510,7 +2510,7 @@ func vendorGithubComCloudfoundryBoshDeploymentMiscNoInternetAccessOsConfYml() (*
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/misc/no-internet-access/os-conf.yml", size: 217, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/misc/no-internet-access/os-conf.yml", size: 217, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2530,7 +2530,7 @@ func vendorGithubComCloudfoundryBoshDeploymentMiscNoInternetAccessStemcellYml() 
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/misc/no-internet-access/stemcell.yml", size: 182, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/misc/no-internet-access/stemcell.yml", size: 182, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2550,7 +2550,7 @@ func vendorGithubComCloudfoundryBoshDeploymentMiscNoInternetAccessUaaYml() (*ass
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/misc/no-internet-access/uaa.yml", size: 201, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/misc/no-internet-access/uaa.yml", size: 201, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2570,7 +2570,7 @@ func vendorGithubComCloudfoundryBoshDeploymentMiscNoInternetAccessVsphereCpiYml(
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/misc/no-internet-access/vsphere-cpi.yml", size: 265, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/misc/no-internet-access/vsphere-cpi.yml", size: 265, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2590,7 +2590,7 @@ func vendorGithubComCloudfoundryBoshDeploymentMiscNtpYml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/misc/ntp.yml", size: 175, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/misc/ntp.yml", size: 175, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2610,7 +2610,7 @@ func vendorGithubComCloudfoundryBoshDeploymentMiscPowerdnsYml() (*asset, error) 
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/misc/powerdns.yml", size: 569, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/misc/powerdns.yml", size: 569, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2630,7 +2630,7 @@ func vendorGithubComCloudfoundryBoshDeploymentMiscProxyYml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/misc/proxy.yml", size: 243, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/misc/proxy.yml", size: 243, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2650,7 +2650,7 @@ func vendorGithubComCloudfoundryBoshDeploymentMiscSecondNetworkYml() (*asset, er
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/misc/second-network.yml", size: 433, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/misc/second-network.yml", size: 433, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2670,7 +2670,7 @@ func vendorGithubComCloudfoundryBoshDeploymentMiscSourceReleasesBoshYml() (*asse
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/misc/source-releases/bosh.yml", size: 448, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/misc/source-releases/bosh.yml", size: 448, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2690,7 +2690,7 @@ func vendorGithubComCloudfoundryBoshDeploymentMiscSourceReleasesCredhubYml() (*a
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/misc/source-releases/credhub.yml", size: 224, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/misc/source-releases/credhub.yml", size: 224, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2710,7 +2710,7 @@ func vendorGithubComCloudfoundryBoshDeploymentMiscSourceReleasesUaaYml() (*asset
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/misc/source-releases/uaa.yml", size: 212, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/misc/source-releases/uaa.yml", size: 212, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2730,7 +2730,7 @@ func vendorGithubComCloudfoundryBoshDeploymentOpenstackAutoAntiAffinityYml() (*a
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/openstack/auto-anti-affinity.yml", size: 117, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/openstack/auto-anti-affinity.yml", size: 117, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2750,7 +2750,7 @@ func vendorGithubComCloudfoundryBoshDeploymentOpenstackBootFromVolumeYml() (*ass
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/openstack/boot-from-volume.yml", size: 108, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/openstack/boot-from-volume.yml", size: 108, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2770,7 +2770,7 @@ func vendorGithubComCloudfoundryBoshDeploymentOpenstackCloudConfigYml() (*asset,
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/openstack/cloud-config.yml", size: 751, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/openstack/cloud-config.yml", size: 751, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2790,7 +2790,7 @@ func vendorGithubComCloudfoundryBoshDeploymentOpenstackCpiSecondaryYml() (*asset
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/openstack/cpi-secondary.yml", size: 805, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/openstack/cpi-secondary.yml", size: 805, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2810,7 +2810,7 @@ func vendorGithubComCloudfoundryBoshDeploymentOpenstackCpiYml() (*asset, error) 
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/openstack/cpi.yml", size: 2323, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/openstack/cpi.yml", size: 2323, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2830,7 +2830,7 @@ func vendorGithubComCloudfoundryBoshDeploymentOpenstackCustomCaYml() (*asset, er
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/openstack/custom-ca.yml", size: 266, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/openstack/custom-ca.yml", size: 266, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2850,7 +2850,7 @@ func vendorGithubComCloudfoundryBoshDeploymentOpenstackDisableReadableVmNamesYml
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/openstack/disable-readable-vm-names.yml", size: 211, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/openstack/disable-readable-vm-names.yml", size: 211, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2870,7 +2870,7 @@ func vendorGithubComCloudfoundryBoshDeploymentOpenstackKeystoneV2Yml() (*asset, 
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/openstack/keystone-v2.yml", size: 565, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/openstack/keystone-v2.yml", size: 565, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2890,7 +2890,7 @@ func vendorGithubComCloudfoundryBoshDeploymentOpenstackNovaNetworkingYml() (*ass
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/openstack/nova-networking.yml", size: 111, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/openstack/nova-networking.yml", size: 111, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2910,7 +2910,7 @@ func vendorGithubComCloudfoundryBoshDeploymentOpenstackTrustedCertsYml() (*asset
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/openstack/trusted-certs.yml", size: 121, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/openstack/trusted-certs.yml", size: 121, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2930,7 +2930,7 @@ func vendorGithubComCloudfoundryBoshDeploymentRuntimeConfigsBpmYml() (*asset, er
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/runtime-configs/bpm.yml", size: 252, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/runtime-configs/bpm.yml", size: 252, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2950,7 +2950,7 @@ func vendorGithubComCloudfoundryBoshDeploymentRuntimeConfigsDnsYml() (*asset, er
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/runtime-configs/dns.yml", size: 2065, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/runtime-configs/dns.yml", size: 2065, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2970,7 +2970,7 @@ func vendorGithubComCloudfoundryBoshDeploymentRuntimeConfigsSyslogYml() (*asset,
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/runtime-configs/syslog.yml", size: 384, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/runtime-configs/syslog.yml", size: 384, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -2990,7 +2990,7 @@ func vendorGithubComCloudfoundryBoshDeploymentSoftlayerCloudConfigLegacyYml() (*
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/softlayer/cloud-config-legacy.yml", size: 1287, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/softlayer/cloud-config-legacy.yml", size: 1287, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -3010,7 +3010,7 @@ func vendorGithubComCloudfoundryBoshDeploymentSoftlayerCloudConfigYml() (*asset,
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/softlayer/cloud-config.yml", size: 1266, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/softlayer/cloud-config.yml", size: 1266, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -3030,7 +3030,7 @@ func vendorGithubComCloudfoundryBoshDeploymentSoftlayerCpiDynamicYml() (*asset, 
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/softlayer/cpi-dynamic.yml", size: 3801, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/softlayer/cpi-dynamic.yml", size: 3801, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -3050,7 +3050,7 @@ func vendorGithubComCloudfoundryBoshDeploymentSoftlayerCpiLegacyDynamicYml() (*a
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/softlayer/cpi-legacy-dynamic.yml", size: 2998, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/softlayer/cpi-legacy-dynamic.yml", size: 2998, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -3070,7 +3070,7 @@ func vendorGithubComCloudfoundryBoshDeploymentSoftlayerCpiLegacyYml() (*asset, e
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/softlayer/cpi-legacy.yml", size: 2120, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/softlayer/cpi-legacy.yml", size: 2120, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -3090,7 +3090,7 @@ func vendorGithubComCloudfoundryBoshDeploymentSoftlayerCpiYml() (*asset, error) 
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/softlayer/cpi.yml", size: 3777, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/softlayer/cpi.yml", size: 3777, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -3110,7 +3110,7 @@ func vendorGithubComCloudfoundryBoshDeploymentSyslogYml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/syslog.yml", size: 451, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/syslog.yml", size: 451, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -3130,7 +3130,7 @@ func vendorGithubComCloudfoundryBoshDeploymentTestsGitignore() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/tests/.gitignore", size: 21, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/tests/.gitignore", size: 21, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -3150,7 +3150,7 @@ func vendorGithubComCloudfoundryBoshDeploymentTestsCredTestYml() (*asset, error)
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/tests/cred-test.yml", size: 132, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/tests/cred-test.yml", size: 132, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -3170,7 +3170,7 @@ func vendorGithubComCloudfoundryBoshDeploymentTestsRunChecksSh() (*asset, error)
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/tests/run-checks.sh", size: 12823, mode: os.FileMode(493), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/tests/run-checks.sh", size: 12823, mode: os.FileMode(493), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -3190,7 +3190,7 @@ func vendorGithubComCloudfoundryBoshDeploymentTestsRunSh() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/tests/run.sh", size: 2005, mode: os.FileMode(493), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/tests/run.sh", size: 2005, mode: os.FileMode(493), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -3210,7 +3210,7 @@ func vendorGithubComCloudfoundryBoshDeploymentTurbulenceYml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/turbulence.yml", size: 1511, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/turbulence.yml", size: 1511, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -3230,7 +3230,7 @@ func vendorGithubComCloudfoundryBoshDeploymentUaaYml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/uaa.yml", size: 4686, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/uaa.yml", size: 4686, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -3250,7 +3250,7 @@ func vendorGithubComCloudfoundryBoshDeploymentVcloudCpiYml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/vcloud/cpi.yml", size: 1482, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/vcloud/cpi.yml", size: 1482, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -3270,7 +3270,7 @@ func vendorGithubComCloudfoundryBoshDeploymentVirtualboxCloudConfigYml() (*asset
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/virtualbox/cloud-config.yml", size: 606, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/virtualbox/cloud-config.yml", size: 606, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -3290,7 +3290,7 @@ func vendorGithubComCloudfoundryBoshDeploymentVirtualboxCpiYml() (*asset, error)
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/virtualbox/cpi.yml", size: 1347, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/virtualbox/cpi.yml", size: 1347, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -3310,7 +3310,7 @@ func vendorGithubComCloudfoundryBoshDeploymentVirtualboxCreateEnvSh() (*asset, e
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/virtualbox/create-env.sh", size: 3123, mode: os.FileMode(493), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/virtualbox/create-env.sh", size: 3123, mode: os.FileMode(493), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -3330,7 +3330,7 @@ func vendorGithubComCloudfoundryBoshDeploymentVirtualboxDeleteEnvSh() (*asset, e
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/virtualbox/delete-env.sh", size: 878, mode: os.FileMode(493), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/virtualbox/delete-env.sh", size: 878, mode: os.FileMode(493), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -3350,7 +3350,7 @@ func vendorGithubComCloudfoundryBoshDeploymentVirtualboxInternalNetworkYml() (*a
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/virtualbox/internal-network.yml", size: 111, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/virtualbox/internal-network.yml", size: 111, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -3370,7 +3370,7 @@ func vendorGithubComCloudfoundryBoshDeploymentVirtualboxIpv6CpiYml() (*asset, er
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/virtualbox/ipv6/cpi.yml", size: 297, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/virtualbox/ipv6/cpi.yml", size: 297, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -3390,7 +3390,7 @@ func vendorGithubComCloudfoundryBoshDeploymentVirtualboxIpv6RemoteYml() (*asset,
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/virtualbox/ipv6/remote.yml", size: 207, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/virtualbox/ipv6/remote.yml", size: 207, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -3410,7 +3410,7 @@ func vendorGithubComCloudfoundryBoshDeploymentVirtualboxOutboundNetworkYml() (*a
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/virtualbox/outbound-network.yml", size: 363, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/virtualbox/outbound-network.yml", size: 363, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -3430,7 +3430,7 @@ func vendorGithubComCloudfoundryBoshDeploymentVirtualboxRemoteYml() (*asset, err
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/virtualbox/remote.yml", size: 729, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/virtualbox/remote.yml", size: 729, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -3450,7 +3450,7 @@ func vendorGithubComCloudfoundryBoshDeploymentVirtualboxRemoveNtpYml() (*asset, 
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/virtualbox/remove-ntp.yml", size: 146, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/virtualbox/remove-ntp.yml", size: 146, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -3470,7 +3470,7 @@ func vendorGithubComCloudfoundryBoshDeploymentVsphereCloudConfigYml() (*asset, e
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/vsphere/cloud-config.yml", size: 843, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/vsphere/cloud-config.yml", size: 843, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -3490,7 +3490,7 @@ func vendorGithubComCloudfoundryBoshDeploymentVsphereCpiSecondaryYml() (*asset, 
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/vsphere/cpi-secondary.yml", size: 589, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/vsphere/cpi-secondary.yml", size: 589, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -3510,7 +3510,7 @@ func vendorGithubComCloudfoundryBoshDeploymentVsphereCpiYml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/vsphere/cpi.yml", size: 1549, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/vsphere/cpi.yml", size: 1549, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -3530,7 +3530,7 @@ func vendorGithubComCloudfoundryBoshDeploymentVsphereResourcePoolYml() (*asset, 
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/vsphere/resource-pool.yml", size: 338, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/vsphere/resource-pool.yml", size: 338, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -3550,7 +3550,7 @@ func vendorGithubComCloudfoundryBoshDeploymentVsphereSecondNetworkYml() (*asset,
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/vsphere/second-network.yml", size: 117, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/vsphere/second-network.yml", size: 117, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -3570,7 +3570,7 @@ func vendorGithubComCloudfoundryBoshDeploymentWardenCloudConfigYml() (*asset, er
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/warden/cloud-config.yml", size: 402, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/warden/cloud-config.yml", size: 402, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -3590,7 +3590,7 @@ func vendorGithubComCloudfoundryBoshDeploymentWardenCpiYml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/warden/cpi.yml", size: 1387, mode: os.FileMode(420), modTime: time.Unix(1547664334, 0)}
+	info := bindataFileInfo{name: "vendor/github.com/cloudfoundry/bosh-deployment/warden/cpi.yml", size: 1387, mode: os.FileMode(420), modTime: time.Unix(1548670343, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
