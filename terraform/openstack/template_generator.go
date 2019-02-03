@@ -1,10 +1,21 @@
 package openstack
 
 import (
-	"fmt"
+	"strings"
 
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
+
+type templates struct {
+	networkOutputs   string
+	networkVars      string
+	network          string
+	providerVars     string
+	provider         string
+	resourcesOutputs string
+	resourcesVars    string
+	resources        string
+}
 
 type TemplateGenerator struct{}
 
@@ -13,42 +24,21 @@ func NewTemplateGenerator() TemplateGenerator {
 }
 
 func (t TemplateGenerator) Generate(state storage.State) string {
-	return fmt.Sprintf(`
-variable "internal_cidr" {}
-variable "internal_gw" {}
-variable "director_internal_ip" {}
-variable "jumpbox_internal_ip" {}
-variable "external_ip" {}
-variable "auth_url" {}
-variable "az" {}
-variable "default_key_name" {}
-variable "default_security_group" {}
-variable "net_id" {}
-variable "openstack_project" {}
-variable "openstack_domain" {}
-variable "region" {}
-variable "env_id" {}
-variable "private_key" {}
-
-output "internal_cidr" { value = "${var.internal_cidr}" }
-output "internal_gw" { value = "${var.internal_gw}" }
-output "external_ip" { value = "${var.external_ip}" }
-output "jumpbox__internal_ip" { value = "${var.jumpbox_internal_ip}" }
-output "jumpbox_url" { value = "${var.external_ip}:22" }
-output "director__internal_ip" { value = "${var.director_internal_ip}" }
-output "auth_url" { value = "${var.auth_url}" }
-output "az" { value = "${var.az}" }
-output "default_key_name" { value = "${var.default_key_name}" }
-output "default_security_groups" { value = ["${var.default_security_group}"] }
-output "net_id" { value = "${var.net_id}" }
-output "openstack_project" { value = "${var.openstack_project}" }
-output "openstack_domain" { value = "${var.openstack_domain}" }
-output "region" { value = "${var.region}" }
-output "env_id" { value = "${var.env_id}" }
-output "director_name" { value = "${var.env_id}" }
-output "private_key" {
-	value     = "${var.private_key}"
-	sensitive = true
+	tmpls := readTemplates()
+	template := strings.Join([]string{tmpls.networkOutputs, tmpls.networkVars, tmpls.network, tmpls.providerVars, tmpls.provider, tmpls.resourcesOutputs, tmpls.resourcesVars, tmpls.resources}, "\n")
+	return template
 }
-`)
+
+func readTemplates() templates {
+	tmpls := templates{}
+	tmpls.networkOutputs = string(MustAsset("templates/network-outputs.tf"))
+	tmpls.networkVars = string(MustAsset("templates/network-vars.tf"))
+	tmpls.network = string(MustAsset("templates/network.tf"))
+	tmpls.providerVars = string(MustAsset("templates/provider-vars.tf"))
+	tmpls.provider = string(MustAsset("templates/provider.tf"))
+	tmpls.resourcesOutputs = string(MustAsset("templates/resources-outputs.tf"))
+	tmpls.resourcesVars = string(MustAsset("templates/resources-vars.tf"))
+	tmpls.resources = string(MustAsset("templates/resources.tf"))
+
+	return tmpls
 }
