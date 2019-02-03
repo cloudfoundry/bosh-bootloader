@@ -341,24 +341,22 @@ var _ = Describe("LoadState", func() {
 						args = []string{
 							"bbl",
 							"--iaas", "openstack",
-							"--openstack-internal-cidr", "internal-cidr",
-							"--openstack-external-ip", "external-ip",
 							"--openstack-auth-url", "auth-url",
 							"--openstack-az", "az",
-							"--openstack-default-key-name", "key-name",
-							"--openstack-default-security-group", "security-group",
 							"--openstack-network-id", "network-id",
+							"--openstack-network-name", "network-name",
 							"--openstack-password", "password",
 							"--openstack-username", "username",
 							"--openstack-project", "project",
 							"--openstack-domain", "domain",
 							"--openstack-region", "region",
-							"--openstack-private-key", "private-key",
+							"--openstack-security-group-suffix", "suffix",
+							"--openstack-cacert-file", "/path/to/file",
+							"--openstack-insecure", "true",
+							"--openstack-dns-name-servers", "8.8.8.8,9.9.9.9",
 							"up",
 							"--name", "some-env-id",
 						}
-
-						fakeFileIO.ReadFileCall.Returns.Contents = []byte("private-key-contents")
 					})
 
 					It("returns a state object containing configuration flags", func() {
@@ -368,19 +366,19 @@ var _ = Describe("LoadState", func() {
 						state := appConfig.State
 
 						Expect(state.IAAS).To(Equal("openstack"))
-						Expect(state.OpenStack.InternalCidr).To(Equal("internal-cidr"))
-						Expect(state.OpenStack.ExternalIP).To(Equal("external-ip"))
 						Expect(state.OpenStack.AuthURL).To(Equal("auth-url"))
 						Expect(state.OpenStack.AZ).To(Equal("az"))
-						Expect(state.OpenStack.DefaultKeyName).To(Equal("key-name"))
-						Expect(state.OpenStack.DefaultSecurityGroup).To(Equal("security-group"))
 						Expect(state.OpenStack.NetworkID).To(Equal("network-id"))
+						Expect(state.OpenStack.NetworkName).To(Equal("network-name"))
 						Expect(state.OpenStack.Password).To(Equal("password"))
 						Expect(state.OpenStack.Username).To(Equal("username"))
 						Expect(state.OpenStack.Project).To(Equal("project"))
 						Expect(state.OpenStack.Domain).To(Equal("domain"))
 						Expect(state.OpenStack.Region).To(Equal("region"))
-						Expect(state.OpenStack.PrivateKey).To(Equal("private-key-contents"))
+						Expect(state.OpenStack.SecurityGroupSuffix).To(Equal("suffix"))
+						Expect(state.OpenStack.CACertFile).To(Equal("/path/to/file"))
+						Expect(state.OpenStack.Insecure).To(Equal("true"))
+						Expect(state.OpenStack.DNSNameServers).To(Equal([]string{"8.8.8.8", "9.9.9.9"}))
 					})
 
 					It("returns the remaining arguments", func() {
@@ -392,42 +390,6 @@ var _ = Describe("LoadState", func() {
 					})
 				})
 
-				Context("when the private key is passed in raw", func() {
-					var args []string
-
-					BeforeEach(func() {
-						args = []string{
-							"bbl",
-							"--iaas", "openstack",
-							"--openstack-internal-cidr", "internal-cidr",
-							"--openstack-external-ip", "external-ip",
-							"--openstack-auth-url", "auth-url",
-							"--openstack-az", "az",
-							"--openstack-default-key-name", "key-name",
-							"--openstack-default-security-group", "security-group",
-							"--openstack-network-id", "network-id",
-							"--openstack-password", "password",
-							"--openstack-username", "username",
-							"--openstack-project", "project",
-							"--openstack-domain", "domain",
-							"--openstack-region", "region",
-							"--openstack-private-key", "private-key",
-							"up",
-							"--name", "some-env-id",
-						}
-
-						fakeFileIO.StatCall.Returns.Error = errors.New("no file found")
-					})
-
-					It("uses the raw key", func() {
-						appConfig, err := c.Bootstrap(bootstrapArgs(args))
-
-						state := appConfig.State
-						Expect(err).NotTo(HaveOccurred())
-						Expect(state.OpenStack.PrivateKey).To(Equal("private-key"))
-					})
-				})
-
 				Context("when configuration is passed in by env vars", func() {
 					var args []string
 
@@ -435,21 +397,19 @@ var _ = Describe("LoadState", func() {
 						args = []string{"bbl", "up"}
 
 						os.Setenv("BBL_IAAS", "openstack")
-						os.Setenv("BBL_OPENSTACK_INTERNAL_CIDR", "internal-cidr")
-						os.Setenv("BBL_OPENSTACK_EXTERNAL_IP", "external-ip")
 						os.Setenv("BBL_OPENSTACK_AUTH_URL", "auth-url")
 						os.Setenv("BBL_OPENSTACK_AZ", "az")
-						os.Setenv("BBL_OPENSTACK_DEFAULT_KEY_NAME", "key-name")
-						os.Setenv("BBL_OPENSTACK_DEFAULT_SECURITY_GROUP", "security-group")
 						os.Setenv("BBL_OPENSTACK_NETWORK_ID", "network-id")
+						os.Setenv("BBL_OPENSTACK_NETWORK_NAME", "network-name")
 						os.Setenv("BBL_OPENSTACK_PASSWORD", "password")
 						os.Setenv("BBL_OPENSTACK_USERNAME", "username")
 						os.Setenv("BBL_OPENSTACK_PROJECT", "project")
 						os.Setenv("BBL_OPENSTACK_DOMAIN", "domain")
 						os.Setenv("BBL_OPENSTACK_REGION", "region")
-						os.Setenv("BBL_OPENSTACK_PRIVATE_KEY", "private-key-path")
-
-						fakeFileIO.ReadFileCall.Returns.Contents = []byte("private-key-contents")
+						os.Setenv("BBL_OPENSTACK_SECURITY_GROUP_SUFFIX", "suffix")
+						os.Setenv("BBL_OPENSTACK_CACERT_FILE", "/path/to/file")
+						os.Setenv("BBL_OPENSTACK_INSECURE", "true")
+						os.Setenv("BBL_OPENSTACK_DNS_NAME_SERVERS", "8.8.8.8,9.9.9.9")
 					})
 
 					It("returns a state object containing configuration flags", func() {
@@ -458,19 +418,19 @@ var _ = Describe("LoadState", func() {
 
 						state := appConfig.State
 						Expect(state.IAAS).To(Equal("openstack"))
-						Expect(state.OpenStack.InternalCidr).To(Equal("internal-cidr"))
-						Expect(state.OpenStack.ExternalIP).To(Equal("external-ip"))
 						Expect(state.OpenStack.AuthURL).To(Equal("auth-url"))
 						Expect(state.OpenStack.AZ).To(Equal("az"))
-						Expect(state.OpenStack.DefaultKeyName).To(Equal("key-name"))
-						Expect(state.OpenStack.DefaultSecurityGroup).To(Equal("security-group"))
 						Expect(state.OpenStack.NetworkID).To(Equal("network-id"))
+						Expect(state.OpenStack.NetworkName).To(Equal("network-name"))
 						Expect(state.OpenStack.Password).To(Equal("password"))
 						Expect(state.OpenStack.Username).To(Equal("username"))
 						Expect(state.OpenStack.Project).To(Equal("project"))
 						Expect(state.OpenStack.Domain).To(Equal("domain"))
 						Expect(state.OpenStack.Region).To(Equal("region"))
-						Expect(state.OpenStack.PrivateKey).To(Equal("private-key-contents"))
+						Expect(state.OpenStack.SecurityGroupSuffix).To(Equal("suffix"))
+						Expect(state.OpenStack.CACertFile).To(Equal("/path/to/file"))
+						Expect(state.OpenStack.Insecure).To(Equal("true"))
+						Expect(state.OpenStack.DNSNameServers).To(Equal([]string{"8.8.8.8", "9.9.9.9"}))
 					})
 
 					It("returns the command", func() {
@@ -487,23 +447,18 @@ var _ = Describe("LoadState", func() {
 					fakeStateMigrator.MigrateCall.Returns.State = storage.State{
 						IAAS: "openstack",
 						OpenStack: storage.OpenStack{
-							InternalCidr:         "internal-cidr",
-							ExternalIP:           "external-ip",
-							AuthURL:              "auth-url",
-							AZ:                   "az",
-							DefaultKeyName:       "key-name",
-							DefaultSecurityGroup: "security-group",
-							NetworkID:            "network-id",
-							Password:             "password",
-							Username:             "username",
-							Project:              "project",
-							Domain:               "domain",
-							Region:               "region",
-							PrivateKey:           "private-key",
+							AuthURL:     "auth-url",
+							AZ:          "az",
+							NetworkID:   "network-id",
+							NetworkName: "network-name",
+							Password:    "password",
+							Username:    "username",
+							Project:     "project",
+							Domain:      "domain",
+							Region:      "region",
 						},
 						EnvID: "some-env-id",
 					}
-					fakeFileIO.ReadFileCall.Returns.Contents = []byte("some-private-key")
 				})
 
 				Context("when valid matching configuration is passed in", func() {
@@ -511,19 +466,15 @@ var _ = Describe("LoadState", func() {
 						appConfig, err := c.Bootstrap(bootstrapArgs([]string{
 							"bbl", "up",
 							"--iaas", "openstack",
-							"--openstack-internal-cidr", "internal-cidr",
-							"--openstack-external-ip", "external-ip",
 							"--openstack-auth-url", "auth-url",
 							"--openstack-az", "az",
-							"--openstack-default-key-name", "key-name",
-							"--openstack-default-security-group", "security-group",
 							"--openstack-network-id", "network-id",
+							"--openstack-network-name", "network-name",
 							"--openstack-password", "password",
 							"--openstack-username", "username",
 							"--openstack-project", "project",
 							"--openstack-domain", "domain",
 							"--openstack-region", "region",
-							"--openstack-private-key", "private-key",
 						}))
 						Expect(err).NotTo(HaveOccurred())
 
@@ -1339,18 +1290,14 @@ var _ = Describe("LoadState", func() {
 				storage.State{
 					IAAS: "openstack",
 					OpenStack: storage.OpenStack{
-						InternalCidr:         "value",
-						ExternalIP:           "value",
-						AuthURL:              "value",
-						AZ:                   "value",
-						DefaultKeyName:       "value",
-						DefaultSecurityGroup: "value",
-						NetworkID:            "value",
-						Password:             "value",
-						Username:             "value",
-						Project:              "value",
-						Domain:               "value",
-						PrivateKey:           "value",
+						AuthURL:     "value",
+						AZ:          "value",
+						NetworkID:   "value",
+						NetworkName: "value",
+						Password:    "value",
+						Username:    "value",
+						Project:     "value",
+						Domain:      "value",
 					},
 				},
 				"Missing --openstack-region. To see all required credentials run `bbl plan --help`."),
