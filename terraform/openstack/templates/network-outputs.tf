@@ -17,7 +17,3 @@ output "internal_ip" {
 output "router_id" {
   value = "${openstack_networking_router_v2.bosh_router.id}"
 }
-
-output "default_security_groups" {
-  value = ["${openstack_networking_secgroup_v2.secgroup.name}"]
-}
