@@ -1,4 +1,3 @@
-
 # access coordinates/credentials
 variable "auth_url" {
   description = "Authentication endpoint URL for OpenStack provider (only scheme+host+port, but without path!)"
@@ -28,14 +27,4 @@ variable "insecure" {
 variable "cacert_file" {
   description = "Custom CA certificate"
   default = ""
-}
-
-# external network coordinates
-variable "ext_net_name" {
-  description = "OpenStack external network name to register floating IP"
-}
-
-# region/zone coordinates
-variable "region_name" {
-  description = "OpenStack region name"
 }

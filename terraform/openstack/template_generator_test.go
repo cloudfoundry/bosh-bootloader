@@ -24,8 +24,7 @@ var _ = Describe("TemplateGenerator", func() {
 
 	Describe("Generate", func() {
 		BeforeEach(func() {
-			expectedTemplate = expectTemplate("network-outputs", "network-vars", "network", "provider-vars",
-				"provider", "resources-outputs", "resources-vars", "resources")
+			expectedTemplate = expectTemplate("provider-vars", "provider", "resources-outputs", "resources-vars", "resources")
 		})
 		It("uses openstack templates", func() {
 			template := templateGenerator.Generate(storage.State{})

@@ -56,7 +56,6 @@ var _ = Describe("Commands Usage", func() {
   --openstack-project                OpenStack Project                env: $BBL_OPENSTACK_PROJECT
   --openstack-domain                 OpenStack Domain                 env: $BBL_OPENSTACK_DOMAIN
   --openstack-region                 OpenStack Region                 env: $BBL_OPENSTACK_REGION
-  --openstack-security-group-suffix  OpenStack Security Group Suffix  env: $BBL_OPENSTACK_SECURITY_GROUP_SUFFIX
   --openstack-cacert-file            OpenStack CA Cert File           env: $BBL_OPENSTACK_CACERT_FILE
   --openstack-insecure               OpenStack Insecure               env: $BBL_OPENSTACK_INSECURE
   --openstack-dns-name-servers       OpenStack DNS Name Servers       env: $BBL_OPENSTACK_DNS_NAME_SERVERS

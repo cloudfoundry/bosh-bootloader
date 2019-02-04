@@ -23,9 +23,6 @@ func (i InputGenerator) Generate(state storage.State) (map[string]interface{}, e
 		"region_name":       state.OpenStack.Region,
 	}
 
-	if state.OpenStack.SecurityGroupSuffix != "" {
-		inputs["security_group_suffix"] = state.OpenStack.SecurityGroupSuffix
-	}
 	if state.OpenStack.CACertFile != "" {
 		inputs["cacert_file"] = state.OpenStack.CACertFile
 	}

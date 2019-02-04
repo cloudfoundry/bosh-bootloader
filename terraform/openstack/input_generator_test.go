@@ -52,7 +52,6 @@ var _ = Describe("InputGenerator", func() {
 
 		Context("when optional OpenStack variables are set", func() {
 			JustBeforeEach(func() {
-				state.OpenStack.SecurityGroupSuffix = "-suffix"
 				state.OpenStack.CACertFile = "path/to/file"
 				state.OpenStack.Insecure = "true"
 				state.OpenStack.DNSNameServers = []string{"8.8.8.8", "9.9.9.9"}
@@ -62,18 +61,17 @@ var _ = Describe("InputGenerator", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(inputs).To(Equal(map[string]interface{}{
-					"env_id":                "banana",
-					"auth_url":              "auth-url",
-					"availability_zone":     "az",
-					"ext_net_id":            "network-id",
-					"ext_net_name":          "network-name",
-					"domain_name":           "domain",
-					"region_name":           "region",
-					"tenant_name":           "project",
-					"security_group_suffix": "-suffix",
-					"cacert_file":           "path/to/file",
-					"insecure":              "true",
-					"dns_nameservers":       []string{"8.8.8.8", "9.9.9.9"},
+					"env_id":            "banana",
+					"auth_url":          "auth-url",
+					"availability_zone": "az",
+					"ext_net_id":        "network-id",
+					"ext_net_name":      "network-name",
+					"domain_name":       "domain",
+					"region_name":       "region",
+					"tenant_name":       "project",
+					"cacert_file":       "path/to/file",
+					"insecure":          "true",
+					"dns_nameservers":   []string{"8.8.8.8", "9.9.9.9"},
 				}))
 			})
 		})
