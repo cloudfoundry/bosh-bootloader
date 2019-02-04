@@ -51,6 +51,7 @@ const (
       reserved: ["((internal_gw))-((jumpbox__internal_ip))"]
       cloud_properties:
         net_id: ((net_id))
+        security_groups: ((vms_security_groups))
 
 - type: replace
   path: /vm_extensions/-

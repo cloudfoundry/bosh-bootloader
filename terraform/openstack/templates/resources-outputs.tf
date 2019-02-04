@@ -8,7 +8,19 @@ output "private_key" {
 }
 
 output "external_ip" {
-  value = "${openstack_networking_floatingip_v2.bosh.address}"
+  value = "${openstack_networking_floatingip_v2.jb.address}"
+}
+
+output "vms_security_groups" {
+  value = ["${openstack_networking_secgroup_v2.vms.name}"]
+}
+
+output "jumpbox__default_security_groups" {
+  value = ["${openstack_networking_secgroup_v2.jb.name}"]
+}
+
+output "director__default_security_groups" {
+  value = ["${openstack_networking_secgroup_v2.bosh.name}"]
 }
 
 output "auth_url" { value = "${var.auth_url}" }
@@ -19,7 +31,4 @@ output "region" { value = "${var.region_name}" }
 
 output "env_id" { value = "${var.env_id}" }
 output "director_name" { value = "${var.env_id}" }
-output "director__internal_ip" { value = "10.0.1.6" }
-output "jumpbox__internal_ip" { value = "10.0.1.5" }
-output "jumpbox_url" { value = "${openstack_networking_floatingip_v2.bosh.address}:22" }
-
+output "jumpbox_url" { value = "${openstack_networking_floatingip_v2.jb.address}:22" }
