@@ -72,7 +72,6 @@ func (m Merger) updateOpenStackState(globalFlags GlobalFlags, state storage.Stat
 	copyFlagToState(globalFlags.OpenStackProject, &state.OpenStack.Project)
 	copyFlagToState(globalFlags.OpenStackDomain, &state.OpenStack.Domain)
 	copyFlagToState(globalFlags.OpenStackRegion, &state.OpenStack.Region)
-	copyFlagToState(globalFlags.OpenStackSecurityGroupSuffix, &state.OpenStack.SecurityGroupSuffix)
 	copyFlagToState(globalFlags.OpenStackCACertFile, &state.OpenStack.CACertFile)
 	copyFlagToState(globalFlags.OpenStackInsecure, &state.OpenStack.Insecure)
 	copyCommaSeparatedFlagToState(globalFlags.OpenStackDNSNameServers, &state.OpenStack.DNSNameServers)

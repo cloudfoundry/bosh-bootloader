@@ -350,7 +350,6 @@ var _ = Describe("LoadState", func() {
 							"--openstack-project", "project",
 							"--openstack-domain", "domain",
 							"--openstack-region", "region",
-							"--openstack-security-group-suffix", "suffix",
 							"--openstack-cacert-file", "/path/to/file",
 							"--openstack-insecure", "true",
 							"--openstack-dns-name-servers", "8.8.8.8,9.9.9.9",
@@ -375,7 +374,6 @@ var _ = Describe("LoadState", func() {
 						Expect(state.OpenStack.Project).To(Equal("project"))
 						Expect(state.OpenStack.Domain).To(Equal("domain"))
 						Expect(state.OpenStack.Region).To(Equal("region"))
-						Expect(state.OpenStack.SecurityGroupSuffix).To(Equal("suffix"))
 						Expect(state.OpenStack.CACertFile).To(Equal("/path/to/file"))
 						Expect(state.OpenStack.Insecure).To(Equal("true"))
 						Expect(state.OpenStack.DNSNameServers).To(Equal([]string{"8.8.8.8", "9.9.9.9"}))
@@ -406,7 +404,6 @@ var _ = Describe("LoadState", func() {
 						os.Setenv("BBL_OPENSTACK_PROJECT", "project")
 						os.Setenv("BBL_OPENSTACK_DOMAIN", "domain")
 						os.Setenv("BBL_OPENSTACK_REGION", "region")
-						os.Setenv("BBL_OPENSTACK_SECURITY_GROUP_SUFFIX", "suffix")
 						os.Setenv("BBL_OPENSTACK_CACERT_FILE", "/path/to/file")
 						os.Setenv("BBL_OPENSTACK_INSECURE", "true")
 						os.Setenv("BBL_OPENSTACK_DNS_NAME_SERVERS", "8.8.8.8,9.9.9.9")
@@ -427,7 +424,6 @@ var _ = Describe("LoadState", func() {
 						Expect(state.OpenStack.Project).To(Equal("project"))
 						Expect(state.OpenStack.Domain).To(Equal("domain"))
 						Expect(state.OpenStack.Region).To(Equal("region"))
-						Expect(state.OpenStack.SecurityGroupSuffix).To(Equal("suffix"))
 						Expect(state.OpenStack.CACertFile).To(Equal("/path/to/file"))
 						Expect(state.OpenStack.Insecure).To(Equal("true"))
 						Expect(state.OpenStack.DNSNameServers).To(Equal([]string{"8.8.8.8", "9.9.9.9"}))
