@@ -39,19 +39,15 @@ type Config struct {
 	VSphereVCenterVMs       string
 	VSphereVCenterTemplates string
 
-	OpenStackInternalCidr         string
-	OpenStackExternalIP           string
-	OpenStackAuthURL              string
-	OpenStackAZ                   string
-	OpenStackDefaultKeyName       string
-	OpenStackDefaultSecurityGroup string
-	OpenStackNetworkID            string
-	OpenStackPassword             string
-	OpenStackUsername             string
-	OpenStackProject              string
-	OpenStackDomain               string
-	OpenStackRegion               string
-	OpenStackPrivateKey           string
+	OpenStackAuthURL     string
+	OpenStackAZ          string
+	OpenStackNetworkID   string
+	OpenStackNetworkName string
+	OpenStackPassword    string
+	OpenStackUsername    string
+	OpenStackProject     string
+	OpenStackDomain      string
+	OpenStackRegion      string
 
 	// if bucket is set, statefiledir should be ignored
 	StateFileDir   string
@@ -193,7 +189,33 @@ func validateVSphereCreds(config Config) error {
 }
 
 func validateOpenStackCreds(config Config) error {
-	//TODO: validate openstack creds
+	if config.OpenStackUsername == "" {
+		return errors.New("OpenStack user name is missing")
+	}
+	if config.OpenStackPassword == "" {
+		return errors.New("OpenStack password is missing")
+	}
+	if config.OpenStackAuthURL == "" {
+		return errors.New("OpenStack auth URL is missing")
+	}
+	if config.OpenStackAZ == "" {
+		return errors.New("OpenStack AZ is missing")
+	}
+	if config.OpenStackNetworkID == "" {
+		return errors.New("OpenStack network ID is missing")
+	}
+	if config.OpenStackNetworkName == "" {
+		return errors.New("OpenStack network name is missing")
+	}
+	if config.OpenStackProject == "" {
+		return errors.New("OpenStack project is missing")
+	}
+	if config.OpenStackDomain == "" {
+		return errors.New("OpenStack domain is missing")
+	}
+	if config.OpenStackRegion == "" {
+		return errors.New("OpenStack region is missing")
+	}
 	return nil
 }
 
@@ -229,19 +251,15 @@ func loadConfigFromEnvVars() Config {
 		VSphereVCenterVMs:       os.Getenv("BBL_VSPHERE_VCENTER_VMS"),
 		VSphereVCenterTemplates: os.Getenv("BBL_VSPHERE_VCENTER_TEMPLATES"),
 
-		OpenStackInternalCidr:         os.Getenv("BBL_OPENSTACK_INTERNAL_CIDR"),
-		OpenStackExternalIP:           os.Getenv("BBL_OPENSTACK_EXTERNAL_IP"),
-		OpenStackAuthURL:              os.Getenv("BBL_OPENSTACK_AUTH_URL"),
-		OpenStackAZ:                   os.Getenv("BBL_OPENSTACK_AZ"),
-		OpenStackDefaultKeyName:       os.Getenv("BBL_OPENSTACK_DEFAULT_KEY_NAME"),
-		OpenStackDefaultSecurityGroup: os.Getenv("BBL_OPENSTACK_DEFAULT_SECURITY_GROUP"),
-		OpenStackNetworkID:            os.Getenv("BBL_OPENSTACK_NETWORK_ID"),
-		OpenStackPassword:             os.Getenv("BBL_OPENSTACK_PASSWORD"),
-		OpenStackUsername:             os.Getenv("BBL_OPENSTACK_USERNAME"),
-		OpenStackProject:              os.Getenv("BBL_OPENSTACK_PROJECT"),
-		OpenStackDomain:               os.Getenv("BBL_OPENSTACK_DOMAIN"),
-		OpenStackRegion:               os.Getenv("BBL_OPENSTACK_REGION"),
-		OpenStackPrivateKey:           os.Getenv("BBL_OPENSTACK_PRIVATE_KEY"),
+		OpenStackAuthURL:     os.Getenv("BBL_OPENSTACK_AUTH_URL"),
+		OpenStackAZ:          os.Getenv("BBL_OPENSTACK_AZ"),
+		OpenStackNetworkName: os.Getenv("BBL_OPENSTACK_NETWORK_NAME"),
+		OpenStackNetworkID:   os.Getenv("BBL_OPENSTACK_NETWORK_ID"),
+		OpenStackPassword:    os.Getenv("BBL_OPENSTACK_PASSWORD"),
+		OpenStackUsername:    os.Getenv("BBL_OPENSTACK_USERNAME"),
+		OpenStackProject:     os.Getenv("BBL_OPENSTACK_PROJECT"),
+		OpenStackDomain:      os.Getenv("BBL_OPENSTACK_DOMAIN"),
+		OpenStackRegion:      os.Getenv("BBL_OPENSTACK_REGION"),
 
 		StateFileDir:   os.Getenv("BBL_STATE_DIR"),
 		BBLStateBucket: os.Getenv("BBL_STATE_BUCKET"),
