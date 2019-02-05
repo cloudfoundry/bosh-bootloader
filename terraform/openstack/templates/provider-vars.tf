@@ -4,7 +4,7 @@ variable "auth_url" {
 }
 
 variable "user_name" {
-  description = "OpenStack pipeline technical user name"
+  description = "OpenStack user name"
 }
 
 variable "password" {
