@@ -100,6 +100,11 @@ const (
     disk: 102400
 
 - type: replace
+  path: /vm_extensions/name=500GB_ephemeral_disk/cloud_properties?
+  value:
+    disk: 512000
+
+- type: replace
   path: /vm_extensions/-
   value:
     name: cf-router-network-properties
