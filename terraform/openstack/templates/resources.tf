@@ -1,13 +1,13 @@
 # key pairs
 resource "openstack_compute_keypair_v2" "bosh" {
   region     = "${var.region_name}"
-  name       = "bosh-${var.tenant_name}"
+  name       = "${var.env_id}-keypair"
 }
 
 # networks
 resource "openstack_networking_network_v2" "bosh" {
   region         = "${var.region_name}"
-  name           = "bosh"
+  name           = "${var.env_id}-network"
   admin_state_up = "true"
 }
 
@@ -16,7 +16,7 @@ resource "openstack_networking_subnet_v2" "bosh_subnet" {
   network_id       = "${openstack_networking_network_v2.bosh.id}"
   cidr             = "10.0.1.0/24"
   ip_version       = 4
-  name             = "bosh_sub"
+  name             = "${var.env_id}-subnet"
   allocation_pools = {
     start = "10.0.1.200"
     end   = "10.0.1.254"
@@ -29,7 +29,7 @@ resource "openstack_networking_subnet_v2" "bosh_subnet" {
 # router
 resource "openstack_networking_router_v2" "bosh_router" {
   region           = "${var.region_name}"
-  name             = "bosh-router"
+  name             = "${var.env_id}-router"
   admin_state_up   = "true"
   external_network_id = "${var.ext_net_id}"
 }
@@ -49,7 +49,7 @@ resource "openstack_networking_floatingip_v2" "jb" {
 # security groups
 resource "openstack_networking_secgroup_v2" "jb" {
   region = "${var.region_name}"
-  name = "jb"
+  name = "${var.env_id}-jb"
   description = "Jumpbox Security Group"
 }
 resource "openstack_networking_secgroup_rule_v2" "jb_rule_1" {
@@ -78,7 +78,7 @@ resource "openstack_networking_secgroup_rule_v2" "jb_rule_2" {
 resource "openstack_networking_secgroup_v2" "bosh" {
   description = "BOSH Director Security Group"
   region = "${var.region_name}"
-  name = "bosh"
+  name = "${var.env_id}-bosh"
 }
 resource "openstack_networking_secgroup_rule_v2" "bosh_rule_1" {
   description = "Jumpbox to Director NGINX"
@@ -171,7 +171,7 @@ resource "openstack_networking_secgroup_rule_v2" "bosh_rule_8" {
 
 resource "openstack_networking_secgroup_v2" "vms" {
   region = "${var.region_name}"
-  name = "vms"
+  name = "${var.env_id}-vms"
   description = "BOSH deployed VMs Security Group"
 }
 resource "openstack_networking_secgroup_rule_v2" "vms_rule_1" {
