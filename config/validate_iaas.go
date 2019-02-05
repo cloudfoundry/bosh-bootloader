@@ -85,6 +85,9 @@ func openstack(state storage.OpenStack) error {
 	if state.NetworkID == "" {
 		return fmt.Errorf(CRED_ERROR, "--openstack-network-id")
 	}
+	if state.NetworkName == "" {
+		return fmt.Errorf(CRED_ERROR, "--openstack-network-name")
+	}
 	if state.Username == "" {
 		return fmt.Errorf(CRED_ERROR, "--openstack-username")
 	}
