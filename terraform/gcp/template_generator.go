@@ -72,9 +72,6 @@ func (t TemplateGenerator) GenerateBackendService(zoneList []string) string {
 }
 
 func (t TemplateGenerator) GenerateInstanceGroups(zoneList []string) string {
-	if len(zoneList) > 2 {
-		zoneList = zoneList[:2]
-	}
 	var groups []string
 	for i, zone := range zoneList {
 		groups = append(groups, fmt.Sprintf(`resource "google_compute_instance_group" "router-lb-%[1]d" {
