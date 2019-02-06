@@ -44,11 +44,11 @@ output "router_id" {
 }
 
 output "director__internal_ip" {
-  value = "10.0.1.6"
+  value = "${cidrhost(openstack_networking_subnet_v2.bosh_subnet.cidr, 6)}"
 }
 
 output "jumpbox__internal_ip" {
-  value = "10.0.1.5"
+  value = "${cidrhost(openstack_networking_subnet_v2.bosh_subnet.cidr, 5)}"
 }
 
 output "jumpbox_url" {
