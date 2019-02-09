@@ -138,8 +138,8 @@ func (p PrintEnv) Execute(args []string, state storage.State) error {
 	}
 
 	variables["JUMPBOX_PRIVATE_KEY"] = privateKeyPath
-	variables["BOSH_ALL_PROXY"] = p.allProxyGetter.BoshAllProxy(state.Jumpbox.URL, privateKeyPath)
-	variables["CREDHUB_PROXY"] = p.allProxyGetter.BoshAllProxy(state.Jumpbox.URL, privateKeyPath)
+	variables["BOSH_ALL_PROXY"] = p.allProxyGetter.BoshAllProxy(state.Jumpbox.GetURLWithJumpboxUser(), privateKeyPath)
+	variables["CREDHUB_PROXY"] = p.allProxyGetter.BoshAllProxy(state.Jumpbox.GetURLWithJumpboxUser(), privateKeyPath)
 
 	p.renderVariables(renderer, variables)
 	return nil

@@ -73,7 +73,7 @@ var _ = Describe("PrintEnv", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(allProxyGetter.GeneratePrivateKeyCall.CallCount).To(Equal(1))
-			Expect(allProxyGetter.BoshAllProxyCall.Receives.JumpboxURL).To(Equal("some-magical-jumpbox-url:22"))
+			Expect(allProxyGetter.BoshAllProxyCall.Receives.JumpboxURL).To(Equal("jumpbox@some-magical-jumpbox-url:22"))
 			Expect(allProxyGetter.BoshAllProxyCall.Receives.PrivateKey).To(Equal("the-key-path"))
 
 			Expect(logger.PrintlnCall.Messages).To(ContainElement("export BOSH_CLIENT=some-director-username"))
@@ -102,7 +102,7 @@ var _ = Describe("PrintEnv", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(allProxyGetter.GeneratePrivateKeyCall.CallCount).To(Equal(1))
-				Expect(allProxyGetter.BoshAllProxyCall.Receives.JumpboxURL).To(Equal("some-magical-jumpbox-url:22"))
+				Expect(allProxyGetter.BoshAllProxyCall.Receives.JumpboxURL).To(Equal("jumpbox@some-magical-jumpbox-url:22"))
 				Expect(allProxyGetter.BoshAllProxyCall.Receives.PrivateKey).To(Equal("the-key-path"))
 
 				Expect(logger.PrintlnCall.Messages).To(ContainElement("$env:BOSH_CLIENT=\"some-director-username\""))
