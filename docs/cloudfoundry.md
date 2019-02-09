@@ -1,10 +1,16 @@
 # Generic Steps for Cloud Foundry Deployment
 
+1. You can use existing certificate and key files, or generate new ones. See below for instructions on generating these files for Microsoft Azure.
+    `bbl plan \ 
+          --lb-type cf \
+          --lb-cert <PATH_TO_CERT_FILE> \
+          --lb-key <PATH_TO_KEY_FILE> \
+          --lb-domain <DOMAIN_NAME> \
+          && bbl up`.
+
 1. Create an environment and target the BOSH director with `eval "$(bbl print-env)"`
 
-1. `bbl plan --lb-type cf --lb-cert <PATH_TO_CERT_FILE> --lb-key <PATH_TO_KEY_FILE> && bbl up`. You can use existing certificate and key files, or generate new ones. See below for instructions on generating these files for Microsoft Azure.
-
-1. `bosh deploy cf-deployment.yml -o operations/<MY IaaS>` using the [CF deployment manifest!](https://github.com/cloudfoundry/cf-deployment)
+1. `bosh deploy cf-deployment.yml -o operations/<MY IaaS> -v system_domain=<DOMAIN_NAME>` using the [CF deployment manifest!](https://github.com/cloudfoundry/cf-deployment)
 
 ## Appendix: Generating Load Balancer Key and Certificate Files for Microsoft Azure
 

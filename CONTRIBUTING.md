@@ -10,15 +10,26 @@ To verify your changes before submitting a pull request:
     ~/bosh-bootloader/scripts/test
   ```
 
-1. Run acceptance tests
+2. Run acceptance tests
 
   ```
     ~/bosh-bootloader/scripts/acceptance-tests IAAS
   ```
 
-1. Add tests
+3. Add tests
 
 Add unit tests for your feature.
+
+## Terraform Template Changes
+
+If you made any changes to the terraform templates, you need to run this script
+to update the generated `templates.go` file.
+
+```
+~/bosh-bootloader/scripts/update_terraform_templates <IaaS>
+```
+
+Pass in the IaaS that needs updating as the argument (i.e. aws, gcp, azure)
 
 ## Vendor a dependency
 
