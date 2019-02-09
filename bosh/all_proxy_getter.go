@@ -46,5 +46,5 @@ func (a AllProxyGetter) GeneratePrivateKey() (string, error) {
 }
 
 func (a AllProxyGetter) BoshAllProxy(jumpboxURL, privateKeyPath string) string {
-	return fmt.Sprintf("ssh+socks5://jumpbox@%s?private-key=%s", jumpboxURL, privateKeyPath)
+	return fmt.Sprintf("ssh+socks5://%s?private-key=%s", jumpboxURL, privateKeyPath)
 }
