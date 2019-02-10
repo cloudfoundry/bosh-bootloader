@@ -46,7 +46,7 @@ type GlobalFlags struct {
 	OpenStackDomain      string `long:"openstack-domain"                 env:"BBL_OPENSTACK_DOMAIN"`
 	OpenStackRegion      string `long:"openstack-region"                 env:"BBL_OPENSTACK_REGION"`
 	// optional
-	OpenStackCACertFile     string `long:"openstack-cacert-file"            env:"BBL_OPENSTACK_CACERT_FILE"`
-	OpenStackInsecure       string `long:"openstack-insecure"               env:"BBL_OPENSTACK_INSECURE"`
-	OpenStackDNSNameServers string `long:"openstack-dns-name-servers"       env:"BBL_OPENSTACK_DNS_NAME_SERVERS"`
+	OpenStackCACertFile     string   `long:"openstack-cacert-file"       env:"BBL_OPENSTACK_CACERT_FILE"`
+	OpenStackInsecure       string   `long:"openstack-insecure"          env:"BBL_OPENSTACK_INSECURE"`
+	OpenStackDNSNameServers []string `long:"openstack-dns-name-server"   env:"BBL_OPENSTACK_DNS_NAME_SERVERS" env-delim:","`
 }

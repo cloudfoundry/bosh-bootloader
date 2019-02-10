@@ -352,7 +352,8 @@ var _ = Describe("LoadState", func() {
 							"--openstack-region", "region",
 							"--openstack-cacert-file", "/path/to/file",
 							"--openstack-insecure", "true",
-							"--openstack-dns-name-servers", "8.8.8.8,9.9.9.9",
+							"--openstack-dns-name-server", "8.8.8.8",
+							"--openstack-dns-name-server", "9.9.9.9",
 							"up",
 							"--name", "some-env-id",
 						}
@@ -443,23 +444,28 @@ var _ = Describe("LoadState", func() {
 					fakeStateMigrator.MigrateCall.Returns.State = storage.State{
 						IAAS: "openstack",
 						OpenStack: storage.OpenStack{
-							AuthURL:     "auth-url",
-							AZ:          "az",
-							NetworkID:   "network-id",
-							NetworkName: "network-name",
-							Password:    "password",
-							Username:    "username",
-							Project:     "project",
-							Domain:      "domain",
-							Region:      "region",
+							AuthURL:        "auth-url",
+							AZ:             "az",
+							NetworkID:      "network-id",
+							NetworkName:    "network-name",
+							Password:       "password",
+							Username:       "username",
+							Project:        "project",
+							Domain:         "domain",
+							Region:         "region",
+							DNSNameServers: []string{"8.8.8.8", "9.9.9.9"},
 						},
 						EnvID: "some-env-id",
 					}
 				})
 
 				Context("when valid matching configuration is passed in", func() {
-					It("returns state with existing configuration", func() {
-						appConfig, err := c.Bootstrap(bootstrapArgs([]string{
+					var (
+						appConfig application.Configuration
+						err       error
+					)
+					BeforeEach(func() {
+						appConfig, err = c.Bootstrap(bootstrapArgs([]string{
 							"bbl", "up",
 							"--iaas", "openstack",
 							"--openstack-auth-url", "auth-url",
@@ -470,11 +476,20 @@ var _ = Describe("LoadState", func() {
 							"--openstack-username", "username",
 							"--openstack-project", "project",
 							"--openstack-domain", "domain",
-							"--openstack-region", "region",
+							"--openstack-region", "new-region",
+							"--openstack-dns-name-server", "1.1.1.1",
 						}))
-						Expect(err).NotTo(HaveOccurred())
+					})
 
+					It("returns state with existing configuration", func() {
+						Expect(err).NotTo(HaveOccurred())
 						Expect(appConfig.State.EnvID).To(Equal("some-env-id"))
+					})
+
+					It("overrides existing configuration", func() {
+						Expect(err).NotTo(HaveOccurred())
+						Expect(appConfig.State.OpenStack.Region).To(Equal("new-region"))
+						Expect(appConfig.State.OpenStack.DNSNameServers).To(Equal([]string{"1.1.1.1"}))
 					})
 				})
 

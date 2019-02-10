@@ -58,7 +58,7 @@ var _ = Describe("Commands Usage", func() {
   --openstack-region                 OpenStack Region                 env: $BBL_OPENSTACK_REGION
   --openstack-cacert-file            OpenStack CA Cert File           env: $BBL_OPENSTACK_CACERT_FILE
   --openstack-insecure               OpenStack Insecure               env: $BBL_OPENSTACK_INSECURE
-  --openstack-dns-name-servers       OpenStack DNS Name Servers       env: $BBL_OPENSTACK_DNS_NAME_SERVERS
+  --openstack-dns-name-server        OpenStack DNS Name Servers       env: $BBL_OPENSTACK_DNS_NAME_SERVERS
 
   Load Balancer options:
   --lb-type                  Load balancer(s) type: "concourse" or "cf"
