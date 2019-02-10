@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"path/filepath"
-	"strings"
 
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
@@ -48,17 +47,18 @@ func copyFlagToState(source string, sink *string) {
 	}
 }
 
+func copySliceFlagToState(source []string, sink *[]string) {
+	if source != nil {
+		*sink = make([]string, len(source))
+		copy(*sink, source)
+	}
+}
+
 func copyFlagToStateWithDefault(source string, sink *string, def string) {
 	if source == "" {
 		*sink = def
 	} else {
 		*sink = source
-	}
-}
-
-func copyCommaSeparatedFlagToState(source string, sink *[]string) {
-	if source != "" {
-		*sink = strings.Split(source, ",")
 	}
 }
 
@@ -74,7 +74,7 @@ func (m Merger) updateOpenStackState(globalFlags GlobalFlags, state storage.Stat
 	copyFlagToState(globalFlags.OpenStackRegion, &state.OpenStack.Region)
 	copyFlagToState(globalFlags.OpenStackCACertFile, &state.OpenStack.CACertFile)
 	copyFlagToState(globalFlags.OpenStackInsecure, &state.OpenStack.Insecure)
-	copyCommaSeparatedFlagToState(globalFlags.OpenStackDNSNameServers, &state.OpenStack.DNSNameServers)
+	copySliceFlagToState(globalFlags.OpenStackDNSNameServers, &state.OpenStack.DNSNameServers)
 
 	return state, nil
 }
