@@ -33,6 +33,6 @@ func (c CLIProvider) AuthenticatedCLI(jumpbox storage.Jumpbox, stderr io.Writer,
 		return AuthenticatedCLI{}, err
 	}
 
-	boshAllProxy := c.allProxyGetter.BoshAllProxy(jumpbox.URL, privateKey)
+	boshAllProxy := c.allProxyGetter.BoshAllProxy(jumpbox.GetURLWithJumpboxUser(), privateKey)
 	return NewAuthenticatedCLI(stderr, c.boshCLIPath, directorAddress, directorUsername, directorPassword, directorCACert, boshAllProxy), nil
 }
