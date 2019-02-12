@@ -1,10 +1,13 @@
 package acceptance_test
 
 import (
+	"encoding/json"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
+	"os/user"
+	"path/filepath"
 	"runtime"
 
 	acceptance "github.com/cloudfoundry/bosh-bootloader/acceptance-tests"
@@ -21,14 +24,16 @@ var _ = Describe("Upgrade", func() {
 		newBBL  actors.BBL
 		boshcli actors.BOSHCLI
 
-		sshSession *gexec.Session
-		f          *os.File
+		sshSession    *gexec.Session
+		f             *os.File
+		configuration acceptance.Config
 	)
 
 	BeforeEach(func() {
 		acceptance.SkipUnless("upgrade")
 
-		configuration, err := acceptance.LoadConfig()
+		var err error
+		configuration, err = acceptance.LoadConfig()
 		Expect(err).NotTo(HaveOccurred())
 
 		var bblBinaryLocation string
@@ -108,6 +113,29 @@ var _ = Describe("Upgrade", func() {
 			exists, err := boshcli.DirectorExists(oldBBL.DirectorAddress(), oldBBL.DirectorUsername(), oldBBL.DirectorPassword(), oldBBL.SaveDirectorCA())
 			Expect(err).NotTo(HaveOccurred())
 			Expect(exists).To(BeTrue())
+		})
+
+		By("cleaning out an installation directory holding onto old golang", func() {
+			removeInstallation := func(stateFileName string) {
+				stateJSON, err := ioutil.ReadFile(filepath.Join(configuration.StateFileDir, "vars", stateFileName))
+				Expect(err).NotTo(HaveOccurred())
+
+				var state struct {
+					InstallationID string `json:"installation_id"`
+				}
+
+				err = json.Unmarshal(stateJSON, &state)
+				Expect(err).NotTo(HaveOccurred())
+
+				u, err := user.Current()
+				Expect(err).NotTo(HaveOccurred())
+
+				err = os.RemoveAll(filepath.Join(u.HomeDir, ".bosh", "installations", state.InstallationID))
+				Expect(err).NotTo(HaveOccurred())
+			}
+
+			removeInstallation("bosh-state.json")
+			removeInstallation("jumpbox-state.json")
 		})
 
 		By("upgrading to the latest bbl", func() {
