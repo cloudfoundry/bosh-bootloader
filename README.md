@@ -58,6 +58,13 @@ The bbl state directory contains all of the files that were used to create your 
 ``delete-director.sh`` | The BOSH cli command bbl will use to delete your director.
 ``delete-jumpbox.sh`` | The BOSH cli command bbl will use to delete your jumpbox.
 
+### Troubleshooting
+
+To turn on bbl debugging traces, use `bbl --debug` flag.
+
+To turn on [bosh debugging](https://bosh.io/docs/build-cpi/#debugging) traces, export the `BOSH_LOG_LEVEL=debug` environment variable in the related bbl shell script, such as `create-jumpbox.sh`. 
+ 
+To turn on the cpi traces, override or set cpi configuration, e.g. for vsphere cpi within `jumpbox-deployment/vsphere/cpi.yml` set `http_logging: true` according to [vsphere cpi documentation](https://bosh.io/docs/vsphere-cpi/#global)  
 
 ### Tearing down an environment
 
