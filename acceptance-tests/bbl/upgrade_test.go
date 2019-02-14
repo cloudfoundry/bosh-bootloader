@@ -130,7 +130,12 @@ var _ = Describe("Upgrade", func() {
 				u, err := user.Current()
 				Expect(err).NotTo(HaveOccurred())
 
-				err = os.RemoveAll(filepath.Join(u.HomeDir, ".bosh", "installations", state.InstallationID))
+				packageDir := filepath.Join(u.HomeDir, ".bosh", "installations", state.InstallationID, "packages")
+
+				err = os.RemoveAll(packageDir)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = os.Mkdir(packageDir, 0777)
 				Expect(err).NotTo(HaveOccurred())
 			}
 
