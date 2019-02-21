@@ -33,9 +33,9 @@ exist.
     export BBL_OPENSTACK_REGION=
 
     # optionally
-    export BBL_OPENSTACK_CACERT_FILE= # custom CA certificate when communicating over SSL; either path to file or contents of certificate
-    export BBL_OPENSTACK_INSECURE=  # e.g. "true", default: "false"
-    export BBL_OPENSTACK_DNS_NAME_SERVERS=  # e.g. "8.8.8.8,9.9.9.9", default: "8.8.8.8"
+    #export BBL_OPENSTACK_CACERT_FILE= # custom CA certificate when communicating over SSL; either path to file or contents of certificate
+    #export BBL_OPENSTACK_INSECURE=  # e.g. "true", default: "false"
+    #export BBL_OPENSTACK_DNS_NAME_SERVERS=  # e.g. "8.8.8.8,9.9.9.9", default: "8.8.8.8"
     ```
 
 1. Create OpenStack resources, jumpbox and bosh director.
