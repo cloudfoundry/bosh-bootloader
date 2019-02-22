@@ -2,6 +2,7 @@ package acceptance_test
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -18,7 +19,11 @@ import (
 	"github.com/onsi/gomega/gexec"
 )
 
-var _ = Describe("Upgrade", func() {
+const (
+	BBLReleaseURL = "https://github.com/cloudfoundry/bosh-bootloader/releases/download/%s/%s"
+)
+
+var _ = FDescribe("Upgrade", func() {
 	var (
 		oldBBL  actors.BBL
 		newBBL  actors.BBL
@@ -35,12 +40,11 @@ var _ = Describe("Upgrade", func() {
 		var err error
 		configuration, err = acceptance.LoadConfig()
 		Expect(err).NotTo(HaveOccurred())
-
 		var bblBinaryLocation string
 		if runtime.GOOS == "darwin" {
-			bblBinaryLocation = "https://github.com/cloudfoundry/bosh-bootloader/releases/download/v5.11.5/bbl-v5.11.5_osx"
+			bblBinaryLocation = fmt.Sprintf(BBLReleaseURL, "v6.10.54", "bbl-v6.10.54_osx")
 		} else {
-			bblBinaryLocation = "https://github.com/cloudfoundry/bosh-bootloader/releases/download/v5.11.5/bbl-v5.11.5_linux_x86-64"
+			bblBinaryLocation = fmt.Sprintf(BBLReleaseURL, "v6.10.54", "bbl-v6.10.54_linux_x86-64")
 		}
 
 		resp, err := http.Get(bblBinaryLocation)
