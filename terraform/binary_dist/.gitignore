@@ -2,3 +2,4 @@ terraform
 terraform.exe
 tf_binary_dist_*.go
 tf_binaries_fetched_from.txt
+terraform-mod-time
