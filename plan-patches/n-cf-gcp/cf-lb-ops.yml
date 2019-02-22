@@ -1,0 +1,14 @@
+- type: replace
+  path: /instance_groups/name=router/vm_extensions
+  value:
+  - cf-router-network-properties-((env))
+
+- type: replace
+  path: /instance_groups/name=tcp-router/vm_extensions
+  value:
+  - cf-tcp-router-network-properties-((env))
+
+- type: replace
+  path: /instance_groups/name=scheduler/vm_extensions
+  value:
+  - diego-ssh-proxy-network-properties-((env))

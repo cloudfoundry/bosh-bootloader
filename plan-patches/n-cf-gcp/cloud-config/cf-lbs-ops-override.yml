@@ -1,0 +1,8 @@
+- type: remove
+  path: /vm_extensions/name=cf-router-network-properties
+
+- type: remove
+  path: /vm_extensions/name=diego-ssh-proxy-network-properties
+
+- type: remove
+  path: /vm_extensions/name=cf-tcp-router-network-properties
