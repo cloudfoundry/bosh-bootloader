@@ -23,7 +23,7 @@ const (
 	BBLReleaseURL = "https://github.com/cloudfoundry/bosh-bootloader/releases/download/%s/%s"
 )
 
-var _ = FDescribe("Upgrade", func() {
+var _ = Describe("Upgrade", func() {
 	var (
 		oldBBL  actors.BBL
 		newBBL  actors.BBL

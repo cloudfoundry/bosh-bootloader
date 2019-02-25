@@ -1,22 +1,17 @@
 #!/bin/bash -eu
 
-shopt -s extglob
-
-JUMPBOX_DEPLOYMENT_DIR_PATH=${JUMPBOX_DEPLOYMENT_DIR_PATH:-}
-BOSH_DEPLOYMENT_DIR_PATH=${BOSH_DEPLOYMENT_DIR_PATH:-}
 TERRAFORM_BINARY_PATH=${TERRAFORM_BINARY_PATH:-}
 ROOT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 
-function cleanup() {
-  rm -rf ${ROOT_DIR}/bosh/deployments/bosh-deployment
-  rm -rf ${ROOT_DIR}/bosh/deployments/jumpbox-deployment
-  rm -rf ${ROOT_DIR}/terraform/binary_dist/terraform-mod-time
+source $ROOT_DIR/scripts/create_mod
+
+function cleanup_terraform() {
   rm -rf ${ROOT_DIR}/terraform/binary_dist/terraform
 }
 
 function main() {
-  cleanup
-  trap "cleanup" INT TERM EXIT
+  cleanup_terraform
+  trap "cleanup_terraform" INT TERM EXIT
 
   local parallelFlag
   if [[ "${BBL_IAAS}" == "aws" ]]; then
@@ -25,23 +20,12 @@ function main() {
     parallelFlag="-p"
   fi
 
-  mkdir -p ${ROOT_DIR}/bosh/deployments/bosh-deployment
-  mkdir -p ${ROOT_DIR}/bosh/deployments/jumpbox-deployment
-
-  cp -R ${BOSH_DEPLOYMENT_DIR_PATH}/!(*.git) ${ROOT_DIR}/bosh/deployments/bosh-deployment
-  cp -R ${JUMPBOX_DEPLOYMENT_DIR_PATH}/!(*.git) ${ROOT_DIR}/bosh/deployments/jumpbox-deployment
   cp  ${TERRAFORM_BINARY_PATH} ${ROOT_DIR}/terraform/binary_dist
 
-  if uname | grep -q "Darwin"; then
-    mod_fmt="-f %m"
-  else
-    mod_fmt="-c %Y"
-  fi
-
-  stat $mod_fmt ${ROOT_DIR}/terraform/binary_dist/terraform > ${ROOT_DIR}/terraform/binary_dist/terraform-mod-time
-
   pushd "${ROOT_DIR}/acceptance-tests" > /dev/null
+    create_mod
     ginkgo -r -v ${parallelFlag} -race -failFast -randomizeAllSpecs -randomizeSuites -skipPackage no-iaas
+    cleanup_mod
   popd > /dev/null
 }
 
