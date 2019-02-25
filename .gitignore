@@ -35,3 +35,7 @@ bbl/debug
 
 # Environment
 .env*
+
+# packrd
+-packr*
+bbl/packrd
