@@ -1,0 +1,4 @@
+#!/bin/bash -exu
+
+packr2 install -ldflags="-X main.Version=$(git rev-parse --short=7 HEAD)" github.com/cloudfoundry/bosh-bootloader/bbl
+$GOPATH/bin/bbl "${@:-"-v"}"
