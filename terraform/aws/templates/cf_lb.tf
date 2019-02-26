@@ -94,13 +94,6 @@ resource "aws_security_group" "cf_router" {
     to_port     = 443
   }
 
-  ingress {
-    cidr_blocks = ["0.0.0.0/0"]
-    protocol    = "tcp"
-    from_port   = 4443
-    to_port     = 4443
-  }
-
   egress {
     from_port   = 0
     to_port     = 0
@@ -151,17 +144,6 @@ resource "aws_lb_listener" "cf_router_443" {
   }
 }
 
-resource "aws_lb_listener" "cf_router_4443" {
-  load_balancer_arn = "${aws_lb.cf_router.arn}"
-  port              = 4443
-  protocol          = "TCP"
-
-  default_action {
-    type             = "forward"
-    target_group_arn = "${aws_lb_target_group.cf_router_4443.arn}"
-  }
-}
-
 resource "aws_lb_target_group" "cf_router_80" {
   name     = "${var.short_env_id}-routertg-80"
   port     = 80
@@ -184,17 +166,6 @@ resource "aws_lb_target_group" "cf_router_443" {
   }
 }
 
-resource "aws_lb_target_group" "cf_router_4443" {
-  name     = "${var.short_env_id}-routertg-4443"
-  port     = 4443
-  protocol = "TCP"
-  vpc_id   = "${local.vpc_id}"
-
-  health_check {
-    protocol = "TCP"
-  }
-}
-
 output "cf_router_lb_name" {
   value = "${aws_lb.cf_router.name}"
 }
@@ -207,7 +178,6 @@ output "cf_router_target_group_names" {
   value = [
     "${aws_lb_target_group.cf_router_80.name}",
     "${aws_lb_target_group.cf_router_443.name}",
-    "${aws_lb_target_group.cf_router_4443.name}",
   ]
 }
 

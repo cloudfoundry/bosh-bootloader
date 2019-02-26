@@ -22,7 +22,6 @@
     * It forwards:
         - `HTTP:80`   to `HTTP:80`
         - `HTTPS:443` to `HTTP:80`
-        - `TLS:4443`  to `TCP:80`
 
 ## GCP
 `bbl` creates 4 load balancers on GCP.
