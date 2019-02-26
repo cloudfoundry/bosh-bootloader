@@ -27,11 +27,6 @@ function main() {
 
     echo "Test compilation of acceptance-tests"
     ginkgo -r -p -dryRun acceptance-tests
-
-    if [[ -z ${@} ]]; then
-      echo "No-IAAS integration tests"
-      ginkgo -p -r -race -randomizeAllSpecs -randomizeSuites acceptance-tests/no-iaas ${@}
-    fi
   popd > /dev/null
 }
 

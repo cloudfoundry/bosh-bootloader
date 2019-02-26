@@ -13,6 +13,11 @@ function main() {
   cleanup_terraform
   trap "cleanup_terraform" INT TERM EXIT
 
+  if [[ ! -f "${TERRAFORM_BINARY_PATH}" ]]; then
+    echo "missing required terraform binary path"
+    exit 127
+  fi
+
   local parallelFlag
   if [[ "${BBL_IAAS}" == "aws" ]]; then
     parallelFlag=""

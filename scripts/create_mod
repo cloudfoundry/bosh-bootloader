@@ -14,5 +14,5 @@ function create_mod() {
     mod_fmt="-c %Y"
   fi
 
-  stat $mod_fmt ${ROOT_DIR}/terraform/binary_dist/terraform > ${ROOT_DIR}/terraform/binary_dist/terraform-mod-time
+  stat "${mod_fmt}" "${ROOT_DIR}/terraform/binary_dist/terraform" > "${ROOT_DIR}/terraform/binary_dist/terraform-mod-time"
 }
