@@ -1,6 +1,5 @@
 #!/bin/bash -eu
 
-TERRAFORM_BINARY_PATH=${TERRAFORM_BINARY_PATH:-}
 ROOT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 
 source $ROOT_DIR/scripts/create_mod
@@ -13,8 +12,8 @@ function main() {
   cleanup_terraform
   trap "cleanup_terraform" INT TERM EXIT
 
-  if [[ ! -f "${TERRAFORM_BINARY_PATH}" ]]; then
-    echo "missing required terraform binary path"
+  if [[ ! -f "${ROOT_DIR}/terraform/binary_dist/terraform" ]]; then
+    echo "missing required terraform binary in binary_dist"
     exit 127
   fi
 
@@ -24,8 +23,6 @@ function main() {
   else
     parallelFlag="-p"
   fi
-
-  cp  ${TERRAFORM_BINARY_PATH} ${ROOT_DIR}/terraform/binary_dist
 
   pushd "${ROOT_DIR}/acceptance-tests" > /dev/null
     create_mod
