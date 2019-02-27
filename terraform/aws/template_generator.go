@@ -27,7 +27,7 @@ type TemplateGenerator struct {
 
 func NewTemplateGenerator() TemplateGenerator {
 	return TemplateGenerator{
-		box: packr.New("templates", templatesPath),
+		box: packr.New("aws-templates", templatesPath),
 	}
 }
 
