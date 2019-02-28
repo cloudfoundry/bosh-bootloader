@@ -148,7 +148,7 @@ provider "aws" {
   secret_key = "${var.secret_key}"
   region     = "${var.region}"
 
-  version = ">= 1.17.0"
+  version = "~> 1.60"
 }
 
 resource "aws_default_security_group" "default_security_group" {
