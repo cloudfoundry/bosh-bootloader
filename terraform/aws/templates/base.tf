@@ -125,7 +125,7 @@ resource "aws_security_group_rule" "nat_udp_rule" {
 
 resource "aws_instance" "nat" {
   private_ip             = "${cidrhost(aws_subnet.bosh_subnet.cidr_block, 7)}"
-  instance_type          = "t2.medium"
+  instance_type          = "t3.medium"
   subnet_id              = "${aws_subnet.bosh_subnet.id}"
   source_dest_check      = false
   ami                    = "${lookup(var.nat_ami_map, var.region)}"
