@@ -342,13 +342,6 @@
   
 </li>
       
-        <li class="md-nav__item">
-  <a href="#next-steps" title="Next Steps" class="md-nav__link">
-    Next Steps
-  </a>
-  
-</li>
-      
       
       
       
@@ -420,6 +413,78 @@
   </li>
 
     
+      
+      
+      
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-18" type="checkbox" id="nav-18">
+    
+    <label class="md-nav__link" for="nav-18">
+      Architecture
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="1">
+      <label class="md-nav__title" for="nav-18">
+        Architecture
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-18-1" type="checkbox" id="nav-18-1">
+    
+    <label class="md-nav__link" for="nav-18-1">
+      Decisions
+    </label>
+    <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
+      <label class="md-nav__title" for="nav-18-1">
+        Decisions
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../architecture/decisions/0001-record-architecture-decisions/" title="1. Record architecture decisions" class="md-nav__link">
+      1. Record architecture decisions
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../architecture/decisions/0002-replace-go-bindata-with-packr2/" title="2. Replace go-bindata with packr2" class="md-nav__link">
+      2. Replace go-bindata with packr2
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
   </ul>
 </nav>
                   </div>
@@ -443,13 +508,6 @@
         <li class="md-nav__item">
   <a href="#create-a-jumpbox-and-a-bosh-director" title="Create a Jumpbox and a BOSH Director" class="md-nav__link">
     Create a Jumpbox and a BOSH Director
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#next-steps" title="Next Steps" class="md-nav__link">
-    Next Steps
   </a>
   
 </li>
@@ -483,43 +541,35 @@ any instances BOSH deploys</li>
 <li>A copy of the manifest the BOSH director was deployed with</li>
 <li>A basic cloud config</li>
 </ol>
-<p><code>bbl</code> creates and maintains the lifecycle of the jumpbox and BOSH director.</p>
-<p>It does not create any networks, security groups, or load balancers on OpenStack.</p>
+<p><code>bbl</code> creates and maintains the lifecycle of the OpenStack infrastructure, jumpbox and BOSH director.<br />
+It creates a network, a router, a floating IP, a key pair, security groups, and
+security group rules on OpenStack.<br />
+Prerequisite is that an OpenStack project, external network, and user already
+exist.</p>
 <h2 id="create-a-jumpbox-and-a-bosh-director">Create a Jumpbox and a BOSH Director</h2>
 <ol>
 <li>
 <p>Export environment variables.
-    <code>export BBL_IAAS=openstack
-    export BBL_OPENSTACK_INTERNAL_CIDR=
-    export BBL_OPENSTACK_EXTERNAL_IP=
+    ```
+    export BBL_IAAS=openstack
     export BBL_OPENSTACK_AUTH_URL=
     export BBL_OPENSTACK_AZ=
-    export BBL_OPENSTACK_DEFAULT_KEY_NAME=
-    export BBL_OPENSTACK_DEFAULT_SECURITY_GROUP=
-    export BBL_OPENSTACK_NETWORK_ID=
+    export BBL_OPENSTACK_NETWORK_ID=  # external network ID
+    export BBL_OPENSTACK_NETWORK_NAME=  # external network name
     export BBL_OPENSTACK_PASSWORD=
     export BBL_OPENSTACK_USERNAME=
-    export BBL_OPENSTACK_PROJECT=
+    export BBL_OPENSTACK_PROJECT= # same as tenant
     export BBL_OPENSTACK_DOMAIN=
-    export BBL_OPENSTACK_REGION=
-    export BBL_OPENSTACK_PRIVATE_KEY=</code></p>
-<p><code>powershell
-$env:BBL_IAAS="openstack"
-$env:BBL_OPENSTACK_INTERNAL_CIDR=
-$env:BBL_OPENSTACK_EXTERNAL_IP=
-$env:BBL_OPENSTACK_AUTH_URL=
-$env:BBL_OPENSTACK_AZ=
-$env:BBL_OPENSTACK_DEFAULT_KEY_NAME=
-$env:BBL_OPENSTACK_DEFAULT_SECURITY_GROUP=
-$env:BBL_OPENSTACK_NETWORK_ID=
-$env:BBL_OPENSTACK_PASSWORD=
-$env:BBL_OPENSTACK_USERNAME=
-$env:BBL_OPENSTACK_PROJECT=
-$env:BBL_OPENSTACK_DOMAIN=
-$env:BBL_OPENSTACK_REGION=
-$env:BBL_OPENSTACK_PRIVATE_KEY=</code>
-1. Create jumpbox and bosh director.
-<code>bbl up</code></p>
+    export BBL_OPENSTACK_REGION=</p>
+<h1 id="optionally">optionally</h1>
+<h1 id="export-bbl_openstack_cacert_file-custom-ca-certificate-when-communicating-over-ssl-either-path-to-file-or-contents-of-certificate">export BBL_OPENSTACK_CACERT_FILE= # custom CA certificate when communicating over SSL; either path to file or contents of certificate</h1>
+<h1 id="export-bbl_openstack_insecure-eg-true-default-false">export BBL_OPENSTACK_INSECURE=  # e.g. "true", default: "false"</h1>
+<h1 id="export-bbl_openstack_dns_name_servers-eg-88889999-default-8888">export BBL_OPENSTACK_DNS_NAME_SERVERS=  # e.g. "8.8.8.8,9.9.9.9", default: "8.8.8.8"</h1>
+<p>```</p>
+</li>
+<li>
+<p>Create OpenStack resources, jumpbox and bosh director.
+    <code>bbl up</code></p>
 </li>
 </ol>
 <h2 id="next-steps">Next Steps</h2>
