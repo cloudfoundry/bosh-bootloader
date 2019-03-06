@@ -27,7 +27,7 @@ var _ = Describe("TemplateGenerator", func() {
 			expectedTemplate = expectTemplate("provider-vars", "provider", "resources-outputs", "resources-vars", "resources")
 		})
 		It("uses openstack templates", func() {
-			template := templateGenerator.Generate(storage.State{})
+			template := templateGenerator.Generate(storage.State{}, true)
 			checkTemplate(template, expectedTemplate)
 		})
 	})

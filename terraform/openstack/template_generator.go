@@ -27,7 +27,7 @@ func NewTemplateGenerator() TemplateGenerator {
 	}
 }
 
-func (t TemplateGenerator) Generate(state storage.State) string {
+func (t TemplateGenerator) Generate(state storage.State, _ bool) string {
 	tmpls := t.readTemplates()
 	template := strings.Join([]string{tmpls.providerVars, tmpls.provider, tmpls.resourcesOutputs, tmpls.resourcesVars, tmpls.resources}, "\n")
 	return template

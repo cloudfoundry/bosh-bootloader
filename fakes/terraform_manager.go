@@ -26,10 +26,10 @@ type TerraformManager struct {
 	}
 	ApplyCall struct {
 		CallCount int
-		Receives  struct {
+		Receives  []struct {
 			BBLState storage.State
 		}
-		Returns struct {
+		Returns []struct {
 			BBLState storage.State
 			Error    error
 		}
@@ -92,6 +92,15 @@ type TerraformManager struct {
 			Error   error
 		}
 	}
+	LockdownCall struct {
+		CallCount int
+		Receives  struct {
+			BBLState storage.State
+		}
+		Returns   struct {
+			Error error
+		}
+	}
 }
 
 func (t *TerraformManager) Setup(bblState storage.State) error {
@@ -110,9 +119,9 @@ func (t *TerraformManager) Init(bblState storage.State) error {
 
 func (t *TerraformManager) Apply(bblState storage.State) (storage.State, error) {
 	t.ApplyCall.CallCount++
-	t.ApplyCall.Receives.BBLState = bblState
+	t.ApplyCall.Receives = append(t.ApplyCall.Receives, struct {BBLState storage.State}{bblState})
 
-	return t.ApplyCall.Returns.BBLState, t.ApplyCall.Returns.Error
+	return t.ApplyCall.Returns[t.ApplyCall.CallCount - 1].BBLState, t.ApplyCall.Returns[t.ApplyCall.CallCount - 1].Error
 }
 
 func (t *TerraformManager) Destroy(bblState storage.State) (storage.State, error) {
@@ -155,4 +164,10 @@ func (t *TerraformManager) ValidateVersion() error {
 func (t *TerraformManager) IsPaved() (bool, error) {
 	t.IsPavedCall.CallCount++
 	return t.IsPavedCall.Returns.IsPaved, t.IsPavedCall.Returns.Error
+}
+
+func (t *TerraformManager) Lockdown(bblState storage.State) error {
+	t.LockdownCall.CallCount++
+	t.LockdownCall.Receives.BBLState = bblState
+	return t.LockdownCall.Returns.Error
 }

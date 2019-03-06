@@ -29,6 +29,7 @@ type terraformManager interface {
 	Validate(storage.State) (storage.State, error)
 	Destroy(storage.State) (storage.State, error)
 	IsPaved() (bool, error)
+	Lockdown(storage.State) error
 }
 
 type boshManager interface {

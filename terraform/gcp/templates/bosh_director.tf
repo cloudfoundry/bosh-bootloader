@@ -14,14 +14,14 @@ resource "google_compute_subnetwork" "bbl-subnet" {
   network       = "${google_compute_network.bbl-network.self_link}"
 }
 
-resource "google_compute_firewall" "external" {
-  name    = "${var.env_id}-external"
+resource "google_compute_firewall" "external-ssh" {
+  name    = "${var.env_id}-external-ssh"
   network = "${google_compute_network.bbl-network.name}"
 
   source_ranges = ["0.0.0.0/0"]
 
   allow {
-    ports    = ["22", "6868", "25555"]
+    ports    = ["22"]
     protocol = "tcp"
   }
 

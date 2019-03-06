@@ -49,13 +49,14 @@ var _ = Describe("Up", func() {
 
 	Describe("Execute", func() {
 		var (
-			incomingState       storage.State
-			planState           storage.State
-			planConfig          commands.PlanConfig
-			terraformApplyState storage.State
-			createJumpboxState  storage.State
-			createDirectorState storage.State
-			terraformOutputs    terraform.Outputs
+			incomingState               storage.State
+			planState                   storage.State
+			planConfig                  commands.PlanConfig
+			terraformApplyState         storage.State
+			terraformApplyLockdownState storage.State
+			createJumpboxState          storage.State
+			createDirectorState         storage.State
+			terraformOutputs            terraform.Outputs
 		)
 		BeforeEach(func() {
 			planConfig = commands.PlanConfig{Name: "some-name"}
@@ -67,13 +68,20 @@ var _ = Describe("Up", func() {
 			plan.InitializePlanCall.Returns.State = planState
 
 			terraformApplyState = storage.State{LatestTFOutput: "terraform-apply-call", IAAS: "some-iaas"}
-			terraformManager.ApplyCall.Returns.BBLState = terraformApplyState
+			terraformManager.ApplyCall.Returns = append(terraformManager.ApplyCall.Returns, struct {
+				BBLState storage.State
+				Error    error } {terraformApplyState, nil })
 
 			createJumpboxState = storage.State{LatestTFOutput: "create-jumpbox-call", IAAS: "some-iaas"}
 			boshManager.CreateJumpboxCall.Returns.State = createJumpboxState
 
 			createDirectorState = storage.State{LatestTFOutput: "create-director-call", IAAS: "some-iaas"}
 			boshManager.CreateDirectorCall.Returns.State = createDirectorState
+			
+			terraformApplyLockdownState = storage.State{LatestTFOutput: "terraform-apply-lockdown-call", IAAS: "some-iaas"}
+			terraformManager.ApplyCall.Returns = append(terraformManager.ApplyCall.Returns, struct {
+				BBLState storage.State
+				Error    error } {terraformApplyLockdownState, nil })
 
 			terraformOutputs = terraform.Outputs{
 				Map: map[string]interface{}{
@@ -101,8 +109,9 @@ var _ = Describe("Up", func() {
 
 				Expect(terraformManager.SetupCall.CallCount).To(Equal(0))
 
-				Expect(terraformManager.ApplyCall.CallCount).To(Equal(1))
-				Expect(terraformManager.ApplyCall.Receives.BBLState).To(Equal(incomingState))
+				Expect(terraformManager.ApplyCall.CallCount).To(Equal(2))
+				Expect(terraformManager.ApplyCall.Receives[0].BBLState).To(Equal(incomingState))
+				Expect(terraformManager.ApplyCall.Receives[1].BBLState).To(Equal(createDirectorState))
 				Expect(stateStore.SetCall.Receives[0].State).To(Equal(terraformApplyState))
 
 				Expect(terraformManager.GetOutputsCall.CallCount).To(Equal(1))
@@ -125,7 +134,7 @@ var _ = Describe("Up", func() {
 				Expect(runtimeConfigManager.UpdateCall.CallCount).To(Equal(1))
 				Expect(runtimeConfigManager.UpdateCall.Receives.State).To(Equal(createDirectorState))
 
-				Expect(stateStore.SetCall.CallCount).To(Equal(3))
+				Expect(stateStore.SetCall.CallCount).To(Equal(4))
 			})
 		})
 
@@ -153,8 +162,9 @@ var _ = Describe("Up", func() {
 				Expect(plan.InitializePlanCall.Receives.Plan).To(Equal(planConfig))
 				Expect(plan.InitializePlanCall.Receives.State).To(Equal(incomingState))
 
-				Expect(terraformManager.ApplyCall.CallCount).To(Equal(1))
-				Expect(terraformManager.ApplyCall.Receives.BBLState).To(Equal(planState))
+				Expect(terraformManager.ApplyCall.CallCount).To(Equal(2))
+				Expect(terraformManager.ApplyCall.Receives[0].BBLState).To(Equal(planState))
+				Expect(terraformManager.ApplyCall.Receives[1].BBLState).To(Equal(createDirectorState))
 			})
 		})
 
@@ -172,7 +182,8 @@ var _ = Describe("Up", func() {
 
 			Context("when the terraform manager fails with non terraformManagerError", func() {
 				BeforeEach(func() {
-					terraformManager.ApplyCall.Returns.Error = errors.New("passionfruit")
+					terraformManager.ApplyCall.Returns[0].Error = errors.New("passionfruit")
+					terraformManager.ApplyCall.Returns[1].Error = errors.New("apple")
 				})
 
 				It("returns the error", func() {
@@ -276,8 +287,8 @@ var _ = Describe("Up", func() {
 					partialState = storage.State{
 						LatestTFOutput: "some terraform error",
 					}
-					terraformManager.ApplyCall.Returns.BBLState = partialState
-					terraformManager.ApplyCall.Returns.Error = errors.New("grapefruit")
+					terraformManager.ApplyCall.Returns[0].BBLState = partialState
+					terraformManager.ApplyCall.Returns[0].Error = errors.New("grapefruit")
 				})
 
 				It("saves the bbl state and returns the error", func() {

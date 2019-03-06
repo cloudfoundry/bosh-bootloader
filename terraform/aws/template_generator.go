@@ -31,7 +31,7 @@ func NewTemplateGenerator() TemplateGenerator {
 	}
 }
 
-func (tg TemplateGenerator) Generate(state storage.State) string {
+func (tg TemplateGenerator) Generate(state storage.State, _ bool) string {
 	tmpls := tg.readTemplates()
 	template := strings.Join([]string{tmpls.base, tmpls.iam, tmpls.vpc}, "\n")
 

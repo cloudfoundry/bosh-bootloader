@@ -35,7 +35,7 @@ type InputGenerator interface {
 }
 
 type TemplateGenerator interface {
-	Generate(storage.State) string
+	Generate(storage.State, bool) string
 }
 
 type logger interface {
@@ -79,9 +79,7 @@ func (m Manager) ValidateVersion() error {
 	return nil
 }
 
-func (m Manager) Setup(bblState storage.State) error {
-	m.logger.Step("generating terraform template")
-	template := m.templateGenerator.Generate(bblState)
+func (m Manager) setupTerraformWithTemplate(bblState storage.State, template string) error {
 
 	m.logger.Step("generating terraform variables")
 	input, err := m.inputGenerator.Generate(bblState)
@@ -94,6 +92,13 @@ func (m Manager) Setup(bblState storage.State) error {
 	}
 
 	return m.Init(bblState)
+}
+
+func (m Manager) Setup(bblState storage.State) error {
+	m.logger.Step("generating terraform template")
+	template := m.templateGenerator.Generate(bblState, true)
+
+	return m.setupTerraformWithTemplate(bblState, template)
 }
 
 func (m Manager) Init(bblState storage.State) error {
@@ -160,6 +165,13 @@ func (m Manager) GetOutputs() (Outputs, error) {
 
 func (m Manager) IsPaved() (bool, error) {
 	return m.executor.IsPaved()
+}
+
+func (m Manager) Lockdown(bblState storage.State) (error) {
+	m.logger.Step("generating terraform template")
+	template := m.templateGenerator.Generate(bblState, false)
+
+	return m.setupTerraformWithTemplate(bblState, template)
 }
 
 func readAndReset(buf *bytes.Buffer) string {

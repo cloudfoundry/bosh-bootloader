@@ -14,7 +14,7 @@ type TemplateGenerator struct {
 	}
 }
 
-func (t *TemplateGenerator) Generate(state storage.State) string {
+func (t *TemplateGenerator) Generate(state storage.State, withBootstrap bool) string {
 	t.GenerateCall.CallCount++
 	t.GenerateCall.Receives.State = state
 	return t.GenerateCall.Returns.Template

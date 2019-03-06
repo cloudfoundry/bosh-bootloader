@@ -81,44 +81,85 @@ resource "google_compute_instance_group" "router-lb-2" {
 
 	Describe("Generate", func() {
 		Context("when no lb type is provided", func() {
-			BeforeEach(func() {
-				expectedTemplate = expectTemplate("vars", "bosh_director", "jumpbox")
+			Context("when bootstrap is provided", func() {
+				BeforeEach(func() {
+					expectedTemplate = expectTemplate("vars", "bosh_director", "jumpbox", "bosh_bootstrap")
+				})
+				It("uses the base template", func() {
+					template := templateGenerator.Generate(storage.State{}, true)
+					checkTemplate(template, expectedTemplate)
+				})
 			})
-			It("uses the base template", func() {
-				template := templateGenerator.Generate(storage.State{})
-				checkTemplate(template, expectedTemplate)
+
+			Context("when bootstrap is not provided", func() {
+				BeforeEach(func() {
+					expectedTemplate = expectTemplate("vars", "bosh_director", "jumpbox")
+				})
+				It("uses the base template", func() {
+					template := templateGenerator.Generate(storage.State{}, false)
+					checkTemplate(template, expectedTemplate)
+				})
 			})
 		})
 
 		Context("when a concourse LB is provided", func() {
-			BeforeEach(func() {
-				expectedTemplate = expectTemplate("vars", "bosh_director", "jumpbox", "concourse_lb")
+			JustBeforeEach(func() {
 				state = storage.State{LB: storage.LB{Type: "concourse"}}
 			})
-			It("adds the concourse lb template", func() {
-				template := templateGenerator.Generate(state)
-				checkTemplate(template, expectedTemplate)
+
+			Context("when bootstrap is provided", func() {
+				BeforeEach(func() {
+					expectedTemplate = expectTemplate("vars", "bosh_director", "jumpbox", "bosh_bootstrap", "concourse_lb")
+				})
+				It("adds the concourse lb template", func() {
+					template := templateGenerator.Generate(state, true)
+					checkTemplate(template, expectedTemplate)
+				})
+			})
+
+			Context("when bootstrap is not provided", func() {
+				BeforeEach(func() {
+					expectedTemplate = expectTemplate("vars", "bosh_director", "jumpbox", "concourse_lb")
+				})
+				It("adds the concourse lb template", func() {
+					template := templateGenerator.Generate(state, false)
+					checkTemplate(template, expectedTemplate)
+				})
 			})
 		})
 
 		Context("when a CF LB is provided", func() {
-			BeforeEach(func() {
-				expectedTemplate = expectTemplate("vars", "bosh_director", "jumpbox", "cf_lb")
+			JustBeforeEach(func() {
 				expectedTemplate += "\n" + instanceGroups + "\n" + backendService
 				state = storage.State{
 					GCP: storage.GCP{Zones: []string{"z1", "z2", "z3"}},
 					LB:  storage.LB{Type: "cf"},
 				}
 			})
-			It("adds the cf lb template with instance groups and backend service", func() {
-				template := templateGenerator.Generate(state)
-				checkTemplate(template, expectedTemplate)
+
+			Context("when bootstrap is provided", func() {
+				BeforeEach(func() {
+					expectedTemplate = expectTemplate("vars", "bosh_director", "jumpbox", "bosh_bootstrap", "cf_lb")
+				})
+				It("adds the cf lb template with instance groups and backend service", func() {
+					template := templateGenerator.Generate(state, true)
+					checkTemplate(template, expectedTemplate)
+				})
+			})
+
+			Context("when bootstrap is not provided", func() {
+				BeforeEach(func() {
+					expectedTemplate = expectTemplate("vars", "bosh_director", "jumpbox", "cf_lb")
+				})
+				It("adds the cf lb template with instance groups and backend service", func() {
+					template := templateGenerator.Generate(state, false)
+					checkTemplate(template, expectedTemplate)
+				})
 			})
 		})
 
 		Context("when a CF LB is provided with a domain", func() {
-			BeforeEach(func() {
-				expectedTemplate = expectTemplate("vars", "bosh_director", "jumpbox", "cf_lb")
+			JustBeforeEach(func() {
 				dns := expectTemplate("cf_dns")
 				expectedTemplate += "\n" + instanceGroups + "\n" + backendService + "\n" + dns
 
@@ -130,9 +171,25 @@ resource "google_compute_instance_group" "router-lb-2" {
 					},
 				}
 			})
-			It("adds the cf lb template with instance groups and backend service", func() {
-				template := templateGenerator.Generate(state)
-				checkTemplate(template, expectedTemplate)
+
+			Context("when bootstrap is provided", func() {
+				BeforeEach(func() {
+					expectedTemplate = expectTemplate("vars", "bosh_director", "jumpbox", "bosh_bootstrap", "cf_lb")
+				})
+				It("adds the cf lb template with instance groups and backend service", func() {
+					template := templateGenerator.Generate(state, true)
+					checkTemplate(template, expectedTemplate)
+				})
+			})
+
+			Context("when bootstrap is not provided", func() {
+				BeforeEach(func() {
+					expectedTemplate = expectTemplate("vars", "bosh_director", "jumpbox", "cf_lb")
+				})
+				It("adds the cf lb template with instance groups and backend service", func() {
+					template := templateGenerator.Generate(state, false)
+					checkTemplate(template, expectedTemplate)
+				})
 			})
 		})
 	})

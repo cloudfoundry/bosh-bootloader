@@ -32,7 +32,7 @@ func NewTemplateGenerator() TemplateGenerator {
 	}
 }
 
-func (t TemplateGenerator) Generate(state storage.State) string {
+func (t TemplateGenerator) Generate(state storage.State, _ bool) string {
 	tmpls := t.readTemplates()
 
 	template := strings.Join([]string{tmpls.vars, tmpls.resourceGroup, tmpls.network, tmpls.storage, tmpls.networkSecurityGroup, tmpls.output, tmpls.tls}, "\n")

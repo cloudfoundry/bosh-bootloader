@@ -31,7 +31,7 @@ var _ = Describe("TemplateGenerator", func() {
 			})
 
 			It("uses the base template", func() {
-				template := templateGenerator.Generate(storage.State{})
+				template := templateGenerator.Generate(storage.State{}, true)
 				checkTemplate(template, expectedTemplate)
 			})
 		})
@@ -44,7 +44,7 @@ var _ = Describe("TemplateGenerator", func() {
 				}
 			})
 			It("adds the lb subnet and concourse lb to the base template", func() {
-				template := templateGenerator.Generate(storage.State{LB: lb})
+				template := templateGenerator.Generate(storage.State{LB: lb}, true)
 				checkTemplate(template, expectedTemplate)
 			})
 		})
@@ -57,7 +57,7 @@ var _ = Describe("TemplateGenerator", func() {
 				}
 			})
 			It("adds the lb subnet, cf lb, ssl cert and iso seg to the base template", func() {
-				template := templateGenerator.Generate(storage.State{LB: lb})
+				template := templateGenerator.Generate(storage.State{LB: lb}, true)
 				checkTemplate(template, expectedTemplate)
 			})
 		})
@@ -71,7 +71,7 @@ var _ = Describe("TemplateGenerator", func() {
 				}
 			})
 			It("adds the domain", func() {
-				template := templateGenerator.Generate(storage.State{LB: lb})
+				template := templateGenerator.Generate(storage.State{LB: lb}, true)
 				checkTemplate(template, expectedTemplate)
 			})
 		})

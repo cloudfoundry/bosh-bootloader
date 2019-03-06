@@ -12,7 +12,7 @@ func NewTemplateGenerator() TemplateGenerator {
 	return TemplateGenerator{}
 }
 
-func (t TemplateGenerator) Generate(state storage.State) string {
+func (t TemplateGenerator) Generate(state storage.State, _ bool) string {
 	return fmt.Sprint(`
 variable "env_id" {}
 variable "director_internal_ip" {}

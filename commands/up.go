@@ -107,6 +107,21 @@ func (u Up) Execute(args []string, state storage.State) error {
 		return fmt.Errorf("Update runtime config: %s", err)
 	}
 
+	err = u.terraformManager.Lockdown(state)
+	if err != nil {
+		return fmt.Errorf("Lockdown: %s", err)
+	}
+
+	state, err = u.terraformManager.Apply(state)
+	if err != nil {
+		return handleTerraformError(err, state, u.stateStore)
+	}
+
+	err = u.stateStore.Set(state)
+	if err != nil {
+		return fmt.Errorf("Save state after lockdown: %s", err)
+	}
+
 	return nil
 }
 
