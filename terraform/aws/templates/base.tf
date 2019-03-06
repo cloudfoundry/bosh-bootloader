@@ -151,6 +151,10 @@ provider "aws" {
   version = "~> 1.60"
 }
 
+provider "tls" {
+  version = "~> 1.2"
+}
+
 resource "aws_default_security_group" "default_security_group" {
   vpc_id = "${local.vpc_id}"
 }
