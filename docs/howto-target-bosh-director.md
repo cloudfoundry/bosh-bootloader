@@ -5,6 +5,7 @@
 ```
 eval "$(bbl print-env)"
 ```
+**COMMON GOTCHA:** The quotes above are necessary to successfully target the director!
 
 or powershell:
 
