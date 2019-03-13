@@ -18,6 +18,7 @@ Many of these have additional prep steps or specific downstream bosh deployments
 | [cfcr-aws](cfcr-aws/) | Deploy a CFCR with a kubeapi load balancer and aws cloud-provider |
 | [iso-segs-aws](iso-segs-aws/) | Add Isolation Segments |
 | [1-az-aws](1-az-aws/) | Only create resources in a single availability zone |
+| [openvpn-aws](openvpn-aws/) | Create an internet-accessible subnet for use by an [openvpn](https://github.com/dpb587/openvpn-bosh-release) server |
 | [tf-backend-aws](tf-backend-aws/) | Store your terraform state in S3 |
 | [prometheus-lb-aws](prometheus-lb-aws/) | Deploy a dedicated AWS network load balancer for your prometheus cluster |
 | [s3-blobstore-aws](s3-blobstore-aws/) | Create S3 and IAM resources for an external blobstore |
