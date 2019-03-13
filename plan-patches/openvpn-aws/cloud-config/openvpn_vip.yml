@@ -1,0 +1,24 @@
+- path: /networks/-
+  type: replace
+  value:
+    name: vip
+    type: vip
+
+- path: /networks/-
+  type: replace
+  value:
+    name: openvpn
+    subnets:
+    - az: z1
+      cloud_properties:
+        security_groups:
+        - ((openvpn_security_group))
+        subnet: ((openvpn_subnet_id))
+      gateway: 10.0.144.1
+      range: 10.0.144.0/24
+      reserved:
+      - 10.0.144.2-10.0.144.3
+      - 10.0.144.255
+      static:
+      - 10.0.144.190-10.0.144.254
+    type: manual
