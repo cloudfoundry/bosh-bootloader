@@ -81,7 +81,7 @@ func (c Client) RetrieveDNS(url string) string {
 	return parentDomain
 }
 
-// Return the AWS Availability Zones for a given region.
+// RetrieveAZs returns the AWS Availability Zones for a given region.
 func (c Client) RetrieveAZs(region string) ([]string, error) {
 	output, err := c.ec2Client.DescribeAvailabilityZones(&awsec2.DescribeAvailabilityZonesInput{
 		Filters: []*awsec2.Filter{{
@@ -110,7 +110,7 @@ func (c Client) RetrieveAZs(region string) ([]string, error) {
 	return azList, nil
 }
 
-// Return true if the network with the provided name exists.
+// CheckExists returns true if the network with the provided name exists.
 func (c Client) CheckExists(networkName string) (bool, error) {
 	vpcs, err := c.ec2Client.DescribeVpcs(&awsec2.DescribeVpcsInput{
 		Filters: []*awsec2.Filter{{
