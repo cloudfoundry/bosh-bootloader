@@ -57,7 +57,10 @@ resource "aws_lb_target_group" "cf_ssh" {
   vpc_id   = "${local.vpc_id}"
 
   health_check {
-    protocol = "TCP"
+    protocol            = "TCP"
+    healthy_threshold   = 2
+    unhealthy_threshold = 2
+    interval            = 10
   }
 }
 
@@ -151,7 +154,10 @@ resource "aws_lb_target_group" "cf_router_80" {
   vpc_id   = "${local.vpc_id}"
 
   health_check {
-    protocol = "TCP"
+    protocol            = "TCP"
+    healthy_threshold   = 2
+    unhealthy_threshold = 2
+    interval            = 10
   }
 }
 
@@ -162,7 +168,10 @@ resource "aws_lb_target_group" "cf_router_443" {
   vpc_id   = "${local.vpc_id}"
 
   health_check {
-    protocol = "TCP"
+    protocol            = "TCP"
+    healthy_threshold   = 2
+    unhealthy_threshold = 2
+    interval            = 10
   }
 }
 
@@ -257,6 +266,9 @@ resource "aws_lb_target_group" "cf_tcp_router" {
 
   health_check {
     protocol = "TCP"
+    healthy_threshold   = 2
+    unhealthy_threshold = 2
+    interval            = 10
   }
 }
 
