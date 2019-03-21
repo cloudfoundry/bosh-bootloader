@@ -42,12 +42,12 @@ var _ = Describe("up_and_down", func() {
 		boshcli = actors.NewBOSHCLI()
 	})
 
-	AfterEach(func() {
-		By("ensure the director and the jumpbox are destroyed", func() {
-			session := bbl.Down()
-			Eventually(session, bblDownTimeout).Should(gexec.Exit(0))
-		})
-	})
+	//AfterEach(func() {
+	//	By("ensure the director and the jumpbox are destroyed", func() {
+	//		session := bbl.Down()
+	//		Eventually(session, bblDownTimeout).Should(gexec.Exit(0))
+	//	})
+	//})
 
 	It("bbl's up a new bosh director and jumpbox", func() {
 		By("cleaning up any leftovers", func() {
