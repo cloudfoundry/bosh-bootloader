@@ -4,13 +4,13 @@ import "fmt"
 
 type Route struct {
 	client routesClient
-	name string
+	name   string
 }
 
 func NewRoute(client routesClient, name string) Route {
 	return Route{
 		client: client,
-		name: name,
+		name:   name,
 	}
 }
 

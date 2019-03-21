@@ -81,7 +81,7 @@ var _ = Describe("RouteTables", func() {
 						RouteTableId: aws.String("the-route-table-id"),
 						VpcId:        aws.String("the-vpc-id"),
 						Associations: []*awsec2.RouteTableAssociation{{
-							Main: aws.Bool(false),
+							Main:                    aws.Bool(false),
 							RouteTableAssociationId: aws.String("the-association-id"),
 							RouteTableId:            aws.String("the-route-table-id"),
 							SubnetId:                aws.String("the-subnet-id"),

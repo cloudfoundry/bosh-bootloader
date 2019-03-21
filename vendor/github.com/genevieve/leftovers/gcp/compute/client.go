@@ -498,7 +498,7 @@ func (c client) ListRoutes() ([]*gcpcompute.Route, error) {
 
 		token = resp.NextPageToken
 		if token == "" {
-			break;
+			break
 		}
 
 		time.Sleep(time.Second)

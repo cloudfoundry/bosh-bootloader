@@ -45,7 +45,7 @@ type Leftovers struct {
 // NewLeftovers returns a new Leftovers for AWS that can be used to list resources,
 // list types, or delete resources for the provided account. It returns an error
 // if the credentials provided are invalid.
-func NewLeftovers(logger logger, accessKeyId, secretAccessKey, region string) (Leftovers, error) {
+func NewLeftovers(logger logger, accessKeyId, secretAccessKey, sessionToken, region string) (Leftovers, error) {
 	if accessKeyId == "" {
 		return Leftovers{}, errors.New("Missing aws access key id.")
 	}
@@ -59,7 +59,7 @@ func NewLeftovers(logger logger, accessKeyId, secretAccessKey, region string) (L
 	}
 
 	config := &awslib.Config{
-		Credentials: credentials.NewStaticCredentials(accessKeyId, secretAccessKey, ""),
+		Credentials: credentials.NewStaticCredentials(accessKeyId, secretAccessKey, sessionToken),
 		Region:      awslib.String(region),
 	}
 	sess := session.New(config)
