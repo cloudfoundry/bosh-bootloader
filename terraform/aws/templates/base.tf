@@ -1,24 +1,13 @@
-variable "nat_ami_map" {
-  type = "map"
+provider "aws" {
+  access_key = "${var.access_key}"
+  secret_key = "${var.secret_key}"
+  region     = "${var.region}"
 
-  default = {
-    ap-northeast-1 = "ami-0cf78ae724f63bac0"
-    ap-northeast-2 = "ami-08cfa02141f9e9bee"
-    ap-south-1     = "ami-0aba92643213491b9"
-    ap-southeast-1 = "ami-0cf24653bcf894797"
-    ap-southeast-2 = "ami-00c1445796bc0a29f"
-    ca-central-1   = "ami-b61b96d2"
-    eu-central-1   = "ami-06465d49ba60cf770"
-    eu-west-1      = "ami-0ea87e2bfa81ca08a"
-    eu-west-2      = "ami-e6768381"
-    eu-west-3      = "ami-0050bb60cea70c5b3"
-    sa-east-1      = "ami-09c013530239687aa"
-    us-east-1      = "ami-0422d936d535c63b1"
-    us-east-2      = "ami-0f9c61b5a562a16af"
-    us-gov-west-1  = "ami-c177eba0"
-    us-west-1      = "ami-0d4027d2cdbca669d"
-    us-west-2      = "ami-40d1f038"
-  }
+  version = "~> 1.60"
+}
+
+provider "tls" {
+  version = "~> 1.2"
 }
 
 variable "access_key" {
@@ -123,13 +112,9 @@ resource "aws_security_group_rule" "nat_udp_rule" {
   source_security_group_id = "${aws_security_group.internal_security_group.id}"
 }
 
-resource "aws_instance" "nat" {
-  private_ip             = "${cidrhost(aws_subnet.bosh_subnet.cidr_block, 7)}"
-  instance_type          = "t3.medium"
-  subnet_id              = "${aws_subnet.bosh_subnet.id}"
-  source_dest_check      = false
-  ami                    = "${lookup(var.nat_ami_map, var.region)}"
-  vpc_security_group_ids = ["${aws_security_group.nat_security_group.id}"]
+resource "aws_nat_gateway" "nat" {
+  subnet_id     = "${aws_subnet.bosh_subnet.id}"
+  allocation_id = "${aws_eip.nat_eip.id}"
 
   tags {
     Name  = "${var.env_id}-nat"
@@ -138,21 +123,12 @@ resource "aws_instance" "nat" {
 }
 
 resource "aws_eip" "nat_eip" {
-  depends_on = ["aws_internet_gateway.ig"]
-  instance   = "${aws_instance.nat.id}"
-  vpc        = true
-}
+  vpc = true
 
-provider "aws" {
-  access_key = "${var.access_key}"
-  secret_key = "${var.secret_key}"
-  region     = "${var.region}"
-
-  version = "~> 1.60"
-}
-
-provider "tls" {
-  version = "~> 1.2"
+  tags {
+    Name  = "${var.env_id}-nat"
+    EnvID = "${var.env_id}"
+  }
 }
 
 resource "aws_default_security_group" "default_security_group" {
@@ -426,7 +402,7 @@ resource "aws_route_table" "internal_route_table" {
 
 resource "aws_route" "internal_route_table" {
   destination_cidr_block = "0.0.0.0/0"
-  instance_id            = "${aws_instance.nat.id}"
+  nat_gateway_id         = "${aws_nat_gateway.nat.id}"
   route_table_id         = "${aws_route_table.internal_route_table.id}"
 }
 
