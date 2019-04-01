@@ -398,12 +398,11 @@ resource "aws_subnet" "internal_subnets" {
 
 resource "aws_route_table" "internal_route_table" {
   vpc_id = "${local.vpc_id}"
-}
 
-resource "aws_route" "internal_route_table" {
-  destination_cidr_block = "0.0.0.0/0"
-  nat_gateway_id         = "${aws_nat_gateway.nat.id}"
-  route_table_id         = "${aws_route_table.internal_route_table.id}"
+  route {
+    cidr_block     = "0.0.0.0/0"
+    nat_gateway_id = "${aws_nat_gateway.nat.id}"
+  }
 }
 
 resource "aws_route_table_association" "route_internal_subnets" {
