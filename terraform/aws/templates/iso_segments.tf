@@ -50,7 +50,7 @@ resource "aws_lb" "iso_router_lb" {
 }
 
 resource "aws_lb_listener" "iso_router_lb_80" {
-  count = "${var.isolation_segments}"
+  count             = "${var.isolation_segments}"
   load_balancer_arn = "${aws_lb.iso_router_lb.arn}"
   port              = 80
   protocol          = "TCP"
@@ -62,7 +62,7 @@ resource "aws_lb_listener" "iso_router_lb_80" {
 }
 
 resource "aws_lb_listener" "iso_router_lb_443" {
-  count = "${var.isolation_segments}"
+  count             = "${var.isolation_segments}"
   load_balancer_arn = "${aws_lb.iso_router_lb.arn}"
   port              = 443
   protocol          = "TCP"
@@ -74,7 +74,7 @@ resource "aws_lb_listener" "iso_router_lb_443" {
 }
 
 resource "aws_lb_target_group" "iso_router_lb_80" {
-  count = "${var.isolation_segments}"
+  count    = "${var.isolation_segments}"
   name     = "${var.short_env_id}-isotg-80"
   port     = 80
   protocol = "TCP"
@@ -86,7 +86,7 @@ resource "aws_lb_target_group" "iso_router_lb_80" {
 }
 
 resource "aws_lb_target_group" "iso_router_lb_443" {
-  count = "${var.isolation_segments}"
+  count    = "${var.isolation_segments}"
   name     = "${var.short_env_id}-isotg-443"
   port     = 443
   protocol = "TCP"
