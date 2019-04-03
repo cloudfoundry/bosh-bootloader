@@ -396,7 +396,7 @@ resource "aws_subnet" "internal_subnets" {
   }
 }
 
-resource "aws_route_table" "internal_route_table" {
+resource "aws_route_table" "nated_route_table" {
   vpc_id = "${local.vpc_id}"
 
   route {
@@ -408,7 +408,7 @@ resource "aws_route_table" "internal_route_table" {
 resource "aws_route_table_association" "route_internal_subnets" {
   count          = "${length(var.availability_zones)}"
   subnet_id      = "${element(aws_subnet.internal_subnets.*.id, count.index)}"
-  route_table_id = "${aws_route_table.internal_route_table.id}"
+  route_table_id = "${aws_route_table.nated_route_table.id}"
 }
 
 resource "aws_internet_gateway" "ig" {

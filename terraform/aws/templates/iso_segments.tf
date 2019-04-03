@@ -37,7 +37,7 @@ resource "aws_subnet" "iso_subnets" {
 resource "aws_route_table_association" "route_iso_subnets" {
   count          = "${local.iso_az_count}"
   subnet_id      = "${element(aws_subnet.iso_subnets.*.id, count.index)}"
-  route_table_id = "${aws_route_table.internal_route_table.id}"
+  route_table_id = "${aws_route_table.nated_route_table.id}"
 }
 
 resource "aws_lb" "iso_router_lb" {
