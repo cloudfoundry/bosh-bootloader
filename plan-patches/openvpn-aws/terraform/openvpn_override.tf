@@ -22,6 +22,11 @@ resource "aws_route" "openvpn_route_table" {
   route_table_id         = "${aws_route_table.openvpn_route_table.id}"
 }
 
+resource "aws_route_table_association" "openvpn_route_table_association" {
+  subnet_id      = "${aws_subnet.openvpn_subnet.id}"
+  route_table_id = "${aws_route_table.openvpn_route_table.id}"
+}
+
 resource "aws_security_group" "openvpn_security_group" {
   name        = "${var.env_id}-openvpn-security-group"
   description = "OpenVPN"
