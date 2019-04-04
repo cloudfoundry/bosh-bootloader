@@ -28,10 +28,10 @@ It does not create any networks, security groups, or load balancers on vSphere.
     export BBL_VSPHERE_VCENTER_RP
     export BBL_VSPHERE_NETWORK
     export BBL_VSPHERE_VCENTER_DS
-    export BBL_VSPHERE_SUBNET_CIDR
-    export BBL_VSPHERE_VCENTER_DISKS
-    export BBL_VSPHERE_VCENTER_TEMPLATES
-    export BBL_VSPHERE_VCENTER_VMS
+    export BBL_VSPHERE_SUBNET_CIDR         # Subnet to deploy BOSH to, in CIDR format
+    export BBL_VSPHERE_VCENTER_DISKS       # A folder name for disks
+    export BBL_VSPHERE_VCENTER_TEMPLATES   # A folder name for templates
+    export BBL_VSPHERE_VCENTER_VMS         # A folder name for VMs
     ```
 
     or powershell:
