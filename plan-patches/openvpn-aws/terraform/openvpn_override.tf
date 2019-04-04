@@ -16,7 +16,7 @@ resource "aws_route_table" "openvpn_route_table" {
   vpc_id = "${local.vpc_id}"
 }
 
-resource "aws_route" "openvpn_route_table" {
+resource "aws_route" "openvpn_route" {
   destination_cidr_block = "0.0.0.0/0"
   gateway_id             = "${aws_internet_gateway.ig.id}"
   route_table_id         = "${aws_route_table.openvpn_route_table.id}"
