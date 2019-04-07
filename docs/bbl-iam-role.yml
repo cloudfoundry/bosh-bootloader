@@ -1,0 +1,176 @@
+title: BBL
+stage: BETA
+description: Allows BBL to bbl up and destroy
+included_permissions:
+# addresses
+- compute.addresses.get,
+- compute.addresses.list,
+- compute.addresses.create,
+- compute.addresses.use,
+- compute.addresses.delete,
+- compute.globalAddresses.create,
+- compute.globalAddresses.delete,
+- compute.globalAddresses.get,
+- compute.globalAddresses.use,
+
+# backend services
+- compute.backendServices.get,
+- compute.backendServices.list,
+- compute.backendServices.create,
+- compute.backendServices.use,
+- compute.backendServices.delete,
+
+# disk types
+- compute.diskTypes.get,
+
+# disks
+- compute.disks.delete,
+- compute.disks.list,
+- compute.disks.get,
+- compute.disks.createSnapshot,
+- compute.disks.create,
+- compute.disks.use,
+
+# global operations
+- compute.globalOperations.get,
+
+# images
+- compute.images.useReadOnly,
+- compute.images.delete,
+- compute.images.get,
+- compute.images.create,
+
+# instance groups
+- compute.instanceGroups.get,
+- compute.instanceGroups.list,
+- compute.instanceGroups.update,
+- compute.instanceGroups.create,
+- compute.instanceGroups.delete,
+- compute.instanceGroups.use,
+
+# instances
+- compute.instances.setMetadata,
+- compute.instances.setLabels,
+- compute.instances.setTags,
+- compute.instances.reset,
+- compute.instances.start,
+- compute.instances.list,
+- compute.instances.get,
+- compute.instances.delete,
+- compute.instances.create,
+- compute.instances.detachDisk,
+- compute.instances.attachDisk,
+- compute.instances.deleteAccessConfig,
+- compute.instances.addAccessConfig,
+- compute.instances.use,
+
+# machine type
+- compute.machineTypes.get,
+
+# region operations
+- compute.regionOperations.get,
+- compute.regions.get,
+- compute.regions.list,
+
+# zone operations
+- compute.zoneOperations.get,
+- compute.zones.list,
+
+# networks
+- compute.networks.get,
+- compute.networks.list,
+- compute.networks.create,
+- compute.networks.delete,
+- compute.networks.updatePolicy,
+
+# subnetworks
+- compute.subnetworks.get,
+- compute.subnetworks.create,
+- compute.subnetworks.use,
+- compute.subnetworks.useExternalIp,
+- compute.subnetworks.delete,
+
+# snapshots
+- compute.snapshots.delete,
+- compute.snapshots.get,
+- compute.snapshots.create,
+
+# target pool
+- compute.targetPools.list,
+- compute.targetPools.get,
+- compute.targetPools.addInstance,
+- compute.targetPools.removeInstance,
+- compute.targetPools.create,
+- compute.targetPools.delete,
+- compute.targetPools.use,
+
+# Storage services - used when uploading heavy stemcells
+- storage.buckets.create,
+- storage.objects.create,
+
+# firewalls
+- compute.firewalls.create,
+- compute.firewalls.get,
+- compute.firewalls.delete,
+
+# ssl certificates
+- compute.sslCertificates.create,
+- compute.sslCertificates.delete,
+- compute.sslCertificates.get,
+
+# health checks
+- compute.httpHealthChecks.create,
+- compute.httpHealthChecks.delete,
+- compute.httpHealthChecks.get,
+- compute.httpHealthChecks.useReadOnly,
+- compute.healthChecks.create,
+- compute.healthChecks.delete,
+- compute.healthChecks.get,
+- compute.healthChecks.useReadOnly,
+
+# forwarding rules
+- compute.forwardingRules.create,
+- compute.forwardingRules.delete,
+- compute.forwardingRules.get,
+- compute.globalForwardingRules.create,
+- compute.globalForwardingRules.delete,
+- compute.globalForwardingRules.get,
+
+# url maps
+- compute.urlMaps.create,
+- compute.urlMaps.delete,
+- compute.urlMaps.get,
+- compute.urlMaps.use,
+
+# https proxies
+- compute.targetHttpProxies.create,
+- compute.targetHttpProxies.delete,
+- compute.targetHttpProxies.get,
+- compute.targetHttpProxies.use,
+- compute.targetHttpsProxies.create,
+- compute.targetHttpsProxies.delete,
+- compute.targetHttpsProxies.get,
+- compute.targetHttpsProxies.use,
+
+# dns
+- dns.resourceRecordSets.create,
+- dns.resourceRecordSets.delete,
+- dns.resourceRecordSets.list,
+- dns.resourceRecordSets.update,
+- dns.managedZoneOperations.get,
+- dns.managedZoneOperations.list,
+- dns.managedZones.create,
+- dns.managedZones.delete,
+- dns.managedZones.get,
+- dns.managedZones.list,
+- dns.managedZones.update,
+- dns.changes.create,
+- dns.changes.get,
+- dns.changes.list,
+- dns.dnsKeys.get,
+- dns.dnsKeys.list,
+
+# routes
+- compute.routes.get,
+- compute.routes.delete,
+- compute.routes.create,

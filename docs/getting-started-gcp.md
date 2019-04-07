@@ -23,6 +23,16 @@ gcloud iam service-accounts keys create --iam-account='<service account name>@<p
 gcloud projects add-iam-policy-binding <project id> --member='serviceAccount:<service account name>@<project id>.iam.gserviceaccount.com' --role='roles/editor'
 ```
 
+### (Optional) Create a Custom GCP Cloud IAM Role for BBL
+
+Optionally, a [custom IAM role](https://cloud.google.com/iam/docs/understanding-roles#custom_roles) can be created with a set of minimum permissions
+rather than using the [primitive role](https://cloud.google.com/iam/docs/understanding-roles#primitive_role_definitions) definition of `roles/editor`.
+
+The [bbl-iam-role.yml](bbl-iam-role.yml) can be used to create the `bbl` IAM role via the command line.
+See [Creating a custom role using YAML files](https://cloud.google.com/iam/docs/creating-custom-roles#creating_a_custom_role).
+
+Once created, the `add-iam-policy-binding` command above can now substitute `roles/editor` for the custom role definition: `projects/<project id>/roles/BBL`
+
 ## Pave Infrastructure, Create a Jumpbox, and Create a BOSH Director
 
 1. Export environment variables.
