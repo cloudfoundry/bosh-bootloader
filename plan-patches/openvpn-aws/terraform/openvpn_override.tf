@@ -131,6 +131,42 @@ resource "aws_security_group_rule" "openvpn_bosh_security_group_rule_udp" {
   source_security_group_id = "${aws_security_group.openvpn_security_group.id}"
 }
 
+resource "aws_security_group_rule" "openvpn_security_group_rule_allow_traffic_from_internal_sg_tcp" {
+  security_group_id        = "${aws_security_group.openvpn_security_group.id}"
+  type                     = "ingress"
+  protocol                 = "tcp"
+  from_port                = 0
+  to_port                  = 65535
+  source_security_group_id = "${aws_security_group.internal_security_group.id}"
+}
+
+resource "aws_security_group_rule" "internal_security_group_rule_allow_traffic_from_openvpn_sg_tcp" {
+  security_group_id        = "${aws_security_group.internal_security_group.id}"
+  type                     = "ingress"
+  protocol                 = "TCP"
+  from_port                = 0
+  to_port                  = 65535
+  source_security_group_id = "${aws_security_group.openvpn_security_group.id}"
+}
+
+resource "aws_security_group_rule" "openvpn_security_group_rule_allow_traffic_from_internal_sg_udp" {
+  security_group_id        = "${aws_security_group.openvpn_security_group.id}"
+  type                     = "ingress"
+  protocol                 = "udp"
+  from_port                = 0
+  to_port                  = 65535
+  source_security_group_id = "${aws_security_group.internal_security_group.id}"
+}
+
+resource "aws_security_group_rule" "internal_security_group_rule_allow_traffic_from_openvpn_sg_udp" {
+  security_group_id        = "${aws_security_group.internal_security_group.id}"
+  type                     = "ingress"
+  protocol                 = "udp"
+  from_port                = 0
+  to_port                  = 65535
+  source_security_group_id = "${aws_security_group.openvpn_security_group.id}"
+}
+
 resource "aws_eip" "openvpn_eip" {
   vpc = true
 }
