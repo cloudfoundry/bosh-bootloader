@@ -106,6 +106,7 @@ func (s SSH) Execute(args []string, state storage.State) error {
 		return s.cli.Run([]string{
 			"-tt",
 			"-o", "ServerAliveInterval=300",
+			"o", "IdentitiesOnly=yes",
 			fmt.Sprintf("jumpbox@%s", jumpboxURL),
 			"-i", jumpboxKeyPath,
 		})
@@ -132,6 +133,7 @@ func (s SSH) Execute(args []string, state storage.State) error {
 	err = s.cli.Run([]string{
 		"-T",
 		fmt.Sprintf("jumpbox@%s", jumpboxURL),
+		"o", "IdentitiesOnly=yes",
 		"-i", jumpboxKeyPath,
 		"echo", "host key confirmed",
 	})
@@ -143,6 +145,7 @@ func (s SSH) Execute(args []string, state storage.State) error {
 		"-4",
 		"-D", port,
 		"-nNC",
+		"o", "IdentitiesOnly=yes",
 		fmt.Sprintf("jumpbox@%s", jumpboxURL),
 		"-i", jumpboxKeyPath,
 	})
@@ -164,6 +167,7 @@ func (s SSH) Execute(args []string, state storage.State) error {
 
 	toExecute := []string{
 		"-tt",
+		"o", "IdentitiesOnly=yes",
 		"-o", "StrictHostKeyChecking=no",
 		"-o", "ServerAliveInterval=300",
 		"-o", fmt.Sprintf("ProxyCommand=%s localhost:%s %%h %%p", proxyCommandPrefix, port),
