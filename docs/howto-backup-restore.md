@@ -36,7 +36,7 @@ backup
 ```
 
 Where:
-- `DIRECTOR-IP` is internal (or public) IP of your BOSH Director.  This can be obtained using `bbl director-address` and removing the port.  If your BBL Director's SSH port is not the standard `22` port, you can optionally specify it as so `--host DIRECTOR-IP:PORT`.
+- `DIRECTOR-IP` is internal (or public) IP of your BOSH Director.  This can be obtained using `bbl director-address` and removing the port.
 - `BBR-USERNAME` is the user that BBR uses to SSH onto the Director VM.  For BBL, this is `jumpbox`.
 - `BOSH-DIRECTOR-PRIVATE-KEY-PATH` is the path to your BOSH Director's private key.  The contexts of the BOSH Director's key can be obtained using `bbl director-ssh-key`.
 
