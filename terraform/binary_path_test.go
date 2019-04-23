@@ -1,17 +1,27 @@
 package terraform_test
 
 import (
+	"bytes"
 	"errors"
 	"os"
 	"time"
 
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/terraform"
+	"github.com/gobuffalo/packd"
 	"github.com/gobuffalo/packr/v2"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
+
+type resolveHelper struct {
+	resolveFunc func(string, string) (packd.File, error)
+}
+
+func (r *resolveHelper) Resolve(box string, path string) (packd.File, error) {
+	return r.resolveFunc(box, path)
+}
 
 var _ = Describe("BinaryPath", func() {
 	var (
@@ -27,6 +37,25 @@ var _ = Describe("BinaryPath", func() {
 		fileSystem.ExistsCall.Returns.Bool = false
 		box := packr.New("terraform", "./binary_dist")
 
+		box.DefaultResolver = &resolveHelper{
+			resolveFunc: func(box string, path string) (packd.File, error) {
+				if path == "terraform-mod-time" {
+					fakeModTime, err := packd.NewFile("fake-mod-time", bytes.NewBufferString("1550769688"))
+					if err != nil {
+						return nil, err
+					}
+
+					return fakeModTime, nil
+				}
+
+				fakeTerraform, err := packd.NewFile("fake-terraform", bytes.NewBufferString("my-terraform-binary"))
+				if err != nil {
+					return nil, err
+				}
+
+				return fakeTerraform, nil
+			},
+		}
 		err := box.AddString("terraform", "my-terraform-binary")
 		Expect(err).NotTo(HaveOccurred())
 
@@ -57,22 +86,38 @@ var _ = Describe("BinaryPath", func() {
 	Context("when there is no my-terraform-binary in box", func() {
 		BeforeEach(func() {
 			box := packr.New("a-totally-different-box", "./binary_dist")
+			box.DefaultResolver = &resolveHelper{
+				resolveFunc: func(box string, path string) (packd.File, error) {
+					return nil, errors.New("missing terraform")
+				},
+			}
 
 			binary.Box = box
 		})
 
 		It("returns an error", func() {
 			_, err := binary.BinaryPath()
-			Expect(err).To(MatchError(ContainSubstring("no such file or directory")))
+			Expect(err).To(MatchError(ContainSubstring("missing terraform")))
 		})
 	})
 
 	Context("when there is no terraform-mod-time in box", func() {
 		BeforeEach(func() {
 			box := packr.New("different-box", "./binary_dist")
+			box.DefaultResolver = &resolveHelper{
+				resolveFunc: func(box string, path string) (packd.File, error) {
+					if path == "terraform" {
+						fakeTerraform, err := packd.NewFile("fake-terraform", bytes.NewBuffer([]byte{}))
+						if err != nil {
+							return nil, err
+						}
 
-			err := box.AddString("terraform", "my-terraform-binary")
-			Expect(err).NotTo(HaveOccurred())
+						return fakeTerraform, nil
+					}
+
+					return nil, errors.New("missing terraform-mod-time")
+				},
+			}
 
 			binary.Box = box
 		})
@@ -83,15 +128,14 @@ var _ = Describe("BinaryPath", func() {
 		})
 	})
 
-	Context("when there is no terraform-mod-time in box", func() {
+	Context("when terraform mod time is formatted incorrectly", func() {
 		BeforeEach(func() {
 			box := packr.New("so-many-different-boxes", "./binary_dist")
-
-			err := box.AddString("terraform", "my-terraform-binary")
-			Expect(err).NotTo(HaveOccurred())
-
-			err = box.AddString("terraform-mod-time", "15507 not a valid number 69688")
-			Expect(err).NotTo(HaveOccurred())
+			box.DefaultResolver = &resolveHelper{
+				resolveFunc: func(box string, path string) (packd.File, error) {
+					return packd.NewFile("some-file", bytes.NewBufferString("some-file-contents"))
+				},
+			}
 
 			binary.Box = box
 		})
