@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/aws/aws-sdk-go/service/elbv2"
-
 	"github.com/cloudfoundry/bosh-bootloader/application"
 	"github.com/cloudfoundry/bosh-bootloader/aws"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
@@ -18,6 +16,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/elb"
 )
 
 func NewAWSLBHelper(c acceptance.Config) awsLBHelper {
@@ -37,7 +36,7 @@ func NewAWSLBHelper(c acceptance.Config) awsLBHelper {
 	}
 	return awsLBHelper{
 		client:    client,
-		elbClient: elbv2.New(session.New(elbConfig)),
+		elbClient: elb.New(session.New(elbConfig)),
 	}
 }
 
@@ -47,12 +46,12 @@ func (a awsLBHelper) loadBalancers(vpcName string) []string {
 	vpcID, err := a.client.GetVPC(vpcName)
 	Expect(err).NotTo(HaveOccurred())
 
-	loadBalancerOutput, err := a.elbClient.DescribeLoadBalancers(&elbv2.DescribeLoadBalancersInput{})
+	loadBalancerOutput, err := a.elbClient.DescribeLoadBalancers(&elb.DescribeLoadBalancersInput{})
 	Expect(err).NotTo(HaveOccurred())
 
-	for _, loadBalancer := range loadBalancerOutput.LoadBalancers {
-		if *loadBalancer.VpcId == *vpcID {
-			loadBalancerNames = append(loadBalancerNames, *loadBalancer.LoadBalancerName)
+	for _, lbDescription := range loadBalancerOutput.LoadBalancerDescriptions {
+		if *lbDescription.VPCId == *vpcID {
+			loadBalancerNames = append(loadBalancerNames, *lbDescription.LoadBalancerName)
 		}
 	}
 
@@ -61,7 +60,7 @@ func (a awsLBHelper) loadBalancers(vpcName string) []string {
 
 type awsLBHelper struct {
 	client    aws.Client
-	elbClient *elbv2.ELBV2
+	elbClient *elb.ELB
 }
 
 func (a awsLBHelper) GetLBArgs() []string {
