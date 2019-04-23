@@ -40,61 +40,45 @@ resource "aws_route_table_association" "route_iso_subnets" {
   route_table_id = "${aws_route_table.nated_route_table.id}"
 }
 
-resource "aws_lb" "iso_router_lb" {
-  count                            = "${var.isolation_segments}"
-  name                             = "${var.short_env_id}-iso-router-lb"
-  load_balancer_type               = "network"
-  enable_cross_zone_load_balancing = true
-  internal                         = false
-  subnets                          = ["${aws_subnet.lb_subnets.*.id}"]
-}
+resource "aws_elb" "iso_router_lb" {
+  count = "${var.isolation_segments}"
 
-resource "aws_lb_listener" "iso_router_lb_80" {
-  count             = "${var.isolation_segments}"
-  load_balancer_arn = "${aws_lb.iso_router_lb.arn}"
-  port              = 80
-  protocol          = "TCP"
-
-  default_action {
-    type             = "forward"
-    target_group_arn = "${aws_lb_target_group.iso_router_lb_80.arn}"
-  }
-}
-
-resource "aws_lb_listener" "iso_router_lb_443" {
-  count             = "${var.isolation_segments}"
-  load_balancer_arn = "${aws_lb.iso_router_lb.arn}"
-  port              = 443
-  protocol          = "TCP"
-
-  default_action {
-    type             = "forward"
-    target_group_arn = "${aws_lb_target_group.iso_router_lb_443.arn}"
-  }
-}
-
-resource "aws_lb_target_group" "iso_router_lb_80" {
-  count    = "${var.isolation_segments}"
-  name     = "${var.short_env_id}-isotg-80"
-  port     = 80
-  protocol = "TCP"
-  vpc_id   = "${local.vpc_id}"
+  name                      = "${var.short_env_id}-iso-router-lb"
+  cross_zone_load_balancing = true
 
   health_check {
-    protocol = "TCP"
+    healthy_threshold   = 5
+    unhealthy_threshold = 2
+    interval            = 12
+    target              = "TCP:80"
+    timeout             = 2
   }
-}
 
-resource "aws_lb_target_group" "iso_router_lb_443" {
-  count    = "${var.isolation_segments}"
-  name     = "${var.short_env_id}-isotg-443"
-  port     = 443
-  protocol = "TCP"
-  vpc_id   = "${local.vpc_id}"
-
-  health_check {
-    protocol = "TCP"
+  listener {
+    instance_port     = 80
+    instance_protocol = "http"
+    lb_port           = 80
+    lb_protocol       = "http"
   }
+
+  listener {
+    instance_port      = 80
+    instance_protocol  = "http"
+    lb_port            = 443
+    lb_protocol        = "https"
+    ssl_certificate_id = "${aws_iam_server_certificate.lb_cert.arn}"
+  }
+
+  listener {
+    instance_port      = 80
+    instance_protocol  = "tcp"
+    lb_port            = 4443
+    lb_protocol        = "ssl"
+    ssl_certificate_id = "${aws_iam_server_certificate.lb_cert.arn}"
+  }
+
+  security_groups = ["${aws_security_group.cf_router_lb_security_group.id}"]
+  subnets         = ["${aws_subnet.lb_subnets.*.id}"]
 }
 
 resource "aws_security_group" "iso_security_group" {
@@ -204,14 +188,7 @@ resource "aws_security_group_rule" "nat_to_isolated_cells_rule" {
 }
 
 output "cf_iso_router_lb_name" {
-  value = "${element(concat(aws_lb.iso_router_lb.*.name, list("")), 0)}"
-}
-
-output "cf_iso_router_target_group_names" {
-  value = [
-    "${element(concat(aws_lb_target_group.iso_router_lb_80.*.name, list("")), 0)}",
-    "${element(concat(aws_lb_target_group.iso_router_lb_443.*.name, list("")), 0)}",
-  ]
+  value = "${element(concat(aws_elb.iso_router_lb.*.name, list("")), 0)}"
 }
 
 output "iso_security_group_id" {

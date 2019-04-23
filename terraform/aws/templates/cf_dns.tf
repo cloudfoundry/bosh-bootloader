@@ -50,7 +50,7 @@ resource "aws_route53_record" "wildcard_dns" {
   type    = "CNAME"
   ttl     = 300
 
-  records = ["${aws_lb.cf_router.dns_name}"]
+  records = ["${aws_elb.cf_router_lb.dns_name}"]
 }
 
 resource "aws_route53_record" "ssh" {
@@ -59,7 +59,7 @@ resource "aws_route53_record" "ssh" {
   type    = "CNAME"
   ttl     = 300
 
-  records = ["${aws_lb.cf_ssh.dns_name}"]
+  records = ["${aws_elb.cf_ssh_lb.dns_name}"]
 }
 
 resource "aws_route53_record" "bosh" {
@@ -77,7 +77,7 @@ resource "aws_route53_record" "tcp" {
   type    = "CNAME"
   ttl     = 300
 
-  records = ["${aws_lb.cf_tcp_router.dns_name}"]
+  records = ["${aws_elb.cf_tcp_lb.dns_name}"]
 }
 
 resource "aws_route53_record" "iso" {
@@ -88,5 +88,5 @@ resource "aws_route53_record" "iso" {
   type    = "CNAME"
   ttl     = 300
 
-  records = ["${aws_lb.iso_router_lb.dns_name}"]
+  records = ["${aws_elb.iso_router_lb.dns_name}"]
 }
