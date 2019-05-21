@@ -195,6 +195,10 @@ func (m *Manager) InitializeDirector(state storage.State) error {
 }
 
 func (m *Manager) CleanUpDirector(state storage.State) error {
+	if state.BOSH.IsEmpty() {
+		return nil
+	}
+
 	m.logger.Step("cleaning up director resources")
 
 	boshCLI, err := m.boshCLIProvider.AuthenticatedCLI(

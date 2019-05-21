@@ -21,6 +21,8 @@ function unset_env_vars() {
 }
 
 function main() {
+  unset_env_vars
+
   pushd "${ROOT_DIR}" > /dev/null
     echo "Unit tests"
     ginkgo -p -r -race -randomizeAllSpecs -randomizeSuites -skipPackage acceptance-test ${@}
