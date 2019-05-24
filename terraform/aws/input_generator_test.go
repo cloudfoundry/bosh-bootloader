@@ -43,6 +43,32 @@ var _ = Describe("InputGenerator", func() {
 			})
 		})
 
+		Context("when more than 3 azs are available in the region", func() {
+			It("uses the first 3 azs for availability_zones", func() {
+				awsClient.RetrieveAZsCall.Returns.AZs = []string{"z1", "z2", "z3", "z4"}
+
+				inputs, err := inputGenerator.Generate(storage.State{
+					EnvID: "some-env-id",
+					AWS: storage.AWS{
+						AccessKeyID:     "some-access-key-id",
+						SecretAccessKey: "some-secret-access-key",
+						Region:          "some-region",
+					},
+					LB: storage.LB{
+						Type: "concourse",
+					},
+				})
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(inputs).To(Equal(map[string]interface{}{
+					"env_id":             "some-env-id",
+					"short_env_id":       "some-env-id",
+					"region":             "some-region",
+					"availability_zones": []string{"z1", "z2", "z3"},
+				}))
+			})
+		})
+
 		It("receives BBL state and returns a map of terraform variables", func() {
 			inputs, err := inputGenerator.Generate(storage.State{
 				EnvID: "some-env-id",

@@ -358,8 +358,9 @@ resource "aws_security_group_rule" "bosh_internal_security_rule_udp" {
 }
 
 resource "aws_subnet" "bosh_subnet" {
-  vpc_id     = "${local.vpc_id}"
-  cidr_block = "${cidrsubnet(var.vpc_cidr, 8, 0)}"
+  vpc_id            = "${local.vpc_id}"
+  cidr_block        = "${cidrsubnet(var.vpc_cidr, 8, 0)}"
+  availability_zone = "${element(var.availability_zones, 0)}"
 
   tags {
     Name = "${var.env_id}-bosh-subnet"

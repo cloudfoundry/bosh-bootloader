@@ -81,7 +81,7 @@ func (c Client) RetrieveDNS(url string) string {
 	return parentDomain
 }
 
-// Return the AWS Availability Zones for a given region.
+// Return the AWS Availability Zones for a given region in sorted order.
 func (c Client) RetrieveAZs(region string) ([]string, error) {
 	output, err := c.ec2Client.DescribeAvailabilityZones(&awsec2.DescribeAvailabilityZonesInput{
 		Filters: []*awsec2.Filter{{
