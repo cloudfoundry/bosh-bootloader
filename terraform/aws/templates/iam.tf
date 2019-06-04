@@ -86,7 +86,8 @@ resource "aws_iam_policy" "bosh" {
     },
 	{
 	  "Action": [
-	    "iam:PassRole"
+            "iam:PassRole",
+            "iam:CreateServiceLinkedRole"
 	  ],
 	  "Effect": "Allow",
 	  "Resource": "*"
