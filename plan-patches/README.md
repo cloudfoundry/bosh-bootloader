@@ -1,5 +1,7 @@
 ## Plan Patches
 
+**WARNING: We do not test these configurations as thoroughly as the rest of bosh-bootloader.**
+
 Plan patches can be used to customize the IAAS
 environment and bosh director that is created by
 `bbl up`.
