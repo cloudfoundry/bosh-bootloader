@@ -18,7 +18,6 @@ type awsClient interface {
 }
 
 const terraformNameCharLimit = 18
-const azLimit = 3
 
 func NewInputGenerator(awsClient awsClient) InputGenerator {
 	return InputGenerator{
@@ -30,10 +29,6 @@ func (i InputGenerator) Generate(state storage.State) (map[string]interface{}, e
 	azs, err := i.awsClient.RetrieveAZs(state.AWS.Region)
 	if err != nil {
 		return map[string]interface{}{}, err
-	}
-
-	if len(azs) > azLimit {
-		azs = azs[:len(azs)-1]
 	}
 
 	shortEnvID := state.EnvID

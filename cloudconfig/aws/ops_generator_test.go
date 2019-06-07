@@ -229,16 +229,6 @@ iso_az_subnet_id_mapping:
 
 				Expect(opsYAML).To(MatchYAML(expectedOpsYAML))
 			})
-
-			Context("when more than 3 azs are available in the region", func() {
-				It("returns an ops file that only includes the first 3 azs", func() {
-					availabilityZones.RetrieveAZsCall.Returns.AZs = []string{"us-east-1a", "us-east-1b", "us-east-1c", "us-east-1d"}
-					opsYAML, err := opsGenerator.Generate(incomingState)
-					Expect(err).NotTo(HaveOccurred())
-
-					Expect(opsYAML).To(MatchYAML(expectedOpsYAML))
-				})
-			})
 		})
 
 		Context("when there are cf lbs", func() {

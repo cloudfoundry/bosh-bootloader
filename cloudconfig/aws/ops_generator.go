@@ -74,8 +74,6 @@ type lbCloudProperties struct {
 
 var marshal func(interface{}) ([]byte, error) = yaml.Marshal
 
-const azLimit = 3
-
 func NewOpsGenerator(terraformManager terraformManager, availabilityZones availabilityZones) OpsGenerator {
 	return OpsGenerator{
 		terraformManager:  terraformManager,
@@ -220,10 +218,6 @@ func (o OpsGenerator) generateOps(state storage.State) ([]op, error) {
 	azs, err := o.availabilityZones.RetrieveAZs(state.AWS.Region)
 	if err != nil {
 		return []op{}, fmt.Errorf("Retrieve availability zones: %s", err)
-	}
-
-	if len(azs) > azLimit {
-		azs = azs[:len(azs)-1]
 	}
 
 	for i := range azs {
