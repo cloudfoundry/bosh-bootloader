@@ -50,6 +50,9 @@ type binding struct {
 }
 
 func (s ServiceAccount) removeBindings() error {
+	mutexKV.Lock("shared-policy")
+	defer mutexKV.Unlock("shared-policy")
+
 	p, err := s.client.GetProjectIamPolicy()
 	if err != nil {
 		return fmt.Errorf("Get Project IAM Policy: %s", err)

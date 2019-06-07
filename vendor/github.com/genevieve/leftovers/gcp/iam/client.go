@@ -4,10 +4,13 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/hashicorp/terraform/helper/mutexkv"
 	gcpcrm "google.golang.org/api/cloudresourcemanager/v1"
 	"google.golang.org/api/googleapi"
 	gcpiam "google.golang.org/api/iam/v1"
 )
+
+var mutexKV = mutexkv.NewMutexKV()
 
 type client struct {
 	project string
