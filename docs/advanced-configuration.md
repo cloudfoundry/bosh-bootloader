@@ -27,7 +27,7 @@ bosh create-env \
   -o  ${BBL_STATE_DIR}/bosh-deployment/cpi.yml \
   -o  ${BBL_STATE_DIR}/bosh-deployment/jumpbox-user.yml \
   -o  ${BBL_STATE_DIR}/bosh-deployment/uaa.yml \
-  -o  ${BBL_STATE_DIR}/../shared/bosh-deployment/credhub.yml 
+  -o  ${BBL_STATE_DIR}/../shared/bosh-deployment/credhub.yml
 ```
 
 ### Authoring an ops-file
@@ -52,7 +52,7 @@ bosh create-env \
   -o  ${BBL_STATE_DIR}/../shared/bosh-deployment/credhub.yml
 ```
 ## <a name='terraform'></a>Customizing IaaS Paving with Terraform
-Numerous settings can be reconfigured repeatedly by editing `$BBL_STATE_DIR/vars/terraform.tfvars` or adding a terraform override into  `$BBL_STATE_DIR/terraform/my-cool-template-override.tf`. Some settings, like VPCs, are not able to be changed after initial creation so it may be better to `bbl plan` first before running `bbl up` for the first time.
+Numerous settings can be reconfigured repeatedly by editing `$BBL_STATE_DIR/vars/bbl.tfvars` or adding a terraform override into  `$BBL_STATE_DIR/terraform/my-cool-template-override.tf`. Some settings, like VPCs, are not able to be changed after initial creation so it may be better to `bbl plan` first before running `bbl up` for the first time.
 
 ### Example: adjusting the cidr on AWS
 1. Plan the environment:
@@ -63,7 +63,7 @@ Numerous settings can be reconfigured repeatedly by editing `$BBL_STATE_DIR/vars
     export BBL_AWS_ACCESS_KEY_ID=12345678
     export BBL_AWS_SECRET_ACCESS_KEY=12345678
     bbl plan
-    echo -e "\nvpc_cidr=\"192.168.0.0/20\"" >> vars/terraform.tfvars
+    echo -e "\nvpc_cidr=\"192.168.0.0/20\"" >> vars/bbl.tfvars
     ```
 1. Create the environment:
     ```
@@ -78,4 +78,3 @@ Through operations files and terraform overrides, all sorts of wild modification
 We've used plan patches to [deploy bosh-lite directors on gcp](https://github.com/cloudfoundry/bosh-bootloader/tree/master/plan-patches/bosh-lite-gcp), to deploy CF Isolation Segments on [public](https://github.com/cloudfoundry/bosh-bootloader/tree/master/plan-patches/iso-segs-gcp) [clouds](https://github.com/cloudfoundry/bosh-bootloader/tree/master/plan-patches/iso-segs-aws), and to deploy bosh managed k8s clusters with working cloud-providers using [cfcr](https://github.com/cloudfoundry-incubator/kubo-deployment/tree/master/manifests).
 
 Our plan patches are experimental. They were tested a bit when we wrote them, but we don't continuously integrate against their dependencies or even check if they still work with recent versions of terraform. They should be used with caution. Operators should make sure they understand each modification and its implications before using our patches in their own environments. Regardless, the plan-patches in this repo are great examples of the different ways you can configure bbl to deploy whatever you might need. To see all the plan patches, visit the [Plan Patches README.md](https://github.com/cloudfoundry/bosh-bootloader/tree/master/plan-patches). If you write your own plan patch that gets you what you need, please consider upstreaming it in a PR.
-
