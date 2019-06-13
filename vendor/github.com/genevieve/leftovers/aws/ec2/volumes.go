@@ -2,6 +2,7 @@ package ec2
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
 	awsec2 "github.com/aws/aws-sdk-go/service/ec2"
@@ -39,6 +40,10 @@ func (v Volumes) List(filter string) ([]common.Deletable, error) {
 	var resources []common.Deletable
 	for _, volume := range output.Volumes {
 		r := NewVolume(v.client, volume.VolumeId, volume.State, volume.Tags)
+
+		if !strings.Contains(r.Name(), filter) {
+			continue
+		}
 
 		proceed := v.logger.PromptWithDetails(r.Type(), r.Name())
 		if !proceed {
