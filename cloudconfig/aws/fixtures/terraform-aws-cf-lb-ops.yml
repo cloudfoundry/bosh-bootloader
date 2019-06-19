@@ -3,9 +3,9 @@
   value:
     name: cf-router-network-properties
     cloud_properties:
-      elbs: [((cf_router_lb_name))]
+      lb_target_groups: ((cf_router_target_group_names))
       security_groups:
-      - ((cf_router_lb_internal_security_group))
+      - ((cf_router_security_group))
       - ((internal_security_group))
 
 - type: replace
@@ -13,9 +13,9 @@
   value:
     name: diego-ssh-proxy-network-properties
     cloud_properties:
-      elbs: [((cf_ssh_lb_name))]
+      lb_target_groups: ((cf_ssh_target_group_names))
       security_groups:
-      - ((cf_ssh_lb_internal_security_group))
+      - ((cf_ssh_security_group))
       - ((internal_security_group))
 
 - type: replace
@@ -23,9 +23,9 @@
   value:
     name: cf-tcp-router-network-properties
     cloud_properties:
-      elbs: [((cf_tcp_lb_name))]
+      lb_target_groups: ((cf_tcp_target_group_names))
       security_groups:
-      - ((cf_tcp_lb_internal_security_group))
+      - ((cf_tcp_router_security_group))
       - ((internal_security_group))
 
 - type: replace
@@ -33,9 +33,9 @@
   value:
     name: router-lb
     cloud_properties:
-      elbs: [((cf_router_lb_name))]
+      lb_target_groups: ((cf_router_target_group_names))
       security_groups:
-      - ((cf_router_lb_internal_security_group))
+      - ((cf_router_security_group))
       - ((internal_security_group))
 
 - type: replace
@@ -43,7 +43,7 @@
   value:
     name: ssh-proxy-lb
     cloud_properties:
-      elbs: [((cf_ssh_lb_name))]
+      lb_target_groups: ((cf_ssh_target_group_names))
       security_groups:
-      - ((cf_ssh_lb_internal_security_group))
+      - ((cf_ssh_security_group))
       - ((internal_security_group))
