@@ -11,7 +11,7 @@ variable "iso_to_bosh_ports" {
 
 variable "iso_to_shared_tcp_ports" {
   type    = "list"
-  default = [9090, 9091, 8082, 8300, 8301, 8889, 8443, 3000, 8080, 3457, 9023, 9022, 4222]
+  default = [9090, 9091, 8082, 8300, 8301, 8889, 8443, 3000, 4443, 8080, 3457, 9023, 9022, 4222]
 }
 
 variable "iso_to_shared_udp_ports" {
@@ -73,6 +73,18 @@ resource "aws_lb_listener" "iso_router_lb_443" {
   }
 }
 
+resource "aws_lb_listener" "iso_router_lb_4443" {
+  count = "${var.isolation_segments}"
+  load_balancer_arn = "${aws_lb.iso_router_lb.arn}"
+  port              = 4443
+  protocol          = "TCP"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = "${aws_lb_target_group.iso_router_lb_4443.arn}"
+  }
+}
+
 resource "aws_lb_target_group" "iso_router_lb_80" {
   count    = "${var.isolation_segments}"
   name     = "${var.short_env_id}-isotg-80"
@@ -89,6 +101,18 @@ resource "aws_lb_target_group" "iso_router_lb_443" {
   count    = "${var.isolation_segments}"
   name     = "${var.short_env_id}-isotg-443"
   port     = 443
+  protocol = "TCP"
+  vpc_id   = "${local.vpc_id}"
+
+  health_check {
+    protocol = "TCP"
+  }
+}
+
+resource "aws_lb_target_group" "iso_router_lb_4443" {
+  count = "${var.isolation_segments}"
+  name     = "${var.short_env_id}-isotg-4443"
+  port     = 4443
   protocol = "TCP"
   vpc_id   = "${local.vpc_id}"
 
@@ -211,6 +235,7 @@ output "cf_iso_router_target_group_names" {
   value = [
     "${element(concat(aws_lb_target_group.iso_router_lb_80.*.name, list("")), 0)}",
     "${element(concat(aws_lb_target_group.iso_router_lb_443.*.name, list("")), 0)}",
+    "${element(concat(aws_lb_target_group.iso_router_lb_4443.*.name, list("")), 0)}",
   ]
 }
 
