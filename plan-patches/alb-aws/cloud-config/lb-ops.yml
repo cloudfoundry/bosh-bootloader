@@ -3,5 +3,5 @@
   value:
     lb_target_groups: ((cf_router_target_group_names))
     security_groups:
-    - ((cf_router_security_group))
+    - ((cf_router_lb_internal_security_group))
     - ((internal_security_group))
