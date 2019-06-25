@@ -65,11 +65,31 @@ Numerous settings can be reconfigured repeatedly by editing `$BBL_STATE_DIR/vars
     bbl plan
     echo -e "\nvpc_cidr=\"192.168.0.0/20\"" >> vars/terraform.tfvars
     ```
-1. Create the environment:
+*NOTE*: It's currently not possible to use a smaller subnet size than a /20
+
+2. Create the environment:
     ```
     bbl up
     ```
     That's it. Your director is now at `192.168.0.6`.
+
+### Example: use an already existing VPC
+1. Create vars file:
+    ```
+    mkdir vars
+    echo 'existing_vpc_id="vpc-YOURID132"' >> vars/existing_vpc.tfvars
+    ```
+2. Plan the environment:
+    ```
+    bbl plan
+    ```
+3. Create the environment:
+    ```
+    bbl up
+    ```
+
+If you already have a fitting subnet in that VPC you'd like to use, configure that as well.
+(See example about adjusting CIDR above)
 
 ## <a name='plan-patches'> [Plan Patches](https://github.com/cloudfoundry/bosh-bootloader/tree/master/plan-patches)
 
