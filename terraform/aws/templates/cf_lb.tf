@@ -112,6 +112,13 @@ resource "aws_security_group" "cf_router_lb_security_group" {
     to_port     = 443
   }
 
+  ingress {
+    cidr_blocks = ["0.0.0.0/0"]
+    protocol    = "tcp"
+    from_port   = 4443
+    to_port     = 4443
+  }
+
   egress {
     from_port   = 0
     to_port     = 0
