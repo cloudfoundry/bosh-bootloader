@@ -76,26 +76,17 @@ func gcp(state storage.GCP) error {
 }
 
 func openstack(state storage.OpenStack) error {
-	if state.InternalCidr == "" {
-		return fmt.Errorf(CRED_ERROR, "--openstack-internal-cidr")
-	}
-	if state.ExternalIP == "" {
-		return fmt.Errorf(CRED_ERROR, "--openstack-external-ip")
-	}
 	if state.AuthURL == "" {
 		return fmt.Errorf(CRED_ERROR, "--openstack-auth-url")
 	}
 	if state.AZ == "" {
 		return fmt.Errorf(CRED_ERROR, "--openstack-az")
 	}
-	if state.DefaultKeyName == "" {
-		return fmt.Errorf(CRED_ERROR, "--openstack-default-key-name")
-	}
-	if state.DefaultSecurityGroup == "" {
-		return fmt.Errorf(CRED_ERROR, "--openstack-default-security-group")
-	}
 	if state.NetworkID == "" {
 		return fmt.Errorf(CRED_ERROR, "--openstack-network-id")
+	}
+	if state.NetworkName == "" {
+		return fmt.Errorf(CRED_ERROR, "--openstack-network-name")
 	}
 	if state.Username == "" {
 		return fmt.Errorf(CRED_ERROR, "--openstack-username")
@@ -111,9 +102,6 @@ func openstack(state storage.OpenStack) error {
 	}
 	if state.Region == "" {
 		return fmt.Errorf(CRED_ERROR, "--openstack-region")
-	}
-	if state.PrivateKey == "" {
-		return fmt.Errorf(CRED_ERROR, "--openstack-private-key")
 	}
 	return nil
 }
@@ -143,8 +131,8 @@ func vsphere(state storage.VSphere) error {
 	if state.Network == "" {
 		return fmt.Errorf(CRED_ERROR, "--vsphere-network")
 	}
-	if state.Subnet == "" {
-		return fmt.Errorf(CRED_ERROR, "--vsphere-subnet")
+	if state.SubnetCIDR == "" {
+		return fmt.Errorf(CRED_ERROR, "--vsphere-subnet-cidr")
 	}
 	return nil
 }

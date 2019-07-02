@@ -1,18 +1,32 @@
 #!/bin/bash -eu
 
+ROOT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
+
+source $ROOT_DIR/scripts/create_mod
+
+function cleanup_terraform() {
+  rm -rf ${ROOT_DIR}/terraform/binary_dist/terraform
+}
+
 function main() {
-  local root_dir
-  root_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
+  trap "cleanup_terraform" INT TERM EXIT
+
+  if [[ ! -f "${ROOT_DIR}/terraform/binary_dist/terraform" ]]; then
+    echo "missing required terraform binary in binary_dist"
+    exit 127
+  fi
 
   local parallelFlag
-  if [ "${BBL_IAAS}" == "aws" ]; then
+  if [[ "${BBL_IAAS}" == "aws" ]]; then
     parallelFlag=""
   else
     parallelFlag="-p"
   fi
 
-  pushd "${root_dir}/acceptance-tests" > /dev/null
+  pushd "${ROOT_DIR}/acceptance-tests" > /dev/null
+    create_mod
     ginkgo -r -v ${parallelFlag} -race -failFast -randomizeAllSpecs -randomizeSuites -skipPackage no-iaas
+    cleanup_mod
   popd > /dev/null
 }
 

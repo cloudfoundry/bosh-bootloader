@@ -4,23 +4,34 @@ import (
 	"fmt"
 	"time"
 
+	gcpcrm "google.golang.org/api/cloudresourcemanager/v1"
 	"google.golang.org/api/googleapi"
 	gcpiam "google.golang.org/api/iam/v1"
 )
 
+var mutexKV = NewMutexKV()
+
 type client struct {
 	project string
 
-	service         *gcpiam.Service
 	serviceAccounts *gcpiam.ProjectsServiceAccountsService
+	projects        *gcpcrm.ProjectsService
 }
 
-func NewClient(project string, service *gcpiam.Service) client {
+func NewClient(project string, iamService *gcpiam.Service, crmService *gcpcrm.Service) client {
 	return client{
 		project:         project,
-		service:         service,
-		serviceAccounts: service.Projects.ServiceAccounts,
+		serviceAccounts: iamService.Projects.ServiceAccounts,
+		projects:        crmService.Projects,
 	}
+}
+
+func (c client) GetProjectIamPolicy() (*gcpcrm.Policy, error) {
+	return c.projects.GetIamPolicy(c.project, &gcpcrm.GetIamPolicyRequest{}).Do()
+}
+
+func (c client) SetProjectIamPolicy(p *gcpcrm.Policy) (*gcpcrm.Policy, error) {
+	return c.projects.SetIamPolicy(c.project, &gcpcrm.SetIamPolicyRequest{Policy: p}).Do()
 }
 
 // ListServiceAccounts will loop over every page of results

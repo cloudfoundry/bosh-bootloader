@@ -1,5 +1,0 @@
-#!/bin/bash -exu
-
-GOBUILDTAGS="${GOBUILDTAGS:-""}"
-go install -tags="${GOBUILDTAGS}" -ldflags="-X main.Version=$(git rev-parse --short=6 HEAD)" github.com/cloudfoundry/bosh-bootloader/bbl
-bbl "${@:-"-v"}"

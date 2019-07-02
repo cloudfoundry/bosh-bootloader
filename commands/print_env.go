@@ -1,8 +1,6 @@
 package commands
 
 import (
-	"fmt"
-
 	"github.com/cloudfoundry/bosh-bootloader/fileio"
 	"github.com/cloudfoundry/bosh-bootloader/flags"
 	"github.com/cloudfoundry/bosh-bootloader/renderers"
@@ -106,17 +104,6 @@ func (p PrintEnv) Execute(args []string, state storage.State) error {
 		return err
 	}
 
-	if state.NoDirector {
-		terraformOutputs, err := p.terraformManager.GetOutputs()
-		if err != nil {
-			return err
-		}
-		externalIP := terraformOutputs.GetString("external_ip")
-		variables["BOSH_ENVIRONMENT"] = fmt.Sprintf("https://%s:25555", externalIP)
-		p.renderVariables(renderer, variables)
-		return nil
-	}
-
 	variables["BOSH_CLIENT"] = state.BOSH.DirectorUsername
 	variables["BOSH_CLIENT_SECRET"] = state.BOSH.DirectorPassword
 	variables["BOSH_ENVIRONMENT"] = state.BOSH.DirectorAddress
@@ -151,8 +138,8 @@ func (p PrintEnv) Execute(args []string, state storage.State) error {
 	}
 
 	variables["JUMPBOX_PRIVATE_KEY"] = privateKeyPath
-	variables["BOSH_ALL_PROXY"] = p.allProxyGetter.BoshAllProxy(state.Jumpbox.URL, privateKeyPath)
-	variables["CREDHUB_PROXY"] = p.allProxyGetter.BoshAllProxy(state.Jumpbox.URL, privateKeyPath)
+	variables["BOSH_ALL_PROXY"] = p.allProxyGetter.BoshAllProxy(state.Jumpbox.GetURLWithJumpboxUser(), privateKeyPath)
+	variables["CREDHUB_PROXY"] = p.allProxyGetter.BoshAllProxy(state.Jumpbox.GetURLWithJumpboxUser(), privateKeyPath)
 
 	p.renderVariables(renderer, variables)
 	return nil

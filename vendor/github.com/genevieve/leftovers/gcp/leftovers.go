@@ -19,6 +19,7 @@ import (
 	"github.com/genevieve/leftovers/gcp/sql"
 	"github.com/genevieve/leftovers/gcp/storage"
 	"golang.org/x/oauth2/google"
+	gcpcrm "google.golang.org/api/cloudresourcemanager/v1"
 	gcpcompute "google.golang.org/api/compute/v1"
 	gcpcontainer "google.golang.org/api/container/v1"
 	gcpdns "google.golang.org/api/dns/v1"
@@ -97,11 +98,16 @@ func NewLeftovers(logger logger, keyPath string) (Leftovers, error) {
 	}
 	storageClient := storage.NewClient(p.ProjectId, storageService)
 
+	crmService, err := gcpcrm.New(httpClient)
+	if err != nil {
+		return Leftovers{}, err
+	}
+
 	iamService, err := gcpiam.New(httpClient)
 	if err != nil {
 		return Leftovers{}, err
 	}
-	iamClient := iam.NewClient(p.ProjectId, iamService)
+	iamClient := iam.NewClient(p.ProjectId, iamService, crmService)
 
 	containerService, err := gcpcontainer.New(httpClient)
 	if err != nil {
@@ -142,6 +148,7 @@ func NewLeftovers(logger logger, keyPath string) (Leftovers, error) {
 			compute.NewDisks(client, logger, zones),
 			compute.NewVpnTunnels(client, logger, regions),
 			compute.NewTargetVpnGateways(client, logger, regions),
+			compute.NewRoutes(client, logger),
 			compute.NewSubnetworks(client, logger, regions),
 			compute.NewNetworks(client, logger),
 			compute.NewAddresses(client, logger, regions),
@@ -205,7 +212,7 @@ func (l Leftovers) Delete(filter string) error {
 	return l.asyncDeleter.Run(deletables)
 }
 
-// DeleteType will collect all resources of the provied type that contain
+// DeleteType will collect all resources of the provided type that contain
 // the provided filter in the resource's identifier, prompt
 // you to confirm deletion (if enabled), and delete those
 // that are selected.

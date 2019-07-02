@@ -11,6 +11,7 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/fileio"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
+	"github.com/gobuffalo/packr/v2"
 	"github.com/spf13/afero"
 
 	. "github.com/onsi/ginkgo"
@@ -33,7 +34,7 @@ var _ = Describe("Executor", func() {
 	)
 
 	BeforeEach(func() {
-		fs = &afero.Afero{afero.NewMemMapFs()}
+		fs = &afero.Afero{Fs: afero.NewMemMapFs()}
 		cli = &fakes.BOSHCLI{}
 		cli.RunStub = func(stdout io.Writer, workingDirectory string, args []string) error {
 			stdout.Write([]byte("some-manifest"))
@@ -62,7 +63,14 @@ var _ = Describe("Executor", func() {
 			StateDir: stateDir,
 		}
 
-		executor = bosh.NewExecutor(cli, fs)
+		box := packr.New("some-name", "./deployments")
+		box.AddString("jumpbox-deployment/no-external-ip.yml", "no-ip")
+		box.AddString("jumpbox-deployment/aws/cpi.yml", "vsphere-cpi")
+		box.AddString("jumpbox-deployment/azure/cpi.yml", "azure-cpi")
+		box.AddString("bosh-deployment/vsphere/cpi.yml", "vsphere-cpi")
+		box.AddString("bosh-deployment/LICENSE", "my-license")
+
+		executor = bosh.Executor{CLI: cli, FS: fs, Box: box}
 	})
 
 	Describe("PlanJumpbox", func() {
@@ -72,18 +80,16 @@ var _ = Describe("Executor", func() {
 
 			By("writing bosh-deployment assets to the deployment dir", func() {
 				simplePath := filepath.Join(deploymentDir, "no-external-ip.yml")
-				expectedContents := bosh.MustAsset("vendor/github.com/cppforlife/jumpbox-deployment/no-external-ip.yml")
 
 				contents, err := fs.ReadFile(simplePath)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(contents).To(Equal(expectedContents))
+				Expect(string(contents)).To(Equal("no-ip"))
 
-				nestedPath := filepath.Join(deploymentDir, "vsphere", "cpi.yml")
-				expectedContents = bosh.MustAsset("vendor/github.com/cppforlife/jumpbox-deployment/vsphere/cpi.yml")
+				nestedPath := filepath.Join(deploymentDir, "aws", "cpi.yml")
 
 				contents, err = fs.ReadFile(nestedPath)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(contents).To(Equal(expectedContents))
+				Expect(string(contents)).To(Equal("vsphere-cpi"))
 			})
 
 			By("writing create-env and delete-env scripts", func() {
@@ -136,6 +142,14 @@ var _ = Describe("Executor", func() {
 					"-v", `client_secret="${BBL_AZURE_CLIENT_SECRET}"`,
 					"-v", `tenant_id="${BBL_AZURE_TENANT_ID}"`,
 				}
+
+				By("creating the azure cpi file", func() {
+					simplePath := filepath.Join(deploymentDir, "azure", "cpi.yml")
+
+					contents, err := fs.ReadFile(simplePath)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(string(contents)).To(Equal("azure-cpi"))
+				})
 
 				By("writing the create-env args to a shell script", func() {
 					expectedScript := formatScript("create-env", stateDir, expectedArgs)
@@ -242,17 +256,9 @@ var _ = Describe("Executor", func() {
 					"--vars-store", fmt.Sprintf("%s/jumpbox-vars-store.yml", relativeVarsDir),
 					"--vars-file", fmt.Sprintf("%s/jumpbox-vars-file.yml", relativeVarsDir),
 					"-o", fmt.Sprintf("%s/openstack/cpi.yml", relativeDeploymentDir),
-					"-o", fmt.Sprintf("%s/openstack-keystone-v3-ops.yml", relativeDeploymentDir),
 					"-v", `openstack_username="${BBL_OPENSTACK_USERNAME}"`,
 					"-v", `openstack_password="${BBL_OPENSTACK_PASSWORD}"`,
 				}
-
-				By("writing the keystone v3 ops-file", func() {
-					opsfile, err := fs.ReadFile(fmt.Sprintf("%s/openstack-keystone-v3-ops.yml", deploymentDir))
-					Expect(err).NotTo(HaveOccurred())
-
-					Expect(string(opsfile)).To(ContainSubstring("/openstack/project?"))
-				})
 
 				By("writing the create-env args to a shell script", func() {
 					expectedScript := formatScript("create-env", stateDir, expectedArgs)
@@ -279,18 +285,14 @@ var _ = Describe("Executor", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			simplePath := filepath.Join(deploymentDir, "LICENSE")
-			expectedContents := bosh.MustAsset("vendor/github.com/cloudfoundry/bosh-deployment/LICENSE")
-
 			contents, err := fs.ReadFile(simplePath)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(contents).To(Equal(expectedContents))
+			Expect(string(contents)).To(Equal("my-license"))
 
 			nestedPath := filepath.Join(deploymentDir, "vsphere", "cpi.yml")
-			expectedContents = bosh.MustAsset("vendor/github.com/cloudfoundry/bosh-deployment/vsphere/cpi.yml")
-
 			contents, err = fs.ReadFile(nestedPath)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(contents).To(Equal(expectedContents))
+			Expect(string(contents)).To(Equal("vsphere-cpi"))
 		})
 
 		Context("aws", func() {
@@ -457,7 +459,7 @@ var _ = Describe("Executor", func() {
 		)
 
 		BeforeEach(func() {
-			fs = &afero.Afero{afero.NewOsFs()} // real os fs so we can exec scripts...
+			fs = &afero.Afero{Fs: afero.NewOsFs()} // real os fs so we can exec scripts...
 			cli = &fakes.BOSHCLI{}
 
 			var err error
@@ -466,7 +468,13 @@ var _ = Describe("Executor", func() {
 			stateDir, err = fs.TempDir("", "")
 			Expect(err).NotTo(HaveOccurred())
 
-			executor = bosh.NewExecutor(cli, fs)
+			box := packr.New("another-test", "./deployments")
+
+			executor = bosh.Executor{
+				CLI: cli,
+				FS:  fs,
+				Box: box,
+			}
 
 			dirInput = bosh.DirInput{
 				Deployment: "some-deployment",
@@ -583,8 +591,8 @@ var _ = Describe("Executor", func() {
 					state.IAAS = "gcp"
 					state.GCP = storage.GCP{
 						ServiceAccountKeyPath: "some-service-account-key-path",
-						Zone:      "some-zone",
-						ProjectID: "some-project-id",
+						Zone:                  "some-zone",
+						ProjectID:             "some-project-id",
 					}
 				})
 
@@ -658,7 +666,7 @@ var _ = Describe("Executor", func() {
 		)
 
 		BeforeEach(func() {
-			fs = &afero.Afero{afero.NewOsFs()} // real os fs so we can exec scripts...
+			fs = &afero.Afero{Fs: afero.NewOsFs()} // real os fs so we can exec scripts...
 
 			var err error
 			varsDir, err = fs.TempDir("", "")
@@ -666,7 +674,13 @@ var _ = Describe("Executor", func() {
 			stateDir, err = fs.TempDir("", "")
 			Expect(err).NotTo(HaveOccurred())
 
-			executor = bosh.NewExecutor(cli, fs)
+			box := packr.New("best-test-box", "./deployments")
+
+			executor = bosh.Executor{
+				CLI: cli,
+				FS:  fs,
+				Box: box,
+			}
 
 			dirInput = bosh.DirInput{
 				Deployment: "director",
@@ -814,8 +828,8 @@ var _ = Describe("Executor", func() {
 					state.IAAS = "gcp"
 					state.GCP = storage.GCP{
 						ServiceAccountKeyPath: "some-service-account-key-path",
-						Zone:      "some-zone",
-						ProjectID: "some-project-id",
+						Zone:                  "some-zone",
+						ProjectID:             "some-project-id",
 					}
 				})
 

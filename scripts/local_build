@@ -1,0 +1,17 @@
+#!/bin/bash -exu
+ROOT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
+
+source ${ROOT_DIR}/scripts/create_mod
+
+function main(){
+  cp -f $(which terraform) ${ROOT_DIR}/terraform/binary_dist
+  create_mod
+  pushd ${ROOT_DIR}/bbl > /dev/null
+    ${ROOT_DIR}/scripts/build
+  popd > /dev/null
+
+  printf "\nBuilt binary to ${GOPATH}/bin/bbl. You will probably want to mv it to /usr/local/bin/bbl.\n"
+}
+
+main "$@"
+

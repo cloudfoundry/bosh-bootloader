@@ -1,22 +1,13 @@
-variable "nat_ami_map" {
-  type = "map"
+provider "aws" {
+  access_key = "${var.access_key}"
+  secret_key = "${var.secret_key}"
+  region     = "${var.region}"
 
-  default = {
-    ap-northeast-1 = "ami-10dfc877"
-    ap-northeast-2 = "ami-1a1bc474"
-    ap-south-1     = "ami-74c1861b"
-    ap-southeast-1 = "ami-36af2055"
-    ap-southeast-2 = "ami-1e91817d"
-    ca-central-1   = "ami-12d36a76"
-    eu-central-1   = "ami-9ebe18f1"
-    eu-west-1      = "ami-3a849f5c"
-    eu-west-2      = "ami-21120445"
-    us-east-1      = "ami-d4c5efc2"
-    us-east-2      = "ami-f27b5a97"
-    us-gov-west-1  = "ami-c39610a2"
-    us-west-1      = "ami-b87f53d8"
-    us-west-2      = "ami-8bfce8f2"
-  }
+  version = "~> 1.60"
+}
+
+provider "tls" {
+  version = "~> 1.2"
 }
 
 variable "access_key" {
@@ -121,13 +112,9 @@ resource "aws_security_group_rule" "nat_udp_rule" {
   source_security_group_id = "${aws_security_group.internal_security_group.id}"
 }
 
-resource "aws_instance" "nat" {
-  private_ip             = "${cidrhost(aws_subnet.bosh_subnet.cidr_block, 7)}"
-  instance_type          = "t2.medium"
-  subnet_id              = "${aws_subnet.bosh_subnet.id}"
-  source_dest_check      = false
-  ami                    = "${lookup(var.nat_ami_map, var.region)}"
-  vpc_security_group_ids = ["${aws_security_group.nat_security_group.id}"]
+resource "aws_nat_gateway" "nat" {
+  subnet_id     = "${aws_subnet.bosh_subnet.id}"
+  allocation_id = "${aws_eip.nat_eip.id}"
 
   tags {
     Name  = "${var.env_id}-nat"
@@ -136,17 +123,12 @@ resource "aws_instance" "nat" {
 }
 
 resource "aws_eip" "nat_eip" {
-  depends_on = ["aws_internet_gateway.ig"]
-  instance   = "${aws_instance.nat.id}"
-  vpc        = true
-}
+  vpc = true
 
-provider "aws" {
-  access_key = "${var.access_key}"
-  secret_key = "${var.secret_key}"
-  region     = "${var.region}"
-
-  version = ">= 1.17.0"
+  tags {
+    Name  = "${var.env_id}-nat"
+    EnvID = "${var.env_id}"
+  }
 }
 
 resource "aws_default_security_group" "default_security_group" {
@@ -227,12 +209,12 @@ resource "aws_security_group" "bosh_security_group" {
 }
 
 resource "aws_security_group_rule" "bosh_security_group_rule_tcp_ssh" {
-  security_group_id = "${aws_security_group.bosh_security_group.id}"
-  type              = "ingress"
-  protocol          = "tcp"
-  from_port         = 22
-  to_port           = 22
-  cidr_blocks       = ["${var.bosh_inbound_cidr}"]
+  security_group_id        = "${aws_security_group.bosh_security_group.id}"
+  type                     = "ingress"
+  protocol                 = "tcp"
+  from_port                = 22
+  to_port                  = 22
+  source_security_group_id = "${aws_security_group.jumpbox.id}"
 }
 
 resource "aws_security_group_rule" "bosh_security_group_rule_tcp_bosh_agent" {
@@ -414,20 +396,19 @@ resource "aws_subnet" "internal_subnets" {
   }
 }
 
-resource "aws_route_table" "internal_route_table" {
+resource "aws_route_table" "nated_route_table" {
   vpc_id = "${local.vpc_id}"
-}
 
-resource "aws_route" "internal_route_table" {
-  destination_cidr_block = "0.0.0.0/0"
-  instance_id            = "${aws_instance.nat.id}"
-  route_table_id         = "${aws_route_table.internal_route_table.id}"
+  route {
+    cidr_block     = "0.0.0.0/0"
+    nat_gateway_id = "${aws_nat_gateway.nat.id}"
+  }
 }
 
 resource "aws_route_table_association" "route_internal_subnets" {
   count          = "${length(var.availability_zones)}"
   subnet_id      = "${element(aws_subnet.internal_subnets.*.id, count.index)}"
-  route_table_id = "${aws_route_table.internal_route_table.id}"
+  route_table_id = "${aws_route_table.nated_route_table.id}"
 }
 
 resource "aws_internet_gateway" "ig" {

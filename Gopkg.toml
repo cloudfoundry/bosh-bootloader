@@ -46,3 +46,7 @@
 
 [prune]
   unused-packages = true
+
+[[constraint]]
+  name = "github.com/gobuffalo/packr"
+  version = "2.0.1"

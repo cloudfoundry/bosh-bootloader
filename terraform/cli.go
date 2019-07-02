@@ -25,7 +25,7 @@ func (c CLI) Run(stdout io.Writer, workingDirectory string, args []string) error
 }
 
 func (c CLI) RunWithEnv(stdout io.Writer, workingDirectory string, args []string, extraEnvVars []string) error {
-	path, err := BinaryPath()
+	path, err := NewBinary().BinaryPath()
 	if err != nil {
 		return err
 	}

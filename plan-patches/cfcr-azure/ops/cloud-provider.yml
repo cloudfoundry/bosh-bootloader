@@ -1,0 +1,86 @@
+- type: replace
+  path: /instance_groups/name=master/jobs/-
+  value:
+    name: cloud-provider
+    release: kubo
+    properties:
+      cloud-provider:
+        type: azure
+      cloud-config:
+        aadClientId: ((client_id))
+        aadClientSecret: ((client_secret))
+        cloud: ((azure_cloud_name))
+        location: ((cfcr_location))
+        primaryAvailabilitySetName: ((primary_availability_set))
+        subscriptionId: ((subscription_id))
+        tenantId: ((tenant_id))
+        useInstanceMetadata: true
+        resourceGroup: ((cfcr_resource_group_name))
+        vnetResourceGroup: ((cfcr_vnet_resource_group_name))
+        vnetName: ((cfcr_vnet_name))
+        subnetName: ((cfcr_subnet_name))
+        securityGroupName: ((cfcr_master_security_group))
+        loadBalancerSku: standard
+
+    provides:
+      cloud-provider: {as: master-cloud-provider}
+
+- type: replace
+  path: /instance_groups/name=master/jobs/name=kube-apiserver/consumes?
+  value:
+    cloud-provider: {from: master-cloud-provider}
+
+- type: replace
+  path: /instance_groups/name=master/jobs/name=kube-controller-manager/consumes?
+  value:
+    cloud-provider: {from: master-cloud-provider}
+
+- type: replace
+  path: /instance_groups/name=master/jobs/name=kubernetes-roles/consumes?
+  value:
+    cloud-provider: {from: master-cloud-provider}
+
+- type: replace
+  path: /instance_groups/name=apply-addons/jobs/name=apply-specs/consumes?
+  value:
+    cloud-provider: {from: master-cloud-provider}
+
+- type: replace
+  path: /instance_groups/name=worker/jobs/-
+  value:
+    name: cloud-provider
+    release: kubo
+    properties:
+      cloud-provider:
+        type: azure
+      cloud-config:
+        aadClientId: ((client_id))
+        aadClientSecret: ((client_secret))
+        cloud: ((azure_cloud_name))
+        location: ((cfcr_location))
+        primaryAvailabilitySetName: ((primary_availability_set))
+        subscriptionId: ((subscription_id))
+        tenantId: ((tenant_id))
+        useInstanceMetadata: true
+        resourceGroup: ((cfcr_resource_group_name))
+        vnetResourceGroup: ((cfcr_vnet_resource_group_name))
+        vnetName: ((cfcr_vnet_name))
+        subnetName: ((cfcr_subnet_name))
+        securityGroupName: ((cfcr_master_security_group))
+        loadBalancerSku: standard
+
+    provides:
+      cloud-provider: {as: worker-cloud-provider}
+
+- type: replace
+  path: /instance_groups/name=worker/jobs/name=kubelet/consumes?
+  value:
+    cloud-provider: {from: worker-cloud-provider}
+
+- type: replace
+  path: /instance_groups/name=worker/jobs/name=kubelet/properties/cloud-provider?
+  value: azure
+
+- type: replace
+  path: /instance_groups/name=worker/jobs/name=kube-proxy/properties/cloud-provider?
+  value: azure

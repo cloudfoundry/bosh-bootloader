@@ -1,10 +1,14 @@
 package acceptance_test
 
 import (
+	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
+	"os/user"
+	"path/filepath"
 	"runtime"
 
 	acceptance "github.com/cloudfoundry/bosh-bootloader/acceptance-tests"
@@ -15,27 +19,32 @@ import (
 	"github.com/onsi/gomega/gexec"
 )
 
+const (
+	BBLReleaseURL = "https://github.com/cloudfoundry/bosh-bootloader/releases/download/%s/%s"
+)
+
 var _ = Describe("Upgrade", func() {
 	var (
 		oldBBL  actors.BBL
 		newBBL  actors.BBL
 		boshcli actors.BOSHCLI
 
-		sshSession *gexec.Session
-		f          *os.File
+		sshSession    *gexec.Session
+		f             *os.File
+		configuration acceptance.Config
 	)
 
 	BeforeEach(func() {
 		acceptance.SkipUnless("upgrade")
 
-		configuration, err := acceptance.LoadConfig()
+		var err error
+		configuration, err = acceptance.LoadConfig()
 		Expect(err).NotTo(HaveOccurred())
-
 		var bblBinaryLocation string
 		if runtime.GOOS == "darwin" {
-			bblBinaryLocation = "https://github.com/cloudfoundry/bosh-bootloader/releases/download/v5.11.5/bbl-v5.11.5_osx"
+			bblBinaryLocation = fmt.Sprintf(BBLReleaseURL, "v6.10.54", "bbl-v6.10.54_osx")
 		} else {
-			bblBinaryLocation = "https://github.com/cloudfoundry/bosh-bootloader/releases/download/v5.11.5/bbl-v5.11.5_linux_x86-64"
+			bblBinaryLocation = fmt.Sprintf(BBLReleaseURL, "v6.10.54", "bbl-v6.10.54_linux_x86-64")
 		}
 
 		resp, err := http.Get(bblBinaryLocation)
@@ -108,6 +117,34 @@ var _ = Describe("Upgrade", func() {
 			exists, err := boshcli.DirectorExists(oldBBL.DirectorAddress(), oldBBL.DirectorUsername(), oldBBL.DirectorPassword(), oldBBL.SaveDirectorCA())
 			Expect(err).NotTo(HaveOccurred())
 			Expect(exists).To(BeTrue())
+		})
+
+		By("cleaning out an installation directory holding onto old golang", func() {
+			removeInstallation := func(stateFileName string) {
+				stateJSON, err := ioutil.ReadFile(filepath.Join(configuration.StateFileDir, "vars", stateFileName))
+				Expect(err).NotTo(HaveOccurred())
+
+				var state struct {
+					InstallationID string `json:"installation_id"`
+				}
+
+				err = json.Unmarshal(stateJSON, &state)
+				Expect(err).NotTo(HaveOccurred())
+
+				u, err := user.Current()
+				Expect(err).NotTo(HaveOccurred())
+
+				packageDir := filepath.Join(u.HomeDir, ".bosh", "installations", state.InstallationID, "packages")
+
+				err = os.RemoveAll(packageDir)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = os.Mkdir(packageDir, 0777)
+				Expect(err).NotTo(HaveOccurred())
+			}
+
+			removeInstallation("bosh-state.json")
+			removeInstallation("jumpbox-state.json")
 		})
 
 		By("upgrading to the latest bbl", func() {

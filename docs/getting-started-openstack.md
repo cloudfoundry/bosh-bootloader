@@ -11,47 +11,34 @@ any instances BOSH deploys
 1. A copy of the manifest the BOSH director was deployed with
 1. A basic cloud config
 
-`bbl` creates and maintains the lifecycle of the jumpbox and BOSH director.
-
-It does not create any networks, security groups, or load balancers on OpenStack.
+`bbl` creates and maintains the lifecycle of the OpenStack infrastructure, jumpbox and BOSH director.  
+It creates a network, a router, a floating IP, a key pair, security groups, and
+security group rules on OpenStack.  
+Prerequisite is that an OpenStack project, external network, and user already
+exist.
 
 ## Create a Jumpbox and a BOSH Director
 
 1. Export environment variables.
     ```
     export BBL_IAAS=openstack
-    export BBL_OPENSTACK_INTERNAL_CIDR=
-    export BBL_OPENSTACK_EXTERNAL_IP=
     export BBL_OPENSTACK_AUTH_URL=
     export BBL_OPENSTACK_AZ=
-    export BBL_OPENSTACK_DEFAULT_KEY_NAME=
-    export BBL_OPENSTACK_DEFAULT_SECURITY_GROUP=
-    export BBL_OPENSTACK_NETWORK_ID=
+    export BBL_OPENSTACK_NETWORK_ID=  # external network ID
+    export BBL_OPENSTACK_NETWORK_NAME=  # external network name
     export BBL_OPENSTACK_PASSWORD=
     export BBL_OPENSTACK_USERNAME=
-    export BBL_OPENSTACK_PROJECT=
+    export BBL_OPENSTACK_PROJECT= # same as tenant
     export BBL_OPENSTACK_DOMAIN=
     export BBL_OPENSTACK_REGION=
-    export BBL_OPENSTACK_PRIVATE_KEY=
+
+    # optionally
+    #export BBL_OPENSTACK_CACERT_FILE= # custom CA certificate when communicating over SSL; either path to file or contents of certificate
+    #export BBL_OPENSTACK_INSECURE=  # e.g. "true", default: "false"
+    #export BBL_OPENSTACK_DNS_NAME_SERVERS=  # e.g. "8.8.8.8,9.9.9.9", default: "8.8.8.8"
     ```
 
-    ```powershell
-    $env:BBL_IAAS="openstack"
-    $env:BBL_OPENSTACK_INTERNAL_CIDR=
-    $env:BBL_OPENSTACK_EXTERNAL_IP=
-    $env:BBL_OPENSTACK_AUTH_URL=
-    $env:BBL_OPENSTACK_AZ=
-    $env:BBL_OPENSTACK_DEFAULT_KEY_NAME=
-    $env:BBL_OPENSTACK_DEFAULT_SECURITY_GROUP=
-    $env:BBL_OPENSTACK_NETWORK_ID=
-    $env:BBL_OPENSTACK_PASSWORD=
-    $env:BBL_OPENSTACK_USERNAME=
-    $env:BBL_OPENSTACK_PROJECT=
-    $env:BBL_OPENSTACK_DOMAIN=
-    $env:BBL_OPENSTACK_REGION=
-    $env:BBL_OPENSTACK_PRIVATE_KEY=
-    ```
-1. Create jumpbox and bosh director.
+1. Create OpenStack resources, jumpbox and bosh director.
     ```
     bbl up
     ```

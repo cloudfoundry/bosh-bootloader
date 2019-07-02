@@ -1,0 +1,20 @@
+- type: replace
+  path: /networks/-
+  value:
+    name: cfcr
+    subnets:
+    - azs:
+      - z1
+      - z2
+      - z3
+      gateway: ((cfcr_internal_gw))
+      range: ((cfcr_subnet_cidr))
+      reserved:
+      - ((cfcr_internal_gw))/30
+      cloud_properties:
+        virtual_network_name: ((cfcr_vnet_name))
+        subnet_name: ((cfcr_subnet))
+        security_group:
+          resource_group_name: ((cfcr_resource_group_name))
+          name: ((cfcr_master_security_group))
+    type: dynamic

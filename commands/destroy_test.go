@@ -264,6 +264,20 @@ var _ = Describe("Destroy", func() {
 			})
 		})
 
+		It("invokes bosh clean up", func() {
+			state := storage.State{
+				BOSH: storage.BOSH{
+					DirectorName: "some-director",
+				},
+			}
+
+			err := destroy.Execute([]string{}, state)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(boshManager.CleanUpDirectorCall.CallCount).To(Equal(1))
+			Expect(boshManager.CleanUpDirectorCall.Receives.State).To(Equal(state))
+		})
+
 		It("invokes bosh delete", func() {
 			state := storage.State{
 				BOSH: storage.BOSH{
@@ -356,6 +370,19 @@ var _ = Describe("Destroy", func() {
 				})
 			})
 
+			Context("when bosh clean-up fails", func() {
+				It("returns an error", func() {
+					boshManager.CleanUpDirectorCall.Returns.Error = errors.New("bosh clean-up --all failed")
+
+					err := destroy.Execute([]string{}, storage.State{
+						BOSH: storage.BOSH{
+							DirectorName: "some-director",
+						},
+					})
+					Expect(err).To(MatchError("bosh clean-up --all failed"))
+				})
+			})
+
 			Context("when bosh delete fails", func() {
 				It("returns an error", func() {
 					boshManager.DeleteDirectorCall.Returns.Error = errors.New("bosh delete-env failed")
@@ -439,21 +466,6 @@ var _ = Describe("Destroy", func() {
 						Expect(err).To(MatchError("the following errors occurred:\nfailed to destroy,\nfailed to set state"))
 					})
 				})
-			})
-
-			Context("reentrance", func() {
-				Context("when NoDirector is true", func() {
-					It("does not attempt to delete the bosh director", func() {
-						state.NoDirector = true
-						err := destroy.Execute([]string{}, state)
-						Expect(err).NotTo(HaveOccurred())
-
-						Expect(logger.PrintlnCall.Receives.Message).To(Equal("No BOSH director, skipping..."))
-						Expect(logger.StepCall.Messages).NotTo(ContainElement("destroying bosh director"))
-						Expect(boshManager.DeleteDirectorCall.CallCount).To(Equal(0))
-					})
-				})
-
 			})
 		})
 

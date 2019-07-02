@@ -2,7 +2,7 @@
 
 Steps to deploy cfcr with bbl:
 
-1. Pick a valid IP that's within your BBL_VSPHERE_SUBNET to be the k8s api IP.
+1. Pick a valid IP that's within your BBL_VSPHERE_SUBNET_CIDR to be the k8s api IP.
    IPs 10 or more above the base of your cidr should be safe, but this is highly dependent on if you're going to deploy anything else to this director.
 
    ```bash
@@ -26,16 +26,20 @@ Steps to deploy cfcr with bbl:
     eval "$(bbl print-env)"
     ```
 
-1. `bosh upload-release https://storage.googleapis.com/kubo-public/kubo-release-latest.tgz`
-
-1. `bosh upload-stemcell https://bosh.io/d/stemcells/bosh-vsphere-esxi-ubuntu-xenial-go_agent`
-
 1. export KD as your path to kubo-deployment so you can copy-paste from below if you so desire.
    be careful to check out the manifest that matches the kubo-release you downloaded above.
 
    ```bash
    git clone git@github.com:cloudfoundry-incubator/kubo-deployment.git
    export KD=$(pwd)/kubo-deployment
+   ```
+
+1. `bosh upload-stemcell https://bosh.io/d/stemcells/bosh-vsphere-esxi-ubuntu-xenial-go_agent?v=$(bosh int ${KD}/manifests/cfcr.yml --path=/stemcells/0/version)`
+
+1. Update the cloud config to enable disk UUID:
+
+   ```bash
+   bosh update-config ${KD}/manifests/cloud-config/iaas/vsphere/use-vm-extensions.yml --type=cloud --name=cfcr-diskuuid
    ```
 
 1. Deploy the cfcr manifest. Since vSphere can't provision load balancers for us, we're going to deploy with a single master with a set static IP.
@@ -45,9 +49,9 @@ Steps to deploy cfcr with bbl:
    -o ${KD}/manifests/ops-files/iaas/vsphere/cloud-provider.yml \
    -o ${KD}/manifests/ops-files/misc/single-master.yml \
    -o ${KD}/manifests/ops-files/iaas/vsphere/master-static-ip.yml \
-   -o ${KD}/manifests/ops-files/add-hostname-to-master-certificate.yml
+   -o ${KD}/manifests/ops-files/add-hostname-to-master-certificate.yml \
    -o ${KD}/manifests/ops-files/iaas/vsphere/set-working-dir-no-rp.yml \
-   -o cfcr-ops.yml \
+   -o ${KD}/manifests/ops-files/iaas/vsphere/use-vm-extensions.yml \
    -v kubernetes_master_host="${kubernetes_master_host}" \
    -v api-hostname="${kubernetes_master_host}" \
    -l <(bbl outputs)

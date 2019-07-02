@@ -29,6 +29,7 @@ var _ = Describe("TemplateGenerator", func() {
 			BeforeEach(func() {
 				expectedTemplate = expectTemplate("base", "iam", "vpc")
 			})
+
 			It("uses the base template", func() {
 				template := templateGenerator.Generate(storage.State{})
 				checkTemplate(template, expectedTemplate)

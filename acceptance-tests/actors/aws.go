@@ -105,3 +105,5 @@ func (a awsLBHelper) VerifyBblLBOutput(stdout string) {
 	Expect(stdout).To(MatchRegexp("CF SSH Proxy LB:.*"))
 	Expect(stdout).To(MatchRegexp("CF TCP Router LB:.*"))
 }
+
+func (a awsLBHelper) ConfirmNoStemcellsExist(stemcellIDs []string) {}

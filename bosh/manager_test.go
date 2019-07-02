@@ -3,25 +3,26 @@ package bosh_test
 import (
 	"errors"
 	"io/ioutil"
+	"os"
 
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/cloudfoundry/bosh-bootloader/terraform"
-
-	"github.com/pivotal-cf-experimental/gomegamatchers"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/pivotal-cf-experimental/gomegamatchers"
 )
 
 var _ = Describe("Manager", func() {
 	var (
-		boshExecutor *fakes.BOSHExecutor
-		logger       *fakes.Logger
-		stateStore   *fakes.StateStore
-		sshKeyGetter *fakes.SSHKeyGetter
-		fs           *fakes.FileIO
+		boshExecutor    *fakes.BOSHExecutor
+		logger          *fakes.Logger
+		stateStore      *fakes.StateStore
+		sshKeyGetter    *fakes.SSHKeyGetter
+		fs              *fakes.FileIO
+		boshCLIProvider *fakes.BOSHCLIProvider
+		boshCLI         *fakes.BOSHCLI
 
 		boshManager      *bosh.Manager
 		terraformOutputs terraform.Outputs
@@ -38,14 +39,14 @@ var _ = Describe("Manager", func() {
 		sshKeyGetter = &fakes.SSHKeyGetter{}
 		sshKeyGetter.GetCall.Returns.PrivateKey = "some-jumpbox-private-key"
 		fs = &fakes.FileIO{}
-
+		boshCLIProvider = &fakes.BOSHCLIProvider{}
 		stateStore = &fakes.StateStore{}
 		stateStore.GetVarsDirCall.Returns.Directory = "some-bbl-vars-dir"
 		stateStore.GetStateDirCall.Returns.Directory = "some-state-dir"
 		stateStore.GetDirectorDeploymentDirCall.Returns.Directory = "some-director-deployment-dir"
 		stateStore.GetJumpboxDeploymentDirCall.Returns.Directory = "some-jumpbox-deployment-dir"
 
-		boshManager = bosh.NewManager(boshExecutor, logger, stateStore, sshKeyGetter, fs)
+		boshManager = bosh.NewManager(boshExecutor, logger, stateStore, sshKeyGetter, fs, boshCLIProvider)
 
 		boshVars = `admin_password: some-admin-password
 director_ssl:
@@ -160,7 +161,7 @@ director_ssl:
 					DirectorSSLCA:          "some-ca",
 					DirectorSSLCertificate: "some-certificate",
 					DirectorSSLPrivateKey:  "some-private-key",
-					State: nil,
+					State:                  nil,
 				}))
 			})
 
@@ -344,6 +345,107 @@ director_ssl:
 					It("returns a helpful error", func() {
 						_, err := boshManager.CreateJumpbox(state, terraformOutputs)
 						Expect(err).To(MatchError("Write jumpbox private key: starfruit"))
+					})
+				})
+			})
+		})
+	})
+
+	Describe("CleanUpDirector", func() {
+		BeforeEach(func() {
+			boshCLI = &fakes.BOSHCLI{}
+			boshCLIProvider.AuthenticatedCLICall.Returns.AuthenticatedCLI = boshCLI
+			boshCLIProvider.AuthenticatedCLICall.Returns.Error = nil
+		})
+
+		Context("when there is no bosh director", func() {
+			var state storage.State
+
+			BeforeEach(func() {
+				state = storage.State{}
+			})
+
+			It("does nothing", func() {
+				boshManager.CleanUpDirector(state)
+
+				Expect(logger.StepCall.CallCount).To(Equal(0))
+				Expect(boshCLIProvider.AuthenticatedCLICall.CallCount).To(Equal(0))
+			})
+		})
+
+		Context("when there is a bosh director", func() {
+			var state storage.State
+
+			BeforeEach(func() {
+				state = storage.State{
+					Jumpbox: storage.Jumpbox{
+						URL: "some-jumpbox-url:22",
+					},
+					BOSH: storage.BOSH{
+						DirectorAddress:  "director-address",
+						DirectorUsername: "director-username",
+						DirectorPassword: "director-password",
+						DirectorSSLCA:    "ca-cert",
+					},
+				}
+			})
+
+			It("authenticates the CLI", func() {
+				err := boshManager.CleanUpDirector(state)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(boshCLIProvider.AuthenticatedCLICall.CallCount).To(Equal(1))
+				Expect(boshCLIProvider.AuthenticatedCLICall.Receives.Jumpbox).To(Equal(state.Jumpbox))
+				Expect(boshCLIProvider.AuthenticatedCLICall.Receives.Stderr).To(Equal(os.Stderr))
+				Expect(boshCLIProvider.AuthenticatedCLICall.Receives.DirectorAddress).To(Equal(state.BOSH.DirectorAddress))
+				Expect(boshCLIProvider.AuthenticatedCLICall.Receives.DirectorUsername).To(Equal(state.BOSH.DirectorUsername))
+				Expect(boshCLIProvider.AuthenticatedCLICall.Receives.DirectorPassword).To(Equal(state.BOSH.DirectorPassword))
+				Expect(boshCLIProvider.AuthenticatedCLICall.Receives.DirectorCACert).To(Equal(state.BOSH.DirectorSSLCA))
+			})
+
+			It("runs bosh clean-up --all", func() {
+				err := boshManager.CleanUpDirector(state)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(boshCLI.RunCall.CallCount).To(Equal(1))
+				Expect(boshCLI.RunCall.Receives.Args).To(Equal([]string{"clean-up", "--all"}))
+			})
+
+			It("logs that it is cleaning up the director", func() {
+				err := boshManager.CleanUpDirector(state)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(logger.StepCall.Messages).To(gomegamatchers.ContainSequence([]string{
+					"cleaning up director resources",
+				}))
+			})
+
+			Context("when an error occurs", func() {
+				Context("when the cli fails to authenticate", func() {
+					BeforeEach(func() {
+						boshCLIProvider.AuthenticatedCLICall.Returns.Error = errors.New("failed to authenticate cli")
+					})
+
+					It("returns an error", func() {
+						err := boshManager.CleanUpDirector(state)
+						Expect(err).To(HaveOccurred())
+						Expect(err).To(MatchError("failed to authenticate cli"))
+
+						Expect(boshCLIProvider.AuthenticatedCLICall.CallCount).To(Equal(1))
+					})
+				})
+
+				Context("when bosh clean-up --all fails", func() {
+					BeforeEach(func() {
+						boshCLI.RunCall.Returns.Error = errors.New("failed to run bosh clean-up")
+					})
+
+					It("returns an error", func() {
+						err := boshManager.CleanUpDirector(state)
+						Expect(err).To(HaveOccurred())
+						Expect(err).To(MatchError("failed to run bosh clean-up"))
+
+						Expect(boshCLI.RunCall.CallCount).To(Equal(1))
 					})
 				})
 			})

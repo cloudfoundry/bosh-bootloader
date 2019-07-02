@@ -52,6 +52,7 @@ func (c Client) CheckExists(networkName string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
+
 	if len(networkList.Items) > 0 {
 		return true, nil
 	}

@@ -1,0 +1,10 @@
+#!/bin/bash -exu
+ROOT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
+
+# remove .git dirs so they are not build into
+# final binary
+rm -rf ${ROOT_DIR}/bosh/deployments/bosh-deployment/.git
+rm -rf ${ROOT_DIR}/bosh/deployments/jumpbox-deployment/.git
+
+packr2 install -ldflags="-X main.Version=$(git rev-parse --short=7 HEAD)" github.com/cloudfoundry/bosh-bootloader/bbl
+$GOPATH/bin/bbl "${@:-"-v"}"

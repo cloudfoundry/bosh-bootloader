@@ -161,9 +161,7 @@ var _ = Describe("CertificateValidator", func() {
 		Context("When the certificate is invalid", func() {
 			It("returns an error", func() {
 				err := certificateValidator.ValidatePKCS12(fakeCert, realPassword)
-				expectedErr := multierror.NewMultiError("")
-				expectedErr.Add(fmt.Errorf("failed to parse certificate: pkcs12: error reading P12 data: asn1: structure error: tags don't match (16 vs {class:1 tag:14 length:111 isCompound:true}) {optional:false explicit:false application:false defaultValue:<nil> tag:<nil> stringType:0 timeType:0 set:false omitEmpty:false} pfxPdu @2"))
-				Expect(err).To(Equal(expectedErr))
+				Expect(err.Error()).To(ContainSubstring("failed to parse certificate: pkcs12:"))
 			})
 		})
 	})

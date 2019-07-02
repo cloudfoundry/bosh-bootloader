@@ -20,7 +20,7 @@ variable "internal_gw" {}
 variable "jumpbox_ip" {}
 variable "network_name" {}
 variable "vcenter_cluster" {}
-variable "vsphere_subnet" {}
+variable "vsphere_subnet_cidr" {}
 variable "vcenter_user" {}
 variable "vcenter_password" {}
 variable "vcenter_ip" {}
@@ -31,7 +31,7 @@ variable "vcenter_templates" {}
 variable "vcenter_vms" {}
 variable "vcenter_disks" {}
 
-output "internal_cidr" { value = "${var.vsphere_subnet}" }
+output "internal_cidr" { value = "${var.vsphere_subnet_cidr}" }
 output "internal_gw" { value = "${var.internal_gw}" }
 output "network_name" { value = "${var.network_name}" }
 output "vcenter_cluster" { value = "${var.vcenter_cluster}" }

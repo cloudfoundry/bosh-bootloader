@@ -1,3 +1,0 @@
-- type: replace
-  path: /instance_groups/name=worker/vm_extensions?/-
-  value: cfcr-worker-cloud-properties

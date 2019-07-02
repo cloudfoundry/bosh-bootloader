@@ -2,6 +2,7 @@
 
 ## The easy way: `bbl print-env`
 
+**COMMON GOTCHA:** The quotes are necessary to successfully target the director!
 ```
 eval "$(bbl print-env)"
 ```

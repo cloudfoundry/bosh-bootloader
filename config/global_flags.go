@@ -24,7 +24,7 @@ type GlobalFlags struct {
 	GCPRegion            string `long:"gcp-region"              env:"BBL_GCP_REGION"`
 
 	VSphereNetwork          string `long:"vsphere-network"            env:"BBL_VSPHERE_NETWORK"`
-	VSphereSubnet           string `long:"vsphere-subnet"             env:"BBL_VSPHERE_SUBNET"`
+	VSphereSubnetCIDR       string `long:"vsphere-subnet-cidr"        env:"BBL_VSPHERE_SUBNET_CIDR"`
 	VSphereVCenterCluster   string `long:"vsphere-vcenter-cluster"    env:"BBL_VSPHERE_VCENTER_CLUSTER"`
 	VSphereVCenterDC        string `long:"vsphere-vcenter-dc"         env:"BBL_VSPHERE_VCENTER_DC"`
 	VSphereVCenterDS        string `long:"vsphere-vcenter-ds"         env:"BBL_VSPHERE_VCENTER_DS"`
@@ -36,17 +36,17 @@ type GlobalFlags struct {
 	VSphereVCenterVMs       string `long:"vsphere-vcenter-vms"        env:"BBL_VSPHERE_VCENTER_VMS"`
 	VSphereVCenterTemplates string `long:"vsphere-vcenter-templates"  env:"BBL_VSPHERE_VCENTER_TEMPLATES"`
 
-	OpenStackInternalCidr         string `long:"openstack-internal-cidr"          env:"BBL_OPENSTACK_INTERNAL_CIDR"`
-	OpenStackExternalIP           string `long:"openstack-external-ip"            env:"BBL_OPENSTACK_EXTERNAL_IP"`
-	OpenStackAuthURL              string `long:"openstack-auth-url"               env:"BBL_OPENSTACK_AUTH_URL"`
-	OpenStackAZ                   string `long:"openstack-az"                     env:"BBL_OPENSTACK_AZ"`
-	OpenStackDefaultKeyName       string `long:"openstack-default-key-name"       env:"BBL_OPENSTACK_DEFAULT_KEY_NAME"`
-	OpenStackDefaultSecurityGroup string `long:"openstack-default-security-group" env:"BBL_OPENSTACK_DEFAULT_SECURITY_GROUP"`
-	OpenStackNetworkID            string `long:"openstack-network-id"             env:"BBL_OPENSTACK_NETWORK_ID"`
-	OpenStackPassword             string `long:"openstack-password"               env:"BBL_OPENSTACK_PASSWORD"`
-	OpenStackUsername             string `long:"openstack-username"               env:"BBL_OPENSTACK_USERNAME"`
-	OpenStackProject              string `long:"openstack-project"                env:"BBL_OPENSTACK_PROJECT"`
-	OpenStackDomain               string `long:"openstack-domain"                 env:"BBL_OPENSTACK_DOMAIN"`
-	OpenStackRegion               string `long:"openstack-region"                 env:"BBL_OPENSTACK_REGION"`
-	OpenStackPrivateKey           string `long:"openstack-private-key"            env:"BBL_OPENSTACK_PRIVATE_KEY"`
+	OpenStackAuthURL     string `long:"openstack-auth-url"               env:"BBL_OPENSTACK_AUTH_URL"`
+	OpenStackAZ          string `long:"openstack-az"                     env:"BBL_OPENSTACK_AZ"`
+	OpenStackNetworkID   string `long:"openstack-network-id"             env:"BBL_OPENSTACK_NETWORK_ID"`
+	OpenStackNetworkName string `long:"openstack-network-name"           env:"BBL_OPENSTACK_NETWORK_NAME"`
+	OpenStackPassword    string `long:"openstack-password"               env:"BBL_OPENSTACK_PASSWORD"`
+	OpenStackUsername    string `long:"openstack-username"               env:"BBL_OPENSTACK_USERNAME"`
+	OpenStackProject     string `long:"openstack-project"                env:"BBL_OPENSTACK_PROJECT"`
+	OpenStackDomain      string `long:"openstack-domain"                 env:"BBL_OPENSTACK_DOMAIN"`
+	OpenStackRegion      string `long:"openstack-region"                 env:"BBL_OPENSTACK_REGION"`
+	// optional
+	OpenStackCACertFile     string   `long:"openstack-cacert-file"       env:"BBL_OPENSTACK_CACERT_FILE"`
+	OpenStackInsecure       string   `long:"openstack-insecure"          env:"BBL_OPENSTACK_INSECURE"`
+	OpenStackDNSNameServers []string `long:"openstack-dns-name-server"   env:"BBL_OPENSTACK_DNS_NAME_SERVERS" env-delim:","`
 }

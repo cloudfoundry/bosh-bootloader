@@ -118,14 +118,19 @@ var _ = Describe("Manager", func() {
 
 			Context("when write file fails to write the ops files", func() {
 				BeforeEach(func() {
-					fileIO.WriteFileCall.Returns = []fakes.WriteFileReturn{{
-						Error: errors.New("apple"),
-					}}
+					fileIO.WriteFileCall.Returns = []fakes.WriteFileReturn{
+						{
+							Error: nil,
+						},
+						{
+							Error: errors.New("banana"),
+						},
+					}
 				})
 
 				It("returns an error", func() {
 					err := manager.Initialize(storage.State{})
-					Expect(err).To(MatchError("apple"))
+					Expect(err).To(MatchError("banana"))
 				})
 			})
 		})

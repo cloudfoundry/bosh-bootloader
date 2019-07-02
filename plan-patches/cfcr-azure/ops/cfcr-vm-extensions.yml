@@ -1,0 +1,18 @@
+vm_extensions:
+- cloud_properties:
+    resource_group_name: ((cfcr_resource_group_name))
+    load_balancer:
+      resource_group_name: ((cfcr_resource_group_name))
+      name: ((cfcr_master_loadbalancer_name))
+    security_group:
+      resource_group_name: ((cfcr_resource_group_name))
+      name: ((cfcr_master_security_group))
+  name: ((deployment_name))-master-cloud-properties
+
+- cloud_properties:
+    resource_group_name: ((cfcr_resource_group_name))
+  name: ((deployment_name))-worker-cloud-properties
+
+- cloud_properties:
+    resource_group_name: ((cfcr_resource_group_name))
+  name: ((deployment_name))-apply-addons-cloud-properties

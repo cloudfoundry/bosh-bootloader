@@ -1,0 +1,18 @@
+#!/bin/bash -eu
+ROOT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
+
+function cleanup_mod() {
+  rm -rf ${ROOT_DIR}/terraform/binary_dist/terraform-mod-time
+}
+
+function create_mod() {
+  cleanup_mod
+
+  if uname | grep -q "Darwin"; then
+    mod_fmt="-f %m"
+  else
+    mod_fmt="-c %Y"
+  fi
+
+  stat "${mod_fmt}" "${ROOT_DIR}/terraform/binary_dist/terraform" > "${ROOT_DIR}/terraform/binary_dist/terraform-mod-time"
+}

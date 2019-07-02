@@ -47,6 +47,13 @@ func copyFlagToState(source string, sink *string) {
 	}
 }
 
+func copySliceFlagToState(source []string, sink *[]string) {
+	if source != nil {
+		*sink = make([]string, len(source))
+		copy(*sink, source)
+	}
+}
+
 func copyFlagToStateWithDefault(source string, sink *string, def string) {
 	if source == "" {
 		*sink = def
@@ -56,38 +63,18 @@ func copyFlagToStateWithDefault(source string, sink *string, def string) {
 }
 
 func (m Merger) updateOpenStackState(globalFlags GlobalFlags, state storage.State) (storage.State, error) {
-	copyFlagToState(globalFlags.OpenStackInternalCidr, &state.OpenStack.InternalCidr)
-	copyFlagToState(globalFlags.OpenStackExternalIP, &state.OpenStack.ExternalIP)
 	copyFlagToState(globalFlags.OpenStackAuthURL, &state.OpenStack.AuthURL)
 	copyFlagToState(globalFlags.OpenStackAZ, &state.OpenStack.AZ)
-	copyFlagToState(globalFlags.OpenStackDefaultKeyName, &state.OpenStack.DefaultKeyName)
-	copyFlagToState(globalFlags.OpenStackDefaultSecurityGroup, &state.OpenStack.DefaultSecurityGroup)
 	copyFlagToState(globalFlags.OpenStackNetworkID, &state.OpenStack.NetworkID)
+	copyFlagToState(globalFlags.OpenStackNetworkName, &state.OpenStack.NetworkName)
 	copyFlagToState(globalFlags.OpenStackPassword, &state.OpenStack.Password)
 	copyFlagToState(globalFlags.OpenStackUsername, &state.OpenStack.Username)
 	copyFlagToState(globalFlags.OpenStackProject, &state.OpenStack.Project)
 	copyFlagToState(globalFlags.OpenStackDomain, &state.OpenStack.Domain)
 	copyFlagToState(globalFlags.OpenStackRegion, &state.OpenStack.Region)
-	copyFlagToState(globalFlags.OpenStackRegion, &state.OpenStack.Region)
-
-	if globalFlags.OpenStackPrivateKey != "" {
-		keyFlag := globalFlags.OpenStackPrivateKey
-		if _, err := m.fs.Stat(keyFlag); err != nil {
-			state.OpenStack.PrivateKey = keyFlag
-		} else {
-			absKeyPath, err := filepath.Abs(keyFlag)
-			if err != nil {
-				return storage.State{}, err
-			}
-
-			_, key, err := m.readKey(absKeyPath)
-			if err != nil {
-				return storage.State{}, err
-			}
-
-			state.OpenStack.PrivateKey = key
-		}
-	}
+	copyFlagToState(globalFlags.OpenStackCACertFile, &state.OpenStack.CACertFile)
+	copyFlagToState(globalFlags.OpenStackInsecure, &state.OpenStack.Insecure)
+	copySliceFlagToState(globalFlags.OpenStackDNSNameServers, &state.OpenStack.DNSNameServers)
 
 	return state, nil
 }
@@ -101,7 +88,7 @@ func (m Merger) updateVSphereState(globalFlags GlobalFlags, state storage.State)
 	copyFlagToState(globalFlags.VSphereVCenterCluster, &state.VSphere.VCenterCluster)
 	copyFlagToState(globalFlags.VSphereNetwork, &state.VSphere.Network)
 	copyFlagToState(globalFlags.VSphereVCenterDS, &state.VSphere.VCenterDS)
-	copyFlagToState(globalFlags.VSphereSubnet, &state.VSphere.Subnet)
+	copyFlagToState(globalFlags.VSphereSubnetCIDR, &state.VSphere.SubnetCIDR)
 	copyFlagToStateWithDefault(globalFlags.VSphereVCenterDisks, &state.VSphere.VCenterDisks, globalFlags.VSphereNetwork)
 	copyFlagToStateWithDefault(globalFlags.VSphereVCenterTemplates, &state.VSphere.VCenterTemplates, fmt.Sprintf("%s_templates", globalFlags.VSphereNetwork))
 	copyFlagToStateWithDefault(globalFlags.VSphereVCenterVMs, &state.VSphere.VCenterVMs, fmt.Sprintf("%s_vms", globalFlags.VSphereNetwork))

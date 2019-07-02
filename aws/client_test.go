@@ -346,6 +346,31 @@ var _ = Describe("Client", func() {
 			})
 		})
 
+		Context("when there are multiple nat instances", func() {
+			BeforeEach(func() {
+				ec2Client.DescribeInstancesCall.Returns.Output = &awsec2.DescribeInstancesOutput{
+					Reservations: []*awsec2.Reservation{
+						reservationContainingInstance("test-env-nat"),
+						reservationContainingInstance("test-env-nat"),
+						reservationContainingInstance("NAT"),
+						reservationContainingInstance("bosh/0"),
+					},
+				}
+			})
+
+			It("returns nil", func() {
+				err := client.ValidateSafeToDelete("some-vpc-id", "test-env")
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(ec2Client.DescribeInstancesCall.Receives.Input).To(Equal(&awsec2.DescribeInstancesInput{
+					Filters: []*awsec2.Filter{{
+						Name:   awslib.String("vpc-id"),
+						Values: []*string{awslib.String("some-vpc-id")},
+					}},
+				}))
+			})
+		})
+
 		Describe("failure cases", func() {
 			Context("when the describe instances call fails", func() {
 				BeforeEach(func() {

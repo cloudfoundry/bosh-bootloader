@@ -35,7 +35,7 @@ files within the state directory.
 ### Generate cloud-config template
 After the director VM comes up, `bbl` generates a base cloud-config, based on the IAAS, IAAS region, and chosen load balancer type.
 
-### Map TErraform outputs to BOSH cloud-config vars
+### Map Terraform outputs to BOSH cloud-config vars
 Having generated a base cloud-config template, `bbl` maps Terraform outputs to cloud-config variables. These variables include network and subnetwork names,
 security groups or tags, and CIDR ranges, as well as load balancer target pool names.
 

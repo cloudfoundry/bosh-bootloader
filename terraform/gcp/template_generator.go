@@ -5,7 +5,10 @@ import (
 	"strings"
 
 	"github.com/cloudfoundry/bosh-bootloader/storage"
+	"github.com/gobuffalo/packr/v2"
 )
+
+const templatesPath = "./templates"
 
 type templates struct {
 	vars         string
@@ -16,14 +19,18 @@ type templates struct {
 	concourseLB  string
 }
 
-type TemplateGenerator struct{}
+type TemplateGenerator struct {
+	box *packr.Box
+}
 
 func NewTemplateGenerator() TemplateGenerator {
-	return TemplateGenerator{}
+	return TemplateGenerator{
+		box: packr.New("gcp-templates", templatesPath),
+	}
 }
 
 func (t TemplateGenerator) Generate(state storage.State) string {
-	tmpls := readTemplates()
+	tmpls := t.readTemplates()
 
 	template := strings.Join([]string{tmpls.vars, tmpls.boshDirector, tmpls.jumpbox}, "\n")
 
@@ -72,9 +79,6 @@ func (t TemplateGenerator) GenerateBackendService(zoneList []string) string {
 }
 
 func (t TemplateGenerator) GenerateInstanceGroups(zoneList []string) string {
-	if len(zoneList) > 2 {
-		zoneList = zoneList[:2]
-	}
 	var groups []string
 	for i, zone := range zoneList {
 		groups = append(groups, fmt.Sprintf(`resource "google_compute_instance_group" "router-lb-%[1]d" {
@@ -93,14 +97,37 @@ func (t TemplateGenerator) GenerateInstanceGroups(zoneList []string) string {
 	return strings.Join(groups, "\n")
 }
 
-func readTemplates() templates {
-	tmpls := templates{}
-	tmpls.vars = string(MustAsset("templates/vars.tf"))
-	tmpls.jumpbox = string(MustAsset("templates/jumpbox.tf"))
-	tmpls.boshDirector = string(MustAsset("templates/bosh_director.tf"))
-	tmpls.cfLB = string(MustAsset("templates/cf_lb.tf"))
-	tmpls.cfDNS = string(MustAsset("templates/cf_dns.tf"))
-	tmpls.concourseLB = string(MustAsset("templates/concourse_lb.tf"))
+func (t TemplateGenerator) readTemplates() templates {
+	listings := map[string]string{
+		"vars.tf":          "",
+		"jumpbox.tf":       "",
+		"bosh_director.tf": "",
+		"cf_lb.tf":         "",
+		"cf_dns.tf":        "",
+		"concourse_lb.tf":  "",
+	}
 
-	return tmpls
+	var errors []error
+	for item := range listings {
+		content, err := t.box.FindString(item)
+		if err != nil {
+			errors = append(errors, err)
+			continue
+		}
+
+		listings[item] = content
+	}
+
+	if errors != nil {
+		panic(errors)
+	}
+
+	return templates{
+		vars:         listings["vars.tf"],
+		jumpbox:      listings["jumpbox.tf"],
+		boshDirector: listings["bosh_director.tf"],
+		cfLB:         listings["cf_lb.tf"],
+		cfDNS:        listings["cf_dns.tf"],
+		concourseLB:  listings["concourse_lb.tf"],
+	}
 }

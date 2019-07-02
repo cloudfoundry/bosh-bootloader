@@ -55,6 +55,35 @@ var _ = Describe("Volumes", func() {
 			Expect(items).To(HaveLen(1))
 		})
 
+		Context("when the filter is empty", func() {
+			It("deletes ec2 volumes", func() {
+				items, err := volumes.List("")
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(client.DescribeVolumesCall.CallCount).To(Equal(1))
+				Expect(client.DescribeVolumesCall.Receives.Input.Filters[0].Name).To(Equal(aws.String("status")))
+				Expect(client.DescribeVolumesCall.Receives.Input.Filters[0].Values[0]).To(Equal(aws.String("available")))
+
+				Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(1))
+				Expect(logger.PromptWithDetailsCall.Receives.Type).To(Equal("EC2 Volume"))
+				Expect(logger.PromptWithDetailsCall.Receives.Name).To(Equal("banana (State:available)"))
+
+				Expect(items).To(HaveLen(1))
+			})
+		})
+
+		Context("when the volume name does not contain the filter", func() {
+			It("does not try to delete it", func() {
+				items, err := volumes.List("kiwi")
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(client.DescribeVolumesCall.CallCount).To(Equal(1))
+				Expect(logger.PromptWithDetailsCall.CallCount).To(Equal(0))
+
+				Expect(items).To(HaveLen(0))
+			})
+		})
+
 		Context("when the client fails to list volumes", func() {
 			BeforeEach(func() {
 				client.DescribeVolumesCall.Returns.Error = errors.New("some error")

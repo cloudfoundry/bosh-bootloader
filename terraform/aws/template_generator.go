@@ -4,9 +4,10 @@ import (
 	"strings"
 
 	"github.com/cloudfoundry/bosh-bootloader/storage"
+	"github.com/gobuffalo/packr/v2"
 )
 
-type TemplateGenerator struct{}
+const templatesPath = "./templates"
 
 type templates struct {
 	base           string
@@ -20,12 +21,18 @@ type templates struct {
 	vpc            string
 }
 
+type TemplateGenerator struct {
+	box *packr.Box
+}
+
 func NewTemplateGenerator() TemplateGenerator {
-	return TemplateGenerator{}
+	return TemplateGenerator{
+		box: packr.New("aws-templates", templatesPath),
+	}
 }
 
 func (tg TemplateGenerator) Generate(state storage.State) string {
-	tmpls := readTemplates()
+	tmpls := tg.readTemplates()
 	template := strings.Join([]string{tmpls.base, tmpls.iam, tmpls.vpc}, "\n")
 
 	switch state.LB.Type {
@@ -42,17 +49,43 @@ func (tg TemplateGenerator) Generate(state storage.State) string {
 	return template
 }
 
-func readTemplates() templates {
-	tmpls := templates{}
-	tmpls.base = string(MustAsset("templates/base.tf"))
-	tmpls.iam = string(MustAsset("templates/iam.tf"))
-	tmpls.lbSubnet = string(MustAsset("templates/lb_subnet.tf"))
-	tmpls.concourseLB = string(MustAsset("templates/concourse_lb.tf"))
-	tmpls.sslCertificate = string(MustAsset("templates/ssl_certificate.tf"))
-	tmpls.cfLB = string(MustAsset("templates/cf_lb.tf"))
-	tmpls.cfDNS = string(MustAsset("templates/cf_dns.tf"))
-	tmpls.isoSeg = string(MustAsset("templates/iso_segments.tf"))
-	tmpls.vpc = string(MustAsset("templates/vpc.tf"))
+func (tg TemplateGenerator) readTemplates() templates {
+	listings := map[string]string{
+		"base.tf":            "",
+		"iam.tf":             "",
+		"lb_subnet.tf":       "",
+		"cf_lb.tf":           "",
+		"cf_dns.tf":          "",
+		"concourse_lb.tf":    "",
+		"ssl_certificate.tf": "",
+		"iso_segments.tf":    "",
+		"vpc.tf":             "",
+	}
 
-	return tmpls
+	var errors []error
+	for item := range listings {
+		content, err := tg.box.FindString(item)
+		if err != nil {
+			errors = append(errors, err)
+			continue
+		}
+
+		listings[item] = content
+	}
+
+	if errors != nil {
+		panic(errors)
+	}
+
+	return templates{
+		base:           listings["base.tf"],
+		iam:            listings["iam.tf"],
+		lbSubnet:       listings["lb_subnet.tf"],
+		cfLB:           listings["cf_lb.tf"],
+		cfDNS:          listings["cf_dns.tf"],
+		concourseLB:    listings["concourse_lb.tf"],
+		sslCertificate: listings["ssl_certificate.tf"],
+		isoSeg:         listings["iso_segments.tf"],
+		vpc:            listings["vpc.tf"],
+	}
 }

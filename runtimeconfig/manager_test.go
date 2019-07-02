@@ -20,7 +20,7 @@ var _ = Describe("Manager", func() {
 		manager       runtimeconfig.Manager
 		incomingState storage.State
 
-		fileIO      *fakes.FileIO
+		fileIO      = &fakes.FileIO{}
 		dirProvider *fakes.DirProvider
 	)
 	BeforeEach(func() {

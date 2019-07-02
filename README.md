@@ -43,16 +43,20 @@ $ brew install bbl
 
 ### Managing state
 
-The bbl state directory contains all of the files that were used to create your bosh director. This should be checked in
-to version control, so that you have all the information necessary to later destroy or update this environment at a later
-date.
+The bbl state directory contains all of the files that were used to create your
+bosh director. You will need the entire bbl state in order to update, delete, or
+run bosh commands against the environment, so you should keep it someone anyone
+on your team can access it. However, it is important to note that the bbl state
+directory contains very senstive IAAS credentials, so you should keep it
+somewhere you feel comfortable storing these credentials, such as an encrypted
+bucket.
 
  filename |  contents
 ------------ | -------------
 ``bbl-state.json`` | Environment name, and bbl version metadata
 ``terraform/`` | The terraform templates bbl used to pave your IaaS. See [docs/advanced-configuration](docs/advanced-configuration.md#terraform) for information on modifying this. 
 ``vars/`` | This is where bbl will store environment specific variables. Consider storing this outside of version control.
-``jumpbox-deployment/`` | The latest [jumpbox-deployment](http://github.com/cppforlife/jumpbox-deployment) that has been tested with your version of bbl.
+``jumpbox-deployment/`` | The latest [jumpbox-deployment](http://github.com/cloudfoundry/jumpbox-deployment) that has been tested with your version of bbl.
 ``create-jumpbox.sh`` | The BOSH cli command bbl will use to create your jumpbox.
 ``bosh-deployment/`` | The latest [bosh-deployment](http://github.com/cloudfoundry/bosh-deployment) that has been tested with your version of bbl
 ``create-director.sh`` | The BOSH cli command bbl will use to create your director when you run `bbl up`. See [docs/advanced-configuration](docs/advanced-configuration.md#opsfile) for help with modifying this.
@@ -60,6 +64,13 @@ date.
 ``delete-director.sh`` | The BOSH cli command bbl will use to delete your director.
 ``delete-jumpbox.sh`` | The BOSH cli command bbl will use to delete your jumpbox.
 
+### Troubleshooting
+
+To turn on bbl debugging traces, use `bbl --debug` flag.
+
+To turn on [bosh debugging](https://bosh.io/docs/build-cpi/#debugging) traces, export the `BOSH_LOG_LEVEL=debug` environment variable in the related bbl shell script, such as `create-jumpbox.sh`. 
+ 
+To turn on the cpi traces, override or set cpi configuration, e.g. for vsphere cpi within `jumpbox-deployment/vsphere/cpi.yml` set `http_logging: true` according to [vsphere cpi documentation](https://bosh.io/docs/vsphere-cpi/#global)  
 
 ### Tearing down an environment
 

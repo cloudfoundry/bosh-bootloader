@@ -1,54 +1,67 @@
 package openstack
 
 import (
-	"fmt"
+	"strings"
 
 	"github.com/cloudfoundry/bosh-bootloader/storage"
+	"github.com/gobuffalo/packr/v2"
 )
 
-type TemplateGenerator struct{}
+const templatesPath = "./templates"
+
+type templates struct {
+	providerVars     string
+	provider         string
+	resourcesOutputs string
+	resourcesVars    string
+	resources        string
+}
+
+type TemplateGenerator struct {
+	box *packr.Box
+}
 
 func NewTemplateGenerator() TemplateGenerator {
-	return TemplateGenerator{}
+	return TemplateGenerator{
+		box: packr.New("openstack-templates", templatesPath),
+	}
 }
 
 func (t TemplateGenerator) Generate(state storage.State) string {
-	return fmt.Sprintf(`
-variable "internal_cidr" {}
-variable "internal_gw" {}
-variable "director_internal_ip" {}
-variable "jumpbox_internal_ip" {}
-variable "external_ip" {}
-variable "auth_url" {}
-variable "az" {}
-variable "default_key_name" {}
-variable "default_security_group" {}
-variable "net_id" {}
-variable "openstack_project" {}
-variable "openstack_domain" {}
-variable "region" {}
-variable "env_id" {}
-variable "private_key" {}
-
-output "internal_cidr" { value = "${var.internal_cidr}" }
-output "internal_gw" { value = "${var.internal_gw}" }
-output "external_ip" { value = "${var.external_ip}" }
-output "jumpbox__internal_ip" { value = "${var.jumpbox_internal_ip}" }
-output "jumpbox_url" { value = "${var.external_ip}:22" }
-output "director__internal_ip" { value = "${var.director_internal_ip}" }
-output "auth_url" { value = "${var.auth_url}" }
-output "az" { value = "${var.az}" }
-output "default_key_name" { value = "${var.default_key_name}" }
-output "default_security_groups" { value = ["${var.default_security_group}"] }
-output "net_id" { value = "${var.net_id}" }
-output "openstack_project" { value = "${var.openstack_project}" }
-output "openstack_domain" { value = "${var.openstack_domain}" }
-output "region" { value = "${var.region}" }
-output "env_id" { value = "${var.env_id}" }
-output "director_name" { value = "${var.env_id}" }
-output "private_key" {
-	value     = "${var.private_key}"
-	sensitive = true
+	tmpls := t.readTemplates()
+	template := strings.Join([]string{tmpls.providerVars, tmpls.provider, tmpls.resourcesOutputs, tmpls.resourcesVars, tmpls.resources}, "\n")
+	return template
 }
-`)
+
+func (t TemplateGenerator) readTemplates() templates {
+	listings := map[string]string{
+		"provider-vars.tf":     "",
+		"provider.tf":          "",
+		"resources-outputs.tf": "",
+		"resources-vars.tf":    "",
+		"resources.tf":         "",
+	}
+
+	var errors []error
+	for item := range listings {
+		content, err := t.box.FindString(item)
+		if err != nil {
+			errors = append(errors, err)
+			continue
+		}
+
+		listings[item] = content
+	}
+
+	if errors != nil {
+		panic(errors)
+	}
+
+	return templates{
+		providerVars:     listings["provider-vars.tf"],
+		provider:         listings["provider.tf"],
+		resourcesOutputs: listings["resources-outputs.tf"],
+		resourcesVars:    listings["resources-vars.tf"],
+		resources:        listings["resources.tf"],
+	}
 }

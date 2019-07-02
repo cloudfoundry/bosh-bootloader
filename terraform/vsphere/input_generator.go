@@ -13,11 +13,11 @@ func NewInputGenerator() InputGenerator {
 }
 
 func (i InputGenerator) Generate(state storage.State) (map[string]interface{}, error) {
-	cidr := state.VSphere.Subnet
+	cidr := state.VSphere.SubnetCIDR
 	parsedCIDR, _ := bosh.ParseCIDRBlock(cidr)
 	return map[string]interface{}{
 		"env_id":               state.EnvID,
-		"vsphere_subnet":       cidr,
+		"vsphere_subnet_cidr":  cidr,
 		"jumpbox_ip":           parsedCIDR.GetNthIP(5).String(),
 		"director_internal_ip": parsedCIDR.GetNthIP(6).String(),
 		"internal_gw":          parsedCIDR.GetNthIP(1).String(),

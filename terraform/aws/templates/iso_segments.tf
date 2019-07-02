@@ -11,7 +11,7 @@ variable "iso_to_bosh_ports" {
 
 variable "iso_to_shared_tcp_ports" {
   type    = "list"
-  default = [9090, 9091, 8082, 8300, 8301, 8889, 8443, 3000, 4443, 8080, 3457, 9023, 9022, 4222]
+  default = [9090, 9091, 8082, 8300, 8301, 8889, 8443, 3000, 8080, 3457, 9023, 9022, 4222]
 }
 
 variable "iso_to_shared_udp_ports" {
@@ -37,7 +37,7 @@ resource "aws_subnet" "iso_subnets" {
 resource "aws_route_table_association" "route_iso_subnets" {
   count          = "${local.iso_az_count}"
   subnet_id      = "${element(aws_subnet.iso_subnets.*.id, count.index)}"
-  route_table_id = "${aws_route_table.internal_route_table.id}"
+  route_table_id = "${aws_route_table.nated_route_table.id}"
 }
 
 resource "aws_elb" "iso_router_lb" {

@@ -6,11 +6,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	yaml "gopkg.in/yaml.v2"
-
 	"github.com/cloudfoundry/bosh-bootloader/fileio"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/cloudfoundry/bosh-bootloader/terraform"
+	yaml "gopkg.in/yaml.v2"
 )
 
 var (
@@ -24,11 +23,12 @@ type managerFs interface {
 }
 
 type Manager struct {
-	executor     executor
-	logger       logger
-	stateStore   stateStore
-	sshKeyGetter sshKeyGetter
-	fs           managerFs
+	executor        executor
+	logger          logger
+	stateStore      stateStore
+	sshKeyGetter    sshKeyGetter
+	fs              managerFs
+	boshCLIProvider boshCLIProvider
 }
 
 type directorVars struct {
@@ -65,13 +65,14 @@ type sshKeyGetter interface {
 	Get(string) (string, error)
 }
 
-func NewManager(executor executor, logger logger, stateStore stateStore, sshKeyGetter sshKeyGetter, fs deleterFs) *Manager {
+func NewManager(executor executor, logger logger, stateStore stateStore, sshKeyGetter sshKeyGetter, fs deleterFs, boshCLIProvider boshCLIProvider) *Manager {
 	return &Manager{
-		executor:     executor,
-		logger:       logger,
-		stateStore:   stateStore,
-		sshKeyGetter: sshKeyGetter,
-		fs:           fs,
+		executor:        executor,
+		logger:          logger,
+		stateStore:      stateStore,
+		sshKeyGetter:    sshKeyGetter,
+		fs:              fs,
+		boshCLIProvider: boshCLIProvider,
 	}
 }
 
@@ -191,6 +192,29 @@ func (m *Manager) InitializeDirector(state storage.State) error {
 	}
 
 	return nil
+}
+
+func (m *Manager) CleanUpDirector(state storage.State) error {
+	if state.BOSH.IsEmpty() {
+		return nil
+	}
+
+	m.logger.Step("cleaning up director resources")
+
+	boshCLI, err := m.boshCLIProvider.AuthenticatedCLI(
+		state.Jumpbox,
+		os.Stderr,
+		state.BOSH.DirectorAddress,
+		state.BOSH.DirectorUsername,
+		state.BOSH.DirectorPassword,
+		state.BOSH.DirectorSSLCA,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	return boshCLI.Run(nil, "", []string{"clean-up", "--all"})
 }
 
 func (m *Manager) CreateDirector(state storage.State, terraformOutputs terraform.Outputs) (storage.State, error) {

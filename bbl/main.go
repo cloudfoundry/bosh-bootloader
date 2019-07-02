@@ -118,8 +118,8 @@ func main() {
 	sshKeyGetter := bosh.NewSSHKeyGetter(stateStore, afs)
 	allProxyGetter := bosh.NewAllProxyGetter(sshKeyGetter, afs)
 	credhubGetter := bosh.NewCredhubGetter(stateStore, afs)
-	boshManager := bosh.NewManager(boshExecutor, logger, stateStore, sshKeyGetter, afs)
 	boshCLIProvider := bosh.NewCLIProvider(allProxyGetter, boshPath)
+	boshManager := bosh.NewManager(boshExecutor, logger, stateStore, sshKeyGetter, afs, boshCLIProvider)
 
 	configUpdater := bosh.NewConfigUpdater(boshCLIProvider)
 
@@ -143,7 +143,8 @@ func main() {
 			networkDeletionValidator = awsClient
 			networkClient = awsClient
 
-			leftovers, err = awsleftovers.NewLeftovers(logger, appConfig.State.AWS.AccessKeyID, appConfig.State.AWS.SecretAccessKey, appConfig.State.AWS.Region)
+			sessionToken := ""
+			leftovers, err = awsleftovers.NewLeftovers(logger, appConfig.State.AWS.AccessKeyID, appConfig.State.AWS.SecretAccessKey, sessionToken, appConfig.State.AWS.Region)
 			if err != nil {
 				log.Fatalf("\n\n%s\n", err)
 			}

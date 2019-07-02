@@ -87,3 +87,5 @@ func (z azureLBHelper) ConfirmNoLBsExist(envID string) {
 func (z azureLBHelper) VerifyBblLBOutput(stdout string) {
 	Expect(stdout).To(MatchRegexp("Concourse LB:.*"))
 }
+
+func (z azureLBHelper) ConfirmNoStemcellsExist(stemcellIDs []string) {}

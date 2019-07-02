@@ -121,7 +121,6 @@ func (p Plan) Execute(args []string, state storage.State) error {
 func (p Plan) InitializePlan(config PlanConfig, state storage.State) (storage.State, error) {
 	state.BBLVersion = p.bblVersion
 	state.LB = config.LB
-	state.NoDirector = false
 
 	var err error
 	state, err = p.envIDManager.Sync(state, config.Name)

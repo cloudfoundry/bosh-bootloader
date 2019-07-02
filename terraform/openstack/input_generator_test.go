@@ -14,48 +14,70 @@ var _ = Describe("InputGenerator", func() {
 	)
 
 	Describe("Generate", func() {
-		It("receives state and returns a map of terraform variables", func() {
-			inputs, err := inputGenerator.Generate(storage.State{
+		var state storage.State
+		BeforeEach(func() {
+			state = storage.State{
 				EnvID: "banana",
 				OpenStack: storage.OpenStack{
-					InternalCidr:         "10.0.0.0/16",
-					ExternalIP:           "external-ip",
-					AuthURL:              "auth-url",
-					AZ:                   "az",
-					DefaultKeyName:       "key-name",
-					DefaultSecurityGroup: "security-group",
-					NetworkID:            "network-id",
-					Password:             "password",
-					Username:             "username",
-					Project:              "project",
-					Domain:               "domain",
-					Region:               "region",
-					PrivateKey:           "private-key",
+					AuthURL:     "auth-url",
+					AZ:          "az",
+					NetworkID:   "network-id",
+					NetworkName: "network-name",
+					Password:    "password",
+					Username:    "username",
+					Project:     "project",
+					Domain:      "domain",
+					Region:      "region",
 				},
-			})
-			Expect(err).NotTo(HaveOccurred())
+			}
+		})
 
-			Expect(inputs).To(Equal(map[string]interface{}{
-				"env_id":                 "banana",
-				"internal_cidr":          "10.0.0.0/16",
-				"internal_gw":            "10.0.0.1",
-				"director_internal_ip":   "10.0.0.6",
-				"jumpbox_internal_ip":    "10.0.0.5",
-				"external_ip":            "external-ip",
-				"auth_url":               "auth-url",
-				"az":                     "az",
-				"default_key_name":       "key-name",
-				"default_security_group": "security-group",
-				"net_id":                 "network-id",
-				"openstack_project":      "project",
-				"openstack_domain":       "domain",
-				"region":                 "region",
-				"private_key":            "private-key",
-			}))
+		Context("when optional OpenStack variables have zero values", func() {
+			It("receives state and returns a map of required terraform variables", func() {
+				inputs, err := inputGenerator.Generate(state)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(inputs).To(Equal(map[string]interface{}{
+					"env_id":            "banana",
+					"auth_url":          "auth-url",
+					"availability_zone": "az",
+					"ext_net_id":        "network-id",
+					"ext_net_name":      "network-name",
+					"domain_name":       "domain",
+					"region_name":       "region",
+					"tenant_name":       "project",
+				}))
+			})
+		})
+
+		Context("when optional OpenStack variables are set", func() {
+			JustBeforeEach(func() {
+				state.OpenStack.CACertFile = "path/to/file"
+				state.OpenStack.Insecure = "true"
+				state.OpenStack.DNSNameServers = []string{"8.8.8.8", "9.9.9.9"}
+			})
+			It("receives state and returns a map of required and optional terraform variables", func() {
+				inputs, err := inputGenerator.Generate(state)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(inputs).To(Equal(map[string]interface{}{
+					"env_id":            "banana",
+					"auth_url":          "auth-url",
+					"availability_zone": "az",
+					"ext_net_id":        "network-id",
+					"ext_net_name":      "network-name",
+					"domain_name":       "domain",
+					"region_name":       "region",
+					"tenant_name":       "project",
+					"cacert_file":       "path/to/file",
+					"insecure":          "true",
+					"dns_nameservers":   []string{"8.8.8.8", "9.9.9.9"},
+				}))
+			})
 		})
 	})
 	Describe("Credentials", func() {
-		It("returns the vsphere credentials", func() {
+		It("returns the OpenStack credentials", func() {
 			state := storage.State{
 				OpenStack: storage.OpenStack{
 					Username: "the-user",
@@ -66,8 +88,8 @@ var _ = Describe("InputGenerator", func() {
 			credentials := inputGenerator.Credentials(state)
 
 			Expect(credentials).To(Equal(map[string]string{
-				"openstack_username": "the-user",
-				"openstack_password": "the-password",
+				"user_name": "the-user",
+				"password":  "the-password",
 			}))
 		})
 	})
