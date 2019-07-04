@@ -2,6 +2,12 @@
 
 [BBR](https://github.com/cloudfoundry-incubator/bosh-backup-and-restore) can be used to backup and restore your BOSH Director or its deployments.  It uses the BOSH cli to target the Director and SSH onto the Director and deployment VMs. Documentation for the backup and restore a generic BOSH environment can be found [here](https://docs.cloudfoundry.org/bbr/index.html).
 
+## Enable Backup and Restore on your BBL Director
+
+Backup and restore is not enabled by default in a bbl'd up director.
+To enable it, you must apply the `bbr.yml` ops file that is present in the top-level of the [`bosh-deployment` repo](https://github.com/cloudfoundry/bosh-deployment/blob/master/bbr.yml).
+To do this, follow the [instructions for overriding your director creation script](customization.md#override-scripts) and apply this ops file. 
+
 ## Accessing your BBL Environment
 
 To backup or restore your BOSH Director and its deployments you must either SSH onto your BBL jumpbox or use `BOSH_ALL_PROXY` provided by BBL.
