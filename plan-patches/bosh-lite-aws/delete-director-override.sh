@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-bosh delete-env
+bosh delete-env \
  ${BBL_STATE_DIR}/bosh-deployment/bosh.yml \
- --state=state.json \
- --vars-store  ${BBL_STATE_DIR}/vars/director-vars-store.yml \
- --vars-file  ${BBL_STATE_DIR}/vars/director-vars-file.yml \
+ --state ${BBL_STATE_DIR}/vars/bosh-state.json \
+ --vars-store ${BBL_STATE_DIR}/vars/director-vars-store.yml \
+ --vars-file ${BBL_STATE_DIR}/vars/director-vars-file.yml \
  -o ${BBL_STATE_DIR}/bosh-deployment/aws/cpi.yml \
  -o ${BBL_STATE_DIR}/bosh-deployment/bosh-lite.yml \
  -o ${BBL_STATE_DIR}/bosh-deployment/bosh-lite-runc.yml \
