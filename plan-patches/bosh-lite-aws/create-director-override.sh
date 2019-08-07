@@ -1,5 +1,5 @@
 #!/bin/sh
-BOSH_LOG_LEVEL=debug bosh create-env \
+bosh create-env \
  ${BBL_STATE_DIR}/bosh-deployment/bosh.yml \
  --state=state.json \
  --vars-store  ${BBL_STATE_DIR}/vars/director-vars-store.yml \
