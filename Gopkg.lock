@@ -954,6 +954,7 @@
     "github.com/genevieve/leftovers/vsphere",
     "github.com/gobuffalo/packd",
     "github.com/gobuffalo/packr/v2",
+    "github.com/gobuffalo/packr/v2/file/resolver",
     "github.com/jessevdk/go-flags",
     "github.com/kr/pty",
     "github.com/lytics/cloudstorage",
