@@ -29,6 +29,7 @@ type client struct {
 	forwardingRules       *gcpcompute.ForwardingRulesService
 	globalForwardingRules *gcpcompute.GlobalForwardingRulesService
 	routes                *gcpcompute.RoutesService
+	routers               *gcpcompute.RoutersService
 	subnetworks           *gcpcompute.SubnetworksService
 	sslCertificates       *gcpcompute.SslCertificatesService
 	networks              *gcpcompute.NetworksService
@@ -63,6 +64,7 @@ func NewClient(project string, service *gcpcompute.Service, logger logger) clien
 		forwardingRules:       service.ForwardingRules,
 		globalForwardingRules: service.GlobalForwardingRules,
 		routes:                service.Routes,
+		routers:               service.Routers,
 		sslCertificates:       service.SslCertificates,
 		subnetworks:           service.Subnetworks,
 		networks:              service.Networks,
@@ -509,6 +511,33 @@ func (c client) ListRoutes() ([]*gcpcompute.Route, error) {
 
 func (c client) DeleteRoute(route string) error {
 	return c.wait(c.routes.Delete(c.project, route))
+}
+
+func (c client) ListRouters(region string) ([]*gcpcompute.Router, error) {
+	var token string
+	list := []*gcpcompute.Router{}
+
+	for {
+		resp, err := c.routers.List(c.project, region).PageToken(token).Do()
+		if err != nil {
+			return nil, err
+		}
+
+		list = append(list, resp.Items...)
+
+		token = resp.NextPageToken
+		if token == "" {
+			break
+		}
+
+		time.Sleep(time.Second)
+	}
+
+	return list, nil
+}
+
+func (c client) DeleteRouter(region, router string) error {
+	return c.wait(c.routers.Delete(c.project, region, router))
 }
 
 func (c client) ListNetworks() ([]*gcpcompute.Network, error) {

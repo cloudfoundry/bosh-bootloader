@@ -171,7 +171,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:0e0743fb4a74a5d56de9c6ff8effac7af92f452f53eaeeb5b5a0515df7a7009e"
+  digest = "1:61cad760baf0f54a9e36f9ca9dbae49124ca6942f90b89b2ab0116c2f6b1f1b4"
   name = "github.com/genevieve/leftovers"
   packages = [
     "app",
@@ -199,7 +199,7 @@
     "vsphere",
   ]
   pruneopts = "U"
-  revision = "703436e28f22240d5f6401b61a80ca3a02c1524c"
+  revision = "e86fd74c07140544760454660f1f621a930bdbe6"
 
 [[projects]]
   digest = "1:039d212663a562ed6e04b63e5e2b955b8a409990874d83c371164620590081ab"
@@ -954,7 +954,6 @@
     "github.com/genevieve/leftovers/vsphere",
     "github.com/gobuffalo/packd",
     "github.com/gobuffalo/packr/v2",
-    "github.com/gobuffalo/packr/v2/file/resolver",
     "github.com/jessevdk/go-flags",
     "github.com/kr/pty",
     "github.com/lytics/cloudstorage",

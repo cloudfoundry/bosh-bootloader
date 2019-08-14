@@ -37,6 +37,11 @@ func (l Leftovers) List(filter string) {
 	}
 }
 
+// ListByType defaults to List as there is only one resource type.
+func (l Leftovers) ListByType(filter, rType string) {
+	l.List(filter)
+}
+
 // Types will print all the resource types that can
 // be deleted on this IaaS.
 func (l Leftovers) Types() {
@@ -75,11 +80,11 @@ func (l Leftovers) Delete(filter string) error {
 	return result.ErrorOrNil()
 }
 
-// DeleteType will collect all resources of the provied type that contain
+// DeleteByType will collect all resources of the provied type that contain
 // the provided filter in the resource's identifier, prompt
 // you to confirm deletion (if enabled), and delete those
 // that are selected.
-func (l Leftovers) DeleteType(filter, rType string) error {
+func (l Leftovers) DeleteByType(filter, rType string) error {
 	return l.Delete(filter)
 }
 

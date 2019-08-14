@@ -142,23 +142,36 @@ func (l Leftovers) Types() {
 	}
 }
 
-// List will print all the resources that contain
-// the provided filter in the resource's identifier.
+// List will print all of the resources that match the provided filter.
 func (l Leftovers) List(filter string) {
 	l.logger.NoConfirm()
 
-	var all []common.Deletable
 	for _, r := range l.resources {
-		list, err := r.List(filter)
-		if err != nil {
-			l.logger.Println(err.Error())
-		}
+		l.list(r, filter)
+	}
+}
 
-		all = append(all, list...)
+// ListByType will print resources of the specified type with
+// names that match the provided filter.
+func (l Leftovers) ListByType(filter, rtype string) {
+	l.logger.NoConfirm()
+
+	for _, r := range l.resources {
+		if r.Type() == rtype {
+			l.list(r, filter)
+			return
+		}
+	}
+}
+
+func (l Leftovers) list(r resource, filter string) {
+	list, err := r.List(filter)
+	if err != nil {
+		l.logger.Println(color.YellowString(err.Error()))
 	}
 
-	for _, r := range all {
-		l.logger.Println(fmt.Sprintf("[%s: %s]", r.Type(), r.Name()))
+	for _, d := range list {
+		l.logger.Println(fmt.Sprintf("[%s: %s]", d.Type(), d.Name()))
 	}
 }
 
@@ -181,11 +194,11 @@ func (l Leftovers) Delete(filter string) error {
 	return l.asyncDeleter.Run(deletables)
 }
 
-// DeleteType will collect all resources of the provied type that contain
+// DeleteByType will collect all resources of the provied type that contain
 // the provided filter in the resource's identifier, prompt
 // you to confirm deletion (if enabled), and delete those
 // that are selected.
-func (l Leftovers) DeleteType(filter, rType string) error {
+func (l Leftovers) DeleteByType(filter, rType string) error {
 	deletables := [][]common.Deletable{}
 
 	for _, r := range l.resources {
