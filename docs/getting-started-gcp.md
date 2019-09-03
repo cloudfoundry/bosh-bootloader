@@ -44,6 +44,10 @@ gcloud projects add-iam-policy-binding <project id> --member='serviceAccount:<se
     mkdir some-bbl-state-dir
     cd some-bbl-state-dir
     ```
+1. Plan the environment:
+    ```
+    bbl plan
+    ```	
 1. Create infrastructure, jumpbox, and bosh director.
     ```
     bbl up

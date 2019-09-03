@@ -51,7 +51,10 @@ It does not create any networks, security groups, or load balancers on vSphere.
     $env:BBL_VSPHERE_VCENTER_TEMPLATES=
     $env:BBL_VSPHERE_VCENTER_VMS=
     ```
-
+1. Plan the environment:
+    ```
+    bbl plan
+    ```
 1. Create jumpbox and bosh director.
     ```
     bbl up

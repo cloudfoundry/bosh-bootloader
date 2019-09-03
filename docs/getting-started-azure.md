@@ -45,6 +45,11 @@ it can interact with Azure.
     $env:BBL_AZURE_SUBSCRIPTION_ID=
     $env:BBL_AZURE_TENANT_ID=
     ```
+	
+1. Plan the environment:
+    ```
+    bbl plan
+    ```
 
 1. Create infrastructure, jumpbox, and bosh director.
     ```
