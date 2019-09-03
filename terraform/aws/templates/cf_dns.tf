@@ -15,12 +15,13 @@ data "aws_route53_zone" "parent" {
 }
 
 output "env_dns_zone_name_servers" {
-  value = ["${split(",", local.name_servers)}"]
+  value = "${formatlist("%s.", compact(local.name_servers))}"
 }
 
 locals {
-  zone_id      = "${var.parent_zone == "" ? element(concat(aws_route53_zone.env_dns_zone.*.zone_id, list("")), 0) : element(concat(data.aws_route53_zone.parent.*.zone_id, list("")), 0)}"
-  name_servers = "${var.parent_zone == "" ? join(",", flatten(concat(aws_route53_zone.env_dns_zone.*.name_servers, list(list(""))))) :  join(",", flatten(concat(data.aws_route53_zone.env_dns_zone.*.name_servers, list(list("")))))}"
+  zone_id = "${var.parent_zone == "" ?  element(concat(aws_route53_zone.env_dns_zone.*.zone_id, list("")), 0) : element(concat(data.aws_route53_zone.parent.*.zone_id, list("")), 0)}"
+
+  name_servers = "${split(",", var.parent_zone == "" ? join(",", flatten(aws_route53_zone.env_dns_zone.*.name_servers)) :  join(",", flatten(data.aws_route53_zone.parent.*.name_servers)))}"
 }
 
 resource "aws_route53_zone" "env_dns_zone" {
