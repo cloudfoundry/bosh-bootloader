@@ -80,7 +80,7 @@ resource "openstack_networking_secgroup_v2" "dir" {
   region = "${var.region_name}"
   name = "${var.env_id}-dir"
 }
-resource "openstack_networking_secgroup_rule_v2" "bosh_rule_1" {
+resource "openstack_networking_secgroup_rule_v2" "dir_rule_1" {
   description = "Jumpbox to Director NGINX"
   region = "${var.region_name}"
   direction = "ingress"
@@ -91,7 +91,7 @@ resource "openstack_networking_secgroup_rule_v2" "bosh_rule_1" {
   remote_group_id = "${openstack_networking_secgroup_v2.jb.id}"
   security_group_id = "${openstack_networking_secgroup_v2.dir.id}"
 }
-resource "openstack_networking_secgroup_rule_v2" "bosh_rule_2" {
+resource "openstack_networking_secgroup_rule_v2" "dir_rule_2" {
   description = "Jumpbox to Director MBUS"
   region = "${var.region_name}"
   direction = "ingress"
@@ -102,7 +102,7 @@ resource "openstack_networking_secgroup_rule_v2" "bosh_rule_2" {
   remote_group_id = "${openstack_networking_secgroup_v2.jb.id}"
   security_group_id = "${openstack_networking_secgroup_v2.dir.id}"
 }
-resource "openstack_networking_secgroup_rule_v2" "bosh_rule_3" {
+resource "openstack_networking_secgroup_rule_v2" "dir_rule_3" {
   description = "Jumpbox to Director SSH"
   region = "${var.region_name}"
   direction = "ingress"
@@ -113,7 +113,7 @@ resource "openstack_networking_secgroup_rule_v2" "bosh_rule_3" {
   remote_group_id = "${openstack_networking_secgroup_v2.jb.id}"
   security_group_id = "${openstack_networking_secgroup_v2.dir.id}"
 }
-resource "openstack_networking_secgroup_rule_v2" "bosh_rule_4" {
+resource "openstack_networking_secgroup_rule_v2" "dir_rule_4" {
   description = "Jumpbox to Director UAA"
   region = "${var.region_name}"
   direction = "ingress"
@@ -124,7 +124,7 @@ resource "openstack_networking_secgroup_rule_v2" "bosh_rule_4" {
   remote_group_id = "${openstack_networking_secgroup_v2.jb.id}"
   security_group_id = "${openstack_networking_secgroup_v2.dir.id}"
 }
-resource "openstack_networking_secgroup_rule_v2" "bosh_rule_5" {
+resource "openstack_networking_secgroup_rule_v2" "dir_rule_5" {
   description = "Jumpbox to Director Credhub"
   region = "${var.region_name}"
   direction = "ingress"
@@ -135,7 +135,7 @@ resource "openstack_networking_secgroup_rule_v2" "bosh_rule_5" {
   remote_group_id = "${openstack_networking_secgroup_v2.jb.id}"
   security_group_id = "${openstack_networking_secgroup_v2.dir.id}"
 }
-resource "openstack_networking_secgroup_rule_v2" "bosh_rule_6" {
+resource "openstack_networking_secgroup_rule_v2" "dir_rule_6" {
   description = "BOSH deployed VMs to Director NATS"
   region = "${var.region_name}"
   direction = "ingress"
@@ -146,7 +146,7 @@ resource "openstack_networking_secgroup_rule_v2" "bosh_rule_6" {
   remote_group_id = "${openstack_networking_secgroup_v2.vms.id}"
   security_group_id = "${openstack_networking_secgroup_v2.dir.id}"
 }
-resource "openstack_networking_secgroup_rule_v2" "bosh_rule_7" {
+resource "openstack_networking_secgroup_rule_v2" "dir_rule_7" {
   description = "BOSH deployed VMs to Director Registry"
   region = "${var.region_name}"
   direction = "ingress"
@@ -157,7 +157,7 @@ resource "openstack_networking_secgroup_rule_v2" "bosh_rule_7" {
   remote_group_id = "${openstack_networking_secgroup_v2.vms.id}"
   security_group_id = "${openstack_networking_secgroup_v2.dir.id}"
 }
-resource "openstack_networking_secgroup_rule_v2" "bosh_rule_8" {
+resource "openstack_networking_secgroup_rule_v2" "dir_rule_8" {
   description = "BOSH deployed VMs to Director Blobstore"
   region = "${var.region_name}"
   direction = "ingress"
