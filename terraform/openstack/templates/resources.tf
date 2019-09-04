@@ -75,10 +75,10 @@ resource "openstack_networking_secgroup_rule_v2" "jb_rule_2" {
   security_group_id = "${openstack_networking_secgroup_v2.jb.id}"
 }
 
-resource "openstack_networking_secgroup_v2" "bosh" {
+resource "openstack_networking_secgroup_v2" "dir" {
   description = "BOSH Director Security Group"
   region = "${var.region_name}"
-  name = "${var.env_id}-bosh"
+  name = "${var.env_id}-dir"
 }
 resource "openstack_networking_secgroup_rule_v2" "bosh_rule_1" {
   description = "Jumpbox to Director NGINX"
@@ -89,7 +89,7 @@ resource "openstack_networking_secgroup_rule_v2" "bosh_rule_1" {
   port_range_min = 25555
   port_range_max = 25555
   remote_group_id = "${openstack_networking_secgroup_v2.jb.id}"
-  security_group_id = "${openstack_networking_secgroup_v2.bosh.id}"
+  security_group_id = "${openstack_networking_secgroup_v2.dir.id}"
 }
 resource "openstack_networking_secgroup_rule_v2" "bosh_rule_2" {
   description = "Jumpbox to Director MBUS"
@@ -100,7 +100,7 @@ resource "openstack_networking_secgroup_rule_v2" "bosh_rule_2" {
   port_range_min = 6868
   port_range_max = 6868
   remote_group_id = "${openstack_networking_secgroup_v2.jb.id}"
-  security_group_id = "${openstack_networking_secgroup_v2.bosh.id}"
+  security_group_id = "${openstack_networking_secgroup_v2.dir.id}"
 }
 resource "openstack_networking_secgroup_rule_v2" "bosh_rule_3" {
   description = "Jumpbox to Director SSH"
@@ -111,7 +111,7 @@ resource "openstack_networking_secgroup_rule_v2" "bosh_rule_3" {
   port_range_min = 22
   port_range_max = 22
   remote_group_id = "${openstack_networking_secgroup_v2.jb.id}"
-  security_group_id = "${openstack_networking_secgroup_v2.bosh.id}"
+  security_group_id = "${openstack_networking_secgroup_v2.dir.id}"
 }
 resource "openstack_networking_secgroup_rule_v2" "bosh_rule_4" {
   description = "Jumpbox to Director UAA"
@@ -122,7 +122,7 @@ resource "openstack_networking_secgroup_rule_v2" "bosh_rule_4" {
   port_range_min = 8443
   port_range_max = 8443
   remote_group_id = "${openstack_networking_secgroup_v2.jb.id}"
-  security_group_id = "${openstack_networking_secgroup_v2.bosh.id}"
+  security_group_id = "${openstack_networking_secgroup_v2.dir.id}"
 }
 resource "openstack_networking_secgroup_rule_v2" "bosh_rule_5" {
   description = "Jumpbox to Director Credhub"
@@ -133,7 +133,7 @@ resource "openstack_networking_secgroup_rule_v2" "bosh_rule_5" {
   port_range_min = 8844
   port_range_max = 8844
   remote_group_id = "${openstack_networking_secgroup_v2.jb.id}"
-  security_group_id = "${openstack_networking_secgroup_v2.bosh.id}"
+  security_group_id = "${openstack_networking_secgroup_v2.dir.id}"
 }
 resource "openstack_networking_secgroup_rule_v2" "bosh_rule_6" {
   description = "BOSH deployed VMs to Director NATS"
@@ -144,7 +144,7 @@ resource "openstack_networking_secgroup_rule_v2" "bosh_rule_6" {
   port_range_min = 4222
   port_range_max = 4222
   remote_group_id = "${openstack_networking_secgroup_v2.vms.id}"
-  security_group_id = "${openstack_networking_secgroup_v2.bosh.id}"
+  security_group_id = "${openstack_networking_secgroup_v2.dir.id}"
 }
 resource "openstack_networking_secgroup_rule_v2" "bosh_rule_7" {
   description = "BOSH deployed VMs to Director Registry"
@@ -155,7 +155,7 @@ resource "openstack_networking_secgroup_rule_v2" "bosh_rule_7" {
   port_range_min = 25777
   port_range_max = 25777
   remote_group_id = "${openstack_networking_secgroup_v2.vms.id}"
-  security_group_id = "${openstack_networking_secgroup_v2.bosh.id}"
+  security_group_id = "${openstack_networking_secgroup_v2.dir.id}"
 }
 resource "openstack_networking_secgroup_rule_v2" "bosh_rule_8" {
   description = "BOSH deployed VMs to Director Blobstore"
@@ -166,7 +166,7 @@ resource "openstack_networking_secgroup_rule_v2" "bosh_rule_8" {
   port_range_min = 25250
   port_range_max = 25250
   remote_group_id = "${openstack_networking_secgroup_v2.vms.id}"
-  security_group_id = "${openstack_networking_secgroup_v2.bosh.id}"
+  security_group_id = "${openstack_networking_secgroup_v2.dir.id}"
 }
 
 resource "openstack_networking_secgroup_v2" "vms" {
@@ -200,7 +200,7 @@ resource "openstack_networking_secgroup_rule_v2" "vms_rule_3" {
   protocol = "tcp"
   port_range_min = 22
   port_range_max = 22
-  remote_group_id = "${openstack_networking_secgroup_v2.jb.id}"
+  remote_group_id = "${openstack_networking_secgroup_v2.dir.id}"
   security_group_id = "${openstack_networking_secgroup_v2.vms.id}"
 }
 
