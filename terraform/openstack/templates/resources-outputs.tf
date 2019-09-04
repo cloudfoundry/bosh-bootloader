@@ -20,7 +20,7 @@ output "jumpbox__default_security_groups" {
 }
 
 output "director__default_security_groups" {
-  value = ["${openstack_networking_secgroup_v2.bosh.name}"]
+  value = ["${openstack_networking_secgroup_v2.dir.name}"]
 }
 
 output "internal_cidr" {
