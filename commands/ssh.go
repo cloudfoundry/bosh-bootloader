@@ -155,11 +155,17 @@ func (s SSH) Execute(args []string, state storage.State) error {
 		} // removing this will break the acceptance test
 	}()
 
-	proxyCommandPrefix := "nc -x"
-	if s.pathFinder.CommandExists("connect-proxy") {
-		proxyCommandPrefix = "connect-proxy -S"
+	proxyCommandPrefix := "connect-proxy -S"
+	if !s.pathFinder.CommandExists("connect-proxy") {
+		ncHelpOutBytes, err := exec.Command("nc", "-h").Output()
+		outStr := string(ncHelpOutBytes)
+		if err == nil && strings.Contains(outStr,"-x addr[:port]") {
+			proxyCommandPrefix = "nc -x"
+		} else {
+			return fmt.Errorf("neither `connect-proxy` nor openbsd-`nc` (with proxy support: `-x addr[:port]`) can be executed")
+		}
 	}
-
+	
 	ip := strings.Split(strings.TrimPrefix(state.BOSH.DirectorAddress, "https://"), ":")[0]
 
 	toExecute := []string{
