@@ -80,5 +80,5 @@ output "env_id" {
 }
 
 output "director_name" {
-  value = "${var.env_id}"
+  value = "bosh-${var.env_id}"
 }
