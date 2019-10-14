@@ -38,6 +38,8 @@ func (f *factory) createFromType(shellType string) (Renderer, error) {
 		return NewPowershell(), nil
 	case ShellTypePosix:
 		return NewPosix(), nil
+	case ShellTypeYaml:
+		return NewYaml(), nil
 	default:
 		return nil, fmt.Errorf("unrecognized type '%s'", shellType)
 	}
