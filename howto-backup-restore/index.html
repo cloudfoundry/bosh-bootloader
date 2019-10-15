@@ -36,7 +36,7 @@
     
     
       
-        <title>Accessing the BOSH Director CredHub - BBL</title>
+        <title>How to Backup and Restore a BBL Environment using BBR - BBL</title>
       
     
     
@@ -83,7 +83,7 @@
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
     <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
     
-      <a href="#accessing-the-bosh-director-credhub" tabindex="1" class="md-skip">
+      <a href="#how-to-backup-and-restore-a-bbl-environment-using-bbr" tabindex="1" class="md-skip">
         Skip to content
       </a>
     
@@ -109,7 +109,7 @@
             </span>
             <span class="md-header-nav__topic">
               
-                Accessing the BOSH Director CredHub
+                How to Backup and Restore a BBL Environment using BBR
               
             </span>
           
@@ -248,96 +248,11 @@
       
       
 
-  
 
-
-  <li class="md-nav__item md-nav__item--active">
-    
-    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
-    
-      
-    
-    
-      <label class="md-nav__link md-nav__link--active" for="__toc">
-        Accessing the BOSH Director CredHub
-      </label>
-    
-    <a href="./" title="Accessing the BOSH Director CredHub" class="md-nav__link md-nav__link--active">
+  <li class="md-nav__item">
+    <a href="../credhub/" title="Accessing the BOSH Director CredHub" class="md-nav__link">
       Accessing the BOSH Director CredHub
     </a>
-    
-      
-<nav class="md-nav md-nav--secondary">
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">Table of contents</label>
-    <ul class="md-nav__list" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#using-credhub_proxy" title="Using CREDHUB_PROXY" class="md-nav__link">
-    Using CREDHUB_PROXY
-  </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#requirements" title="Requirements" class="md-nav__link">
-    Requirements
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#instructions" title="Instructions" class="md-nav__link">
-    Instructions
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#using-http_proxy" title="Using http_proxy" class="md-nav__link">
-    Using http_proxy
-  </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#requirements_1" title="Requirements" class="md-nav__link">
-    Requirements
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#instructions_1" title="Instructions" class="md-nav__link">
-    Instructions
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-      
-      
-      
-      
-    </ul>
-  
-</nav>
-    
   </li>
 
     
@@ -417,11 +332,97 @@
       
       
 
+  
 
-  <li class="md-nav__item">
-    <a href="../howto-backup-restore/" title="How to Backup and Restore a BBL Environment using BBR" class="md-nav__link">
+
+  <li class="md-nav__item md-nav__item--active">
+    
+    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+    
+      
+    
+    
+      <label class="md-nav__link md-nav__link--active" for="__toc">
+        How to Backup and Restore a BBL Environment using BBR
+      </label>
+    
+    <a href="./" title="How to Backup and Restore a BBL Environment using BBR" class="md-nav__link md-nav__link--active">
       How to Backup and Restore a BBL Environment using BBR
     </a>
+    
+      
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#enable-backup-and-restore-on-your-bbl-director" title="Enable Backup and Restore on your BBL Director" class="md-nav__link">
+    Enable Backup and Restore on your BBL Director
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#accessing-your-bbl-environment" title="Accessing your BBL Environment" class="md-nav__link">
+    Accessing your BBL Environment
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#ssh-onto-the-jumpbox" title="SSH onto the Jumpbox" class="md-nav__link">
+    SSH onto the Jumpbox
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#use-bosh_all_proxy" title="Use BOSH_ALL_PROXY" class="md-nav__link">
+    Use BOSH_ALL_PROXY
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#bbr-director-backup" title="BBR Director Backup" class="md-nav__link">
+    BBR Director Backup
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#bbr-deployment-backup" title="BBR Deployment Backup" class="md-nav__link">
+    BBR Deployment Backup
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#bbr-restore" title="BBR Restore" class="md-nav__link">
+    BBR Restore
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+    
   </li>
 
     
@@ -566,23 +567,30 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#using-credhub_proxy" title="Using CREDHUB_PROXY" class="md-nav__link">
-    Using CREDHUB_PROXY
+  <a href="#enable-backup-and-restore-on-your-bbl-director" title="Enable Backup and Restore on your BBL Director" class="md-nav__link">
+    Enable Backup and Restore on your BBL Director
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#accessing-your-bbl-environment" title="Accessing your BBL Environment" class="md-nav__link">
+    Accessing your BBL Environment
   </a>
   
     <nav class="md-nav">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#requirements" title="Requirements" class="md-nav__link">
-    Requirements
+  <a href="#ssh-onto-the-jumpbox" title="SSH onto the Jumpbox" class="md-nav__link">
+    SSH onto the Jumpbox
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#instructions" title="Instructions" class="md-nav__link">
-    Instructions
+  <a href="#use-bosh_all_proxy" title="Use BOSH_ALL_PROXY" class="md-nav__link">
+    Use BOSH_ALL_PROXY
   </a>
   
 </li>
@@ -593,29 +601,23 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#using-http_proxy" title="Using http_proxy" class="md-nav__link">
-    Using http_proxy
-  </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#requirements_1" title="Requirements" class="md-nav__link">
-    Requirements
+  <a href="#bbr-director-backup" title="BBR Director Backup" class="md-nav__link">
+    BBR Director Backup
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
-  <a href="#instructions_1" title="Instructions" class="md-nav__link">
-    Instructions
+      
+        <li class="md-nav__item">
+  <a href="#bbr-deployment-backup" title="BBR Deployment Backup" class="md-nav__link">
+    BBR Deployment Backup
   </a>
   
 </li>
-        
-      </ul>
-    </nav>
+      
+        <li class="md-nav__item">
+  <a href="#bbr-restore" title="BBR Restore" class="md-nav__link">
+    BBR Restore
+  </a>
   
 </li>
       
@@ -636,56 +638,54 @@
               
                 
                 
-                <h1 id="accessing-the-bosh-director-credhub">Accessing the BOSH Director CredHub</h1>
-<h2 id="using-credhub_proxy">Using <code>CREDHUB_PROXY</code></h2>
-<h3 id="requirements">Requirements</h3>
-<ul>
-<li><code>bbl v6.2</code> or above</li>
-<li><code>credhub-cli v1.6.0</code> or above</li>
-<li>a bbl environment</li>
-</ul>
-<h3 id="instructions">Instructions</h3>
-<ol>
-<li>
-<p>Set necessary environment variables</p>
-<p><code>bbl print-env</code> prints out environment variables (<code>CREDHUB_CLIENT</code>, <code>CREDHUB_SECRET</code>, <code>CREDHUB_PROXY</code>,
-<code>CREDHUB_SERVER</code>, <code>CREDHUB_CA_CERT</code>, and others) that need to be exported to target the Director CredHub using the CredHub CLI.</p>
-<p><code>eval "$(bbl print-env)"</code></p>
-</li>
-<li>
-<p>Get credentials</p>
-<p><code>credhub find -n 'cf_admin_password'</code></p>
-<p>The CredHub CLI will parse <code>CREDHUB_PROXY</code> and determines from the <code>ssh+socks5://</code> scheme that it should proxy throuhg a jumpbox via a tunnel of its own making.</p>
-</li>
-</ol>
-<h2 id="using-http_proxy">Using <code>http_proxy</code></h2>
-<h3 id="requirements_1">Requirements</h3>
-<ul>
-<li><code>bbl</code></li>
-<li><code>credhub-cli</code></li>
-<li>a bbl environment</li>
-</ul>
-<h3 id="instructions_1">Instructions</h3>
-<ol>
-<li>
-<p>Set your CredHub client/secret</p>
-<p><code>eval "$(bbl print-env)"</code></p>
-</li>
-<li>
-<p>Make an SSH tunnel to the jumpbox</p>
-<p><code>bbl ssh-key &gt; /tmp/jumpbox.key
-chmod 0700 /tmp/jumpbox.key
-ssh -4 -D 5000 -fNC jumpbox@`bbl jumpbox-address` -i /tmp/jumpbox.key</code></p>
-</li>
-<li>
-<p>Login</p>
-<p><code>http_proxy=socks5://localhost:5000 credhub login</code></p>
-</li>
-<li>
-<p>Get credentials</p>
-<p><code>http_proxy=socks5://localhost:5000 credhub find -n 'cf_admin_password'</code></p>
-</li>
-</ol>
+                <h1 id="how-to-backup-and-restore-a-bbl-environment-using-bbr">How to Backup and Restore a BBL Environment using BBR</h1>
+<p><a href="https://github.com/cloudfoundry-incubator/bosh-backup-and-restore">BBR</a> can be used to backup and restore your BOSH Director or its deployments.  It uses the BOSH cli to target the Director and SSH onto the Director and deployment VMs. Documentation for the backup and restore a generic BOSH environment can be found <a href="https://docs.cloudfoundry.org/bbr/index.html">here</a>.</p>
+<h2 id="enable-backup-and-restore-on-your-bbl-director">Enable Backup and Restore on your BBL Director</h2>
+<p>Backup and restore is not enabled by default in a bbl'd up director.
+To enable it, you must apply the <code>bbr.yml</code> ops file that is present in the top-level of the <a href="https://github.com/cloudfoundry/bosh-deployment/blob/master/bbr.yml"><code>bosh-deployment</code> repo</a>.
+To do this, follow the <a href="../customization/#override-scripts">instructions for overriding your director creation script</a> and apply this ops file. </p>
+<h2 id="accessing-your-bbl-environment">Accessing your BBL Environment</h2>
+<p>To backup or restore your BOSH Director and its deployments you must either SSH onto your BBL jumpbox or use <code>BOSH_ALL_PROXY</code> provided by BBL.</p>
+<h3 id="ssh-onto-the-jumpbox">SSH onto the Jumpbox</h3>
+<p>SSH onto your BBL jumpbox using the following command:</p>
+<pre><code class="bash">$&gt; bbl ssh --jumpbox
+</code></pre>
+
+<p>When on the jumpbox, you must get the BBR binary and run all BBR commands on the jumpbox.</p>
+<h3 id="use-bosh_all_proxy">Use <code>BOSH_ALL_PROXY</code></h3>
+<p>Use the <code>BOSH_ALL_PROXY</code> environment variable provided by BBL:</p>
+<pre><code class="bash">$&gt; eval &quot;$(bbl print-env)&quot;
+...
+BOSH_ALL_PROXY=ssh+socks5://jumpbox@DIRECTOR-IP:22?private-key=path/to/jumpbox/key
+</code></pre>
+
+<p>You can now use BBR on your local machine and all requests to the BOSH Director will be forwarded through the jumpbox.</p>
+<h2 id="bbr-director-backup">BBR Director Backup</h2>
+<p>You can run the BBR director backup command as documented <a href="https://docs.cloudfoundry.org/bbr/backup.html#back-up-director">here</a>.</p>
+<p>For BBL, the default configuration is the following:</p>
+<pre><code>bbr director \
+    --host DIRECTOR-IP \
+    --username BBR-USERNAME \
+    --private-key-path BOSH-DIRECTOR-PRIVATE-KEY-PATH \
+backup
+</code></pre>
+
+<p>Where:
+- <code>DIRECTOR-IP</code> is internal (or public) IP of your BOSH Director.  This can be obtained using <code>bbl director-address</code> and removing the port.
+- <code>BBR-USERNAME</code> is the user that BBR uses to SSH onto the Director VM.  For BBL, this is <code>jumpbox</code>.
+- <code>BOSH-DIRECTOR-PRIVATE-KEY-PATH</code> is the path to your BOSH Director's private key.  The contexts of the BOSH Director's key can be obtained using <code>bbl director-ssh-key</code>.</p>
+<h2 id="bbr-deployment-backup">BBR Deployment Backup</h2>
+<p>You can run the BBR deployment backup command as documented <a href="https://docs.cloudfoundry.org/bbr/backup.html#back-up-deployment">here</a>.  If you have run the BBL command, <code>$&gt; eval "$(bbl print-env)"</code>, then BBR will pick up all BOSH environment variables it needs to back up the deployment.</p>
+<p>For BBL, the default configuration is the following:</p>
+<pre><code>bbr director \
+    --deployment DEPLOYMENT-NAME \
+backup
+</code></pre>
+
+<p>Where:
+- <code>DEPLOYMENT-NAME</code> is the name of the deployment that you want to backup using BBR.</p>
+<h2 id="bbr-restore">BBR Restore</h2>
+<p>You can run the BBR director or deployment restore commands as documented <a href="https://docs.cloudfoundry.org/bbr/restore.html">here</a>.  These are similar to the BBR backup commands above but with the additional <code>--artifact-path</code> which is a previously taken BBR backup artifact.</p>
                 
                   
                 
@@ -706,7 +706,7 @@ ssh -4 -D 5000 -fNC jumpbox@`bbl jumpbox-address` -i /tmp/jumpbox.key</code></p>
     <div class="md-footer-nav">
       <nav class="md-footer-nav__inner md-grid">
         
-          <a href="../concourse/" title="Concourse" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+          <a href="../getting-started-vsphere/" title="Getting Started: vSphere" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
             <div class="md-flex__cell md-flex__cell--shrink">
               <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
             </div>
@@ -715,19 +715,19 @@ ssh -4 -D 5000 -fNC jumpbox@`bbl jumpbox-address` -i /tmp/jumpbox.key</code></p>
                 <span class="md-footer-nav__direction">
                   Previous
                 </span>
-                Concourse
+                Getting Started: vSphere
               </span>
             </div>
           </a>
         
         
-          <a href="../customization/" title="Customizing your infrastructure and director" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+          <a href="../howto-ssh/" title="How To SSH" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
             <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
               <span class="md-flex__ellipsis">
                 <span class="md-footer-nav__direction">
                   Next
                 </span>
-                Customizing your infrastructure and director
+                How To SSH
               </span>
             </div>
             <div class="md-flex__cell md-flex__cell--shrink">
