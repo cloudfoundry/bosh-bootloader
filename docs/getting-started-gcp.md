@@ -29,7 +29,7 @@ gcloud projects add-iam-policy-binding <project id> --member='serviceAccount:<se
     ```
     export BBL_IAAS=gcp
     export BBL_GCP_REGION=
-    export BBL_GCP_SERVICE_ACCOUNT_KEY=
+    export BBL_GCP_SERVICE_ACCOUNT_KEY=`cat /path/to/service-account-name.key.json`
     ```
 
     or powershell:
