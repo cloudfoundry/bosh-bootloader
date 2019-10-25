@@ -144,7 +144,7 @@ var _ = Describe("Commands Usage", func() {
 				usageText := command.Usage()
 				Expect(usageText).To(Equal(`Prints required BOSH environment variables.
 
-  --shell-type             Prints for the given shell (posix|powershell)
+  --shell-type             Prints for the given shell (posix|powershell|yaml)
 `))
 			})
 		})
