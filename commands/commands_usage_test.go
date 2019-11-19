@@ -145,6 +145,7 @@ var _ = Describe("Commands Usage", func() {
 				Expect(usageText).To(Equal(`Prints required BOSH environment variables.
 
   --shell-type             Prints for the given shell (posix|powershell|yaml)
+  --file                   Read from Toolsmiths metadata file instead of bbl state
 `))
 			})
 		})
