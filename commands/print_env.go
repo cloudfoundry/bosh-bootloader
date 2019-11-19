@@ -109,13 +109,8 @@ func (p PrintEnv) Execute(args []string, state storage.State) error {
 		return err
 	}
 
-	useMetadata := false
 	metadataFile := config.metadataFile
 	if metadataFile != "" {
-		useMetadata = true
-	}
-
-	if useMetadata {
 		var metadata struct {
 			Name     string            `json:"name"`
 			IaasType string            `json:"iaas_type"`
