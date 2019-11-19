@@ -65,9 +65,11 @@ var _ = Describe("PrintEnv", func() {
 				stateValidator.ValidateCall.Returns.Error = errors.New("failed to validate state")
 			})
 
-			It("returns an error", func() {
+			It("does nothing", func() {
+				// We don't do any validation here, because at this point, we don't know if we're using
+				// a bbl-state or a metadata file.
 				err := printEnv.CheckFastFails([]string{}, storage.State{})
-				Expect(err).To(MatchError("failed to validate state"))
+				Expect(err).NotTo(HaveOccurred())
 			})
 		})
 	})
@@ -196,6 +198,18 @@ var _ = Describe("PrintEnv", func() {
 				Expect(string(contents)).To(Equal("-----BEGIN RSA PRIVATE KEY-----\nsome-jumpbox-private-key\n-----END RSA PRIVATE KEY-----\n"))
 			})
 
+			Context("when the state does not exist", func() {
+				BeforeEach(func() {
+					// If we're using a metadata file, we don't care whether or not a valid bbl-state exists.
+					stateValidator.ValidateCall.Returns.Error = errors.New("failed to validate state")
+				})
+
+				It("does not return an error", func() {
+					err := printEnv.Execute([]string{"--file", fmt.Sprintf("%s/metadata.json", tmpDir)}, storage.State{})
+					Expect(err).NotTo(HaveOccurred())
+				})
+			})
+
 			Context("failure cases", func() {
 				Context("when fails to read metadata file", func() {
 					It("logs an error", func() {
@@ -222,6 +236,17 @@ var _ = Describe("PrintEnv", func() {
 		})
 
 		Context("failure cases", func() {
+			Context("when the state does not exist", func() {
+				BeforeEach(func() {
+					stateValidator.ValidateCall.Returns.Error = errors.New("mango")
+				})
+
+				It("returns an error", func() {
+					err := printEnv.Execute([]string{}, storage.State{})
+					Expect(err).To(MatchError("mango"))
+				})
+			})
+
 			Context("when the allproxy getter fails to get a private key", func() {
 				BeforeEach(func() {
 					allProxyGetter.GeneratePrivateKeyCall.Returns.Error = errors.New("papaya")

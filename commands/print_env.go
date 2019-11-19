@@ -72,11 +72,9 @@ func NewPrintEnv(
 }
 
 func (p PrintEnv) CheckFastFails(subcommandFlags []string, state storage.State) error {
-	err := p.stateValidator.Validate()
-	if err != nil {
-		return err
-	}
-
+	// We don't do any validation here, because at this point, we don't know if we're using
+	// a bbl-state or a metadata file. Once we know that we're using a bbl-state, in Execute,
+	// we validate that the state exists.
 	return nil
 }
 
@@ -158,6 +156,11 @@ func (p PrintEnv) Execute(args []string, state storage.State) error {
 
 		p.renderVariables(renderer, variables)
 		return nil
+	}
+
+	err = p.stateValidator.Validate()
+	if err != nil {
+		return err
 	}
 
 	variables["BOSH_CLIENT"] = state.BOSH.DirectorUsername
