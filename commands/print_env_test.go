@@ -1,7 +1,12 @@
 package commands_test
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
 
 	"github.com/cloudfoundry/bosh-bootloader/commands"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
@@ -118,6 +123,101 @@ var _ = Describe("PrintEnv", func() {
 
 				Expect(logger.PrintlnCall.Messages).To(ContainElement("$env:JUMPBOX_PRIVATE_KEY=\"the-key-path\""))
 				Expect(logger.PrintlnCall.Messages).To(ContainElement("$env:BOSH_ALL_PROXY=\"ipfs://some-domain-with?private_key=the-key-path\""))
+			})
+		})
+
+		Context("When using metadata file", func() {
+			var (
+				tmpDir           string
+				metadataFilePath string
+				metadataState    map[string]interface{}
+			)
+
+			BeforeEach(func() {
+				var err error
+				tmpDir, err = ioutil.TempDir("", "")
+				Expect(err).NotTo(HaveOccurred())
+
+				metadataState = map[string]interface{}{
+					"name":      "sweetsixteen",
+					"iaas_type": "gcp",
+					"bosh": map[string]string{
+						"credhub_client":      "some-credhub-admin",
+						"bosh_client":         "some-director-username",
+						"bosh_client_secret":  "some-director-password",
+						"bosh_ca_cert":        "-----BEGIN CERTIFICATE-----\nsome-director-ca-cert\n-----END CERTIFICATE-----\n",
+						"credhub_ca_cert":     "-----BEGIN CERTIFICATE-----\nsome-credhub-certs\n-----END CERTIFICATE-----\n",
+						"jumpbox_private_key": "-----BEGIN RSA PRIVATE KEY-----\nsome-jumpbox-private-key\n-----END RSA PRIVATE KEY-----\n",
+						"bosh_all_proxy":      "ssh+socks5://jumpbox@8.8.8.8:22?private-key=sweetsixteen.priv",
+						"bosh_environment":    "some-director-address",
+						"credhub_secret":      "some-credhub-password",
+						"credhub_server":      "some-credhub-server",
+					},
+					"cf": map[string]string{
+						"api_url": "api.sweetsixteen.cf-app.com",
+					},
+				}
+
+				metadataJson, err := json.Marshal(metadataState)
+				Expect(err).NotTo(HaveOccurred())
+
+				metadataFilePath = filepath.Join(tmpDir, "metadata.json")
+
+				err = ioutil.WriteFile(metadataFilePath, metadataJson, 0660)
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			AfterEach(func() {
+				err := os.RemoveAll(tmpDir)
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			It("prints the correct environment variables for the bosh cli", func() {
+				err := printEnv.Execute([]string{"--file", fmt.Sprintf("%s/metadata.json", tmpDir)}, storage.State{})
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(logger.PrintlnCall.Messages).To(ContainElement("export BOSH_CLIENT=some-director-username"))
+				Expect(logger.PrintlnCall.Messages).To(ContainElement("export BOSH_CLIENT_SECRET=some-director-password"))
+				Expect(logger.PrintlnCall.Messages).To(ContainElement("export BOSH_CA_CERT='-----BEGIN CERTIFICATE-----\nsome-director-ca-cert\n-----END CERTIFICATE-----\n'"))
+				Expect(logger.PrintlnCall.Messages).To(ContainElement("export BOSH_ENVIRONMENT=some-director-address"))
+
+				Expect(logger.PrintlnCall.Messages).To(ContainElement("export CREDHUB_SERVER=some-credhub-server"))
+				Expect(logger.PrintlnCall.Messages).To(ContainElement("export CREDHUB_CA_CERT='-----BEGIN CERTIFICATE-----\nsome-credhub-certs\n-----END CERTIFICATE-----\n'"))
+				Expect(logger.PrintlnCall.Messages).To(ContainElement("export CREDHUB_CLIENT=some-credhub-admin"))
+				Expect(logger.PrintlnCall.Messages).To(ContainElement("export CREDHUB_SECRET=some-credhub-password"))
+				Expect(logger.PrintlnCall.Messages).To(ContainElement(`export CREDHUB_PROXY=ssh+socks5://jumpbox@8.8.8.8:22?private-key=/tmp/sweetsixteen.priv`))
+
+				Expect(logger.PrintlnCall.Messages).To(ContainElement(`export JUMPBOX_PRIVATE_KEY=/tmp/sweetsixteen.priv`))
+				Expect(logger.PrintlnCall.Messages).To(ContainElement(`export BOSH_ALL_PROXY=ssh+socks5://jumpbox@8.8.8.8:22?private-key=/tmp/sweetsixteen.priv`))
+
+				contents, err := ioutil.ReadFile("/tmp/sweetsixteen.priv")
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(string(contents)).To(Equal("-----BEGIN RSA PRIVATE KEY-----\nsome-jumpbox-private-key\n-----END RSA PRIVATE KEY-----\n"))
+			})
+
+			Context("failure cases", func() {
+				Context("when fails to read metadata file", func() {
+					It("logs an error", func() {
+						err := printEnv.Execute([]string{"--file", "does_not_exist.json"}, storage.State{})
+						Expect(err).To(HaveOccurred())
+						Expect(stderrLogger.PrintlnCall.Messages).To(ContainElement(MatchRegexp("Failed to read does_not_exist.json")))
+					})
+				})
+
+				Context("when unmarshalling fails", func() {
+					BeforeEach(func() {
+						badJsonFilePath := filepath.Join(tmpDir, "bad.json")
+						err := ioutil.WriteFile(badJsonFilePath, []byte(`{"name": "", asdf}`), 0660)
+						Expect(err).NotTo(HaveOccurred())
+					})
+
+					It("logs an error", func() {
+						err := printEnv.Execute([]string{"--file", fmt.Sprintf("%s/bad.json", tmpDir)}, storage.State{})
+						Expect(err).To(HaveOccurred())
+						Expect(stderrLogger.PrintlnCall.Messages).To(ContainElement(MatchRegexp(fmt.Sprintf("Failed to unmarshal %s/bad.json", tmpDir))))
+					})
+				})
 			})
 		})
 

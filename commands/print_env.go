@@ -1,6 +1,11 @@
 package commands
 
 import (
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"strings"
+
 	"github.com/cloudfoundry/bosh-bootloader/fileio"
 	"github.com/cloudfoundry/bosh-bootloader/flags"
 	"github.com/cloudfoundry/bosh-bootloader/renderers"
@@ -40,7 +45,8 @@ type fs interface {
 }
 
 type PrintEnvConfig struct {
-	shellType string
+	shellType    string
+	metadataFile string
 }
 
 // NewPrintEnv creates a new PrintEnv Command
@@ -81,6 +87,7 @@ func (p PrintEnv) ParseArgs(args []string, state storage.State) (PrintEnvConfig,
 
 	printEnvFlags := flags.New("print-env")
 	printEnvFlags.String(&config.shellType, "shell-type", "")
+	printEnvFlags.String(&config.metadataFile, "file", "")
 
 	err := printEnvFlags.Parse(args)
 	if err != nil {
@@ -102,6 +109,55 @@ func (p PrintEnv) Execute(args []string, state storage.State) error {
 	renderer, err := p.rendererFactory.Create(shell)
 	if err != nil {
 		return err
+	}
+
+	useMetadata := false
+	metadataFile := config.metadataFile
+	if metadataFile != "" {
+		useMetadata = true
+	}
+
+	if useMetadata {
+		var metadata struct {
+			Name     string            `json:"name"`
+			IaasType string            `json:"iaas_type"`
+			Bosh     map[string]string `json:"bosh"`
+		}
+		metadataContents, err := ioutil.ReadFile(metadataFile)
+		if err != nil {
+			p.stderrLogger.Println(fmt.Sprintf("Failed to read %s: %s", metadataFile, err))
+			return err
+		}
+
+		err = json.Unmarshal(metadataContents, &metadata)
+		if err != nil {
+			p.stderrLogger.Println(fmt.Sprintf("Failed to unmarshal %s: %s", metadataFile, err))
+			return err
+		}
+
+		variables["BOSH_CLIENT"] = metadata.Bosh["bosh_client"]
+		variables["BOSH_CLIENT_SECRET"] = metadata.Bosh["bosh_client_secret"]
+		variables["BOSH_ENVIRONMENT"] = metadata.Bosh["bosh_environment"]
+		variables["BOSH_CA_CERT"] = metadata.Bosh["bosh_ca_cert"]
+		variables["CREDHUB_CLIENT"] = metadata.Bosh["credhub_client"]
+		variables["CREDHUB_SECRET"] = metadata.Bosh["credhub_secret"]
+		variables["CREDHUB_SERVER"] = metadata.Bosh["credhub_server"]
+		variables["CREDHUB_CA_CERT"] = metadata.Bosh["credhub_ca_cert"]
+
+		privateKeyPath := fmt.Sprintf("/tmp/%s.priv", metadata.Name)
+		err = ioutil.WriteFile(privateKeyPath, []byte(metadata.Bosh["jumpbox_private_key"]), 0600)
+		if err != nil {
+			p.stderrLogger.Println(fmt.Sprintf("Failed to write private key to %s: %s", privateKeyPath, err))
+			return err
+		}
+
+		variables["JUMPBOX_PRIVATE_KEY"] = privateKeyPath
+		boshAllProxy := fmt.Sprintf("%s=%s", strings.Split(metadata.Bosh["bosh_all_proxy"], "=")[0], privateKeyPath)
+		variables["BOSH_ALL_PROXY"] = boshAllProxy
+		variables["CREDHUB_PROXY"] = boshAllProxy
+
+		p.renderVariables(renderer, variables)
+		return nil
 	}
 
 	variables["BOSH_CLIENT"] = state.BOSH.DirectorUsername
