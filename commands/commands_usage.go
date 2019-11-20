@@ -112,7 +112,7 @@ const (
 	PrintEnvCommandUsage = `Prints required BOSH environment variables.
 
   --shell-type             Prints for the given shell (posix|powershell|yaml)
-  --file                   Read from Toolsmiths metadata file instead of bbl state
+  --metadata-file          Read from Toolsmiths metadata file instead of bbl state
 `
 	LatestErrorCommandUsage = "Prints the output from the latest call to terraform"
 )

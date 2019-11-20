@@ -85,7 +85,7 @@ func (p PrintEnv) ParseArgs(args []string, state storage.State) (PrintEnvConfig,
 
 	printEnvFlags := flags.New("print-env")
 	printEnvFlags.String(&config.shellType, "shell-type", "")
-	printEnvFlags.String(&config.metadataFile, "file", "")
+	printEnvFlags.String(&config.metadataFile, "metadata-file", "")
 
 	err := printEnvFlags.Parse(args)
 	if err != nil {
