@@ -175,7 +175,7 @@ var _ = Describe("PrintEnv", func() {
 			})
 
 			It("prints the correct environment variables for the bosh cli", func() {
-				err := printEnv.Execute([]string{"--file", fmt.Sprintf("%s/metadata.json", tmpDir)}, storage.State{})
+				err := printEnv.Execute([]string{"--metadata-file", fmt.Sprintf("%s/metadata.json", tmpDir)}, storage.State{})
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(logger.PrintlnCall.Messages).To(ContainElement("export BOSH_CLIENT=some-director-username"))
@@ -205,7 +205,7 @@ var _ = Describe("PrintEnv", func() {
 				})
 
 				It("does not return an error", func() {
-					err := printEnv.Execute([]string{"--file", fmt.Sprintf("%s/metadata.json", tmpDir)}, storage.State{})
+					err := printEnv.Execute([]string{"--metadata-file", fmt.Sprintf("%s/metadata.json", tmpDir)}, storage.State{})
 					Expect(err).NotTo(HaveOccurred())
 				})
 			})
@@ -213,7 +213,7 @@ var _ = Describe("PrintEnv", func() {
 			Context("failure cases", func() {
 				Context("when fails to read metadata file", func() {
 					It("logs an error", func() {
-						err := printEnv.Execute([]string{"--file", "does_not_exist.json"}, storage.State{})
+						err := printEnv.Execute([]string{"--metadata-file", "does_not_exist.json"}, storage.State{})
 						Expect(err).To(HaveOccurred())
 						Expect(stderrLogger.PrintlnCall.Messages).To(ContainElement(MatchRegexp("Failed to read does_not_exist.json")))
 					})
@@ -227,7 +227,7 @@ var _ = Describe("PrintEnv", func() {
 					})
 
 					It("logs an error", func() {
-						err := printEnv.Execute([]string{"--file", fmt.Sprintf("%s/bad.json", tmpDir)}, storage.State{})
+						err := printEnv.Execute([]string{"--metadata-file", fmt.Sprintf("%s/bad.json", tmpDir)}, storage.State{})
 						Expect(err).To(HaveOccurred())
 						Expect(stderrLogger.PrintlnCall.Messages).To(ContainElement(MatchRegexp(fmt.Sprintf("Failed to unmarshal %s/bad.json", tmpDir))))
 					})
