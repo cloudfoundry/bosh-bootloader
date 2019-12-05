@@ -4,10 +4,6 @@
   value: cf
 
 - type: replace
-  path: /instance_groups/name=consul/networks/0/name
-  value: cf
-
-- type: replace
   path: /instance_groups/name=nats/networks/0/name
   value: cf
 

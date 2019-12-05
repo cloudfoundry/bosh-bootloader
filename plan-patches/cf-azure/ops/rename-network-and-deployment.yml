@@ -5,10 +5,6 @@
   value: ((network_name))
 
 - type: replace
-  path: /instance_groups/name=consul/networks/name=default/name
-  value: ((network_name))
-
-- type: replace
   path: /instance_groups/name=nats/networks/name=default/name
   value: ((network_name))
 
@@ -131,13 +127,6 @@
     targets:
     - query: '*'
       instance_group: api
-      deployment: ((deployment_name))
-      network: ((network_name))
-      domain: bosh
-  - domain: consul.service.cf.internal
-    targets:
-    - query: '*'
-      instance_group: consul
       deployment: ((deployment_name))
       network: ((network_name))
       domain: bosh
