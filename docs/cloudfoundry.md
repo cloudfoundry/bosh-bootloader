@@ -12,19 +12,22 @@ To create Cloud Foundry load balancers for Microsoft Azure you must provide a ce
 in the `.pfx` format:
 
 ```
-openssl genrsa -out DOMAIN_NAME.key 2048
-openssl req -new -x509 -days 365 -key DOMAIN_NAME.key -out DOMAIN_NAME.crt
-openssl pkcs12 -export -out PFX_FILE -inkey DOMAIN_NAME.key -in DOMAIN_NAME.crt
+export DOMAIN="<INSERT-DOMAIN-NAME-HERE>"
+openssl genrsa -out $DOMAIN.key 2048
+openssl req -new -x509 -days 365 -key $DOMAIN.key -out $DOMAIN.crt
+openssl pkcs12 -export -out PFX_FILE -inkey $DOMAIN.key -in $DOMAIN.crt
 ```
 
 Save the password you entered when prompted by `openssl` to a file.
 
 ```
-echo SuperSecretPassword > PFX_FILE_PASSWORD
+export PFX_FILE_PASSWORD="<INSERT-FILE-PATH-HERE>"
+echo SuperSecretPassword > $PFX_FILE_PASSWORD
 ```
 
 To `bbl  plan` or `bbl up` you can provide the `.pfx` file and password:
 
 ```
-bbl plan --lb-type cf --lb-cert PFX_FILE --lb-key PFX_FILE_PASSWORD
+export PFX_FILE="<INSERT-FILE-PATH-HERE>"
+bbl plan --lb-type cf --lb-cert $PFX_FILE --lb-key $PFX_FILE_PASSWORD
 ```
