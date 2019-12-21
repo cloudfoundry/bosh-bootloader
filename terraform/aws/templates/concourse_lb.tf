@@ -56,6 +56,10 @@ resource "aws_lb" "concourse_lb" {
   name               = "${var.short_env_id}-concourse-lb"
   load_balancer_type = "network"
   subnets            = ["${aws_subnet.lb_subnets.*.id}"]
+
+  tags {
+    Name = "${var.env_id}"
+  }
 }
 
 resource "aws_lb_listener" "concourse_lb_80" {
@@ -81,6 +85,10 @@ resource "aws_lb_target_group" "concourse_lb_80" {
     interval            = 30
     protocol            = "TCP"
   }
+
+  tags {
+    Name = "${var.env_id}"
+  }
 }
 
 resource "aws_lb_listener" "concourse_lb_2222" {
@@ -99,6 +107,10 @@ resource "aws_lb_target_group" "concourse_lb_2222" {
   port     = 2222
   protocol = "TCP"
   vpc_id   = "${local.vpc_id}"
+
+  tags {
+    Name = "${var.env_id}"
+  }
 }
 
 resource "aws_lb_listener" "concourse_lb_443" {
@@ -117,6 +129,10 @@ resource "aws_lb_target_group" "concourse_lb_443" {
   port     = 443
   protocol = "TCP"
   vpc_id   = "${local.vpc_id}"
+
+  tags {
+    Name = "${var.env_id}"
+  }
 }
 
 resource "aws_security_group_rule" "concourse_lb_internal_8844" {
@@ -155,6 +171,10 @@ resource "aws_lb_target_group" "concourse_lb_8844" {
   port     = 8844
   protocol = "TCP"
   vpc_id   = "${local.vpc_id}"
+
+  tags {
+    Name = "${var.env_id}"
+  }
 }
 
 resource "aws_lb_listener" "concourse_lb_8443" {
@@ -173,6 +193,10 @@ resource "aws_lb_target_group" "concourse_lb_8443" {
   port     = 8443
   protocol = "TCP"
   vpc_id   = "${local.vpc_id}"
+
+  tags {
+    Name = "${var.env_id}"
+  }
 }
 
 output "concourse_lb_internal_security_group" {

@@ -79,6 +79,10 @@ resource "aws_elb" "iso_router_lb" {
 
   security_groups = ["${aws_security_group.cf_router_lb_security_group.id}"]
   subnets         = ["${aws_subnet.lb_subnets.*.id}"]
+
+  tags {
+    Name = "${var.env_id}"
+  }
 }
 
 resource "aws_lb_target_group" "iso_router_lb_4443" {
@@ -90,6 +94,10 @@ resource "aws_lb_target_group" "iso_router_lb_4443" {
 
   health_check {
     protocol = "TCP"
+  }
+
+  tags {
+    Name = "${var.env_id}"
   }
 }
 

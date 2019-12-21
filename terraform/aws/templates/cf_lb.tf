@@ -83,6 +83,10 @@ resource "aws_elb" "cf_ssh_lb" {
 
   security_groups = ["${aws_security_group.cf_ssh_lb_security_group.id}"]
   subnets         = ["${aws_subnet.lb_subnets.*.id}"]
+
+  tags {
+    Name = "${var.env_id}"
+  }
 }
 
 output "cf_ssh_lb_name" {
@@ -208,6 +212,10 @@ resource "aws_elb" "cf_router_lb" {
 
   security_groups = ["${aws_security_group.cf_router_lb_security_group.id}"]
   subnets         = ["${aws_subnet.lb_subnets.*.id}"]
+
+  tags {
+    Name = "${var.env_id}"
+  }
 }
 
 resource "aws_lb_target_group" "cf_router_4443" {
@@ -218,6 +226,10 @@ resource "aws_lb_target_group" "cf_router_4443" {
 
   health_check {
     protocol = "TCP"
+  }
+
+  tags {
+    Name = "${var.env_id}"
   }
 }
 
@@ -1014,6 +1026,10 @@ resource "aws_elb" "cf_tcp_lb" {
 
   security_groups = ["${aws_security_group.cf_tcp_lb_security_group.id}"]
   subnets         = ["${aws_subnet.lb_subnets.*.id}"]
+
+  tags {
+    Name = "${var.env_id}"
+  }
 }
 
 output "cf_tcp_lb_name" {
