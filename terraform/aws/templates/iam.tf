@@ -3,7 +3,7 @@ variable "bosh_iam_instance_profile" {
 }
 
 locals {
-  iamProfileProvided = "${var.bosh_iam_instance_profile == "" ? 0 : 1 }"
+  iamProfileProvided = "${var.bosh_iam_instance_profile == "" ? 0 : 1}"
 }
 
 data "aws_iam_instance_profile" "bosh" {
@@ -142,6 +142,10 @@ resource "aws_flow_log" "bbl" {
 
 resource "aws_cloudwatch_log_group" "bbl" {
   name_prefix = "${var.short_env_id}-log-group"
+
+  tags {
+    Name = "${var.env_id}"
+  }
 }
 
 resource "aws_iam_role" "flow_logs" {

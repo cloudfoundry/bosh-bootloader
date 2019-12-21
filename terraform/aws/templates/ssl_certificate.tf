@@ -20,4 +20,8 @@ resource "aws_iam_server_certificate" "lb_cert" {
   lifecycle {
     create_before_destroy = true
   }
+
+  tags {
+    Name = "${var.env_id}"
+  }
 }
