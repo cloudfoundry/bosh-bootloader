@@ -74,7 +74,8 @@ const (
 
 	CleanupLeftoversCommandUsage = `Cleans up orphaned IAAS resources
 
-  --filter            Only delete resources with this string in their name`
+  --filter            Only delete resources with this string in their name
+  --dry-run           List all resources without deleting any`
 
 	LBsCommandUsage = "Prints attached load balancer(s)"
 
