@@ -16,7 +16,6 @@ package autorest
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -180,30 +179,24 @@ func TestAfterDelayWaits(t *testing.T) {
 
 func TestAfterDelay_Cancels(t *testing.T) {
 	client := mocks.NewSender()
-	ctx, cancel := context.WithCancel(context.Background())
+	cancel := make(chan struct{})
 	delay := 5 * time.Second
 
 	var wg sync.WaitGroup
 	wg.Add(1)
-	start := time.Now()
-	end := time.Now()
-	var err error
+	tt := time.Now()
 	go func() {
 		req := mocks.NewRequest()
-		req = req.WithContext(ctx)
-		_, err = SendWithSender(client, req,
-			AfterDelay(delay))
-		end = time.Now()
+		req.Cancel = cancel
 		wg.Done()
+		SendWithSender(client, req,
+			AfterDelay(delay))
 	}()
-	cancel()
 	wg.Wait()
+	close(cancel)
 	time.Sleep(5 * time.Millisecond)
-	if end.Sub(start) >= delay {
-		t.Fatal("autorest: AfterDelay elapsed")
-	}
-	if err == nil {
-		t.Fatal("autorest: AfterDelay didn't cancel")
+	if time.Since(tt) >= delay {
+		t.Fatal("autorest: AfterDelay failed to cancel")
 	}
 }
 
@@ -817,41 +810,7 @@ func TestDelayWithRetryAfterWithSuccess(t *testing.T) {
 	}
 }
 
-type temporaryError struct {
-	message string
-}
-
-func (te temporaryError) Error() string {
-	return te.message
-}
-
-func (te temporaryError) Timeout() bool {
-	return true
-}
-
-func (te temporaryError) Temporary() bool {
-	return true
-}
-
-func TestDoRetryForStatusCodes_NilResponseTemporaryError(t *testing.T) {
-	client := mocks.NewSender()
-	client.AppendResponse(nil)
-	client.SetError(temporaryError{message: "faux error"})
-
-	r, err := SendWithSender(client, mocks.NewRequest(),
-		DoRetryForStatusCodes(3, time.Duration(1*time.Second), StatusCodesForRetry...),
-	)
-
-	Respond(r,
-		ByDiscardingBody(),
-		ByClosing())
-
-	if err != nil || client.Attempts() != 2 {
-		t.Fatalf("autorest: Sender#TestDoRetryForStatusCodes_NilResponseTemporaryError -- Got: non-nil error or wrong number of attempts - %v", err)
-	}
-}
-
-func TestDoRetryForStatusCodes_NilResponseTemporaryError2(t *testing.T) {
+func TestDoRetryForStatusCodes_NilResponse(t *testing.T) {
 	client := mocks.NewSender()
 	client.AppendResponse(nil)
 	client.SetError(fmt.Errorf("faux error"))
@@ -865,40 +824,6 @@ func TestDoRetryForStatusCodes_NilResponseTemporaryError2(t *testing.T) {
 		ByClosing())
 
 	if err != nil || client.Attempts() != 2 {
-		t.Fatalf("autorest: Sender#TestDoRetryForStatusCodes_NilResponseTemporaryError2 -- Got: nil error or wrong number of attempts - %v", err)
-	}
-}
-
-type fatalError struct {
-	message string
-}
-
-func (fe fatalError) Error() string {
-	return fe.message
-}
-
-func (fe fatalError) Timeout() bool {
-	return false
-}
-
-func (fe fatalError) Temporary() bool {
-	return false
-}
-
-func TestDoRetryForStatusCodes_NilResponseFatalError(t *testing.T) {
-	client := mocks.NewSender()
-	client.AppendResponse(nil)
-	client.SetError(fatalError{"fatal error"})
-
-	r, err := SendWithSender(client, mocks.NewRequest(),
-		DoRetryForStatusCodes(3, time.Duration(1*time.Second), StatusCodesForRetry...),
-	)
-
-	Respond(r,
-		ByDiscardingBody(),
-		ByClosing())
-
-	if err == nil || client.Attempts() > 1 {
-		t.Fatalf("autorest: Sender#TestDoRetryForStatusCodes_NilResponseFatalError -- Got: nil error or wrong number of attempts - %v", err)
+		t.Fatalf("autorest: Sender#TestDoRetryForStatusCodes_NilResponse -- Got: non-nil error or wrong number of attempts - %v", err)
 	}
 }

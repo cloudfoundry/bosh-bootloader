@@ -17,7 +17,7 @@
   version = "v0.18.0"
 
 [[projects]]
-  digest = "1:885b147b40bd5596d3e0e81d52ba4d34281c15dce355d9a2effbbcebd8aa97d1"
+  digest = "1:e44d86307555056df4662123f8af8a63b314cf03f81fd1b6f03d86b67e905dcd"
   name = "github.com/Azure/azure-sdk-for-go"
   packages = [
     "arm/compute",
@@ -26,11 +26,11 @@
     "arm/storage",
   ]
   pruneopts = "U"
-  revision = "2d1d76c9013c4feb6695a2346f0e66ea0ef77aa6"
-  version = "v11.3.0-beta"
+  revision = "21b68149ccf7c16b3f028bb4c7fd0ab458fe308f"
+  version = "v12.5.0-beta"
 
 [[projects]]
-  digest = "1:593d41afb57d955ead22596bd13a647904c13c285ef51817133d0ff64c88e8b8"
+  digest = "1:090c6f56357645defbfbff3922e82060e1912fbebfdc53f3420184bc77fae330"
   name = "github.com/Azure/go-autorest"
   packages = [
     "autorest",
@@ -42,8 +42,8 @@
     "autorest/validation",
   ]
   pruneopts = "U"
-  revision = "1f7cd6cfe0adea687ad44a512dfe76140f804318"
-  version = "v10.12.0"
+  revision = "fc3b03a2d2d1f43fad3007038bd16f044f870722"
+  version = "v9.10.0"
 
 [[projects]]
   digest = "1:513366dae97e37fdcc55e846bfdc040c89b4c36b478db85bdaa73bf9ae8c0e8b"

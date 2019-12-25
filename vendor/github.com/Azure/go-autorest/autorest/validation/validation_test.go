@@ -1090,7 +1090,7 @@ func TestValidateInt_inclusiveMaximumConstraintValid(t *testing.T) {
 	c := Constraint{
 		Target: "str",
 		Name:   InclusiveMaximum,
-		Rule:   int64(2),
+		Rule:   2,
 		Chain:  nil,
 	}
 	require.Nil(t, validateInt(reflect.ValueOf(1), c))
@@ -1101,7 +1101,7 @@ func TestValidateInt_inclusiveMaximumConstraintInvalid(t *testing.T) {
 	c := Constraint{
 		Target: "str",
 		Name:   InclusiveMaximum,
-		Rule:   int64(1),
+		Rule:   1,
 		Chain:  nil,
 	}
 	require.Equal(t, validateInt(reflect.ValueOf(x), c).Error(),
@@ -1112,7 +1112,7 @@ func TestValidateInt_inclusiveMaximumConstraintBoundary(t *testing.T) {
 	c := Constraint{
 		Target: "str",
 		Name:   InclusiveMaximum,
-		Rule:   int64(1),
+		Rule:   1,
 		Chain:  nil,
 	}
 	require.Nil(t, validateInt(reflect.ValueOf(1), c))
@@ -2417,21 +2417,6 @@ func TestValidate_StructInStruct(t *testing.T) {
 	require.Nil(t, Validate(v))
 }
 
-func TestNewError(t *testing.T) {
-	p := &Product{}
-	v := []Validation{
-		{p, []Constraint{{"p", Null, true,
-			[]Constraint{{"p.C", Null, true,
-				[]Constraint{{"p.C.I", Empty, true, nil}}},
-			},
-		}}},
-	}
-	err := createError(reflect.ValueOf(p.C), v[0].Constraints[0].Chain[0], "value can not be null; required parameter")
-	z := fmt.Sprintf("batch.AccountClient#Create: Invalid input: %s",
-		err.Error())
-	require.Equal(t, NewError("batch.AccountClient", "Create", err.Error()).Error(), z)
-}
-
 func TestNewErrorWithValidationError(t *testing.T) {
 	p := &Product{}
 	v := []Validation{
@@ -2444,7 +2429,5 @@ func TestNewErrorWithValidationError(t *testing.T) {
 	err := createError(reflect.ValueOf(p.C), v[0].Constraints[0].Chain[0], "value can not be null; required parameter")
 	z := fmt.Sprintf("batch.AccountClient#Create: Invalid input: %s",
 		err.Error())
-	valError := NewErrorWithValidationError(err, "batch.AccountClient", "Create")
-	require.IsType(t, valError, Error{})
-	require.Equal(t, valError.Error(), z)
+	require.Equal(t, NewErrorWithValidationError(err, "batch.AccountClient", "Create").Error(), z)
 }
