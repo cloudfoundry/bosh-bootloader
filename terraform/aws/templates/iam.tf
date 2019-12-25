@@ -134,10 +134,10 @@ resource "aws_iam_instance_profile" "bosh" {
 }
 
 resource "aws_flow_log" "bbl" {
-  log_group_name = "${aws_cloudwatch_log_group.bbl.name}"
-  iam_role_arn   = "${aws_iam_role.flow_logs.arn}"
-  vpc_id         = "${local.vpc_id}"
-  traffic_type   = "REJECT"
+  log_destination = "${aws_cloudwatch_log_group.bbl.name}"
+  iam_role_arn    = "${aws_iam_role.flow_logs.arn}"
+  vpc_id          = "${local.vpc_id}"
+  traffic_type    = "REJECT"
 }
 
 resource "aws_cloudwatch_log_group" "bbl" {
