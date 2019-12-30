@@ -105,6 +105,7 @@ var _ = Describe("Commands Usage", func() {
 			Expect(usageText).To(Equal(fmt.Sprintf(`Cleans up orphaned IAAS resources
 
   --filter            Only delete resources with this string in their name
+  --dry-run           List all resources without deleting any
 
   Credentials for your IaaS are required:%s`, commands.Credentials)))
 		})
