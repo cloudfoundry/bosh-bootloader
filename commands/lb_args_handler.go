@@ -14,11 +14,10 @@ type LBArgsHandler struct {
 }
 
 type LBArgs struct {
-	LBType    string
-	CertPath  string
-	KeyPath   string
-	ChainPath string
-	Domain    string
+	LBType   string
+	CertPath string
+	KeyPath  string
+	Domain   string
 }
 
 func NewLBArgsHandler(certificateValidator certificateValidator) LBArgsHandler {
@@ -50,7 +49,7 @@ func (l LBArgsHandler) GetLBState(iaas string, args LBArgs) (storage.LB, error) 
 	}
 
 	if args.LBType != "concourse" {
-		certData, err = l.certificateValidator.ReadAndValidate(args.CertPath, args.KeyPath, args.ChainPath)
+		certData, err = l.certificateValidator.ReadAndValidate(args.CertPath, args.KeyPath)
 		if err != nil {
 			return storage.LB{}, fmt.Errorf("Validate certificate: %s", err)
 		}
@@ -64,7 +63,6 @@ func (l LBArgsHandler) GetLBState(iaas string, args LBArgs) (storage.LB, error) 
 		Type:   args.LBType,
 		Cert:   string(certData.Cert),
 		Key:    string(certData.Key),
-		Chain:  string(certData.Chain),
 		Domain: args.Domain,
 	}, nil
 }

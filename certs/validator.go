@@ -17,9 +17,8 @@ import (
 )
 
 type CertData struct {
-	Cert  []byte
-	Key   []byte
-	Chain []byte
+	Cert []byte
+	Key  []byte
 }
 
 type Validator struct{}
@@ -28,13 +27,13 @@ func NewValidator() Validator {
 	return Validator{}
 }
 
-func (v Validator) ReadAndValidate(certPath, keyPath, chainPath string) (CertData, error) {
-	certData, readErrors := v.Read(certPath, keyPath, chainPath)
+func (v Validator) ReadAndValidate(certPath, keyPath string) (CertData, error) {
+	certData, readErrors := v.Read(certPath, keyPath)
 	if readErrors != nil {
 		return CertData{}, readErrors
 	}
 
-	validateErrors := v.Validate(certData.Cert, certData.Key, certData.Chain)
+	validateErrors := v.Validate(certData.Cert, certData.Key)
 	if validateErrors != nil {
 		return CertData{}, validateErrors
 	}
@@ -42,7 +41,7 @@ func (v Validator) ReadAndValidate(certPath, keyPath, chainPath string) (CertDat
 	return certData, nil
 }
 
-func (v Validator) Read(certPath, keyPath, chainPath string) (CertData, error) {
+func (v Validator) Read(certPath, keyPath string) (CertData, error) {
 	validateErrors := multierror.NewMultiError("")
 
 	certBytes, err := readFile("certificate", "--lb-cert", certPath)
@@ -55,25 +54,17 @@ func (v Validator) Read(certPath, keyPath, chainPath string) (CertData, error) {
 		validateErrors.Add(err)
 	}
 
-	var chainBytes []byte
-	if chainPath != "" {
-		if chainBytes, err = readFile("chain", "--lb-chain", chainPath); err != nil {
-			validateErrors.Add(err)
-		}
-	}
-
 	if validateErrors.Length() > 0 {
 		return CertData{}, validateErrors
 	}
 
 	return CertData{
-		Cert:  certBytes,
-		Key:   keyBytes,
-		Chain: chainBytes,
+		Cert: certBytes,
+		Key:  keyBytes,
 	}, nil
 }
 
-func (v Validator) Validate(cert, key, chain []byte) error {
+func (v Validator) Validate(cert, key []byte) error {
 	validateErrors := multierror.NewMultiError("")
 
 	err := validatePEM(cert)
@@ -84,13 +75,6 @@ func (v Validator) Validate(cert, key, chain []byte) error {
 	err = validatePEM(key)
 	if err != nil {
 		validateErrors.Add(fmt.Errorf("key %s: \"%s\"", err, key))
-	}
-
-	if len(chain) > 0 {
-		err = validatePEM(chain)
-		if err != nil {
-			validateErrors.Add(fmt.Errorf("chain %s: \"%s\"", err, chain))
-		}
 	}
 
 	if validateErrors.Length() > 0 {
@@ -111,22 +95,8 @@ func (v Validator) Validate(cert, key, chain []byte) error {
 		validateErrors.Add(err)
 	}
 
-	var certPool *x509.CertPool
-	if len(chain) > 0 {
-		certPool, err = parseChain(chain)
-		if err != nil {
-			validateErrors.Add(err)
-		}
-	}
-
 	if privateKey != nil && certificate != nil {
 		if err := validateCertAndKey(certificate, privateKey); err != nil {
-			validateErrors.Add(err)
-		}
-	}
-
-	if certPool != nil && certificate != nil {
-		if err := validateCertAndChain(certificate, certPool); err != nil {
 			validateErrors.Add(err)
 		}
 	}
@@ -237,16 +207,6 @@ func validateCertAndKey(certificate *x509.Certificate, privateKey *rsa.PrivateKe
 	return nil
 }
 
-func validateCertAndChain(certificate *x509.Certificate, certPool *x509.CertPool) error {
-	opts := x509.VerifyOptions{Roots: certPool}
-
-	if _, err := certificate.Verify(opts); err != nil {
-		return fmt.Errorf("certificate and chain mismatch: %s", err.Error())
-	}
-
-	return nil
-}
-
 func parseCertificate(certificateData []byte, loadKeyPairError error) (*x509.Certificate, error) {
 	pemCertData, _ := pem.Decode(certificateData)
 	cert, err := x509.ParseCertificate(pemCertData.Bytes)
@@ -255,14 +215,4 @@ func parseCertificate(certificateData []byte, loadKeyPairError error) (*x509.Cer
 	}
 
 	return cert, nil
-}
-
-func parseChain(chainData []byte) (*x509.CertPool, error) {
-	roots := x509.NewCertPool()
-	ok := roots.AppendCertsFromPEM(chainData)
-	if !ok {
-		return nil, fmt.Errorf("failed to parse chain")
-	}
-
-	return roots, nil
 }
