@@ -80,10 +80,9 @@ var _ = Describe("InputGenerator", func() {
 						Region:          "some-region",
 					},
 					LB: storage.LB{
-						Type:  "cf",
-						Cert:  "some-cert",
-						Chain: "some-chain",
-						Key:   "some-key",
+						Type: "cf",
+						Cert: "some-cert",
+						Key:  "some-key",
 					},
 				}
 			})
@@ -100,7 +99,6 @@ var _ = Describe("InputGenerator", func() {
 					"region":                      "some-region",
 					"availability_zones":          []string{"z1", "z2", "z3"},
 					"ssl_certificate":             "some-cert",
-					"ssl_certificate_chain":       "some-chain",
 					"ssl_certificate_private_key": "some-key",
 				}))
 			})
@@ -124,7 +122,6 @@ var _ = Describe("InputGenerator", func() {
 						"region":                      "some-region",
 						"availability_zones":          []string{"z1", "z2", "z3"},
 						"ssl_certificate":             "some-cert",
-						"ssl_certificate_chain":       "some-chain",
 						"ssl_certificate_private_key": "some-key",
 						"system_domain":               "some-domain",
 						"parent_zone":                 "zone-id",

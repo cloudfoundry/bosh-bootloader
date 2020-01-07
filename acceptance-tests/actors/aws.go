@@ -66,8 +66,6 @@ type awsLBHelper struct {
 func (a awsLBHelper) GetLBArgs() []string {
 	certPath, err := testhelpers.WriteContentsToTempFile(testhelpers.BBL_CERT)
 	Expect(err).NotTo(HaveOccurred())
-	chainPath, err := testhelpers.WriteContentsToTempFile(testhelpers.BBL_CHAIN)
-	Expect(err).NotTo(HaveOccurred())
 	keyPath, err := testhelpers.WriteContentsToTempFile(testhelpers.BBL_KEY)
 	Expect(err).NotTo(HaveOccurred())
 
@@ -75,7 +73,6 @@ func (a awsLBHelper) GetLBArgs() []string {
 		"--lb-type", "cf",
 		"--lb-cert", certPath,
 		"--lb-key", keyPath,
-		"--lb-chain", chainPath,
 	}
 }
 

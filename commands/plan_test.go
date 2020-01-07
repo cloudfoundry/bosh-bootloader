@@ -118,18 +118,16 @@ var _ = Describe("Plan", func() {
 							"--lb-type", "cf",
 							"--lb-cert", "cert",
 							"--lb-key", "key",
-							"--lb-chain", "chain",
 							"--lb-domain", "something.io",
 						}, storage.State{IAAS: "aws"})
 					Expect(err).NotTo(HaveOccurred())
 					Expect(lbArgsHandler.GetLBStateCall.CallCount).To(Equal(1))
 					Expect(lbArgsHandler.GetLBStateCall.Receives.IAAS).To(Equal("aws"))
 					Expect(lbArgsHandler.GetLBStateCall.Receives.Args).To(Equal(commands.LBArgs{
-						LBType:    "cf",
-						CertPath:  "cert",
-						KeyPath:   "key",
-						ChainPath: "chain",
-						Domain:    "something.io",
+						LBType:   "cf",
+						CertPath: "cert",
+						KeyPath:  "key",
+						Domain:   "something.io",
 					}))
 
 					Expect(envIDManager.SyncCall.CallCount).To(Equal(1))
@@ -304,31 +302,19 @@ var _ = Describe("Plan", func() {
 							"--lb-type", "cf",
 							"--lb-cert", "cert",
 							"--lb-key", "key",
-							"--lb-chain", "chain",
 							"--lb-domain", "something.io",
 						}, storage.State{IAAS: "aws"})
 					Expect(err).NotTo(HaveOccurred())
 					Expect(lbArgsHandler.GetLBStateCall.CallCount).To(Equal(1))
 					Expect(lbArgsHandler.GetLBStateCall.Receives.IAAS).To(Equal("aws"))
 					Expect(lbArgsHandler.GetLBStateCall.Receives.Args).To(Equal(commands.LBArgs{
-						LBType:    "cf",
-						CertPath:  "cert",
-						KeyPath:   "key",
-						ChainPath: "chain",
-						Domain:    "something.io",
+						LBType:   "cf",
+						CertPath: "cert",
+						KeyPath:  "key",
+						Domain:   "something.io",
 					}))
 
 					Expect(config.LB).To(Equal(lb))
-				})
-			})
-
-			Context("gcp", func() {
-				It("doesn't use --lb-chain", func() {
-					_, err := command.ParseArgs(
-						[]string{
-							"--lb-chain", "chain",
-						}, storage.State{IAAS: "gcp"})
-					Expect(err).To(MatchError("flag provided but not defined: -lb-chain"))
 				})
 			})
 

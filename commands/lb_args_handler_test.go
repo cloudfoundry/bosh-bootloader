@@ -25,9 +25,8 @@ var _ = Describe("LBArgsHandler", func() {
 	Describe("GetLBState", func() {
 		BeforeEach(func() {
 			certData := certs.CertData{
-				Key:   []byte("some-key"),
-				Cert:  []byte("some-cert"),
-				Chain: []byte("some-chain"),
+				Key:  []byte("some-key"),
+				Cert: []byte("some-cert"),
 			}
 			certificateValidator.ReadAndValidateCall.Returns.CertData = certData
 			certificateValidator.ReadCall.Returns.CertData = certData
@@ -35,23 +34,20 @@ var _ = Describe("LBArgsHandler", func() {
 
 		It("returns a storage.LB object", func() {
 			lbState, err := handler.GetLBState("aws", commands.LBArgs{
-				LBType:    "cf",
-				CertPath:  "/path/to/cert",
-				KeyPath:   "/path/to/key",
-				ChainPath: "/path/to/chain",
-				Domain:    "something.io",
+				LBType:   "cf",
+				CertPath: "/path/to/cert",
+				KeyPath:  "/path/to/key",
+				Domain:   "something.io",
 			})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(lbState.Type).To(Equal("cf"))
 			Expect(lbState.Cert).To(Equal("some-cert"))
 			Expect(lbState.Key).To(Equal("some-key"))
-			Expect(lbState.Chain).To(Equal("some-chain"))
 			Expect(lbState.Domain).To(Equal("something.io"))
 
 			Expect(certificateValidator.ReadAndValidateCall.CallCount).To(Equal(1))
 			Expect(certificateValidator.ReadAndValidateCall.Receives.CertificatePath).To(Equal("/path/to/cert"))
 			Expect(certificateValidator.ReadAndValidateCall.Receives.KeyPath).To(Equal("/path/to/key"))
-			Expect(certificateValidator.ReadAndValidateCall.Receives.ChainPath).To(Equal("/path/to/chain"))
 		})
 
 		Context("when lb type is concourse", func() {
@@ -64,7 +60,6 @@ var _ = Describe("LBArgsHandler", func() {
 					Expect(lbState.Type).To(Equal("concourse"))
 					Expect(lbState.Cert).To(Equal(""))
 					Expect(lbState.Key).To(Equal(""))
-					Expect(lbState.Chain).To(Equal(""))
 					Expect(lbState.Domain).To(Equal(""))
 					Expect(certificateValidator.ReadAndValidateCall.CallCount).To(Equal(0))
 				})
@@ -149,14 +144,12 @@ var _ = Describe("LBArgsHandler", func() {
 				Type:   "new-type",
 				Cert:   "new-cert",
 				Key:    "new-key",
-				Chain:  "new-chain",
 				Domain: "new-domain",
 			}
 			old = storage.LB{
 				Type:   "old-type",
 				Cert:   "old-cert",
 				Key:    "old-key",
-				Chain:  "old-chain",
 				Domain: "old-domain",
 			}
 		})

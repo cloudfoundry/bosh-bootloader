@@ -97,7 +97,6 @@ var _ = Describe("Store", func() {
 						Type:   "some-type",
 						Cert:   "some-cert",
 						Key:    "some-key",
-						Chain:  "some-chain",
 						Domain: "some-domain",
 					},
 					Jumpbox: storage.Jumpbox{
@@ -152,7 +151,6 @@ var _ = Describe("Store", func() {
 					"type": "some-type",
 					"cert": "some-cert",
 					"key": "some-key",
-					"chain": "some-chain",
 					"domain": "some-domain"
 				},
 				"jumpbox":{

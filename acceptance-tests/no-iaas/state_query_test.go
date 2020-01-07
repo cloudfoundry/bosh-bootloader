@@ -135,8 +135,7 @@ const BBL_STATE_6_10_46 = `
 	"lb": {
 		"type": "cf",
 		"cert": "-----BEGIN CERTIFICATE-----\nsome-lb-cert\n-----END CERTIFICATE-----\n",
-		"key": "-----BEGIN RSA PRIVATE KEY-----\nsome-lb-key\n-----END RSA PRIVATE KEY-----\n",
-		"chain": ""
+		"key": "-----BEGIN RSA PRIVATE KEY-----\nsome-lb-key\n-----END RSA PRIVATE KEY-----\n"
 	},
 	"latestTFOutput": "latest terraform error"
 }

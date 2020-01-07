@@ -47,7 +47,6 @@ func (i InputGenerator) Generate(state storage.State) (map[string]interface{}, e
 	if state.LB.Type == "cf" {
 		inputs["ssl_certificate"] = state.LB.Cert
 		inputs["ssl_certificate_private_key"] = state.LB.Key
-		inputs["ssl_certificate_chain"] = state.LB.Chain
 
 		if state.LB.Domain != "" {
 			inputs["system_domain"] = state.LB.Domain
