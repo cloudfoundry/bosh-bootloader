@@ -62,9 +62,9 @@ resource "google_compute_backend_service" "iso-router-lb-backend-service" {
 }
 
 resource "google_compute_instance_group" "iso-router-lb-0" {
-  name        = "${var.env_id}-iso-router-lb-0-us-west1-a"
+  name        = "${var.env_id}-iso-router-lb-0-us-central1-a"
   description = "isolation-segment: terraform generated instance group that is multi-zone for https loadbalancing"
-  zone        = "us-west1-a"
+  zone        = "us-central1-a"
 
   named_port {
     name = "https"
@@ -73,9 +73,9 @@ resource "google_compute_instance_group" "iso-router-lb-0" {
 }
 
 resource "google_compute_instance_group" "iso-router-lb-1" {
-  name        = "${var.env_id}-iso-router-lb-1-us-west1-b"
+  name        = "${var.env_id}-iso-router-lb-1-us-central1-b"
   description = "isolation-segment: terraform generated instance group that is multi-zone for https loadbalancing"
-  zone        = "us-west1-b"
+  zone        = "us-central1-b"
 
   named_port {
     name = "https"
@@ -84,9 +84,9 @@ resource "google_compute_instance_group" "iso-router-lb-1" {
 }
 
 resource "google_compute_instance_group" "iso-router-lb-2" {
-  name        = "${var.env_id}-iso-router-lb-2-us-west1-c"
+  name        = "${var.env_id}-iso-router-lb-2-us-central1-c"
   description = "isolation-segment: terraform generated instance group that is multi-zone for https loadbalancing"
-  zone        = "us-west1-c"
+  zone        = "us-central1-c"
 
   named_port {
     name = "https"
