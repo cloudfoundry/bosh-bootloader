@@ -4,7 +4,6 @@
   value:
     name: iso-seg-cf-router-network-properties
     cloud_properties:
-      backend_service: ((iso_router_backend_service))
       target_pool: ((iso_ws_target_pool))
       tags:
       - ((iso_router_backend_service))
