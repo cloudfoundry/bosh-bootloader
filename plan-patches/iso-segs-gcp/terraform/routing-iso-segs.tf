@@ -134,7 +134,7 @@ resource "google_dns_record_set" "iso-wildcard-dns" {
 
   managed_zone = "${google_dns_managed_zone.env_dns_zone.name}"
 
-  rrdatas = ["${google_compute_global_address.iso-cf-address.address}"]
+  rrdatas = ["${google_compute_address.iso-cf-ws.address}"]
 }
 
 resource "google_compute_firewall" "iso-firewall-cf" {
