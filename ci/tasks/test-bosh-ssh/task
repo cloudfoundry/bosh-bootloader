@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+set -e -x -u
+
+eval "$(bbl print-env --state-dir bbl-state/${BBL_STATE_DIR})"
+bosh ssh diego-cell -d cf 'echo "we made it!"'

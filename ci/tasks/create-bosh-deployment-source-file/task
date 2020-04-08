@@ -1,0 +1,21 @@
+#!/bin/bash -exu
+
+ROOT="${PWD}"
+
+function main() {
+  local source_file
+  source_file="${ROOT}/source-file/bosh-source.json"
+
+  pushd "${ROOT}/bbl-states/${BBL_STATE_DIR}" > /dev/null
+    export TARGET="$(bbl director-address)"
+    export CLIENT="$(bbl director-username)"
+    export CLIENT_SECRET="$(bbl director-password)"
+    export CA_CERT="$(bbl director-ca-cert)"
+    export JUMPBOX_URL="$(bbl jumpbox-address)"
+    export JUMPBOX_SSH_KEY="$(bbl ssh-key)"
+  popd > /dev/null
+
+  texplate execute "${ROOT}/bbl-ci/ci/tasks/create-bosh-deployment-source-file/source-template.yml" -o json > "${source_file}"
+}
+
+main

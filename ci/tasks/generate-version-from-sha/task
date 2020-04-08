@@ -1,0 +1,11 @@
+#!/bin/bash -exu
+
+function main() {
+  pushd ${PWD}/bosh-bootloader
+    COMMIT_SHA=$(git rev-parse --verify HEAD)
+  popd
+
+  echo $COMMIT_SHA > ${PWD}/sha-version/number
+}
+
+main "$@"

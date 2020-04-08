@@ -1,0 +1,27 @@
+---
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: ubuntu
+
+inputs:
+- name: bbl-cli-dev
+- name: bosh-bootloader
+- name: dockerfiles
+
+outputs:
+- name: docker-workspace
+
+params:
+  DOCKERFILE:
+
+run:
+  path: /bin/bash
+  args:
+  - -c
+  - |
+    cp -R ./bosh-bootloader docker-workspace/
+    cp "./dockerfiles/${DOCKERFILE}" docker-workspace/
+    cp ./bbl-cli-dev/bin/bbl-*linux* docker-workspace/bbl

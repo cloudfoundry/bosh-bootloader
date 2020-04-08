@@ -1,0 +1,18 @@
+---
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: cfinfrastructure/mkdocs
+
+inputs:
+- name: bbl-ci
+- name: bbl-docs-repo
+- name: bbl-release-official
+
+outputs:
+- name: bbl-docs
+
+run:
+  path: bbl-ci/ci/tasks/build-bbl-docs/task

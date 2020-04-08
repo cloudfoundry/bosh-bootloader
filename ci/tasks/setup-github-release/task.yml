@@ -1,0 +1,17 @@
+---
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: cfinfrastructure/deployment
+
+inputs:
+- name: bbl-ci
+- name: tarred-builds
+
+outputs:
+- name: github-release-assets
+
+run:
+  path: bbl-ci/ci/tasks/setup-github-release/task

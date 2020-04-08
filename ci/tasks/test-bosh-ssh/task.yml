@@ -1,0 +1,17 @@
+---
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: relintdockerhubpushbot/cf-deployment-concourse-tasks-bbl-dev
+
+inputs:
+- name: bbl-ci
+- name: bbl-state
+
+params:
+  BBL_STATE_DIR:
+
+run:
+  path: bbl-ci/ci/tasks/test-bosh-ssh/task

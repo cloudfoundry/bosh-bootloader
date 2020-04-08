@@ -1,0 +1,15 @@
+#!/bin/bash -exu
+
+ROOT="${PWD}"
+
+function main() {
+  mkdir -p "${GOPATH}/src/github.com/cloudfoundry"
+
+  pushd "${GOPATH}/src/github.com/cloudfoundry" > /dev/null
+    ln -s "${ROOT}/bosh-bootloader"
+    local username="testuser"
+    chpst -u ${username}:${username} env HOME=/home/${username} ./bosh-bootloader/scripts/test
+  popd > /dev/null
+}
+
+main

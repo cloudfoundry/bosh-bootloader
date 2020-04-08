@@ -1,0 +1,23 @@
+---
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: cfinfrastructure/deployment
+
+inputs:
+- name: bbl-ci
+- name: bosh-bootloader
+- name: terraform-binaries
+- name: version
+
+outputs:
+- name: tarred-builds
+
+params:
+  BUMP_DEPLOYMENTS: false
+  TF_URL: "https://releases.hashicorp.com/terraform"
+
+run:
+  path: bbl-ci/ci/tasks/build-release/task

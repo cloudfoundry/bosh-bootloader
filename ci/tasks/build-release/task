@@ -1,0 +1,94 @@
+#!/bin/bash -exu
+
+ROOT="${PWD}"
+BUILDS_PATH="${ROOT}/builds"
+BBL_VERSION="$(cat ${ROOT}/version/number)"
+BBL_LINUX_BUILD_PATH="${BUILDS_PATH}/bin/bbl-v${BBL_VERSION}_linux_x86-64"
+BBL_OSX_BUILD_PATH="${BUILDS_PATH}/bin/bbl-v${BBL_VERSION}_osx"
+BBL_WINDOWS_BUILD_PATH="${BUILDS_PATH}/bin/bbl-v${BBL_VERSION}_windows.exe"
+BUILD_PATH=""
+
+function main() {
+  local bosh_bootloader_commit_sha
+  local deployment_versions
+
+  mkdir -p "${GOPATH}/src/github.com/cloudfoundry/"
+  ln -s "${ROOT}/bosh-bootloader" "${GOPATH}/src/github.com/cloudfoundry/"
+
+  bosh_bootloader_commit_sha=$(git -C "${ROOT}/bosh-bootloader" rev-parse HEAD)
+  deployment_versions=$(cat "${ROOT}/bosh-bootloader/deployment-versions.txt")
+
+  mkdir "${BUILDS_PATH}"
+  pushd "${GOPATH}/src/github.com/cloudfoundry/bosh-bootloader/" > /dev/null
+    source ./scripts/create_mod
+
+    # strip git dir on submodules
+    rm -rf ./bosh/deployments/bosh-deployment/.git
+    rm -rf ./bosh/deployments/jumpbox-deployment/.git
+
+    for platform in "darwin" "windows" "linux"; do
+      # copy binaries
+      mv ${ROOT}/terraform-binaries/terraform_${platform}* ./terraform/binary_dist/terraform
+      create_mod
+      pushd "bbl/" > /dev/null
+        determine_build_path ${platform}
+        build_bbl ${BUILD_PATH} ${platform}
+      popd > /dev/null
+    done
+  popd > /dev/null
+
+  pushd "${BUILDS_PATH}" > /dev/null
+    echo -n "v${BBL_VERSION}" > name
+    echo -n "${bosh_bootloader_commit_sha}" > commitish
+
+    if ! [ -z "${BUMP_DEPLOYMENTS}" ];
+    then
+      echo "This release only includes changes to deployment manifests." > body
+    fi
+    echo "${deployment_versions}" >> body
+
+    echo "- Includes terraform binaries from ${TF_URL}" >> body
+
+    linux_sha=$(shasum -a 256 "${BBL_LINUX_BUILD_PATH}" | cut -d ' ' -f 1)
+    osx_sha=$(shasum -a 256 "${BBL_OSX_BUILD_PATH}" | cut -d ' ' -f 1)
+    windows_sha=$(shasum -a 256 "${BBL_WINDOWS_BUILD_PATH}" | cut -d ' ' -f 1)
+
+    echo "- *Linux sha256: \`${linux_sha}\`*" >> body
+    echo "- *OSX sha256: \`${osx_sha}\`*" >> body
+    echo "- *Windows sha256: \`${windows_sha}\`*" >> body
+    echo "*Known Issues:* Windows support is incomplete." >> body
+  popd > /dev/null
+
+  tar -zcvf "${ROOT}/tarred-builds/bbl-${BBL_VERSION}.tgz" -C "${BUILDS_PATH}" .
+}
+
+function build_bbl() {
+  local build_path
+  build_path="$1"
+
+  echo "Building amd64 for $2"
+  CGO_ENABLED=0 GOARCH="amd64" GOOS="$2" \
+    packr2 build \
+    -ldflags "-X main.Version=${BBL_VERSION}" \
+    -o "${build_path}" .
+
+  packr2 clean
+}
+
+function determine_build_path() {
+  local platform
+  local build_path
+  platform=$1
+  build_path="${BUILDS_PATH}/bin/bbl-v${BBL_VERSION}_"
+  if [[ $platform == "darwin" ]]; then
+    build_path+="osx"
+  elif [[ $platform == "linux" ]]; then
+    build_path+="linux_x86-64"
+  elif [[ $platform == "windows" ]]; then
+    build_path+="windows.exe"
+  fi
+
+  BUILD_PATH="${build_path}"
+}
+
+main

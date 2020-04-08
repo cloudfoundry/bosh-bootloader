@@ -1,0 +1,40 @@
+#!/bin/bash -xeu
+
+# shellcheck disable=SC1091
+
+source cf-deployment-concourse-tasks/shared-functions
+
+function main() {
+  local root_dir
+  root_dir="${1}"
+
+  if [ "${BBL_IAAS}" == "gcp" ]; then
+    pushd "bbl-state"
+      write_gcp_service_account_key
+    popd
+  fi
+
+  mkdir -p "bbl-state/${BBL_STATE_DIR}"
+  pushd "bbl-state/${BBL_STATE_DIR}"
+    bbl version
+
+    local name_flag
+    name_flag=""
+
+    if [ -n "${BBL_ENV_NAME}" -a ! -f bbl-state.json ]; then
+      name_flag="--name ${BBL_ENV_NAME}"
+    fi
+
+    bbl plan \
+      ${name_flag} \
+      --lb-type concourse > "${root_dir}/bbl_plan.txt"
+
+    bbl --debug up \
+      ${name_flag} \
+      --lb-type concourse > "${root_dir}/bbl_up.txt"
+  popd
+}
+
+trap "commit_bbl_state_dir ${PWD} '${GIT_COMMIT_MESSAGE}'" EXIT
+
+main ${PWD}

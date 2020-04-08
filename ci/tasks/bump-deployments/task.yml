@@ -1,0 +1,23 @@
+---
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: cfinfrastructure/golang
+
+inputs:
+- name: bbl-ci
+- name: bbl-release
+- name: bosh-bootloader
+- name: bosh-deployment
+- name: jumpbox-deployment
+
+outputs:
+- name: bump-deployments-ci
+
+params:
+  DEPLOY_KEY:
+
+run:
+  path: bbl-ci/ci/tasks/bump-deployments/task

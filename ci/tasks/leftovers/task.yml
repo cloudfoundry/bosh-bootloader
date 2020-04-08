@@ -1,0 +1,28 @@
+---
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: relintdockerhubpushbot/cf-deployment-concourse-tasks-bbl-dev
+
+inputs:
+- name: bbl-ci
+
+params:
+  BBL_IAAS:
+  BBL_STATE_DIR:
+  BBL_ENV_NAME:
+  BBL_AWS_REGION:
+  BBL_AWS_ACCESS_KEY_ID:
+  BBL_AWS_SECRET_ACCESS_KEY:
+  BBL_AZURE_SUBSCRIPTION_ID:
+  BBL_AZURE_TENANT_ID:
+  BBL_AZURE_CLIENT_ID:
+  BBL_AZURE_CLIENT_SECRET:
+  BBL_AZURE_REGION:
+  BBL_GCP_SERVICE_ACCOUNT_KEY:
+  BBL_GCP_REGION:
+
+run:
+  path: bbl-ci/ci/tasks/leftovers/task

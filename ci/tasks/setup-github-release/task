@@ -1,0 +1,9 @@
+#!/bin/bash -exu
+
+ROOT="${PWD}"
+
+function main () {
+  tar zxvf "${ROOT}"/tarred-builds/bbl-*.tgz -C "${ROOT}"/github-release-assets
+}
+
+main "$@"

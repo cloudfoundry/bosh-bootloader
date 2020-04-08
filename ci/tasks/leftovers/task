@@ -1,0 +1,11 @@
+#!/bin/bash -exu
+
+ROOT="${PWD}"
+
+mkdir -p "${PWD}/bbl-state"
+
+pushd "${PWD}/bbl-state" > /dev/null
+
+  bbl leftovers --filter ${BBL_ENV_NAME} --no-confirm
+
+popd > /dev/null

@@ -1,0 +1,17 @@
+---
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: cfinfrastructure/minimal
+
+inputs:
+- name: bbl-ci
+- name: bosh-bootloader-bumped
+
+outputs:
+- name: bosh-bootloader
+
+run:
+  path: bbl-ci/ci/tasks/merge-bump-deployments-change/task

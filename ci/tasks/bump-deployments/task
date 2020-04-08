@@ -1,0 +1,58 @@
+#!/bin/bash -exu
+
+ROOT="${PWD}"
+function main() {
+  local latest_release_tag
+  latest_release_tag=$(cat "${ROOT}/bbl-release/version")
+
+  authorize_for_github
+  pushd "${ROOT}/bosh-bootloader" > /dev/null
+    git fetch --tags
+    git checkout -B "bump-deployments-ci" "v${latest_release_tag}"
+  popd > /dev/null
+
+  pushd "${ROOT}/jumpbox-deployment" > /dev/null
+    JUMPBOX_COMMITISH=$(git rev-parse HEAD)
+    git fetch
+    echo "- *Current jumpbox-deployment: cloudfoundry/jumpbox-deployment@${JUMPBOX_COMMITISH}*" > ${ROOT}/bosh-bootloader/deployment-versions.txt
+  popd > /dev/null
+
+  pushd "${ROOT}/bosh-deployment" > /dev/null
+    BOSH_COMMITISH=$(git rev-parse HEAD)
+    git fetch
+    echo "- *Current bosh-deployment: cloudfoundry/bosh-deployment@${BOSH_COMMITISH}*" >> ${ROOT}/bosh-bootloader/deployment-versions.txt
+  popd > /dev/null
+
+  pushd "${ROOT}/bosh-bootloader" > /dev/null
+    git submodule update --init --recursive --remote
+    git -C bosh/deployments/jumpbox-deployment checkout ${JUMPBOX_COMMITISH}
+    git -C bosh/deployments/bosh-deployment checkout ${BOSH_COMMITISH}
+
+    git config user.email "cf-infrastructure@pivotal.io"
+    git config user.name "cf-infra-bot"
+
+    git commit -am 'Update deployments'
+
+    cp -r . ${ROOT}/bump-deployments-ci
+  popd > /dev/null
+}
+
+function authorize_for_github() {
+  set +x
+  mkdir ~/.ssh
+  eval "$(ssh-agent -s)"
+
+  ssh-keyscan github.com,192.30.255.113 github.com,192.30.255.112 >> "${HOME}/.ssh/known_hosts"
+
+  local deploy_key_location
+  deploy_key_location="$(mktemp)"
+
+  echo "${DEPLOY_KEY}" > "${deploy_key_location}"
+  chmod 0600 "${deploy_key_location}"
+  ssh-add "${deploy_key_location}"
+  rm "${deploy_key_location}"
+
+  set -x
+}
+
+main

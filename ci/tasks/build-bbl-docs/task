@@ -1,0 +1,26 @@
+#!/bin/bash -exu
+
+ROOT="${PWD}"
+function main() {
+  cp -a "${ROOT}/bbl-docs-repo/.git" "${ROOT}/bbl-docs/.git"
+  pushd "${ROOT}/bbl-release-official"
+    BBL_VERSION=$(<version)
+    mkdir src
+    tar -xf source.tar.gz -C src --strip-components=1
+    pushd src
+      mkdocs build
+      cp -a site/. "${ROOT}/bbl-docs"
+    popd > /dev/null
+  popd > /dev/null
+
+  pushd "${ROOT}/bbl-docs"
+    git add .
+
+    git config user.email "cf-infrastructure@pivotal.io"
+    git config user.name "cf-infra-bot"
+
+    git commit -am "update docs for bbl v${BBL_VERSION}"
+  popd > /dev/null
+}
+
+main

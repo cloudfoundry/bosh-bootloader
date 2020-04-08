@@ -1,0 +1,24 @@
+#!/bin/bash -exu
+
+ROOT="${PWD}"
+
+function main() {
+  pushd "${ROOT}/bosh-bootloader-bumped" > /dev/null
+    git config user.email "cf-infrastructure@pivotal.io"
+    git config user.name "cf-infra-bot"
+    git remote add http https://github.com/cloudfoundry/bosh-bootloader.git
+    git fetch http
+
+    git checkout master
+
+    if ! git merge --no-edit bump-deployments-ci ; then
+      git checkout --theirs deployment-versions.txt
+      git add .
+      git commit -m "Merge branch 'bump-deployments-ci'."
+    fi
+
+    cp -r . ${ROOT}/bosh-bootloader
+  popd > /dev/null
+}
+
+main

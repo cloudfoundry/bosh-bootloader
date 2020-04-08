@@ -1,0 +1,7 @@
+---
+target: {{ env "TARGET" }}
+client: {{ env "CLIENT" }}
+client_secret: {{ env "CLIENT_SECRET" }}
+ca_cert: {{ toJson (env "CA_CERT") }}
+jumpbox_url: {{ env "JUMPBOX_URL" }}:22
+jumpbox_ssh_key: {{ toJson (env "JUMPBOX_SSH_KEY") }}

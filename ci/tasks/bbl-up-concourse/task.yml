@@ -1,0 +1,50 @@
+---
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+    tag: v5.22.0
+
+inputs:
+- name: bbl-ci
+- name: bbl-state
+- name: cf-deployment-concourse-tasks
+
+outputs:
+- name: updated-bbl-state
+
+params:
+  # AWS Configuration Params
+  # - Required for AWS
+  BBL_AWS_ACCESS_KEY_ID:
+  BBL_AWS_SECRET_ACCESS_KEY:
+  BBL_AWS_REGION:
+
+  # Azure Configuration Params
+  # - Required for Azure
+  BBL_AZURE_CLIENT_ID:
+  BBL_AZURE_CLIENT_SECRET:
+  BBL_AZURE_TENANT_ID:
+  BBL_AZURE_SUBSCRIPTION_ID:
+  BBL_AZURE_REGION:
+
+  # GCP Configuration Params
+  # - Required for GCP
+  BBL_GCP_SERVICE_ACCOUNT_KEY:
+  # - Key content or path to the file containing credentials downloaded from GCP
+  # - Path is relative to the `bbl-state` input
+  BBL_GCP_REGION:
+
+  BBL_STATE_DIR: bbl-state
+  BBL_IAAS:
+  BBL_ENV_NAME:
+  BBL_LB_TYPE: concourse
+
+  GIT_COMMIT_EMAIL: "cf-infrastructure@pivotal.io"
+  GIT_COMMIT_USERNAME: "CI Infra Bot"
+  GIT_COMMIT_MESSAGE: "Update bbl state dir"
+
+run:
+  path: bbl-ci/ci/tasks/bbl-up-concourse/task

@@ -1,0 +1,18 @@
+---
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: cfinfrastructure/deployment
+
+inputs:
+- name: bb-ci
+- name: bbl-release
+- name: homebrew-tap
+
+outputs:
+- name: updated-brew-tap
+
+run:
+  path: bbl-ci/ci/tasks/bump-brew-tap/task
