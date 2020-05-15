@@ -39,3 +39,6 @@ bbl/debug
 # packrd
 **/*-packr.go
 bbl/packrd
+
+#snapd
+cf-bbl_*.snap

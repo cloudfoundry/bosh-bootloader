@@ -1,0 +1,23 @@
+name: cf-bbl
+base: core18
+version: '8.4.0'
+summary: bbl
+description: |
+  Command line utility for standing up a BOSH director on an IAAS of your choice.
+
+grade: devel # devel/stable
+confinement: devmode # devmode/strict
+
+parts:
+  bbl:
+    plugin: go
+    source-type: git
+    source-tag: v8.4.0
+    source: .
+    source-subdir: .
+    go-importpath: github.com/cloudfoundry/bosh-bootloader
+    build-packages:
+      - gcc
+apps:
+  bbl:
+    command: bin/bbl
