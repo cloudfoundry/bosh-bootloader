@@ -5,11 +5,11 @@ summary: bbl
 description: |
   Command line utility for standing up a BOSH director on an IAAS of your choice.
 
-grade: devel # devel/stable
-confinement: devmode # devmode/strict
+grade: stable # devel/stable
+confinement: strict # devmode/strict
 
 parts:
-  bbl:
+  cf-bbl:
     plugin: go
     source-type: git
     source-tag: v8.4.0
@@ -19,5 +19,5 @@ parts:
     build-packages:
       - gcc
 apps:
-  bbl:
+  cf-bbl:
     command: bin/bbl
