@@ -3,20 +3,20 @@ variable "bosh_iam_instance_profile" {
 }
 
 locals {
-  iamProfileProvided = "${var.bosh_iam_instance_profile == "" ? 0 : 1}"
+  iamProfileProvided = var.bosh_iam_instance_profile == "" ? 0 : 1
 }
 
 data "aws_iam_instance_profile" "bosh" {
-  name = "${var.bosh_iam_instance_profile}"
+  name = var.bosh_iam_instance_profile
 
-  count = "${local.iamProfileProvided}"
+  count = local.iamProfileProvided
 }
 
 resource "aws_iam_role" "bosh" {
   name = "${var.env_id}_bosh_role"
   path = "/"
 
-  count = "${1 - local.iamProfileProvided}"
+  count = 1 - local.iamProfileProvided
 
   lifecycle {
     create_before_destroy = true
@@ -43,7 +43,7 @@ resource "aws_iam_policy" "bosh" {
   name = "${var.env_id}_bosh_policy"
   path = "/"
 
-  count = "${1 - local.iamProfileProvided}"
+  count = 1 - local.iamProfileProvided
 
   policy = <<EOF
 {
@@ -118,34 +118,34 @@ EOF
 
 resource "aws_iam_role_policy_attachment" "bosh" {
   role       = "${var.env_id}_bosh_role"
-  policy_arn = "${aws_iam_policy.bosh.arn}"
+  policy_arn = aws_iam_policy.bosh[count.index].arn
 
-  count = "${1 - local.iamProfileProvided}"
+  count = 1 - local.iamProfileProvided
 }
 
 resource "aws_iam_instance_profile" "bosh" {
   name = "${var.env_id}-bosh"
-  role = "${aws_iam_role.bosh.name}"
+  role = aws_iam_role.bosh[count.index].name
 
-  count = "${1 - local.iamProfileProvided}"
+  count = 1 - local.iamProfileProvided
 
   lifecycle {
-    ignore_changes = ["name"]
+    ignore_changes = [name]
   }
 }
 
 resource "aws_flow_log" "bbl" {
-  log_destination = "${aws_cloudwatch_log_group.bbl.arn}"
-  iam_role_arn    = "${aws_iam_role.flow_logs.arn}"
-  vpc_id          = "${local.vpc_id}"
+  log_destination = aws_cloudwatch_log_group.bbl.arn
+  iam_role_arn    = aws_iam_role.flow_logs.arn
+  vpc_id          = local.vpc_id
   traffic_type    = "REJECT"
 }
 
 resource "aws_cloudwatch_log_group" "bbl" {
   name_prefix = "${var.short_env_id}-log-group"
 
-  tags {
-    Name = "${var.env_id}"
+  tags = {
+    Name = var.env_id
   }
 }
 
@@ -171,7 +171,7 @@ EOF
 
 resource "aws_iam_role_policy" "flow_logs" {
   name = "${var.env_id}-flow-logs-policy"
-  role = "${aws_iam_role.flow_logs.id}"
+  role = aws_iam_role.flow_logs.id
 
   policy = <<EOF
 {
@@ -194,5 +194,5 @@ EOF
 }
 
 output "iam_instance_profile" {
-  value = "${local.iamProfileProvided ? join("", data.aws_iam_instance_profile.bosh.*.name) : join("", aws_iam_instance_profile.bosh.*.name)}"
+  value = local.iamProfileProvided == 1 ? join("", data.aws_iam_instance_profile.bosh.*.name) : join("", aws_iam_instance_profile.bosh.*.name)
 }

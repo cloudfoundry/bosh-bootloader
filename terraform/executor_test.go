@@ -606,6 +606,19 @@ var _ = Describe("Executor", func() {
 						"type": "string",
 						"value": "some-director-address"
 					},
+					"env_dns_zone_name_servers": {
+						"sensitive": false,
+						"type": [
+						  "list",
+						  "string"
+						],
+						"value": [
+						  "ns-server-1",
+						  "ns-server-2",
+						  "ns-server-3",
+						  "ns-server-4"
+						]
+					},
 					"external_ip": {
 						"sensitive": false,
 						"type": "string",
@@ -620,8 +633,9 @@ var _ = Describe("Executor", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(outputs).To(Equal(map[string]interface{}{
-				"director_address": "some-director-address",
-				"external_ip":      "some-external-ip",
+				"director_address":          "some-director-address",
+				"env_dns_zone_name_servers": []interface{}{"ns-server-1", "ns-server-2", "ns-server-3", "ns-server-4"},
+				"external_ip":               "some-external-ip",
 			}))
 
 			Expect(bufferingCLI.RunCall.Receives.WorkingDirectory).To(Equal(terraformDir))
