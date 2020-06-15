@@ -21,10 +21,10 @@ variable "tenant_name" {
 
 variable "insecure" {
   description = "Skip SSL verification"
-  default = "false"
+  default     = "false"
 }
 
 variable "cacert_file" {
   description = "Custom CA certificate"
-  default = ""
+  default     = ""
 }
