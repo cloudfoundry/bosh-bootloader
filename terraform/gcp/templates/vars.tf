@@ -1,27 +1,27 @@
 variable "project_id" {
-  type = "string"
+  type = string
 }
 
 variable "region" {
-  type = "string"
+  type = string
 }
 
 variable "zone" {
-  type = "string"
+  type = string
 }
 
 variable "env_id" {
-  type = "string"
+  type = string
 }
 
 variable "credentials" {
-  type = "string"
+  type = string
 }
 
 provider "google" {
-  credentials = "${file("${var.credentials}")}"
-  project     = "${var.project_id}"
-  region      = "${var.region}"
+  credentials = file(var.credentials)
+  project     = var.project_id
+  region      = var.region
 
-  version = "~> 1.20"
+  version = "~> 2.20.0"
 }

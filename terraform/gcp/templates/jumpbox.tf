@@ -7,7 +7,7 @@ output "jumpbox_url" {
 }
 
 output "external_ip" {
-  value = "${google_compute_address.jumpbox-ip.address}"
+  value = google_compute_address.jumpbox-ip.address
 }
 
 output "director_address" {
