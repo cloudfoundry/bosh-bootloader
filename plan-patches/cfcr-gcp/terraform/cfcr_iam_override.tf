@@ -9,67 +9,67 @@ resource "google_service_account" "worker" {
 }
 
 resource "google_project_iam_member" "storageAdminMaster" {
-  project     = "${var.project_id}"
-  role = "roles/compute.storageAdmin"
-  member = "serviceAccount:${google_service_account.master.email}"
+  project = var.project_id
+  role    = "roles/compute.storageAdmin"
+  member  = "serviceAccount:${google_service_account.master.email}"
 }
 resource "google_project_iam_member" "storageAdminWorker" {
-  project     = "${var.project_id}"
-  role = "roles/compute.storageAdmin"
-  member = "serviceAccount:${google_service_account.worker.email}"
+  project = var.project_id
+  role    = "roles/compute.storageAdmin"
+  member  = "serviceAccount:${google_service_account.worker.email}"
 }
 
 resource "google_project_iam_member" "objectViewerMaster" {
-  project     = "${var.project_id}"
-  role = "roles/storage.objectViewer"
-  member = "serviceAccount:${google_service_account.master.email}"
+  project = var.project_id
+  role    = "roles/storage.objectViewer"
+  member  = "serviceAccount:${google_service_account.master.email}"
 }
 resource "google_project_iam_member" "objectViewerWorker" {
-  project     = "${var.project_id}"
-  role = "roles/storage.objectViewer"
-  member = "serviceAccount:${google_service_account.worker.email}"
+  project = var.project_id
+  role    = "roles/storage.objectViewer"
+  member  = "serviceAccount:${google_service_account.worker.email}"
 }
 
 resource "google_project_iam_member" "networkAdminMaster" {
-  project     = "${var.project_id}"
-  role = "roles/compute.networkAdmin"
-  member = "serviceAccount:${google_service_account.master.email}"
+  project = var.project_id
+  role    = "roles/compute.networkAdmin"
+  member  = "serviceAccount:${google_service_account.master.email}"
 }
 resource "google_project_iam_member" "networkAdminWorker" {
-  project     = "${var.project_id}"
-  role = "roles/compute.networkAdmin"
-  member = "serviceAccount:${google_service_account.worker.email}"
+  project = var.project_id
+  role    = "roles/compute.networkAdmin"
+  member  = "serviceAccount:${google_service_account.worker.email}"
 }
 
 resource "google_project_iam_member" "securityAdminMaster" {
-  project     = "${var.project_id}"
-  role = "roles/compute.securityAdmin"
-  member = "serviceAccount:${google_service_account.master.email}"
+  project = var.project_id
+  role    = "roles/compute.securityAdmin"
+  member  = "serviceAccount:${google_service_account.master.email}"
 }
 resource "google_project_iam_member" "securityAdminWorker" {
-  project     = "${var.project_id}"
-  role = "roles/compute.securityAdmin"
-  member = "serviceAccount:${google_service_account.worker.email}"
+  project = var.project_id
+  role    = "roles/compute.securityAdmin"
+  member  = "serviceAccount:${google_service_account.worker.email}"
 }
 
 resource "google_project_iam_member" "instanceAdminMaster" {
-  project     = "${var.project_id}"
-  role = "roles/compute.instanceAdmin.v1"
-  member = "serviceAccount:${google_service_account.master.email}"
+  project = var.project_id
+  role    = "roles/compute.instanceAdmin.v1"
+  member  = "serviceAccount:${google_service_account.master.email}"
 }
 resource "google_project_iam_member" "instanceAdminWorker" {
-  project     = "${var.project_id}"
-  role = "roles/compute.instanceAdmin.v1"
-  member = "serviceAccount:${google_service_account.worker.email}"
+  project = var.project_id
+  role    = "roles/compute.instanceAdmin.v1"
+  member  = "serviceAccount:${google_service_account.worker.email}"
 }
 
 resource "google_project_iam_member" "serviceAccountActorMaster" {
-  project     = "${var.project_id}"
-  role = "roles/iam.serviceAccountActor"
-  member = "serviceAccount:${google_service_account.master.email}"
+  project = var.project_id
+  role    = "roles/iam.serviceAccountActor"
+  member  = "serviceAccount:${google_service_account.master.email}"
 }
 resource "google_project_iam_member" "serviceAccountActorWorker" {
-  project     = "${var.project_id}"
-  role = "roles/iam.serviceAccountActor"
-  member = "serviceAccount:${google_service_account.worker.email}"
+  project = var.project_id
+  role    = "roles/iam.serviceAccountActor"
+  member  = "serviceAccount:${google_service_account.worker.email}"
 }

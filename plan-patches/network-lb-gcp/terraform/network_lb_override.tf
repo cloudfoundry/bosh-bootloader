@@ -12,8 +12,8 @@ resource "google_compute_global_forwarding_rule" "cf-http-forwarding-rule" {
 
 resource "google_compute_forwarding_rule" "cf-http-forwarding-rule" {
   name        = "${var.env_id}-cf-http"
-  ip_address  = "${google_compute_address.cf-address.address}"
-  target      = "${google_compute_target_pool.router-lb-target-pool.self_link}"
+  ip_address  = google_compute_address.cf-address.address
+  target      = google_compute_target_pool.router-lb-target-pool.self_link
   port_range  = "80"
   ip_protocol = "TCP"
 }
@@ -24,8 +24,8 @@ resource "google_compute_global_forwarding_rule" "cf-https-forwarding-rule" {
 
 resource "google_compute_forwarding_rule" "cf-https-forwarding-rule" {
   name        = "${var.env_id}-cf-https"
-  ip_address  = "${google_compute_address.cf-address.address}"
-  target      = "${google_compute_target_pool.router-lb-target-pool.self_link}"
+  ip_address  = google_compute_address.cf-address.address
+  target      = google_compute_target_pool.router-lb-target-pool.self_link
   port_range  = "443"
   ip_protocol = "TCP"
 }
@@ -58,14 +58,14 @@ resource "google_compute_target_pool" "router-lb-target-pool" {
   name = "${var.env_id}-router-lb"
 
   health_checks = [
-    "${google_compute_http_health_check.cf-public-health-check.name}",
+    google_compute_http_health_check.cf-public-health-check.name,
   ]
 }
 
 resource "google_compute_firewall" "cf-health-check" {
   name       = "${var.env_id}-cf-health-check"
-  depends_on = ["google_compute_network.bbl-network"]
-  network    = "${google_compute_network.bbl-network.name}"
+  depends_on = [google_compute_network.bbl-network]
+  network    = google_compute_network.bbl-network.name
 
   allow {
     protocol = "tcp"
@@ -73,13 +73,13 @@ resource "google_compute_firewall" "cf-health-check" {
   }
 
   source_ranges = ["130.211.0.0/22", "35.191.0.0/16"]
-  target_tags   = ["${google_compute_target_pool.router-lb-target-pool.name}"]
+  target_tags   = [google_compute_target_pool.router-lb-target-pool.name]
 }
 
 resource "google_compute_firewall" "firewall-cf" {
   name       = "${var.env_id}-cf-open"
-  depends_on = ["google_compute_network.bbl-network"]
-  network    = "${google_compute_network.bbl-network.name}"
+  depends_on = [google_compute_network.bbl-network]
+  network    = google_compute_network.bbl-network.name
 
   allow {
     protocol = "tcp"
@@ -88,18 +88,18 @@ resource "google_compute_firewall" "firewall-cf" {
 
   source_ranges = ["0.0.0.0/0"]
 
-  target_tags = ["${google_compute_target_pool.router-lb-target-pool.name}"]
+  target_tags = [google_compute_target_pool.router-lb-target-pool.name]
 }
 
 resource "google_dns_record_set" "wildcard-dns" {
   name       = "*.${google_dns_managed_zone.env_dns_zone.dns_name}"
-  depends_on = ["google_compute_address.cf-address"]
+  depends_on = [google_compute_address.cf-address]
   type       = "A"
   ttl        = 300
 
-  managed_zone = "${google_dns_managed_zone.env_dns_zone.name}"
+  managed_zone = google_dns_managed_zone.env_dns_zone.name
 
-  rrdatas = ["${google_compute_address.cf-address.address}"]
+  rrdatas = [google_compute_address.cf-address.address]
 }
 
 # Should always be empty, added to avoid a terraform warning
@@ -108,11 +108,11 @@ output "router_backend_service" {
 }
 
 output "router_target_pool" {
-  value = "${google_compute_target_pool.router-lb-target-pool.name}"
+  value = google_compute_target_pool.router-lb-target-pool.name
 }
 
 output "router_lb_ip" {
-  value = "${google_compute_address.cf-address.address}"
+  value = google_compute_address.cf-address.address
 }
 
 output "ws_lb_ip" {

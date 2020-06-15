@@ -2,8 +2,8 @@
 // Security Group For CFCR Nodes
 resource "azurerm_network_security_group" "cfcr-master" {
   name                = "${var.env_id}-cfcr-master-sg"
-  location            = "${var.region}"
-  resource_group_name          = "${azurerm_resource_group.cfcr.name}"
+  location            = var.region
+  resource_group_name = azurerm_resource_group.cfcr.name
 
   security_rule {
     name                       = "master"

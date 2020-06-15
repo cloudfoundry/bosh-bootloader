@@ -1,8 +1,8 @@
 // Security Group For CF
 resource "azurerm_network_security_group" "cf" {
   name                = "${var.env_id}-cf-sg"
-  location            = "${var.region}"
-  resource_group_name = "${azurerm_resource_group.bosh.name}"
+  location            = var.region
+  resource_group_name = azurerm_resource_group.bosh.name
 
   security_rule {
     name                       = "cf-https"

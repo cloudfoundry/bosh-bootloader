@@ -11,7 +11,7 @@ resource "aws_elb" "cf_router_lb" {
     instance_protocol  = "http"
     lb_port            = 443
     lb_protocol        = "https"
-    ssl_certificate_id = "${aws_acm_certificate.cert.arn}"
+    ssl_certificate_id = aws_acm_certificate.cert.arn
   }
 
   listener {
@@ -19,7 +19,7 @@ resource "aws_elb" "cf_router_lb" {
     instance_protocol  = "tcp"
     lb_port            = 4443
     lb_protocol        = "ssl"
-    ssl_certificate_id = "${aws_acm_certificate.cert.arn}"
+    ssl_certificate_id = aws_acm_certificate.cert.arn
   }
 }
 
@@ -29,7 +29,7 @@ resource "aws_elb" "iso_router_lb" {
     instance_protocol  = "http"
     lb_port            = 443
     lb_protocol        = "https"
-    ssl_certificate_id = "${aws_acm_certificate.cert.arn}"
+    ssl_certificate_id = aws_acm_certificate.cert.arn
   }
 
   listener {
@@ -37,6 +37,6 @@ resource "aws_elb" "iso_router_lb" {
     instance_protocol  = "tcp"
     lb_port            = 4443
     lb_protocol        = "ssl"
-    ssl_certificate_id = "${aws_acm_certificate.cert.arn}"
+    ssl_certificate_id = aws_acm_certificate.cert.arn
   }
 }

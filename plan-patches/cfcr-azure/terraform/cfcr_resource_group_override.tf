@@ -1,9 +1,9 @@
 
 resource "azurerm_resource_group" "cfcr" {
   name     = "${var.env_id}-cfcr"
-  location = "${var.region}"
+  location = var.region
 
-  tags {
-    environment = "${var.env_id}"
+  tags = {
+    environment = var.env_id
   }
 }
