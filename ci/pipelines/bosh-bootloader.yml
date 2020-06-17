@@ -259,10 +259,11 @@ jobs:
 #     - get: version
 #       resource: version-bump-deployments
 #       passed: [test-bosh-bootloader-bump-deployments]
-#     - task: download-terraform
-#       file: bbl-ci/ci/tasks/download-terraform/task.yml
-#       params:
-#         TF_VERSION: 0.11.7
+#
+#   - task: download-terraform
+#     file: bbl-ci/ci/tasks/download-terraform/task.yml
+#     params:
+#       TF_VERSION: 0.11.7
 #
 #   - in_parallel:
 #     - task: plan
@@ -323,17 +324,18 @@ jobs:
     - get: version
       resource: version-bump-deployments
       passed: [test-bosh-bootloader-bump-deployments]
-    - task: download-terraform
-      file: bbl-ci/ci/tasks/download-terraform/task.yml
-      params:
-        TF_VERSION: 0.11.7
+
+  - task: download-terraform
+    file: bbl-ci/ci/tasks/download-terraform/task.yml
+    params:
+      TF_VERSION: 0.11.7
 
   - task: bbl-tests
     file: bbl-ci/ci/tasks/acceptance/task.yml
     params:
       BBL_IAAS: gcp
       BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_key))
-      BBL_GCP_REGION: ((bbl_gcp_region))
+      BBL_GCP_REGION: us-central1
       BBL_TEST_ENV_ID_PREFIX: bump-deployments
       BBL_TEST_PACKAGES: bbl
       BBL_DOWN_TIMEOUT: 20m
@@ -357,10 +359,11 @@ jobs:
       passed:
       # - aws-acceptance-tests-bump-deployments
       - gcp-acceptance-tests-bump-deployments
-    - task: download-terraform
-      file: bbl-ci/ci/tasks/download-terraform/task.yml
-      params:
-        TF_VERSION: 0.11.7
+
+  - task: download-terraform
+    file: bbl-ci/ci/tasks/download-terraform/task.yml
+    params:
+      TF_VERSION: 0.11.7
 
   - task: generate-version-from-sha
     file: bbl-ci/ci/tasks/generate-version-from-sha/task.yml
@@ -681,7 +684,7 @@ jobs:
     params:
       BBL_IAAS: gcp
       BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_key))
-      BBL_GCP_REGION: ((bbl_gcp_region))
+      BBL_GCP_REGION: us-central1
       BBL_ENV_NAME: bump-deployments-downstream
       BBL_STATE_DIR: bump-deployments/bbl-gcp-cf
 
@@ -691,7 +694,7 @@ jobs:
     params:
       BBL_IAAS: gcp
       BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_key))
-      BBL_GCP_REGION: ((bbl_gcp_region))
+      BBL_GCP_REGION: us-central1
       BBL_LB_CERT: ((bbl_downstream_cf_ssl_cert.certificate))
       BBL_LB_KEY: ((bbl_downstream_cf_ssl_cert.private_key))
       LB_DOMAIN: bump-deployments-cf.infrastructure.cf-app.com
@@ -935,7 +938,7 @@ jobs:
     params:
       BBL_IAAS: gcp
       BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_key))
-      BBL_GCP_REGION: ((bbl_gcp_region))
+      BBL_GCP_REGION: us-central1
       BBL_ENV_NAME: bump-deployments-gcp-concourse
       BBL_STATE_DIR: bump-deployments/bbl-gcp-concourse
 
@@ -945,7 +948,7 @@ jobs:
     params:
       BBL_IAAS: gcp
       BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_key))
-      BBL_GCP_REGION: ((bbl_gcp_region))
+      BBL_GCP_REGION: us-central1
       BBL_ENV_NAME: bump-deployments-gcp-concourse
       BBL_STATE_DIR: bump-deployments/bbl-gcp-concourse
     input_mapping:
@@ -1052,7 +1055,7 @@ jobs:
 #     params:
 #       BBL_IAAS: gcp
 #       BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_key))
-#       BBL_GCP_REGION: ((bbl_gcp_region))
+#       BBL_GCP_REGION: us-central1
 #       BBL_CONFIG_DIR: plan-patches/bosh-lite-gcp
 #       BBL_ENV_NAME: bump-deployments-lite-gcp
 #       BBL_STATE_DIR: bump-deployments/bbl-lite-gcp
@@ -1216,10 +1219,11 @@ jobs:
       - bbl-gcp-concourse-bump-deployments
       - bbl-gcp-cf-bump-deployments
       # - bbl-lite-gcp-bump-deployments
-    - task: download-terraform
-      file: bbl-ci/ci/tasks/download-terraform/task.yml
-      params:
-        TF_VERSION: 0.11.7
+
+  - task: download-terraform
+    file: bbl-ci/ci/tasks/download-terraform/task.yml
+    params:
+      TF_VERSION: 0.11.7
 
   - task: build-binaries
     file: bbl-ci/ci/tasks/build-release/task.yml
