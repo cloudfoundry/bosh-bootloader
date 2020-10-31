@@ -87,11 +87,11 @@ resources:
   type: semver
   source:
     driver: s3
-    bucket: relint-bbl-version
-    region_name: us-west-2
+    bucket: bbl-version
+    region_name: us-east-1
     key: bbl-version-bump-deployments
-    access_key_id: ((hermione_aws_access_key_id))
-    secret_access_key: ((hermione_aws_secret_access_key))
+    access_key_id: ((bbl_s3_aws_access_key_id))
+    secret_access_key: ((bbl_s3_aws_secret_access_key))
 
 # - name: bbl-release
 #   type: github-release
@@ -334,7 +334,7 @@ jobs:
     file: bbl-ci/ci/tasks/acceptance/task.yml
     params:
       BBL_IAAS: gcp
-      BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_key))
+      BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_json))
       BBL_GCP_REGION: us-central1
       BBL_TEST_ENV_ID_PREFIX: bump-deployments
       BBL_TEST_PACKAGES: bbl
@@ -683,7 +683,7 @@ jobs:
     image: cf-deployment-concourse-tasks-bbl-dev
     params:
       BBL_IAAS: gcp
-      BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_key))
+      BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_json))
       BBL_GCP_REGION: us-central1
       BBL_ENV_NAME: bump-deployments-downstream
       BBL_STATE_DIR: bump-deployments/bbl-gcp-cf
@@ -693,7 +693,7 @@ jobs:
     image: cf-deployment-concourse-tasks-bbl-dev
     params:
       BBL_IAAS: gcp
-      BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_key))
+      BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_json))
       BBL_GCP_REGION: us-central1
       BBL_LB_CERT: ((bbl_downstream_cf_ssl_cert.certificate))
       BBL_LB_KEY: ((bbl_downstream_cf_ssl_cert.private_key))
@@ -711,7 +711,7 @@ jobs:
       image: cf-deployment-concourse-tasks-bbl-dev
       params:
         BBL_STATE_DIR: bump-deployments/bbl-gcp-cf
-        BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_key))
+        BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_json))
       input_mapping:
         bbl-state: updated-bbl-state
       ensure:
@@ -741,7 +741,7 @@ jobs:
         bbl-state: updated-bbl-state
       params:
         BBL_STATE_DIR: bump-deployments/bbl-gcp-cf
-        BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_key))
+        BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_json))
       ensure:
         put: relint-envs
         params:
@@ -755,7 +755,7 @@ jobs:
       bbl-state: updated-bbl-state
     params:
       BBL_STATE_DIR: bump-deployments/bbl-gcp-cf
-      BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_key))
+      BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_json))
       INFRASTRUCTURE: google
     on_failure:
       do:
@@ -780,7 +780,7 @@ jobs:
           bbl-state: updated-bbl-state
         params:
           BBL_STATE_DIR: bump-deployments/bbl-gcp-cf
-          BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_key))
+          BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_json))
         ensure:
           put: relint-envs
           params:
@@ -794,7 +794,7 @@ jobs:
       bbl-state: updated-bbl-state
     params:
       BBL_STATE_DIR: bump-deployments/bbl-gcp-cf
-      BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_key))
+      BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_json))
       SYSTEM_DOMAIN: bump-deployments-cf.infrastructure.cf-app.com
       VARS_STORE_FILE: bump-deployments/bbl-gcp-cf/deployment-vars.yml
       OPS_FILES: "operations/use-compiled-releases.yml operations/experimental/fast-deploy-with-downtime-and-danger.yml"
@@ -821,7 +821,7 @@ jobs:
           bbl-state: updated-bbl-state
         params:
           BBL_STATE_DIR: bump-deployments/bbl-gcp-cf
-          BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_key))
+          BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_json))
 
       - task: bosh-cleanup
         file: cf-deployment-concourse-tasks/bosh-cleanup/task.yml
@@ -831,7 +831,7 @@ jobs:
         params:
           CLEAN_ALL: true
           BBL_STATE_DIR: bump-deployments/bbl-gcp-cf
-          BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_key))
+          BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_json))
 
       - task: destroy-infrastructure
         file: cf-deployment-concourse-tasks/bbl-destroy/task.yml
@@ -840,7 +840,7 @@ jobs:
           bbl-state: updated-bbl-state
         params:
           BBL_STATE_DIR: bump-deployments/bbl-gcp-cf
-          BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_key))
+          BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_json))
         ensure:
           put: relint-envs
           params:
@@ -883,7 +883,7 @@ jobs:
           bbl-state: updated-bbl-state
         params:
           BBL_STATE_DIR: bump-deployments/bbl-gcp-cf
-          BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_key))
+          BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_json))
 
       - task: bosh-cleanup
         file: cf-deployment-concourse-tasks/bosh-cleanup/task.yml
@@ -893,7 +893,7 @@ jobs:
         params:
           CLEAN_ALL: true
           BBL_STATE_DIR: bump-deployments/bbl-gcp-cf
-          BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_key))
+          BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_json))
 
       - task: destroy-infrastructure
         file: cf-deployment-concourse-tasks/bbl-destroy/task.yml
@@ -902,7 +902,7 @@ jobs:
           bbl-state: updated-bbl-state
         params:
           BBL_STATE_DIR: bump-deployments/bbl-gcp-cf
-          BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_key))
+          BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_json))
         on_failure:
           put: relint-envs
           params:
@@ -937,7 +937,7 @@ jobs:
     image: cf-deployment-concourse-tasks-bbl-dev
     params:
       BBL_IAAS: gcp
-      BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_key))
+      BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_json))
       BBL_GCP_REGION: us-central1
       BBL_ENV_NAME: bump-deployments-gcp-concourse
       BBL_STATE_DIR: bump-deployments/bbl-gcp-concourse
@@ -947,7 +947,7 @@ jobs:
     image: cf-deployment-concourse-tasks-bbl-dev
     params:
       BBL_IAAS: gcp
-      BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_key))
+      BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_json))
       BBL_GCP_REGION: us-central1
       BBL_ENV_NAME: bump-deployments-gcp-concourse
       BBL_STATE_DIR: bump-deployments/bbl-gcp-concourse
@@ -959,7 +959,7 @@ jobs:
       image: cf-deployment-concourse-tasks-bbl-dev
       params:
         BBL_STATE_DIR: bump-deployments/bbl-gcp-concourse
-        BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_key))
+        BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_json))
       input_mapping:
         bbl-state: updated-bbl-state
       ensure:
@@ -981,6 +981,7 @@ jobs:
       BBL_STATE_DIR: bump-deployments/bbl-gcp-concourse
     input_mapping:
       bbl-states: updated-bbl-state
+
   - put: concourse-bosh-deployment
     params:
       source_file: source-file/bosh-source.json
@@ -1015,7 +1016,7 @@ jobs:
           bbl-state: updated-bbl-state
         params:
           BBL_STATE_DIR: bump-deployments/bbl-gcp-concourse
-          BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_key))
+          BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_json))
         on_failure:
           put: relint-envs
           params:
@@ -1054,7 +1055,7 @@ jobs:
 #     image: cf-deployment-concourse-tasks-bbl-dev
 #     params:
 #       BBL_IAAS: gcp
-#       BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_key))
+#       BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_json))
 #       BBL_GCP_REGION: us-central1
 #       BBL_CONFIG_DIR: plan-patches/bosh-lite-gcp
 #       BBL_ENV_NAME: bump-deployments-lite-gcp
@@ -1071,7 +1072,7 @@ jobs:
 #       image: cf-deployment-concourse-tasks-bbl-dev
 #       params:
 #         BBL_STATE_DIR: bump-deployments/bbl-lite-gcp
-#         BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_key))
+#         BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_json))
 #         GIT_COMMIT_EMAIL: cf-infrastructure@pivotal.io
 #         GIT_COMMIT_USERNAME: CI Infra Bot
 #       input_mapping:
@@ -1089,7 +1090,7 @@ jobs:
 #       bbl-state: updated-bbl-state
 #     params:
 #       BBL_STATE_DIR: bump-deployments/bbl-lite-gcp
-#       BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_key))
+#       BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_json))
 #       INFRASTRUCTURE: bosh-lite
 #     on_failure:
 #       task: upload-stemcell-destroy-infrastructure
@@ -1100,7 +1101,7 @@ jobs:
 #       params:
 #         BBL_IAAS: gcp
 #         BBL_STATE_DIR: bump-deployments/bbl-lite-gcp
-#         BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_key))
+#         BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_json))
 #       ensure:
 #         put: relint-envs
 #         params:
@@ -1114,7 +1115,7 @@ jobs:
 #       bbl-state: updated-bbl-state
 #     params:
 #       BBL_STATE_DIR: bump-deployments/bbl-lite-gcp
-#       BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_key))
+#       BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_json))
 #       SYSTEM_DOMAIN: bbl-lite-gcp.infrastructure.cf-app.com
 #       VARS_STORE_FILE: bump-deployments/bbl-lite-gcp/deployment-vars.yml
 #       OPS_FILES: operations/use-compiled-releases.yml operations/bosh-lite.yml
@@ -1127,7 +1128,7 @@ jobs:
 #           bbl-state: updated-bbl-state
 #         params:
 #           BBL_STATE_DIR: bump-deployments/bbl-lite-gcp
-#           BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_key))
+#           BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_json))
 #
 #       - task: bosh-cleanup
 #         file: cf-deployment-concourse-tasks/bosh-cleanup/task.yml
@@ -1137,7 +1138,7 @@ jobs:
 #         params:
 #           CLEAN_ALL: true
 #           BBL_STATE_DIR: bump-deployments/bbl-lite-gcp
-#           BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_key))
+#           BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_json))
 #
 #       - task: destroy-infrastructure
 #         file: cf-deployment-concourse-tasks/bbl-destroy/task.yml
@@ -1146,7 +1147,7 @@ jobs:
 #           bbl-state: updated-bbl-state
 #         params:
 #           BBL_STATE_DIR: bump-deployments/bbl-lite-gcp
-#           BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_key))
+#           BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_json))
 #         ensure:
 #           put: relint-envs
 #           params:
@@ -1168,7 +1169,7 @@ jobs:
 #           bbl-state: updated-bbl-state
 #         params:
 #           BBL_STATE_DIR: bump-deployments/bbl-lite-gcp
-#           BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_key))
+#           BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_json))
 #
 #       - task: bosh-cleanup
 #         file: cf-deployment-concourse-tasks/bosh-cleanup/task.yml
@@ -1178,7 +1179,7 @@ jobs:
 #         params:
 #           CLEAN_ALL: true
 #           BBL_STATE_DIR: bump-deployments/bbl-lite-gcp
-#           BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_key))
+#           BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_json))
 #
 #       - task: destroy-infrastructure
 #         file: cf-deployment-concourse-tasks/bbl-destroy/task.yml
@@ -1187,7 +1188,7 @@ jobs:
 #           bbl-state: updated-bbl-state
 #         params:
 #           BBL_STATE_DIR: bump-deployments/bbl-lite-gcp
-#           BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_key))
+#           BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_json))
 #         on_failure:
 #           put: relint-envs
 #           params:
