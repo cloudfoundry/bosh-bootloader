@@ -32,7 +32,7 @@ db_vm_type: 'default'
 db_persistent_disk_type: '1GB'
 worker_vm_type: 'default'
 deployment_name: 'concourse'
-
+azs: [z1, z2, z3, z4]
 EOL
   popd > /dev/null
 }
