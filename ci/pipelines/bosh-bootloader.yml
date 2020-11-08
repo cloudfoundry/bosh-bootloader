@@ -80,8 +80,8 @@ resources:
 #     bucket: bbl-version
 #     region_name: us-west-2
 #     key: bbl-version
-#     access_key_id: ((aws_access_key_id))
-#     secret_access_key: ((aws_secret_access_key))
+#     access_key_id: ((bbl_aws_access_key_id))
+#     secret_access_key: ((bbl_aws_secret_access_key))
 
 - name: version-bump-deployments
   type: semver
@@ -141,7 +141,7 @@ resources:
     uri: https://github.com/concourse/concourse-bosh-deployment.git
     branch: master
 
-- name: cdct
+- name: cf-deployment-concourse-tasks
   type: git
   source:
     uri: https://github.com/cloudfoundry/cf-deployment-concourse-tasks.git
@@ -193,6 +193,11 @@ resources:
     uri: https://github.com/cloudfoundry/jumpbox-deployment.git
     branch: master
 
+- name: runtime-ci
+  type: git
+  source:
+    uri: https://github.com/cloudfoundry/runtime-ci
+
 jobs:
 - name: bump-deployments
   serial: true
@@ -237,11 +242,13 @@ jobs:
       resource: bosh-bootloader
     - get: bosh-bootloader
       resource: bosh-bootloader-bump-deployments-ci
-      passed: [bump-deployments]
+      passed:
+      - bump-deployments
       trigger: true
     - get: version
       resource: version-bump-deployments
-      passed: [bump-deployments]
+      passed:
+      - bump-deployments
 
   - task: test
     file: bbl-ci/ci/tasks/test-bosh-bootloader/task.yml
@@ -252,13 +259,15 @@ jobs:
 #   - in_parallel:
 #     - get: bosh-bootloader
 #       resource: bosh-bootloader-bump-deployments-ci
-#       passed: [test-bosh-bootloader-bump-deployments]
+#       passed:
+#       - test-bosh-bootloader-bump-deployments
 #       trigger: true
 #     - get: bbl-ci
 #       resource: bosh-bootloader
 #     - get: version
 #       resource: version-bump-deployments
-#       passed: [test-bosh-bootloader-bump-deployments]
+#       passed:
+#       - test-bosh-bootloader-bump-deployments
 #
 #   - task: download-terraform
 #     file: bbl-ci/ci/tasks/download-terraform/task.yml
@@ -270,9 +279,9 @@ jobs:
 #       file: bbl-ci/ci/tasks/acceptance/task.yml
 #       params:
 #         BBL_IAAS: aws
-#         BBL_AWS_ACCESS_KEY_ID: ((aws_access_key_id))
-#         BBL_AWS_SECRET_ACCESS_KEY: ((aws_secret_access_key))
-#         BBL_AWS_REGION: ((aws_region))
+#         BBL_AWS_ACCESS_KEY_ID: ((bbl_aws_access_key_id))
+#         BBL_AWS_SECRET_ACCESS_KEY: ((bbl_aws_secret_access_key))
+#         BBL_AWS_REGION: ((bbl_aws_region))
 #         BBL_TEST_ENV_ID_PREFIX: bump-deployments
 #         BBL_TEST_PACKAGES: bbl
 #         RUN_TEST: plan
@@ -281,9 +290,9 @@ jobs:
 #       file: bbl-ci/ci/tasks/acceptance/task.yml
 #       params:
 #         BBL_IAAS: aws
-#         BBL_AWS_ACCESS_KEY_ID: ((aws_access_key_id))
-#         BBL_AWS_SECRET_ACCESS_KEY: ((aws_secret_access_key))
-#         BBL_AWS_REGION: ((aws_region))
+#         BBL_AWS_ACCESS_KEY_ID: ((bbl_aws_access_key_id))
+#         BBL_AWS_SECRET_ACCESS_KEY: ((bbl_aws_secret_access_key))
+#         BBL_AWS_REGION: ((bbl_aws_region))
 #         BBL_TEST_ENV_ID_PREFIX: bump-deployments
 #         BBL_TEST_PACKAGES: bbl
 #         RUN_TEST: upgrade
@@ -293,9 +302,9 @@ jobs:
 #       file: bbl-ci/ci/tasks/acceptance/task.yml
 #       params:
 #         BBL_IAAS: aws
-#         BBL_AWS_ACCESS_KEY_ID: ((aws_access_key_id))
-#         BBL_AWS_SECRET_ACCESS_KEY: ((aws_secret_access_key))
-#         BBL_AWS_REGION: ((aws_region))
+#         BBL_AWS_ACCESS_KEY_ID: ((bbl_aws_access_key_id))
+#         BBL_AWS_SECRET_ACCESS_KEY: ((bbl_aws_secret_access_key))
+#         BBL_AWS_REGION: ((bbl_aws_region))
 #         BBL_TEST_ENV_ID_PREFIX: bump-deployments
 #         BBL_TEST_PACKAGES: bbl
 #         RUN_TEST: latest-error
@@ -304,9 +313,9 @@ jobs:
 #       file: bbl-ci/ci/tasks/acceptance/task.yml
 #       params:
 #         BBL_IAAS: aws
-#         BBL_AWS_ACCESS_KEY_ID: ((aws_access_key_id))
-#         BBL_AWS_SECRET_ACCESS_KEY: ((aws_secret_access_key))
-#         BBL_AWS_REGION: ((aws_region))
+#         BBL_AWS_ACCESS_KEY_ID: ((bbl_aws_access_key_id))
+#         BBL_AWS_SECRET_ACCESS_KEY: ((bbl_aws_secret_access_key))
+#         BBL_AWS_REGION: ((bbl_aws_region))
 #         BBL_TEST_ENV_ID_PREFIX: bump-deployments
 #         BBL_TEST_PACKAGES: bbl
 #         RUN_TEST: bbl-up
@@ -317,13 +326,15 @@ jobs:
   - in_parallel:
     - get: bosh-bootloader
       resource: bosh-bootloader-bump-deployments-ci
-      passed: [test-bosh-bootloader-bump-deployments]
+      passed:
+      - test-bosh-bootloader-bump-deployments
       trigger: true
     - get: bbl-ci
       resource: bosh-bootloader
     - get: version
       resource: version-bump-deployments
-      passed: [test-bosh-bootloader-bump-deployments]
+      passed:
+      - test-bosh-bootloader-bump-deployments
 
   - task: download-terraform
     file: bbl-ci/ci/tasks/download-terraform/task.yml
@@ -395,13 +406,14 @@ jobs:
 #   - in_parallel:
 #     - get: bosh-bootloader
 #       resource: bosh-bootloader-bump-deployments-ci
-#       passed: [bbl-downstream-docker-image-bump-deployments]
+#       passed:
+#       - bbl-downstream-docker-image-bump-deployments
 #       trigger: true
 #     - get: cf-deployment-concourse-tasks
-#       resource: cdct
 #     - get: relint-envs
 #     - get: cf-deployment-concourse-tasks-bbl-dev
-#       passed: [bbl-downstream-docker-image-bump-deployments]
+#       passed:
+#       - bbl-downstream-docker-image-bump-deployments
 #     - get: bbl-ci
 #       resource: bosh-bootloader
 #     - get: cf-deployment
@@ -413,16 +425,17 @@ jobs:
 #       resource: relint-envs
 #     - get: version
 #       resource: version-bump-deployments
-#       passed: [bbl-downstream-docker-image-bump-deployments]
+#       passed:
+#       - bbl-downstream-docker-image-bump-deployments
 #
 #   - task: bbl-leftovers
 #     file: bbl-ci/ci/tasks/leftovers/task.yml
 #     image: cf-deployment-concourse-tasks-bbl-dev
 #     params:
 #       BBL_IAAS: aws
-#       BBL_AWS_SECRET_ACCESS_KEY: ((aws_secret_access_key))
-#       BBL_AWS_ACCESS_KEY_ID: ((aws_access_key_id))
-#       BBL_AWS_REGION: ((aws_region))
+#       BBL_AWS_SECRET_ACCESS_KEY: ((bbl_aws_secret_access_key))
+#       BBL_AWS_ACCESS_KEY_ID: ((bbl_aws_access_key_id))
+#       BBL_AWS_REGION: ((bbl_aws_region))
 #       BBL_STATE_DIR: bump-deployments/bbl-aws-cf
 #       BBL_ENV_NAME: bump-deployments-aws-cf
 #
@@ -431,9 +444,9 @@ jobs:
 #     image: cf-deployment-concourse-tasks-bbl-dev
 #     params:
 #       BBL_IAAS: aws
-#       BBL_AWS_SECRET_ACCESS_KEY: ((aws_secret_access_key))
-#       BBL_AWS_ACCESS_KEY_ID: ((aws_access_key_id))
-#       BBL_AWS_REGION: ((aws_region))
+#       BBL_AWS_SECRET_ACCESS_KEY: ((bbl_aws_secret_access_key))
+#       BBL_AWS_ACCESS_KEY_ID: ((bbl_aws_access_key_id))
+#       BBL_AWS_REGION: ((bbl_aws_region))
 #       BBL_STATE_DIR: bump-deployments/bbl-aws-cf
 #       BBL_ENV_NAME: bump-deployments-aws-cf
 #       LB_DOMAIN: bbl-aws-cf-bump-deployments.infrastructure.cf-app.com
@@ -450,8 +463,8 @@ jobs:
 #       image: cf-deployment-concourse-tasks-bbl-dev
 #       params:
 #         BBL_STATE_DIR: bump-deployments/bbl-aws-cf
-#         BBL_AWS_SECRET_ACCESS_KEY: ((aws_secret_access_key))
-#         BBL_AWS_ACCESS_KEY_ID: ((aws_access_key_id))
+#         BBL_AWS_SECRET_ACCESS_KEY: ((bbl_aws_secret_access_key))
+#         BBL_AWS_ACCESS_KEY_ID: ((bbl_aws_access_key_id))
 #       input_mapping:
 #         bbl-state: updated-bbl-state
 #       ensure:
@@ -467,8 +480,8 @@ jobs:
 #       bbl-state: updated-bbl-state
 #     params:
 #       BBL_STATE_DIR: bump-deployments/bbl-aws-cf
-#       BBL_AWS_SECRET_ACCESS_KEY: ((aws_secret_access_key))
-#       BBL_AWS_ACCESS_KEY_ID: ((aws_access_key_id))
+#       BBL_AWS_SECRET_ACCESS_KEY: ((bbl_aws_secret_access_key))
+#       BBL_AWS_ACCESS_KEY_ID: ((bbl_aws_access_key_id))
 #       INFRASTRUCTURE: aws
 #     on_failure:
 #       task: upload-stemcell-destroy-infrastructure
@@ -479,8 +492,8 @@ jobs:
 #       params:
 #         BBL_IAAS: aws
 #         BBL_STATE_DIR: bump-deployments/bbl-aws-cf
-#         BBL_AWS_SECRET_ACCESS_KEY: ((aws_secret_access_key))
-#         BBL_AWS_ACCESS_KEY_ID: ((aws_access_key_id))
+#         BBL_AWS_SECRET_ACCESS_KEY: ((bbl_aws_secret_access_key))
+#         BBL_AWS_ACCESS_KEY_ID: ((bbl_aws_access_key_id))
 #       ensure:
 #         put: relint-envs
 #         params:
@@ -494,8 +507,8 @@ jobs:
 #       bbl-state: updated-bbl-state
 #     params:
 #       BBL_STATE_DIR: bump-deployments/bbl-aws-cf
-#       BBL_AWS_SECRET_ACCESS_KEY: ((aws_secret_access_key))
-#       BBL_AWS_ACCESS_KEY_ID: ((aws_access_key_id))
+#       BBL_AWS_SECRET_ACCESS_KEY: ((bbl_aws_secret_access_key))
+#       BBL_AWS_ACCESS_KEY_ID: ((bbl_aws_access_key_id))
 #       SYSTEM_DOMAIN: bbl-aws-cf-bump-deployments.infrastructure.cf-app.com
 #       VARS_STORE_FILE: bump-deployments/bbl-aws-cf/deployment-vars.yml
 #       OPS_FILES: "operations/aws.yml operations/use-compiled-releases.yml operations/experimental/fast-deploy-with-downtime-and-danger.yml"
@@ -508,8 +521,8 @@ jobs:
 #           bbl-state: updated-bbl-state
 #         params:
 #           BBL_STATE_DIR: bump-deployments/bbl-aws-cf
-#           BBL_AWS_SECRET_ACCESS_KEY: ((aws_secret_access_key))
-#           BBL_AWS_ACCESS_KEY_ID: ((aws_access_key_id))
+#           BBL_AWS_SECRET_ACCESS_KEY: ((bbl_aws_secret_access_key))
+#           BBL_AWS_ACCESS_KEY_ID: ((bbl_aws_access_key_id))
 #       - task: bosh-cleanup
 #         file: cf-deployment-concourse-tasks/bosh-cleanup/task.yml
 #         image: cf-deployment-concourse-tasks-bbl-dev
@@ -518,8 +531,8 @@ jobs:
 #         params:
 #           CLEAN_ALL: true
 #           BBL_STATE_DIR: bump-deployments/bbl-aws-cf
-#           BBL_AWS_SECRET_ACCESS_KEY: ((aws_secret_access_key))
-#           BBL_AWS_ACCESS_KEY_ID: ((aws_access_key_id))
+#           BBL_AWS_SECRET_ACCESS_KEY: ((bbl_aws_secret_access_key))
+#           BBL_AWS_ACCESS_KEY_ID: ((bbl_aws_access_key_id))
 #       - task: destroy-infrastructure
 #         file: cf-deployment-concourse-tasks/bbl-destroy/task.yml
 #         image: cf-deployment-concourse-tasks-bbl-dev
@@ -527,8 +540,8 @@ jobs:
 #           bbl-state: updated-bbl-state
 #         params:
 #           BBL_STATE_DIR: bump-deployments/bbl-aws-cf
-#           BBL_AWS_SECRET_ACCESS_KEY: ((aws_secret_access_key))
-#           BBL_AWS_ACCESS_KEY_ID: ((aws_access_key_id))
+#           BBL_AWS_SECRET_ACCESS_KEY: ((bbl_aws_secret_access_key))
+#           BBL_AWS_ACCESS_KEY_ID: ((bbl_aws_access_key_id))
 #         on_failure:
 #           put: relint-envs
 #           params:
@@ -542,29 +555,31 @@ jobs:
 #     - get: concourse-deployment
 #     - get: bosh-bootloader
 #       resource: bosh-bootloader-bump-deployments-ci
-#       passed: [bbl-downstream-docker-image-bump-deployments]
+#       passed:
+#       - bbl-downstream-docker-image-bump-deployments
 #       trigger: true
 #     - get: cf-deployment-concourse-tasks
-#       resource: cdct
 #     - get: relint-envs
 #     - get: cf-deployment-concourse-tasks-bbl-dev
-#       passed: [bbl-downstream-docker-image-bump-deployments]
+#       passed:
+#       - bbl-downstream-docker-image-bump-deployments
 #     - get: bbl-ci
 #       resource: bosh-bootloader
 #     - get: ubuntu-xenial-stemcell-aws
 #     - get: concourse-smoke-tests
 #     - get: version
 #       resource: version-bump-deployments
-#       passed: [bbl-downstream-docker-image-bump-deployments]
+#       passed:
+#       - bbl-downstream-docker-image-bump-deployments
 #
 #   - task: bbl-leftovers
 #     file: bbl-ci/ci/tasks/leftovers/task.yml
 #     image: cf-deployment-concourse-tasks-bbl-dev
 #     params:
 #       BBL_IAAS: aws
-#       BBL_AWS_SECRET_ACCESS_KEY: ((aws_secret_access_key))
-#       BBL_AWS_ACCESS_KEY_ID: ((aws_access_key_id))
-#       BBL_AWS_REGION: ((aws_region))
+#       BBL_AWS_SECRET_ACCESS_KEY: ((bbl_aws_secret_access_key))
+#       BBL_AWS_ACCESS_KEY_ID: ((bbl_aws_access_key_id))
+#       BBL_AWS_REGION: ((bbl_aws_region))
 #       BBL_STATE_DIR: bump-deployments/bbl-aws-concourse
 #       BBL_ENV_NAME: bump-deployments-aws-concourse
 #
@@ -573,9 +588,9 @@ jobs:
 #     image: cf-deployment-concourse-tasks-bbl-dev
 #     params:
 #       BBL_IAAS: aws
-#       BBL_AWS_SECRET_ACCESS_KEY: ((aws_secret_access_key))
-#       BBL_AWS_ACCESS_KEY_ID: ((aws_access_key_id))
-#       BBL_AWS_REGION: ((aws_region))
+#       BBL_AWS_SECRET_ACCESS_KEY: ((bbl_aws_secret_access_key))
+#       BBL_AWS_ACCESS_KEY_ID: ((bbl_aws_access_key_id))
+#       BBL_AWS_REGION: ((bbl_aws_region))
 #       BBL_ENV_NAME: bump-deployments-aws-concourse
 #       BBL_STATE_DIR: bump-deployments/bbl-aws-concourse
 #     input_mapping:
@@ -586,8 +601,8 @@ jobs:
 #       image: cf-deployment-concourse-tasks-bbl-dev
 #       params:
 #         BBL_STATE_DIR: bump-deployments/bbl-aws-concourse
-#         BBL_AWS_SECRET_ACCESS_KEY: ((aws_secret_access_key))
-#         BBL_AWS_ACCESS_KEY_ID: ((aws_access_key_id))
+#         BBL_AWS_SECRET_ACCESS_KEY: ((bbl_aws_secret_access_key))
+#         BBL_AWS_ACCESS_KEY_ID: ((bbl_aws_access_key_id))
 #       input_mapping:
 #         bbl-state: updated-bbl-state
 #       ensure:
@@ -614,7 +629,8 @@ jobs:
 #     params:
 #       source_file: source-file/bosh-source.json
 #       manifest: concourse-deployment/cluster/concourse.yml
-#       stemcells: [ ubuntu-xenial-stemcell-aws/stemcell.tgz ]
+#       stemcells:
+#       - ubuntu-xenial-stemcell-aws/stemcell.tgz
 #       vars_files:
 #         - concourse-deployment/versions.yml
 #         - concourse-vars/vars.yml
@@ -644,8 +660,8 @@ jobs:
 #           bbl-state: updated-bbl-state
 #         params:
 #           BBL_STATE_DIR: bump-deployments/bbl-aws-concourse
-#           BBL_AWS_SECRET_ACCESS_KEY: ((aws_secret_access_key))
-#           BBL_AWS_ACCESS_KEY_ID: ((aws_access_key_id))
+#           BBL_AWS_SECRET_ACCESS_KEY: ((bbl_aws_secret_access_key))
+#           BBL_AWS_ACCESS_KEY_ID: ((bbl_aws_access_key_id))
 #         on_failure:
 #           put: relint-envs
 #           params:
@@ -658,13 +674,14 @@ jobs:
   - in_parallel:
     - get: bosh-bootloader
       resource: bosh-bootloader-bump-deployments-ci
-      passed: [bbl-downstream-docker-image-bump-deployments]
+      passed:
+      - bbl-downstream-docker-image-bump-deployments
       trigger: true
     - get: cf-deployment-concourse-tasks
-      resource: cdct
     - get: relint-envs
     - get: cf-deployment-concourse-tasks-bbl-dev
-      passed: [bbl-downstream-docker-image-bump-deployments]
+      passed:
+      - bbl-downstream-docker-image-bump-deployments
     - get: bbl-ci
       resource: bosh-bootloader
     - get: cf-deployment
@@ -676,7 +693,9 @@ jobs:
       resource: relint-envs
     - get: version
       resource: version-bump-deployments
-      passed: [bbl-downstream-docker-image-bump-deployments]
+      passed:
+      - bbl-downstream-docker-image-bump-deployments
+    - get: runtime-ci
 
   - task: bbl-leftovers
     file: bbl-ci/ci/tasks/leftovers/task.yml
@@ -695,8 +714,8 @@ jobs:
       BBL_IAAS: gcp
       BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_json))
       BBL_GCP_REGION: us-central1
-      BBL_LB_CERT: ((bbl_downstream_cf_ssl_cert.certificate))
-      BBL_LB_KEY: ((bbl_downstream_cf_ssl_cert.private_key))
+      BBL_LB_CERT: ((bbl_cf_ssl_cert.certificate))
+      BBL_LB_KEY: ((bbl_cf_ssl_cert.private_key))
       LB_DOMAIN: bump-deployments-cf.infrastructure.cf-app.com
       BBL_ENV_NAME: bump-deployments-downstream
       BBL_STATE_DIR: bump-deployments/bbl-gcp-cf
@@ -721,18 +740,16 @@ jobs:
           repository: updated-bbl-state
 
   - task: add-to-gcp-dns
-    file: ci/scripts/common/manage-gcp-dns/task.yml
+    file: runtime-ci/tasks/manage-gcp-dns/task.yml
     image: cf-deployment-concourse-tasks-bbl-dev
     params:
       BBL_STATE_DIR: bump-deployments/bbl-gcp-cf
-      GCP_DNS_PROJECT_ID: ((cf_infra_gcp_project_id))
-      GCP_DNS_SERVICE_ACCOUNT_EMAIL: ((cf_infra_gcp_service_account_email))
-      GCP_DNS_SERVICE_ACCOUNT_KEY: ((cf_infra_gcp_service_account_key))
+      GCP_DNS_SERVICE_ACCOUNT_KEY: ((bbl_dns_service_account_json))
       GCP_DNS_ZONE_NAME: infrastructure
       GCP_DNS_RECORD_SET_NAME: bump-deployments-cf.infrastructure.cf-app.com
       ACTION: add
     input_mapping:
-      bbl-states-repo: updated-bbl-state
+      bbl-state: updated-bbl-state
     on_failure:
       task: destroy-infrastructure
       file: cf-deployment-concourse-tasks/bbl-destroy/task.yml
@@ -748,45 +765,6 @@ jobs:
           rebase: true
           repository: updated-bbl-state
 
-  - task: upload-stemcell
-    file: cf-deployment-concourse-tasks/bosh-upload-stemcell-from-cf-deployment/task.yml
-    image: cf-deployment-concourse-tasks-bbl-dev
-    input_mapping:
-      bbl-state: updated-bbl-state
-    params:
-      BBL_STATE_DIR: bump-deployments/bbl-gcp-cf
-      BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_json))
-      INFRASTRUCTURE: google
-    on_failure:
-      do:
-      - task: remove-from-gcp-dns
-        file: ci/scripts/common/manage-gcp-dns/task.yml
-        image: cf-deployment-concourse-tasks-bbl-dev
-        params:
-          BBL_STATE_DIR: bump-deployments/bbl-gcp-cf
-          GCP_DNS_PROJECT_ID: ((cf_infra_gcp_project_id))
-          GCP_DNS_SERVICE_ACCOUNT_EMAIL: ((cf_infra_gcp_service_account_email))
-          GCP_DNS_SERVICE_ACCOUNT_KEY: ((cf_infra_gcp_service_account_key))
-          GCP_DNS_ZONE_NAME: infrastructure
-          GCP_DNS_RECORD_SET_NAME: bump-deployments-cf.infrastructure.cf-app.com
-          ACTION: remove
-        input_mapping:
-          bbl-states-repo: updated-bbl-state
-
-      - task: destroy-infrastructure
-        file: cf-deployment-concourse-tasks/bbl-destroy/task.yml
-        image: cf-deployment-concourse-tasks-bbl-dev
-        input_mapping:
-          bbl-state: updated-bbl-state
-        params:
-          BBL_STATE_DIR: bump-deployments/bbl-gcp-cf
-          BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_json))
-        ensure:
-          put: relint-envs
-          params:
-            rebase: true
-            repository: updated-bbl-state
-
   - task: deploy-cf
     file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
     image: cf-deployment-concourse-tasks-bbl-dev
@@ -797,22 +775,20 @@ jobs:
       BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_json))
       SYSTEM_DOMAIN: bump-deployments-cf.infrastructure.cf-app.com
       VARS_STORE_FILE: bump-deployments/bbl-gcp-cf/deployment-vars.yml
-      OPS_FILES: "operations/use-compiled-releases.yml operations/experimental/fast-deploy-with-downtime-and-danger.yml"
+      OPS_FILES: "operations/use-compiled-releases.yml"
     on_failure:
       do:
       - task: remove-from-gcp-dns
-        file: ci/scripts/common/manage-gcp-dns/task.yml
+        file: runtime-ci/tasks/manage-gcp-dns/task.yml
         image: cf-deployment-concourse-tasks-bbl-dev
         params:
           BBL_STATE_DIR: bump-deployments/bbl-gcp-cf
-          GCP_DNS_PROJECT_ID: ((cf_infra_gcp_project_id))
-          GCP_DNS_SERVICE_ACCOUNT_EMAIL: ((cf_infra_gcp_service_account_email))
-          GCP_DNS_SERVICE_ACCOUNT_KEY: ((cf_infra_gcp_service_account_key))
+          GCP_DNS_SERVICE_ACCOUNT_KEY: ((bbl_dns_service_account_json))
           GCP_DNS_ZONE_NAME: infrastructure
           GCP_DNS_RECORD_SET_NAME: bump-deployments-cf.infrastructure.cf-app.com
           ACTION: remove
         input_mapping:
-          bbl-states-repo: updated-bbl-state
+          bbl-state: updated-bbl-state
 
       - task: delete-cf-deployment
         file: cf-deployment-concourse-tasks/bosh-delete-deployment/task.yml
@@ -847,35 +823,16 @@ jobs:
             rebase: true
             repository: updated-bbl-state
 
-  - task: smoke-tests
+  - task: run-smoke-tests
+    file: cf-deployment-concourse-tasks/run-errand/task.yml
     image: cf-deployment-concourse-tasks-bbl-dev
     input_mapping:
       bbl-state: updated-bbl-state
-    config:
-      platform: linux
-      inputs:
-      - name: bbl-state
-      run:
-        path: bash
-        args:
-          - "-c"
-          - "cd bbl-state/bump-deployments/bbl-gcp-cf/ && eval \"$(bbl print-env)\" && bosh -d cf run-errand smoke-tests"
+    params:
+      BBL_STATE_DIR: bump-deployments/bbl-gcp-cf
+      ERRAND_NAME: smoke-tests
     ensure:
       do:
-      - task: remove-from-gcp-dns
-        file: ci/scripts/common/manage-gcp-dns/task.yml
-        image: cf-deployment-concourse-tasks-bbl-dev
-        params:
-          BBL_STATE_DIR: bump-deployments/bbl-gcp-cf
-          GCP_DNS_PROJECT_ID: ((cf_infra_gcp_project_id))
-          GCP_DNS_SERVICE_ACCOUNT_EMAIL: ((cf_infra_gcp_service_account_email))
-          GCP_DNS_SERVICE_ACCOUNT_KEY: ((cf_infra_gcp_service_account_key))
-          GCP_DNS_ZONE_NAME: infrastructure
-          GCP_DNS_RECORD_SET_NAME: bump-deployments-cf.infrastructure.cf-app.com
-          ACTION: remove
-        input_mapping:
-          bbl-states-repo: updated-bbl-state
-
       - task: delete-cf-deployment
         file: cf-deployment-concourse-tasks/bosh-delete-deployment/task.yml
         image: cf-deployment-concourse-tasks-bbl-dev
@@ -894,6 +851,18 @@ jobs:
           CLEAN_ALL: true
           BBL_STATE_DIR: bump-deployments/bbl-gcp-cf
           BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_json))
+
+      - task: remove-from-gcp-dns
+        file: runtime-ci/tasks/manage-gcp-dns/task.yml
+        image: cf-deployment-concourse-tasks-bbl-dev
+        params:
+          BBL_STATE_DIR: bump-deployments/bbl-gcp-cf
+          GCP_DNS_SERVICE_ACCOUNT_KEY: ((bbl_dns_service_account_json))
+          GCP_DNS_ZONE_NAME: infrastructure
+          GCP_DNS_RECORD_SET_NAME: bump-deployments-cf.infrastructure.cf-app.com
+          ACTION: remove
+        input_mapping:
+          bbl-state: updated-bbl-state
 
       - task: destroy-infrastructure
         file: cf-deployment-concourse-tasks/bbl-destroy/task.yml
@@ -917,20 +886,22 @@ jobs:
     - get: concourse-deployment
     - get: bosh-bootloader
       resource: bosh-bootloader-bump-deployments-ci
-      passed: [bbl-downstream-docker-image-bump-deployments]
+      passed:
+      - bbl-downstream-docker-image-bump-deployments
       trigger: true
     - get: cf-deployment-concourse-tasks
-      resource: cdct
     - get: relint-envs
     - get: cf-deployment-concourse-tasks-bbl-dev
-      passed: [bbl-downstream-docker-image-bump-deployments]
+      passed:
+      - bbl-downstream-docker-image-bump-deployments
     - get: bbl-ci
       resource: bosh-bootloader
     - get: ubuntu-xenial-stemcell-gcp
     - get: concourse-smoke-tests
     - get: version
       resource: version-bump-deployments
-      passed: [bbl-downstream-docker-image-bump-deployments]
+      passed:
+      - bbl-downstream-docker-image-bump-deployments
 
   - task: bbl-leftovers
     file: bbl-ci/ci/tasks/leftovers/task.yml
@@ -986,7 +957,8 @@ jobs:
     params:
       source_file: source-file/bosh-source.json
       manifest: concourse-deployment/cluster/concourse.yml
-      stemcells: [ ubuntu-xenial-stemcell-gcp/stemcell.tgz ]
+      stemcells:
+      - ubuntu-xenial-stemcell-gcp/stemcell.tgz
       vars_files:
         - concourse-deployment/versions.yml
         - concourse-vars/vars.yml
@@ -1030,13 +1002,14 @@ jobs:
 #   - in_parallel:
 #     - get: bosh-bootloader
 #       resource: bosh-bootloader-bump-deployments-ci
-#       passed: [bbl-downstream-docker-image-bump-deployments]
+#       passed:
+#       - bbl-downstream-docker-image-bump-deployments
 #       trigger: true
 #     - get: cf-deployment-concourse-tasks
-#       resource: cdct
 #     - get: relint-envs
 #     - get: cf-deployment-concourse-tasks-bbl-dev
-#       passed: [bbl-downstream-docker-image-bump-deployments]
+#       passed:
+#       - bbl-downstream-docker-image-bump-deployments
 #     - get: bbl-ci
 #       resource: bosh-bootloader
 #     - get: cf-deployment
@@ -1048,7 +1021,8 @@ jobs:
 #       resource: relint-envs
 #     - get: version
 #       resource: version-bump-deployments
-#       passed: [bbl-downstream-docker-image-bump-deployments]
+#       passed:
+#       - bbl-downstream-docker-image-bump-deployments
 #
 #   - task: bbl-up
 #     file: cf-deployment-concourse-tasks/bbl-up/task.yml
@@ -1077,31 +1051,6 @@ jobs:
 #         GIT_COMMIT_USERNAME: CI Infra Bot
 #       input_mapping:
 #         bbl-state: updated-bbl-state
-#       ensure:
-#         put: relint-envs
-#         params:
-#           rebase: true
-#           repository: updated-bbl-state
-#
-#   - task: upload-stemcell
-#     file: cf-deployment-concourse-tasks/bosh-upload-stemcell-from-cf-deployment/task.yml
-#     image: cf-deployment-concourse-tasks-bbl-dev
-#     input_mapping:
-#       bbl-state: updated-bbl-state
-#     params:
-#       BBL_STATE_DIR: bump-deployments/bbl-lite-gcp
-#       BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_json))
-#       INFRASTRUCTURE: bosh-lite
-#     on_failure:
-#       task: upload-stemcell-destroy-infrastructure
-#       file: cf-deployment-concourse-tasks/bbl-destroy/task.yml
-#       image: cf-deployment-concourse-tasks-bbl-dev
-#       input_mapping:
-#         bbl-state: updated-bbl-state
-#       params:
-#         BBL_IAAS: gcp
-#         BBL_STATE_DIR: bump-deployments/bbl-lite-gcp
-#         BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_json))
 #       ensure:
 #         put: relint-envs
 #         params:
@@ -1250,7 +1199,8 @@ jobs:
       resource: bosh-bootloader
     - get: bosh-bootloader-bumped
       resource: bosh-bootloader-bump-deployments-ci
-      passed: [github-release-bump-deployments]
+      passed:
+      - github-release-bump-deployments
       trigger: true
 
   - task: merge-bump-deployments-change
@@ -1265,7 +1215,8 @@ jobs:
     - get: bbl-release-official
       params:
         include_source_tarball: true
-        version: { tag: bbl-release/number }
+        version:
+          tag: bbl-release/number
       # trigger: true
     - get: bbl-ci
       resource: bosh-bootloader
@@ -1287,7 +1238,8 @@ jobs:
     - get: bbl-release
       resource: bbl-release-official
       params:
-        version: { tag: bbl-release/number }
+        version:
+          tag: bbl-release/number
         globs:
         - bbl-*_osx
         - bbl-*_linux_x86-64
