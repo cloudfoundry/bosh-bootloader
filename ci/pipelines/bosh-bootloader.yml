@@ -1,6 +1,7 @@
 groups:
 - name: bump-deployments
   jobs:
+  - sync-version-bump-deployments
   - bump-deployments
   - test-bosh-bootloader-bump-deployments
   # - aws-acceptance-tests-bump-deployments
@@ -199,14 +200,11 @@ resources:
     uri: https://github.com/cloudfoundry/runtime-ci
 
 jobs:
-- name: bump-deployments
+- name: sync-version-bump-deployments
   serial: true
-  # public: true
+  public: true
   plan:
   - in_parallel:
-    - get: bbl-ci
-      resource: bosh-bootloader
-    - get: bosh-bootloader
     - get: bbl-release-official
     - get: bosh-deployment
       trigger: true
@@ -216,6 +214,26 @@ jobs:
   - put: version-bump-deployments
     params:
       file: bbl-release-official/version
+
+- name: bump-deployments
+  serial: true
+  public: true
+  plan:
+  - in_parallel:
+    - get: bbl-ci
+      resource: bosh-bootloader
+    - get: bosh-bootloader
+    - get: version-bump-deployments
+      passed:
+      - sync-version-bump-deployments
+    - get: bosh-deployment
+      passed:
+      - sync-version-bump-deployments
+      trigger: true
+    - get: jumpbox-deployment
+      passed:
+      - sync-version-bump-deployments
+      trigger: true
 
   - put: version-bump-deployments
     params:
@@ -1160,7 +1178,7 @@ jobs:
       - bbl-gcp-concourse-bump-deployments
       - bbl-gcp-cf-bump-deployments
       # - bbl-lite-gcp-bump-deployments
-      # trigger: true
+      trigger: true
     - get: version
       resource: version-bump-deployments
       passed:
