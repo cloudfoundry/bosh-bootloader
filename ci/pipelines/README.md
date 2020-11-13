@@ -1,12 +1,14 @@
 # bosh-bootloader
 
-This pipeline is responsible for automatically bumping
+This
+[pipeline](https://release-integration.ci.cf-app.com/teams/main/pipelines/bosh-bootloader) is responsible for automatically bumping
 [bosh-deployment](https://github.com/cloudfoundry/bosh-deployment) and
 [jumpbox-deployment](https://github.com/cloudfoundry/jumpbox-deployment)
 in bosh-bootloader. It is designed to be a full-automatic pipeline that triggers
 when changes are made to the master branches of either bosh-deployment or
 jumpbox-deployment, validates the changes, and cuts a new patch release of
-bosh-bootloader.
+bosh-bootloader. The source code for the pipeline can be found
+[here](https://github.com/cloudfoundry/bosh-bootloader/blob/master/ci/pipelines/bosh-bootloader.yml).
 
 ## Groups
 
