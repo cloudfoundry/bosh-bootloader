@@ -134,7 +134,6 @@ resources:
   type: git
   source:
     uri: https://github.com/cloudfoundry/cf-deployment.git
-    branch: master
 
 - name: concourse-deployment
   type: git
@@ -146,7 +145,6 @@ resources:
   type: git
   source:
     uri: https://github.com/cloudfoundry/cf-deployment-concourse-tasks.git
-    branch: master
 
 - name: cf-deployment-concourse-tasks-bbl-dev
   type: docker-image
