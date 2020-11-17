@@ -46,7 +46,7 @@ resources:
   type: git
   source:
     uri: git@github.com:cloudfoundry/bosh-bootloader.git
-    branch: master
+    branch: main
     private_key: ((bbl_readwrite_deploy_key.private_key))
     # ignore_paths:
     #   - docs/**
@@ -56,7 +56,7 @@ resources:
 #   type: git
 #   source:
 #     uri: git@github.com:cloudfoundry/bosh-bootloader.git
-#     branch: master
+#     branch: main
 #     private_key: ((bbl_readwrite_deploy_key.private_key))
 
 - name: bbl-docs
@@ -70,7 +70,7 @@ resources:
   type: git
   source:
     uri: git@github.com:cloudfoundry/relint-envs.git
-    branch: master
+    branch: main
     private_key: ((hagrid_env_readwrite_deploy_key.private_key))
 
 # - name: version
@@ -165,7 +165,7 @@ resources:
   type: git
   source:
     uri: git@github.com:cloudfoundry/bosh-bootloader.git
-    branch: master
+    branch: main
     private_key: ((bbl_readwrite_deploy_key.private_key))
     paths:
     - dockerfiles/cf-deployment-concourse-tasks-bbl-dev
