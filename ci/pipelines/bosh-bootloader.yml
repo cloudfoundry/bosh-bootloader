@@ -233,6 +233,7 @@ jobs:
       passed:
       - sync-version-bump-deployments
       trigger: true
+    - get: bbl-release-official
 
   - put: version-bump-deployments
     params:
