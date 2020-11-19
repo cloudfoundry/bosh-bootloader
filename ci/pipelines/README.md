@@ -5,10 +5,10 @@ is responsible for automatically bumping
 [bosh-deployment](https://github.com/cloudfoundry/bosh-deployment) and
 [jumpbox-deployment](https://github.com/cloudfoundry/jumpbox-deployment)
 in bosh-bootloader. It is designed to be a full-automatic pipeline that triggers
-when changes are made to the master branches of either bosh-deployment or
-jumpbox-deployment, validates the changes, and cuts a new patch release of
-bosh-bootloader. The source code for the pipeline can be found
-[here](https://github.com/cloudfoundry/bosh-bootloader/blob/master/ci/pipelines/bosh-bootloader.yml).
+when changes are made to either bosh-deployment or jumpbox-deployment, validates
+the changes, and cuts a new patch release of bosh-bootloader.
+The source code for the pipeline can be found
+[here](https://github.com/cloudfoundry/bosh-bootloader/blob/main/ci/pipelines/bosh-bootloader.yml).
 
 ## Groups
 
@@ -53,7 +53,7 @@ bosh-bootloader. The source code for the pipeline can be found
 * Creates a new Github release with the bumps on the bump-deployments-ci branch
 
 #### merge-bump-deployments-change
-* Merges the changes from the bump-deployments-ci branch back into the master
+* Merges the changes from the bump-deployments-ci branch back into the main
   branch of bbl
 
 ### misc

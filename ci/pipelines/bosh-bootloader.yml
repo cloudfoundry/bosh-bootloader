@@ -1223,6 +1223,7 @@ jobs:
 
   - task: merge-bump-deployments-change
     file: bbl-ci/ci/tasks/merge-bump-deployments-change/task.yml
+
   - put: bosh-bootloader
     params:
       repository: bosh-bootloader
