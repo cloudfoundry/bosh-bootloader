@@ -9,7 +9,7 @@ function main() {
     git remote add http https://github.com/cloudfoundry/bosh-bootloader.git
     git fetch http
 
-    git checkout master
+    git checkout main
 
     if ! git merge --no-edit bump-deployments-ci ; then
       git checkout --theirs deployment-versions.txt
