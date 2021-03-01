@@ -179,7 +179,7 @@ resources:
 - name: concourse-smoke-tests
   type: git
   source:
-    uri: https://github.com/joshzarrabi/concourse-smoke-tests.git
+    uri: https://github.com/davewalter/concourse-smoke-tests.git
 
 - name: bosh-deployment
   type: git

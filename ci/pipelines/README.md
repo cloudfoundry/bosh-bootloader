@@ -46,7 +46,7 @@ The source code for the pipeline can be found
   * Runs `bbl up ---lb-type concourse`
   * Deploys Concourse using
     [concourse-bosh-deployment](https://github.com/concourse/concourse-bosh-deployment)
-  * Runs the [concourse-smoke-tests](https://github.com/joshzarrabi/concourse-smoke-tests)
+  * Runs the [concourse-smoke-tests](https://github.com/davewalter/concourse-smoke-tests)
   * Runs `bbl destroy`
 
 #### github-release-bump-deployments
