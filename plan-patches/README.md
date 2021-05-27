@@ -41,3 +41,4 @@ Many of these have additional prep steps or specific downstream bosh deployments
 | [cf-lite-azure](cf-lite-azure/) | Deploy a cf-lite on azure, one-box dev environment for CF |
 | [cf-azure](cf-azure/) | Deploy a cf on azure |
 | [cfcr-azure](cfcr-azure/) | Deploy a cfcr on azure |
+| [http2-lb-azure](http2-lb-azure/) | Enable http2 on load balancer (application gateway) in Azure |
