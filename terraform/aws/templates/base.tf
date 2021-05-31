@@ -11,15 +11,15 @@ provider "tls" {
 }
 
 variable "access_key" {
-  type = "string"
+  type = string
 }
 
 variable "secret_key" {
-  type = "string"
+  type = string
 }
 
 variable "region" {
-  type = "string"
+  type = string
 }
 
 variable "bosh_inbound_cidr" {
@@ -31,11 +31,11 @@ variable "availability_zones" {
 }
 
 variable "env_id" {
-  type = "string"
+  type = string
 }
 
 variable "short_env_id" {
-  type = "string"
+  type = string
 }
 
 variable "vpc_cidr" {

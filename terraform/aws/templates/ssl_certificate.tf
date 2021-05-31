@@ -1,9 +1,9 @@
 variable "ssl_certificate" {
-  type = "string"
+  type = string
 }
 
 variable "ssl_certificate_private_key" {
-  type = "string"
+  type = string
 }
 
 resource "aws_iam_server_certificate" "lb_cert" {
