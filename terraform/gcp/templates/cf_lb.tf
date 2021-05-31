@@ -1,9 +1,9 @@
 variable "ssl_certificate" {
-  type = "string"
+  type = string
 }
 
 variable "ssl_certificate_private_key" {
-  type = "string"
+  type = string
 }
 
 output "router_backend_service" {

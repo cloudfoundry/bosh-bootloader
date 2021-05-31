@@ -1,5 +1,5 @@
 variable "kubernetes_master_host" {
-  type = "string"
+  type = string
 }
 
 resource "aws_route53_zone" "cfcr_dns_zone" {

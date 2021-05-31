@@ -1,21 +1,21 @@
 variable "project_id" {
-  type = "string"
+  type = string
 }
 
 variable "region" {
-  type = "string"
+  type = string
 }
 
 variable "zone" {
-  type = "string"
+  type = string
 }
 
 variable "env_id" {
-  type = "string"
+  type = string
 }
 
 variable "credentials" {
-  type = "string"
+  type = string
 }
 
 provider "google" {
@@ -194,11 +194,11 @@ output "director_address" {
 }
 
 variable "ssl_certificate" {
-  type = "string"
+  type = string
 }
 
 variable "ssl_certificate_private_key" {
-  type = "string"
+  type = string
 }
 
 output "router_backend_service" {

@@ -1,13 +1,13 @@
 variable "existing-bbl-network" {
-  type = "string"
+  type = string
 }
 
 variable "existing-bbl-subnet" {
-  type = "string"
+  type = string
 }
 
 variable "existing-bastion-address" {
-  type = "string"
+  type = string
 }
 
 resource "google_compute_network" "bbl-network" {

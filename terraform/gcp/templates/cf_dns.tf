@@ -1,5 +1,5 @@
 variable "system_domain" {
-  type = "string"
+  type = string
 }
 
 resource "google_dns_managed_zone" "env_dns_zone" {
