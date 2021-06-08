@@ -86,7 +86,7 @@ const (
   value:
     ephemeral_disk:
       size: 10240
-    instance_type: Standard_GS2
+    instance_type: Standard_E2s_v3
 
 - type: replace
   path: /vm_types/name=sharedcpu/cloud_properties?
