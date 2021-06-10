@@ -3,7 +3,7 @@ variable "system_domain" {
 }
 
 variable "parent_zone" {
-  type        = "string"
+  type        = string
   default     = ""
   description = "The name of the parent zone for the provided system domain if it exists."
 }

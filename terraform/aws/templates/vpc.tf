@@ -1,5 +1,5 @@
 variable "existing_vpc_id" {
-  type        = "string"
+  type        = string
   default     = ""
   description = "Optionally use an existing vpc"
 }

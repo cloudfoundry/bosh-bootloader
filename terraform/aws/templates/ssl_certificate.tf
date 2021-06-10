@@ -3,7 +3,7 @@ variable "ssl_certificate" {
 }
 
 variable "ssl_certificate_chain" {
-  type = "string"
+  type = string
 }
 
 variable "ssl_certificate_private_key" {
