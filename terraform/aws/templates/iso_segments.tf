@@ -1,5 +1,5 @@
 variable "isolation_segments" {
-  type        = "string"
+  type        = string
   default     = "0"
   description = "Optionally create a load balancer and DNS entries for a single isolation segment. Valid values are 0 or 1."
 }
