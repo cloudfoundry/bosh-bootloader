@@ -1,13 +1,20 @@
-FROM golang
+FROM golang:1.13
 MAINTAINER https://github.com/cloudfoundry/bosh-bootloader
 
 ARG GITHUB_TOKEN
 ENV TERRAFORM_VERSION 0.15.3
 ENV RUBY_VERSION 3.0.1
 
+# Create testuser
+RUN mkdir -p /home/testuser && \
+	groupadd -r testuser -g 433 && \
+	useradd -u 431 -r -g testuser -d /home/testuser -s /usr/sbin/nologin -c "Docker image test user" testuser && \
+  chown testuser:testuser /home/testuser
+
 RUN \
       apt-get update && \
       apt-get -qqy install --fix-missing \
+            runit \
             apt-transport-https \
             openssl \
             silversearcher-ag \
@@ -81,3 +88,9 @@ RUN curl https://bootstrap.pypa.io/get-pip.py | python3
 # Install yq
 RUN pip install yq
 RUN pip install -U awscli
+
+# Install ginkgo
+RUN go get -u github.com/onsi/ginkgo/ginkgo
+
+RUN chown -R testuser:testuser /usr/local/go/pkg
+RUN chown -R testuser:testuser /go

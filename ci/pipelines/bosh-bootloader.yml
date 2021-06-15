@@ -47,7 +47,7 @@ resources:
   source:
     uri: git@github.com:cloudfoundry/bosh-bootloader.git
     branch: main
-    private_key: ((bbl_readwrite_deploy_key.private_key))
+    private_key: ((readwrite_deploy_key.private_key))
     # ignore_paths:
     #   - docs/**
     #   - README.md
@@ -64,7 +64,7 @@ resources:
   source:
     uri: git@github.com:cloudfoundry/bosh-bootloader.git
     branch: gh-pages
-    private_key: ((bbl_readwrite_deploy_key.private_key))
+    private_key: ((readwrite_deploy_key.private_key))
 
 - name: relint-envs
   type: git
@@ -91,8 +91,8 @@ resources:
     bucket: bbl-version
     region_name: us-east-1
     key: bbl-version-bump-deployments
-    access_key_id: ((bbl_s3_aws_access_key_id))
-    secret_access_key: ((bbl_s3_aws_secret_access_key))
+    access_key_id: ((s3_aws.access_key_id))
+    secret_access_key: ((s3_aws.secret_access_key))
 
 # - name: bbl-release
 #   type: github-release
@@ -107,7 +107,7 @@ resources:
   source:
     owner: cloudfoundry
     repository: bosh-bootloader
-    access_token: ((cf_deployment_release_bot_access_token))
+    access_token: ((github.access_token))
     drafts: false
 
 - name: homebrew-tap
@@ -151,8 +151,8 @@ resources:
   type: docker-image
   source:
     repository: relintdockerhubpushbot/cf-deployment-concourse-tasks-bbl-dev
-    username: ((dockerhub.username))
-    password: ((dockerhub.password))
+    username: ((bbl_dockerhub.username))
+    password: ((bbl_dockerhub.password))
     email: cf-release-integration+dockerhub-push-bot@pivotal.io
 
 - name: cf-deployment-concourse-tasks-docker-image
@@ -165,7 +165,7 @@ resources:
   source:
     uri: git@github.com:cloudfoundry/bosh-bootloader.git
     branch: main
-    private_key: ((bbl_readwrite_deploy_key.private_key))
+    private_key: ((readwrite_deploy_key.private_key))
     paths:
     - dockerfiles/cf-deployment-concourse-tasks-bbl-dev
 
@@ -174,7 +174,7 @@ resources:
   source:
     uri: git@github.com:cloudfoundry/bosh-bootloader.git
     branch: bump-deployments-ci
-    private_key: ((bbl_readwrite_deploy_key.private_key))
+    private_key: ((readwrite_deploy_key.private_key))
 
 - name: concourse-smoke-tests
   type: git
@@ -244,7 +244,7 @@ jobs:
     input_mapping:
       bbl-release: bbl-release-official
     params:
-      DEPLOY_KEY: ((bbl_readwrite_deploy_key.private_key))
+      DEPLOY_KEY: ((readwrite_deploy_key.private_key))
 
   - put: bump-deployments-ci
     resource: bosh-bootloader-bump-deployments-ci
@@ -260,8 +260,6 @@ jobs:
       resource: bosh-bootloader
     - get: bosh-bootloader
       resource: bosh-bootloader-bump-deployments-ci
-      passed:
-      - bump-deployments
       trigger: true
     - get: version
       resource: version-bump-deployments
@@ -290,7 +288,7 @@ jobs:
 #   - task: download-terraform
 #     file: bbl-ci/ci/tasks/download-terraform/task.yml
 #     params:
-#       TF_VERSION: 0.11.7
+#       TF_VERSION: 0.15.3
 #
 #   - in_parallel:
 #     - task: plan
@@ -357,17 +355,18 @@ jobs:
   - task: download-terraform
     file: bbl-ci/ci/tasks/download-terraform/task.yml
     params:
-      TF_VERSION: 0.11.7
+      TF_VERSION: 0.15.3
 
   - task: bbl-tests
     file: bbl-ci/ci/tasks/acceptance/task.yml
     params:
       BBL_IAAS: gcp
-      BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_json))
+      BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp.service_account_json))
       BBL_GCP_REGION: us-central1
       BBL_TEST_ENV_ID_PREFIX: bump-deployments
       BBL_TEST_PACKAGES: bbl
       BBL_DOWN_TIMEOUT: 20m
+      RUN_TEST: ssh
 
 - name: bbl-downstream-docker-image-bump-deployments
   plan:
@@ -392,7 +391,7 @@ jobs:
   - task: download-terraform
     file: bbl-ci/ci/tasks/download-terraform/task.yml
     params:
-      TF_VERSION: 0.11.7
+      TF_VERSION: 0.15.3
 
   - task: generate-version-from-sha
     file: bbl-ci/ci/tasks/generate-version-from-sha/task.yml
@@ -720,7 +719,7 @@ jobs:
     image: cf-deployment-concourse-tasks-bbl-dev
     params:
       BBL_IAAS: gcp
-      BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_json))
+      BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp.service_account_json))
       BBL_GCP_REGION: us-central1
       BBL_ENV_NAME: bump-deployments-downstream
       BBL_STATE_DIR: bump-deployments/bbl-gcp-cf
@@ -730,7 +729,7 @@ jobs:
     image: cf-deployment-concourse-tasks-bbl-dev
     params:
       BBL_IAAS: gcp
-      BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_json))
+      BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp.service_account_json))
       BBL_GCP_REGION: us-central1
       BBL_LB_CERT: ((bbl_cf_ssl_cert.certificate))
       BBL_LB_KEY: ((bbl_cf_ssl_cert.private_key))
@@ -748,7 +747,7 @@ jobs:
       image: cf-deployment-concourse-tasks-bbl-dev
       params:
         BBL_STATE_DIR: bump-deployments/bbl-gcp-cf
-        BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_json))
+        BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp.service_account_json))
       input_mapping:
         bbl-state: updated-bbl-state
       ensure:
@@ -762,7 +761,7 @@ jobs:
     image: cf-deployment-concourse-tasks-bbl-dev
     params:
       BBL_STATE_DIR: bump-deployments/bbl-gcp-cf
-      GCP_DNS_SERVICE_ACCOUNT_KEY: ((bbl_dns_service_account_json))
+      GCP_DNS_SERVICE_ACCOUNT_KEY: ((bbl_dns.service_account_json))
       GCP_DNS_ZONE_NAME: infrastructure
       GCP_DNS_RECORD_SET_NAME: bump-deployments-cf.infrastructure.cf-app.com
       ACTION: add
@@ -776,7 +775,7 @@ jobs:
         bbl-state: updated-bbl-state
       params:
         BBL_STATE_DIR: bump-deployments/bbl-gcp-cf
-        BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_json))
+        BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp.service_account_json))
       ensure:
         put: relint-envs
         params:
@@ -790,7 +789,7 @@ jobs:
       bbl-state: updated-bbl-state
     params:
       BBL_STATE_DIR: bump-deployments/bbl-gcp-cf
-      BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_json))
+      BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp.service_account_json))
       SYSTEM_DOMAIN: bump-deployments-cf.infrastructure.cf-app.com
       VARS_STORE_FILE: bump-deployments/bbl-gcp-cf/deployment-vars.yml
       OPS_FILES: "operations/use-compiled-releases.yml"
@@ -801,7 +800,7 @@ jobs:
         image: cf-deployment-concourse-tasks-bbl-dev
         params:
           BBL_STATE_DIR: bump-deployments/bbl-gcp-cf
-          GCP_DNS_SERVICE_ACCOUNT_KEY: ((bbl_dns_service_account_json))
+          GCP_DNS_SERVICE_ACCOUNT_KEY: ((bbl_dns.service_account_json))
           GCP_DNS_ZONE_NAME: infrastructure
           GCP_DNS_RECORD_SET_NAME: bump-deployments-cf.infrastructure.cf-app.com
           ACTION: remove
@@ -815,7 +814,7 @@ jobs:
           bbl-state: updated-bbl-state
         params:
           BBL_STATE_DIR: bump-deployments/bbl-gcp-cf
-          BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_json))
+          BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp.service_account_json))
 
       - task: bosh-cleanup
         file: cf-deployment-concourse-tasks/bosh-cleanup/task.yml
@@ -825,7 +824,7 @@ jobs:
         params:
           CLEAN_ALL: true
           BBL_STATE_DIR: bump-deployments/bbl-gcp-cf
-          BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_json))
+          BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp.service_account_json))
 
       - task: destroy-infrastructure
         file: cf-deployment-concourse-tasks/bbl-destroy/task.yml
@@ -834,7 +833,7 @@ jobs:
           bbl-state: updated-bbl-state
         params:
           BBL_STATE_DIR: bump-deployments/bbl-gcp-cf
-          BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_json))
+          BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp.service_account_json))
         ensure:
           put: relint-envs
           params:
@@ -858,7 +857,7 @@ jobs:
           bbl-state: updated-bbl-state
         params:
           BBL_STATE_DIR: bump-deployments/bbl-gcp-cf
-          BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_json))
+          BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp.service_account_json))
 
       - task: bosh-cleanup
         file: cf-deployment-concourse-tasks/bosh-cleanup/task.yml
@@ -868,14 +867,14 @@ jobs:
         params:
           CLEAN_ALL: true
           BBL_STATE_DIR: bump-deployments/bbl-gcp-cf
-          BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_json))
+          BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp.service_account_json))
 
       - task: remove-from-gcp-dns
         file: runtime-ci/tasks/manage-gcp-dns/task.yml
         image: cf-deployment-concourse-tasks-bbl-dev
         params:
           BBL_STATE_DIR: bump-deployments/bbl-gcp-cf
-          GCP_DNS_SERVICE_ACCOUNT_KEY: ((bbl_dns_service_account_json))
+          GCP_DNS_SERVICE_ACCOUNT_KEY: ((bbl_dns.service_account_json))
           GCP_DNS_ZONE_NAME: infrastructure
           GCP_DNS_RECORD_SET_NAME: bump-deployments-cf.infrastructure.cf-app.com
           ACTION: remove
@@ -889,7 +888,7 @@ jobs:
           bbl-state: updated-bbl-state
         params:
           BBL_STATE_DIR: bump-deployments/bbl-gcp-cf
-          BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_json))
+          BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp.service_account_json))
         on_failure:
           put: relint-envs
           params:
@@ -926,7 +925,7 @@ jobs:
     image: cf-deployment-concourse-tasks-bbl-dev
     params:
       BBL_IAAS: gcp
-      BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_json))
+      BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp.service_account_json))
       BBL_GCP_REGION: us-central1
       BBL_ENV_NAME: bump-deployments-gcp-concourse
       BBL_STATE_DIR: bump-deployments/bbl-gcp-concourse
@@ -936,7 +935,7 @@ jobs:
     image: cf-deployment-concourse-tasks-bbl-dev
     params:
       BBL_IAAS: gcp
-      BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_json))
+      BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp.service_account_json))
       BBL_GCP_REGION: us-central1
       BBL_ENV_NAME: bump-deployments-gcp-concourse
       BBL_STATE_DIR: bump-deployments/bbl-gcp-concourse
@@ -948,7 +947,7 @@ jobs:
       image: cf-deployment-concourse-tasks-bbl-dev
       params:
         BBL_STATE_DIR: bump-deployments/bbl-gcp-concourse
-        BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_json))
+        BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp.service_account_json))
       input_mapping:
         bbl-state: updated-bbl-state
       ensure:
@@ -1006,7 +1005,7 @@ jobs:
           bbl-state: updated-bbl-state
         params:
           BBL_STATE_DIR: bump-deployments/bbl-gcp-concourse
-          BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_json))
+          BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp.service_account_json))
         on_failure:
           put: relint-envs
           params:
@@ -1191,7 +1190,7 @@ jobs:
   - task: download-terraform
     file: bbl-ci/ci/tasks/download-terraform/task.yml
     params:
-      TF_VERSION: 0.11.7
+      TF_VERSION: 0.15.3
 
   - task: build-binaries
     file: bbl-ci/ci/tasks/build-release/task.yml
