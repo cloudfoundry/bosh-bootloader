@@ -7,7 +7,8 @@ function main() {
 
   pushd "${GOPATH}/src/github.com/cloudfoundry" > /dev/null
     ln -s "${ROOT}/bosh-bootloader"
-    ./bosh-bootloader/scripts/test
+    local username="testuser"
+    chpst -u ${username}:${username} env HOME=/home/${username} ./bosh-bootloader/scripts/test
   popd > /dev/null
 }
 
