@@ -429,7 +429,6 @@ var _ = Describe("Executor", func() {
 				Expect(cli.RunCall.Receives.WorkingDirectory).To(Equal(terraformDir))
 				Expect(cli.RunCall.Receives.Args).To(ConsistOf([]string{
 					"destroy",
-					"-force",
 					"-var", "some-cert=some-cert-value",
 					"-state", relativeStatePath,
 					"-var-file", relativeVarsPath,

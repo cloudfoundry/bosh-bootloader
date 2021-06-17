@@ -232,7 +232,7 @@ func (e Executor) Validate(credentials map[string]string) error {
 }
 
 func (e Executor) Destroy(credentials map[string]string) error {
-	args := []string{"destroy", "-force"}
+	args := []string{"destroy"}
 	for key, value := range credentials {
 		arg := fmt.Sprintf("%s=%s", key, value)
 		args = append(args, "-var", arg)
