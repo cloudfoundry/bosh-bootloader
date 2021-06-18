@@ -1,4 +1,4 @@
-FROM relintdockerhubpushbot/cf-deployment-concourse-tasks
+FROM cloudfoundry/cf-deployment-concourse-tasks
 MAINTAINER https://github.com/cloudfoundry/bosh-bootloader
 
 # Create directory for GOPATH
