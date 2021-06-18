@@ -158,7 +158,8 @@ resources:
 - name: cf-deployment-concourse-tasks-docker-image
   type: docker-image
   source:
-    repository: relintdockerhubpushbot/cf-deployment-concourse-tasks
+    repository: cloudfoundry/cf-deployment-concourse-tasks
+    tag: latest
 
 - name: cf-deployment-concourse-tasks-bbl-dev-dockerfile
   type: git
