@@ -42,9 +42,9 @@ var _ = Describe("Upgrade", func() {
 		Expect(err).NotTo(HaveOccurred())
 		var bblBinaryLocation string
 		if runtime.GOOS == "darwin" {
-			bblBinaryLocation = fmt.Sprintf(BBLReleaseURL, "v6.10.54", "bbl-v6.10.54_osx")
+			bblBinaryLocation = fmt.Sprintf(BBLReleaseURL, "v8.4.41", "bbl-v8.4.41_osx")
 		} else {
-			bblBinaryLocation = fmt.Sprintf(BBLReleaseURL, "v6.10.54", "bbl-v6.10.54_linux_x86-64")
+			bblBinaryLocation = fmt.Sprintf(BBLReleaseURL, "v8.4.41", "bbl-v8.4.41_linux_x86-64")
 		}
 
 		resp, err := http.Get(bblBinaryLocation)
