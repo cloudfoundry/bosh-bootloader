@@ -18,7 +18,7 @@ groups:
 - name: misc
   jobs:
   - bump-bbl-docs
-  - bump-brew-tap
+#  - bump-brew-tap
 
 resource_types:
 - name: bosh-deployment
@@ -110,13 +110,12 @@ resources:
     access_token: ((github.access_token))
     drafts: false
 
-- name: homebrew-tap
-  type: git
-  source:
-    uri: https://github.com/cloudfoundry/homebrew-tap.git
-    # uri: git@github.com:cloudfoundry/homebrew-tap.git
-    branch: master
-    # private_key: ((cf_infra_bot_github_user.private_key))
+# - name: homebrew-tap
+#   type: git
+#   source:
+#     uri: git@github.com:cloudfoundry/homebrew-tap.git
+#     branch: master
+#     private_key: ((cf_infra_bot_github_user.private_key))
 
 # - name: terraform
 #   type: github-release
@@ -367,7 +366,6 @@ jobs:
       BBL_TEST_ENV_ID_PREFIX: bump-deployments
       BBL_TEST_PACKAGES: bbl
       BBL_DOWN_TIMEOUT: 20m
-      RUN_TEST: ssh
 
 - name: bbl-downstream-docker-image-bump-deployments
   plan:
@@ -1250,26 +1248,26 @@ jobs:
       rebase: true
       repository: bbl-docs
 
-- name: bump-brew-tap
-  plan:
-  - in_parallel:
-    - get: homebrew-tap
-    - get: bbl-release
-      resource: bbl-release-official
-      params:
-        version:
-          tag: bbl-release/number
-        globs:
-        - bbl-*_osx
-        - bbl-*_linux_x86-64
-        - bbl-*_windows
-      # trigger: true
-    - get: bbl-ci
-      resource: bosh-bootloader
+# - name: bump-brew-tap
+#   plan:
+#   - in_parallel:
+#     - get: homebrew-tap
+#     - get: bbl-release
+#       resource: bbl-release-official
+#       params:
+#         version:
+#           tag: bbl-release/number
+#         globs:
+#         - bbl-*_osx
+#         - bbl-*_linux_x86-64
+#         - bbl-*_windows
+#       # trigger: true
+#     - get: bbl-ci
+#       resource: bosh-bootloader
 
-  - task: update-brew-formula
-    file: bbl-ci/ci/tasks/bump-brew-tap/task.yml
+#   - task: update-brew-formula
+#     file: bbl-ci/ci/tasks/bump-brew-tap/task.yml
 
-  - put: homebrew-tap
-    params:
-      repository: updated-brew-tap/homebrew-tap
+#   - put: homebrew-tap
+#     params:
+#       repository: updated-brew-tap/homebrew-tap

@@ -2,13 +2,11 @@
 
 ROOT="${PWD}"
 function main() {
-  local latest_release_tag
-  latest_release_tag=$(cat "${ROOT}/bbl-release/version")
-
   authorize_for_github
   pushd "${ROOT}/bosh-bootloader" > /dev/null
     git fetch --tags
-    git checkout -B "bump-deployments-ci" "v${latest_release_tag}"
+    git checkout -B "bump-deployments-ci"
+    git rebase main
   popd > /dev/null
 
   pushd "${ROOT}/jumpbox-deployment" > /dev/null
