@@ -27,10 +27,10 @@ resource_types:
     repository: cloudfoundry/bosh-deployment-resource
 
 resources:
-- name: ubuntu-xenial-stemcell-gcp
+- name: ubuntu-bionic-stemcell-gcp
   type: bosh-io-stemcell
   source:
-    name: bosh-google-kvm-ubuntu-xenial-go_agent
+    name: bosh-google-kvm-ubuntu-bionic-go_agent
 
 # - name: ubuntu-xenial-stemcell-aws
 #   type: bosh-io-stemcell
@@ -912,7 +912,7 @@ jobs:
       - bbl-downstream-docker-image-bump-deployments
     - get: bbl-ci
       resource: bosh-bootloader
-    - get: ubuntu-xenial-stemcell-gcp
+    - get: ubuntu-bionic-stemcell-gcp
     - get: concourse-smoke-tests
     - get: version
       resource: version-bump-deployments
@@ -974,7 +974,7 @@ jobs:
       source_file: source-file/bosh-source.json
       manifest: concourse-deployment/cluster/concourse.yml
       stemcells:
-      - ubuntu-xenial-stemcell-gcp/stemcell.tgz
+      - ubuntu-bionic-stemcell-gcp/stemcell.tgz
       vars_files:
         - concourse-deployment/versions.yml
         - concourse-vars/vars.yml
