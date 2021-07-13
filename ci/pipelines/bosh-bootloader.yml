@@ -957,6 +957,7 @@ jobs:
 
   - task: create-bosh-source-file
     file: bbl-ci/ci/tasks/create-bosh-deployment-source-file/task.yml
+    image: cf-deployment-concourse-tasks-bbl-dev
     params:
       BBL_STATE_DIR: bump-deployments/bbl-gcp-concourse
     input_mapping:
@@ -964,6 +965,7 @@ jobs:
 
   - task: get-concourse-test-vars
     file: bbl-ci/ci/tasks/get-concourse-test-vars/task.yml
+    image: cf-deployment-concourse-tasks-bbl-dev
     params:
       BBL_STATE_DIR: bump-deployments/bbl-gcp-concourse
     input_mapping:

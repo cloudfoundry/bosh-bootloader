@@ -34,3 +34,5 @@ ADD bbl /usr/local/bin/
 ADD bosh-bootloader /go/src/github.com/cloudfoundry/bosh-bootloader
 
 RUN cp -r /go/src/github.com/cloudfoundry/bosh-bootloader /var/repos
+
+RUN go get -u github.com/pivotal-cf/texplate
