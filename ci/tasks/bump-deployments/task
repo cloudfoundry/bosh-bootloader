@@ -6,7 +6,7 @@ function main() {
   pushd "${ROOT}/bosh-bootloader" > /dev/null
     git fetch --tags
     git checkout -B "bump-deployments-ci-8.4.x"
-    git rebase main
+    git rebase 8.4.x
   popd > /dev/null
 
   pushd "${ROOT}/jumpbox-deployment" > /dev/null
