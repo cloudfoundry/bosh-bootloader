@@ -15,7 +15,7 @@ resource "aws_vpc" "vpc" {
   instance_tenancy     = "default"
   enable_dns_hostnames = true
 
-  tags {
+  tags = {
     Name = "${var.env_id}-vpc"
   }
 }

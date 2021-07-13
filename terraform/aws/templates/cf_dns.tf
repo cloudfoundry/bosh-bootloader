@@ -28,7 +28,7 @@ resource "aws_route53_zone" "env_dns_zone" {
 
   name = "${var.system_domain}"
 
-  tags {
+  tags = {
     Name = "${var.env_id}-hosted-zone"
   }
 }

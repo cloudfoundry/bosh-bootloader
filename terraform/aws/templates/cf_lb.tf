@@ -17,12 +17,12 @@ resource "aws_security_group" "cf_ssh_lb_security_group" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  tags {
+  tags = {
     Name = "${var.env_id}-cf-ssh-lb-security-group"
   }
 
   lifecycle {
-    ignore_changes = ["name"]
+    ignore_changes = [name]
   }
 }
 
@@ -49,12 +49,12 @@ resource "aws_security_group" "cf_ssh_lb_internal_security_group" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  tags {
+  tags = {
     Name = "${var.env_id}-cf-ssh-lb-internal-security-group"
   }
 
   lifecycle {
-    ignore_changes = ["name"]
+    ignore_changes = [name]
   }
 }
 
@@ -84,7 +84,7 @@ resource "aws_elb" "cf_ssh_lb" {
   security_groups = ["${aws_security_group.cf_ssh_lb_security_group.id}"]
   subnets         = ["${aws_subnet.lb_subnets.*.id}"]
 
-  tags {
+  tags = {
     Name = "${var.env_id}"
   }
 }
@@ -130,12 +130,12 @@ resource "aws_security_group" "cf_router_lb_security_group" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  tags {
+  tags = {
     Name = "${var.env_id}-cf-router-lb-security-group"
   }
 
   lifecycle {
-    ignore_changes = ["name"]
+    ignore_changes = [name]
   }
 }
 
@@ -162,12 +162,12 @@ resource "aws_security_group" "cf_router_lb_internal_security_group" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  tags {
+  tags = {
     Name = "${var.env_id}-cf-router-lb-internal-security-group"
   }
 
   lifecycle {
-    ignore_changes = ["name"]
+    ignore_changes = [name]
   }
 }
 
@@ -213,7 +213,7 @@ resource "aws_elb" "cf_router_lb" {
   security_groups = ["${aws_security_group.cf_router_lb_security_group.id}"]
   subnets         = ["${aws_subnet.lb_subnets.*.id}"]
 
-  tags {
+  tags = {
     Name = "${var.env_id}"
   }
 }
@@ -228,7 +228,7 @@ resource "aws_lb_target_group" "cf_router_4443" {
     protocol = "TCP"
   }
 
-  tags {
+  tags = {
     Name = "${var.env_id}"
   }
 }
@@ -260,12 +260,12 @@ resource "aws_security_group" "cf_tcp_lb_security_group" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  tags {
+  tags = {
     Name = "${var.env_id}-cf-tcp-lb-security-group"
   }
 
   lifecycle {
-    ignore_changes = ["name"]
+    ignore_changes = [name]
   }
 }
 
@@ -299,12 +299,12 @@ resource "aws_security_group" "cf_tcp_lb_internal_security_group" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  tags {
+  tags = {
     Name = "${var.env_id}-cf-tcp-lb-security-group"
   }
 
   lifecycle {
-    ignore_changes = ["name"]
+    ignore_changes = [name]
   }
 }
 
@@ -1027,7 +1027,7 @@ resource "aws_elb" "cf_tcp_lb" {
   security_groups = ["${aws_security_group.cf_tcp_lb_security_group.id}"]
   subnets         = ["${aws_subnet.lb_subnets.*.id}"]
 
-  tags {
+  tags = {
     Name = "${var.env_id}"
   }
 }

@@ -5,17 +5,17 @@ variable "isolation_segments" {
 }
 
 variable "iso_to_bosh_ports" {
-  type    = "list"
+  type    = list
   default = [22, 6868, 2555, 4222, 25250]
 }
 
 variable "iso_to_shared_tcp_ports" {
-  type    = "list"
+  type    = list
   default = [9090, 9091, 8082, 8300, 8301, 8889, 8443, 3000, 4443, 8080, 3457, 9023, 9022, 4222]
 }
 
 variable "iso_to_shared_udp_ports" {
-  type    = "list"
+  type    = list
   default = [8301, 8302, 8600]
 }
 
@@ -29,7 +29,7 @@ resource "aws_subnet" "iso_subnets" {
   cidr_block        = "${cidrsubnet(var.vpc_cidr, 4, count.index + length(var.availability_zones) + 1)}"
   availability_zone = "${element(var.availability_zones, count.index)}"
 
-  tags {
+  tags = {
     Name = "${var.env_id}-iso-subnet${count.index}"
   }
 }
@@ -80,7 +80,7 @@ resource "aws_elb" "iso_router_lb" {
   security_groups = ["${aws_security_group.cf_router_lb_security_group.id}"]
   subnets         = ["${aws_subnet.lb_subnets.*.id}"]
 
-  tags {
+  tags = {
     Name = "${var.env_id}"
   }
 }
@@ -96,7 +96,7 @@ resource "aws_lb_target_group" "iso_router_lb_4443" {
     protocol = "TCP"
   }
 
-  tags {
+  tags = {
     Name = "${var.env_id}"
   }
 }
@@ -109,7 +109,7 @@ resource "aws_security_group" "iso_security_group" {
 
   description = "Private isolation segment"
 
-  tags {
+  tags = {
     Name = "${var.env_id}-iso-security-group"
   }
 }
@@ -122,7 +122,7 @@ resource "aws_security_group" "iso_shared_security_group" {
 
   description = "Shared isolation segments"
 
-  tags {
+  tags = {
     Name = "${var.env_id}-iso-shared-security-group"
   }
 }
