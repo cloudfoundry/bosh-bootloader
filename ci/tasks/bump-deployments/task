@@ -8,7 +8,7 @@ function main() {
   authorize_for_github
   pushd "${ROOT}/bosh-bootloader" > /dev/null
     git fetch --tags
-    git checkout -B "bump-deployments-ci" "v${latest_release_tag}"
+    git checkout -B "bump-deployments-ci-8.4.x" "v${latest_release_tag}"
   popd > /dev/null
 
   pushd "${ROOT}/jumpbox-deployment" > /dev/null
