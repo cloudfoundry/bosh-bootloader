@@ -4,7 +4,8 @@ platform: linux
 image_resource:
   type: docker-image
   source:
-    repository: cfinfrastructure/deployment
+    repository: cryogenics/bbl-deployment
+    tag: 8.4.x
 
 inputs:
 - name: bbl-ci
