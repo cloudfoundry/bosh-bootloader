@@ -3,12 +3,12 @@ resource "aws_security_group" "concourse_lb_internal_security_group" {
   description = "Concourse Internal"
   vpc_id      = "${local.vpc_id}"
 
-  tags {
+  tags = {
     Name = "${var.env_id}-concourse-lb-internal-security-group"
   }
 
   lifecycle {
-    ignore_changes = ["name"]
+    ignore_changes = [name]
   }
 }
 
@@ -57,7 +57,7 @@ resource "aws_lb" "concourse_lb" {
   load_balancer_type = "network"
   subnets            = ["${aws_subnet.lb_subnets.*.id}"]
 
-  tags {
+  tags = {
     Name = "${var.env_id}"
   }
 }
@@ -86,7 +86,7 @@ resource "aws_lb_target_group" "concourse_lb_80" {
     protocol            = "TCP"
   }
 
-  tags {
+  tags = {
     Name = "${var.env_id}"
   }
 }
@@ -108,7 +108,7 @@ resource "aws_lb_target_group" "concourse_lb_2222" {
   protocol = "TCP"
   vpc_id   = "${local.vpc_id}"
 
-  tags {
+  tags = {
     Name = "${var.env_id}"
   }
 }
@@ -130,7 +130,7 @@ resource "aws_lb_target_group" "concourse_lb_443" {
   protocol = "TCP"
   vpc_id   = "${local.vpc_id}"
 
-  tags {
+  tags = {
     Name = "${var.env_id}"
   }
 }
@@ -172,7 +172,7 @@ resource "aws_lb_target_group" "concourse_lb_8844" {
   protocol = "TCP"
   vpc_id   = "${local.vpc_id}"
 
-  tags {
+  tags = {
     Name = "${var.env_id}"
   }
 }
@@ -194,7 +194,7 @@ resource "aws_lb_target_group" "concourse_lb_8443" {
   protocol = "TCP"
   vpc_id   = "${local.vpc_id}"
 
-  tags {
+  tags = {
     Name = "${var.env_id}"
   }
 }

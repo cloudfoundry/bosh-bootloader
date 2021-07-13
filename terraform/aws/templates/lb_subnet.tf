@@ -4,12 +4,12 @@ resource "aws_subnet" "lb_subnets" {
   cidr_block        = "${cidrsubnet(var.vpc_cidr, 8, count.index+2)}"
   availability_zone = "${element(var.availability_zones, count.index)}"
 
-  tags {
+  tags = {
     Name = "${var.env_id}-lb-subnet${count.index}"
   }
 
   lifecycle {
-    ignore_changes = ["cidr_block", "availability_zone"]
+    ignore_changes = [cidr_block, availability_zone]
   }
 }
 

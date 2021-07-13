@@ -1,13 +1,20 @@
+terraform {
+  required_providers {
+    aws = {
+      source = "hashicorp/aws"
+      version = ">= 3.49"
+    }
+    tls = {
+      source = "hashicorp/tls"
+      version = ">= 3.1"
+    }
+  }
+}
+
 provider "aws" {
   access_key = "${var.access_key}"
   secret_key = "${var.secret_key}"
   region     = "${var.region}"
-
-  version = "~> 1.60"
-}
-
-provider "tls" {
-  version = "~> 1.2"
 }
 
 variable "access_key" {
@@ -27,7 +34,7 @@ variable "bosh_inbound_cidr" {
 }
 
 variable "availability_zones" {
-  type = "list"
+  type = list
 }
 
 variable "env_id" {
@@ -44,7 +51,7 @@ variable "vpc_cidr" {
 }
 
 resource "aws_eip" "jumpbox_eip" {
-  depends_on = ["aws_internet_gateway.ig"]
+  depends_on = [aws_internet_gateway.ig]
   vpc        = true
 }
 
@@ -63,7 +70,7 @@ resource "aws_security_group" "nat_security_group" {
   description = "NAT"
   vpc_id      = "${local.vpc_id}"
 
-  tags {
+  tags = {
     Name = "${var.env_id}-nat-security-group"
   }
 
@@ -116,7 +123,7 @@ resource "aws_nat_gateway" "nat" {
   subnet_id     = "${aws_subnet.bosh_subnet.id}"
   allocation_id = "${aws_eip.nat_eip.id}"
 
-  tags {
+  tags = {
     Name  = "${var.env_id}-nat"
     EnvID = "${var.env_id}"
   }
@@ -125,7 +132,7 @@ resource "aws_nat_gateway" "nat" {
 resource "aws_eip" "nat_eip" {
   vpc = true
 
-  tags {
+  tags = {
     Name  = "${var.env_id}-nat"
     EnvID = "${var.env_id}"
   }
@@ -140,12 +147,12 @@ resource "aws_security_group" "internal_security_group" {
   description = "Internal"
   vpc_id      = "${local.vpc_id}"
 
-  tags {
+  tags = {
     Name = "${var.env_id}-internal-security-group"
   }
 
   lifecycle {
-    ignore_changes = ["name"]
+    ignore_changes = [name]
   }
 }
 
@@ -199,12 +206,12 @@ resource "aws_security_group" "bosh_security_group" {
   description = "BOSH Director"
   vpc_id      = "${local.vpc_id}"
 
-  tags {
+  tags = {
     Name = "${var.env_id}-bosh-security-group"
   }
 
   lifecycle {
-    ignore_changes = ["name", "description"]
+    ignore_changes = [name, description]
   }
 }
 
@@ -285,12 +292,12 @@ resource "aws_security_group" "jumpbox" {
   description = "Jumpbox"
   vpc_id      = "${local.vpc_id}"
 
-  tags {
+  tags = {
     Name = "${var.env_id}-jumpbox-security-group"
   }
 
   lifecycle {
-    ignore_changes = ["name", "description"]
+    ignore_changes = [name, description]
   }
 }
 
@@ -361,7 +368,7 @@ resource "aws_subnet" "bosh_subnet" {
   vpc_id     = "${local.vpc_id}"
   cidr_block = "${cidrsubnet(var.vpc_cidr, 8, 0)}"
 
-  tags {
+  tags = {
     Name = "${var.env_id}-bosh-subnet"
   }
 }
@@ -387,7 +394,7 @@ resource "aws_subnet" "internal_subnets" {
   cidr_block        = "${cidrsubnet(var.vpc_cidr, 4, count.index+1)}"
   availability_zone = "${element(var.availability_zones, count.index)}"
 
-  tags {
+  tags = {
     Name = "${var.env_id}-internal-subnet${count.index}"
   }
 
