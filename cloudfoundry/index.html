@@ -557,17 +557,20 @@
 <h2 id="appendix-generating-load-balancer-key-and-certificate-files-for-microsoft-azure">Appendix: Generating Load Balancer Key and Certificate Files for Microsoft Azure</h2>
 <p>To create Cloud Foundry load balancers for Microsoft Azure you must provide a certificate
 in the <code>.pfx</code> format:</p>
-<pre><code>openssl genrsa -out DOMAIN_NAME.key 2048
-openssl req -new -x509 -days 365 -key DOMAIN_NAME.key -out DOMAIN_NAME.crt
-openssl pkcs12 -export -out PFX_FILE -inkey DOMAIN_NAME.key -in DOMAIN_NAME.crt
+<pre><code>export DOMAIN=&quot;&lt;INSERT-DOMAIN-NAME-HERE&gt;&quot;
+openssl genrsa -out $DOMAIN.key 2048
+openssl req -new -x509 -days 365 -key $DOMAIN.key -out $DOMAIN.crt
+openssl pkcs12 -export -out PFX_FILE -inkey $DOMAIN.key -in $DOMAIN.crt
 </code></pre>
 
 <p>Save the password you entered when prompted by <code>openssl</code> to a file.</p>
-<pre><code>echo SuperSecretPassword &gt; PFX_FILE_PASSWORD
+<pre><code>export PFX_FILE_PASSWORD=&quot;&lt;INSERT-FILE-PATH-HERE&gt;&quot;
+echo SuperSecretPassword &gt; $PFX_FILE_PASSWORD
 </code></pre>
 
 <p>To <code>bbl  plan</code> or <code>bbl up</code> you can provide the <code>.pfx</code> file and password:</p>
-<pre><code>bbl plan --lb-type cf --lb-cert PFX_FILE --lb-key PFX_FILE_PASSWORD
+<pre><code>export PFX_FILE=&quot;&lt;INSERT-FILE-PATH-HERE&gt;&quot;
+bbl plan --lb-type cf --lb-cert $PFX_FILE --lb-key $PFX_FILE_PASSWORD
 </code></pre>
                 
                   
