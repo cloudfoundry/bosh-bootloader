@@ -28,7 +28,7 @@ require (
 	github.com/jmespath/go-jmespath v0.0.0-20160202185014-0b12d6b521d8 // indirect
 	github.com/kr/pty v1.1.3
 	github.com/lytics/cloudstorage v0.0.0-20180517181525-27319609bc1c
-	github.com/mholt/archiver v3.1.1+incompatible
+	github.com/mholt/archiver v2.0.1-0.20180417220235-e4ef56d48eb0+incompatible
 	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d
 	github.com/nwaples/rardecode v0.0.0-20171029023500-e06696f847ae // indirect
 	github.com/onsi/ginkgo v1.7.0
@@ -40,9 +40,8 @@ require (
 	github.com/rogpeppe/go-internal v1.2.2 // indirect
 	github.com/smartystreets/goconvey v1.6.4 // indirect
 	github.com/spf13/afero v1.2.0
-	github.com/ulikunitz/xz v0.5.8 // indirect
+	github.com/ulikunitz/xz v0.5.4 // indirect
 	github.com/vmware/govmomi v0.18.0 // indirect
-	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2
 	golang.org/x/oauth2 v0.0.0-20181203162652-d668ce993890
 	google.golang.org/api v0.1.0
