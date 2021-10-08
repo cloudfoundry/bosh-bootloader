@@ -7,5 +7,5 @@ provider "openstack" {
   insecure    = "${var.insecure}"
   cacert_file = "${var.cacert_file}"
 
-  version = ">= 1.16, < 1.44"
+  version = ">= 1.16, < 1.43"
 }
