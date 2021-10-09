@@ -37,13 +37,13 @@ eval "$(bbl print-env)"
 export IAAS="$(cat bbl-state.json | jq -r .iaas)"
 if [ "${IAAS}" = "aws" ]; then
   export EXTERNAL_HOST="$(bbl outputs | grep concourse_lb_url | cut -d ' ' -f2)"
-  export STEMCELL_URL="https://bosh.io/d/stemcells/bosh-aws-xen-hvm-ubuntu-xenial-go_agent"
+  export STEMCELL_URL="https://bosh.io/d/stemcells/bosh-aws-xen-hvm-ubuntu-bionic-go_agent"
 elif [ "${IAAS}" = "gcp" ]; then
   export EXTERNAL_HOST="$(bbl outputs | grep concourse_lb_ip | cut -d ' ' -f2)"
-  export STEMCELL_URL="https://bosh.io/d/stemcells/bosh-google-kvm-ubuntu-xenial-go_agent"
+  export STEMCELL_URL="https://bosh.io/d/stemcells/bosh-google-kvm-ubuntu-bionic-go_agent"
 else # Azure
   export EXTERNAL_HOST="$(bbl outputs | grep concourse_lb_ip | cut -d ' ' -f2)"
-  export STEMCELL_URL="https://bosh.io/d/stemcells/bosh-azure-hyperv-ubuntu-xenial-go_agent"
+  export STEMCELL_URL="https://bosh.io/d/stemcells/bosh-azure-hyperv-ubuntu-bionic-go_agent"
 fi
 
 bosh upload-stemcell "${STEMCELL_URL}"
@@ -78,6 +78,7 @@ worker_instances: 2
 worker_vm_type: 'default'
 worker_ephemeral_disk: '50GB_ephemeral_disk'
 deployment_name: 'concourse'
+azs: ['z1']
 EOL
 
   bosh deploy -d concourse concourse.yml \
