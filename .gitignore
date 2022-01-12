@@ -39,3 +39,5 @@ bbl/debug
 # packrd
 **/*-packr.go
 bbl/packrd
+/dist
+/bbl/bbl

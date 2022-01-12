@@ -1,3 +1,5 @@
+//go:generate packr2
+
 package gcp
 
 import (
@@ -63,14 +65,14 @@ func (t TemplateGenerator) GenerateBackendService(zoneList []string) string {
   timeout_sec = 900
   enable_cdn  = false
 %s
-  health_checks = ["${google_compute_health_check.cf-public-health-check.self_link}"]
+  health_checks = [google_compute_health_check.cf-public-health-check.self_link]
 }
 `
 	var backends string
 	for i := 0; i < len(zoneList); i++ {
 		backends = fmt.Sprintf(`%s
   backend {
-    group = "${google_compute_instance_group.router-lb-%d.self_link}"
+    group = google_compute_instance_group.router-lb-%d.self_link
   }
 `, backends, i)
 	}

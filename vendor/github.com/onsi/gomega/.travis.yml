@@ -1,23 +1,18 @@
 language: go
+arch:
+  - amd64
+  - ppc64le
 
 go:
-  - 1.6.x
-  - 1.7.x
-  - 1.8.x
-  - 1.9.x
-  - 1.10.x
-  - 1.11.x
+  - gotip
+  - 1.16.x
+  - 1.15.x
 
 env:
   - GO111MODULE=on
 
-install:
-  - go get -v ./...
-  - go build ./...
-  - go get github.com/onsi/ginkgo
-  - go install github.com/onsi/ginkgo/ginkgo
+install: skip
 
-script: |
-  $HOME/gopath/bin/ginkgo -p -r --randomizeAllSpecs --failOnPending --randomizeSuites --race &&
-  go vet &&
-  [ -z "`gofmt -l -e -s -w .`" ]
+script:
+  - go mod tidy && git diff --exit-code go.mod go.sum
+  - make test

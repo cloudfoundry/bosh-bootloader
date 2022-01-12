@@ -1,3 +1,5 @@
+//go:generate packr2
+
 package bosh_test
 
 import (
@@ -277,6 +279,39 @@ var _ = Describe("Executor", func() {
 				})
 			})
 		})
+
+		Context("cloudstack", func() {
+			It("generates create-env args for jumpbox", func() {
+				err := executor.PlanJumpbox(dirInput, deploymentDir, "cloudstack")
+				Expect(err).NotTo(HaveOccurred())
+
+				expectedArgs := []string{
+					fmt.Sprintf("%s/jumpbox.yml", relativeDeploymentDir),
+					"--state", fmt.Sprintf("%s/jumpbox-state.json", relativeVarsDir),
+					"--vars-store", fmt.Sprintf("%s/jumpbox-vars-store.yml", relativeVarsDir),
+					"--vars-file", fmt.Sprintf("%s/jumpbox-vars-file.yml", relativeVarsDir),
+					"-o", fmt.Sprintf("%s/cloudstack/cpi.yml", relativeDeploymentDir),
+					"-v", `cloudstack_api_key="${BBL_CLOUDSTACK_API_KEY}"`,
+					"-v", `cloudstack_secret_access_key="${BBL_CLOUDSTACK_SECRET_ACCESS_KEY}"`,
+				}
+
+				By("writing the create-env args to a shell script", func() {
+					expectedScript := formatScript("create-env", stateDir, expectedArgs)
+					shellScript, err := fs.ReadFile(fmt.Sprintf("%s/create-jumpbox.sh", stateDir))
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(string(shellScript)).To(Equal(expectedScript))
+				})
+
+				By("writing the delete-env args to a shell script", func() {
+					expectedScript := formatScript("delete-env", stateDir, expectedArgs)
+					shellScript, err := fs.ReadFile(fmt.Sprintf("%s/delete-jumpbox.sh", stateDir))
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(string(shellScript)).To(Equal(expectedScript))
+				})
+			})
+		})
 	})
 
 	Describe("PlanDirector", func() {
@@ -425,6 +460,24 @@ var _ = Describe("Executor", func() {
 				}
 
 				behavesLikePlan(expectedArgs, cli, fs, executor, dirInput, deploymentDir, "openstack", stateDir)
+			})
+		})
+		Context("cloudstack", func() {
+			It("writes create-director.sh and delete-director.sh", func() {
+				expectedArgs := []string{
+					filepath.Join(relativeDeploymentDir, "bosh.yml"),
+					"--state", filepath.Join(relativeVarsDir, "bosh-state.json"),
+					"--vars-store", filepath.Join(relativeVarsDir, "director-vars-store.yml"),
+					"--vars-file", filepath.Join(relativeVarsDir, "director-vars-file.yml"),
+					"-o", filepath.Join(relativeDeploymentDir, "cloudstack", "cpi.yml"),
+					"-o", filepath.Join(relativeDeploymentDir, "jumpbox-user.yml"),
+					"-o", filepath.Join(relativeDeploymentDir, "uaa.yml"),
+					"-o", filepath.Join(relativeDeploymentDir, "credhub.yml"),
+					"-v", `cloudstack_api_key="${BBL_CLOUDSTACK_API_KEY}"`,
+					"-v", `cloudstack_secret_access_key="${BBL_CLOUDSTACK_SECRET_ACCESS_KEY}"`,
+				}
+
+				behavesLikePlan(expectedArgs, cli, fs, executor, dirInput, deploymentDir, "cloudstack", stateDir)
 			})
 		})
 	})
@@ -635,6 +688,21 @@ var _ = Describe("Executor", func() {
 
 					Expect(os.Getenv("BBL_OPENSTACK_USERNAME")).To(Equal("some-user"))
 					Expect(os.Getenv("BBL_OPENSTACK_PASSWORD")).To(Equal("some-password"))
+				})
+			})
+			Context("on cloudstack", func() {
+				It("sets credentials in environment variables", func() {
+					_, err := executor.CreateEnv(dirInput, storage.State{
+						IAAS: "cloudstack",
+						CloudStack: storage.CloudStack{
+							ApiKey:          "some-api-key",
+							SecretAccessKey: "some-secret",
+						},
+					})
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(os.Getenv("BBL_CLOUDSTACK_API_KEY")).To(Equal("some-api-key"))
+					Expect(os.Getenv("BBL_CLOUDSTACK_SECRET_ACCESS_KEY")).To(Equal("some-secret"))
 				})
 			})
 		})
@@ -858,6 +926,23 @@ var _ = Describe("Executor", func() {
 
 					Expect(os.Getenv("BBL_VSPHERE_VCENTER_USER")).To(Equal("some-user"))
 					Expect(os.Getenv("BBL_VSPHERE_VCENTER_PASSWORD")).To(Equal("some-password"))
+				})
+			})
+			Context("on cloudstack", func() {
+				BeforeEach(func() {
+					state.IAAS = "cloudstack"
+					state.CloudStack = storage.CloudStack{
+						ApiKey:          "some-api-key",
+						SecretAccessKey: "some-secret",
+					}
+				})
+
+				It("sets credentials in environment variables", func() {
+					err := executor.DeleteEnv(dirInput, state)
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(os.Getenv("BBL_CLOUDSTACK_API_KEY")).To(Equal("some-api-key"))
+					Expect(os.Getenv("BBL_CLOUDSTACK_SECRET_ACCESS_KEY")).To(Equal("some-secret"))
 				})
 			})
 		})

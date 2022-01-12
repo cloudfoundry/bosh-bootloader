@@ -1,0 +1,12 @@
+#!/bin/bash -eu
+
+ROOT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
+
+cd ${ROOT_DIR}
+
+# packr2 need the envvar to detect that we are on go.mod
+export GOPATH=/tmp/idontexit
+
+go generate ./...
+
+cat bosh/bosh-packr.go

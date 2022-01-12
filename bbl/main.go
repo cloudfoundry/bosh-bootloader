@@ -29,12 +29,14 @@ import (
 
 	awscloudconfig "github.com/cloudfoundry/bosh-bootloader/cloudconfig/aws"
 	azurecloudconfig "github.com/cloudfoundry/bosh-bootloader/cloudconfig/azure"
+	cloudstackcloudconfig "github.com/cloudfoundry/bosh-bootloader/cloudconfig/cloudstack"
 	gcpcloudconfig "github.com/cloudfoundry/bosh-bootloader/cloudconfig/gcp"
 	openstackcloudconfig "github.com/cloudfoundry/bosh-bootloader/cloudconfig/openstack"
 	vspherecloudconfig "github.com/cloudfoundry/bosh-bootloader/cloudconfig/vsphere"
 
 	awsterraform "github.com/cloudfoundry/bosh-bootloader/terraform/aws"
 	azureterraform "github.com/cloudfoundry/bosh-bootloader/terraform/azure"
+	cloudstackterraform "github.com/cloudfoundry/bosh-bootloader/terraform/cloudstack"
 	gcpterraform "github.com/cloudfoundry/bosh-bootloader/terraform/gcp"
 	openstackterraform "github.com/cloudfoundry/bosh-bootloader/terraform/openstack"
 	vsphereterraform "github.com/cloudfoundry/bosh-bootloader/terraform/vsphere"
@@ -106,7 +108,7 @@ func main() {
 		terraformCLI = bufferingCLI
 		out = ioutil.Discard
 	}
-	terraformExecutor := terraform.NewExecutor(terraformCLI, bufferingCLI, stateStore, afs, appConfig.Global.Debug, out)
+	terraformExecutor := terraform.NewExecutor(terraformCLI, bufferingCLI, stateStore, afs, appConfig.Global.Debug, out, globals.NoConfirm)
 
 	// BOSH
 	boshPath, err := config.GetBOSHPath()
@@ -245,6 +247,13 @@ func main() {
 		terraformManager = terraform.NewManager(terraformExecutor, templateGenerator, inputGenerator, terraformOutputBuffer, logger)
 
 		cloudConfigOpsGenerator = openstackcloudconfig.NewOpsGenerator(terraformManager)
+	case "cloudstack":
+		templateGenerator = cloudstackterraform.NewTemplateGenerator()
+		inputGenerator = cloudstackterraform.NewInputGenerator()
+
+		terraformManager = terraform.NewManager(terraformExecutor, templateGenerator, inputGenerator, terraformOutputBuffer, logger)
+
+		cloudConfigOpsGenerator = cloudstackcloudconfig.NewOpsGenerator(terraformManager)
 	}
 
 	cloudConfigManager := cloudconfig.NewManager(logger, configUpdater, stateStore, cloudConfigOpsGenerator, terraformManager, afs)

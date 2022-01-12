@@ -60,6 +60,13 @@ var _ = Describe("Commands Usage", func() {
   --openstack-insecure               OpenStack Insecure               env: $BBL_OPENSTACK_INSECURE
   --openstack-dns-name-server        OpenStack DNS Name Servers       env: $BBL_OPENSTACK_DNS_NAME_SERVERS
 
+  --cloudstack-endpoint              CloudStack Endpoint              env: $BBL_CLOUDSTACK_ENDPOINT
+  --cloudstack-secret-access-key     CloudStack Secret Access Key     env: $BBL_CLOUDSTACK_SECRET_ACCESS_KEY
+  --cloudstack-api-key               CloudStack Api Key               env: $BBL_CLOUDSTACK_API_KEY
+  --cloudstack-zone                  CloudStack Zone                  env: $BBL_CLOUDSTACK_ZONE
+  --cloudstack-secure                CloudStack Activate sec group    env: $BBL_CLOUDSTACK_SECURE
+  --cloudstack-iso-segment           CloudStack Activate iso segemnt  env: $BBL_CLOUDSTACK_ISO_SEGMENT
+
   Load Balancer options:
   --lb-type                  Load balancer(s) type: "concourse" or "cf"
   --lb-cert                  Path to SSL certificate (supported when type="cf")
@@ -76,7 +83,7 @@ var _ = Describe("Commands Usage", func() {
 				usageText := planCmd.Usage()
 				Expect(usageText).To(Equal(fmt.Sprintf(`Populates a state directory with the latest config without applying it
 
-  --iaas                     IAAS to deploy your BOSH director onto: "aws", "azure", "gcp", "vsphere"   env: $BBL_IAAS
+  --iaas                     IAAS to deploy your BOSH director onto: "aws", "azure", "gcp", "vsphere", "cloudstack"   env: $BBL_IAAS
   --name                     Name to assign to your BOSH director (optional)                            env: $BBL_ENV_NAME
 %s%s`, commands.Credentials, commands.LBUsage)))
 			})

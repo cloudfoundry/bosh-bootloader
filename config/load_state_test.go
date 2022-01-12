@@ -1147,6 +1147,132 @@ var _ = Describe("LoadState", func() {
 				})
 			})
 
+			Context("using CloudStack", func() {
+				Context("when a previous state does not exist", func() {
+					Context("when configuration is passed in by flag", func() {
+						var args []string
+
+						BeforeEach(func() {
+							args = []string{
+								"bbl",
+								"--iaas", "cloudstack",
+								"--cloudstack-endpoint", "http://my-cloudstack.com/client/api",
+								"--cloudstack-api-key", "some-api-key",
+								"--cloudstack-secret-access-key", "some-secret-key",
+								"--cloudstack-zone", "some-zone",
+								"--cloudstack-secure",
+								"--cloudstack-iso-segment",
+								"up",
+								"--name", "some-env-id",
+							}
+						})
+
+						It("returns a state object containing configuration flags", func() {
+							appConfig, err := c.Bootstrap(bootstrapArgs(args))
+							Expect(err).NotTo(HaveOccurred())
+
+							state := appConfig.State
+
+							Expect(state.IAAS).To(Equal("cloudstack"))
+							Expect(state.CloudStack.ApiKey).To(Equal("some-api-key"))
+							Expect(state.CloudStack.SecretAccessKey).To(Equal("some-secret-key"))
+							Expect(state.CloudStack.Zone).To(Equal("some-zone"))
+							Expect(state.CloudStack.Endpoint).To(Equal("http://my-cloudstack.com/client/api"))
+							Expect(state.CloudStack.Secure).To(BeTrue())
+							Expect(state.CloudStack.IsoSegment).To(BeTrue())
+						})
+
+						It("returns the remaining arguments", func() {
+							appConfig, err := c.Bootstrap(bootstrapArgs(args))
+							Expect(err).NotTo(HaveOccurred())
+
+							Expect(appConfig.Command).To(Equal("up"))
+							Expect(appConfig.Global.Name).To(Equal("some-env-id"))
+						})
+					})
+
+					Context("when configuration is passed in by env vars", func() {
+						var args []string
+
+						BeforeEach(func() {
+							args = []string{
+								"bbl", "up",
+							}
+
+							os.Setenv("BBL_IAAS", "cloudstack")
+							os.Setenv("BBL_CLOUDSTACK_API_KEY", "some-api-key")
+							os.Setenv("BBL_CLOUDSTACK_SECRET_ACCESS_KEY", "some-secret-key")
+							os.Setenv("BBL_CLOUDSTACK_ZONE", "some-zone")
+							os.Setenv("BBL_CLOUDSTACK_SECURE", "true")
+							os.Setenv("BBL_CLOUDSTACK_ISO_SEGMENT", "true")
+							os.Setenv("BBL_CLOUDSTACK_ENDPOINT", "http://my-cloudstack.com/client/api")
+						})
+
+						It("returns a state object containing configuration flags", func() {
+							appConfig, err := c.Bootstrap(bootstrapArgs(args))
+							Expect(err).NotTo(HaveOccurred())
+
+							state := appConfig.State
+							Expect(state.IAAS).To(Equal("cloudstack"))
+							Expect(state.CloudStack.ApiKey).To(Equal("some-api-key"))
+							Expect(state.CloudStack.SecretAccessKey).To(Equal("some-secret-key"))
+							Expect(state.CloudStack.Zone).To(Equal("some-zone"))
+							Expect(state.CloudStack.Endpoint).To(Equal("http://my-cloudstack.com/client/api"))
+							Expect(state.CloudStack.Secure).To(BeTrue())
+							Expect(state.CloudStack.IsoSegment).To(BeTrue())
+						})
+
+						It("returns the command", func() {
+							appConfig, err := c.Bootstrap(bootstrapArgs(args))
+							Expect(err).NotTo(HaveOccurred())
+
+							Expect(appConfig.Command).To(Equal("up"))
+						})
+					})
+				})
+
+				Context("when a previous state exists", func() {
+					BeforeEach(func() {
+						fakeStateMigrator.MigrateCall.Returns.State = storage.State{
+							IAAS: "cloudstack",
+							CloudStack: storage.CloudStack{
+								ApiKey:          "some-api-key",
+								SecretAccessKey: "some-secret-access-key",
+								Zone:            "some-zone",
+								Endpoint:        "http://my-cloudstack.com/client/api",
+							},
+							EnvID: "some-env-id",
+						}
+					})
+
+					Context("when valid matching configuration is passed in", func() {
+						It("returns state with existing configuration", func() {
+							appConfig, err := c.Bootstrap(bootstrapArgs([]string{
+								"bbl", "up",
+								"--iaas", "cloudstack",
+								"--cloudstack-api-key", "some-api-key",
+								"--cloudstack-secret-access-key", "some-secret-access-key",
+								"--cloudstack-zone", "some-zone",
+								"--cloudstack-endpoint", "http://my-cloudstack.com/client/api",
+							}))
+							Expect(err).NotTo(HaveOccurred())
+
+							Expect(appConfig.State.EnvID).To(Equal("some-env-id"))
+						})
+					})
+
+					DescribeTable("when non-matching configuration is passed in",
+						func(args []string, expected string) {
+							_, err := c.Bootstrap(bootstrapArgs(args))
+
+							Expect(err).To(MatchError(expected))
+						},
+						Entry("returns an error for non-matching IAAS", []string{"bbl", "up", "--iaas", "gcp"},
+							"The iaas type cannot be changed for an existing environment. The current iaas type is cloudstack."),
+					)
+				})
+			})
+
 			Context("when a previous state exists", func() {
 				BeforeEach(func() {
 					fakeStateMigrator.MigrateCall.Returns.State = storage.State{
@@ -1248,12 +1374,12 @@ var _ = Describe("LoadState", func() {
 			},
 			Entry("when IAAS is missing",
 				storage.State{},
-				"--iaas [gcp, aws, azure, vsphere, openstack] must be provided or BBL_IAAS must be set"),
+				"--iaas [gcp, aws, azure, vsphere, openstack, cloudstack] must be provided or BBL_IAAS must be set"),
 			Entry("when IAAS is unsupported",
 				storage.State{
 					IAAS: "not-a-real-iaas",
 				},
-				"--iaas [gcp, aws, azure, vsphere, openstack] must be provided or BBL_IAAS must be set"),
+				"--iaas [gcp, aws, azure, vsphere, openstack, cloudstack] must be provided or BBL_IAAS must be set"),
 			Entry("when an AWS credential is missing",
 				storage.State{
 					IAAS: "aws",
@@ -1312,6 +1438,21 @@ var _ = Describe("LoadState", func() {
 					},
 				},
 				"Missing --openstack-region. To see all required credentials run `bbl plan --help`."),
+			Entry("when any CloudStack credential is missing",
+				storage.State{
+					IAAS: "cloudstack",
+					CloudStack: storage.CloudStack{
+						InternalCidr:    "value",
+						ExternalIP:      "value",
+						ApiKey:          "value",
+						SecretAccessKey: "value",
+						IsoSegment:      true,
+						Secure:          true,
+						Subnet:          "value",
+					},
+				},
+				"Missing --cloudstack-endpoint. To see all required credentials run `bbl plan --help`."),
 		)
+
 	})
 })

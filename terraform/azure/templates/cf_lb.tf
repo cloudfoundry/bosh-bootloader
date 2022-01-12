@@ -6,18 +6,18 @@ variable "pfx_password" {}
 
 resource "azurerm_subnet" "cf-sn" {
   name                 = "${var.env_id}-cf-sn"
-  address_prefix       = "${cidrsubnet(var.network_cidr, 8, 1)}"
-  resource_group_name  = "${azurerm_resource_group.bosh.name}"
-  virtual_network_name = "${azurerm_virtual_network.bosh.name}"
+  address_prefix       = cidrsubnet(var.network_cidr, 8, 1)
+  resource_group_name  = azurerm_resource_group.bosh.name
+  virtual_network_name = azurerm_virtual_network.bosh.name
 }
 
 resource "azurerm_network_security_group" "cf" {
   name                = "${var.env_id}-cf"
-  location            = "${var.region}"
-  resource_group_name = "${azurerm_resource_group.bosh.name}"
+  location            = var.region
+  resource_group_name = azurerm_resource_group.bosh.name
 
   tags {
-    environment = "${var.env_id}"
+    environment = var.env_id
   }
 }
 
@@ -31,8 +31,8 @@ resource "azurerm_network_security_rule" "cf-http" {
   destination_port_range      = "80"
   source_address_prefix       = "*"
   destination_address_prefix  = "*"
-  resource_group_name         = "${azurerm_resource_group.bosh.name}"
-  network_security_group_name = "${azurerm_network_security_group.cf.name}"
+  resource_group_name         = azurerm_resource_group.bosh.name
+  network_security_group_name = azurerm_network_security_group.cf.name
 }
 
 resource "azurerm_network_security_rule" "cf-https" {
@@ -45,8 +45,8 @@ resource "azurerm_network_security_rule" "cf-https" {
   destination_port_range      = "443"
   source_address_prefix       = "*"
   destination_address_prefix  = "*"
-  resource_group_name         = "${azurerm_resource_group.bosh.name}"
-  network_security_group_name = "${azurerm_network_security_group.cf.name}"
+  resource_group_name         = azurerm_resource_group.bosh.name
+  network_security_group_name = azurerm_network_security_group.cf.name
 }
 
 resource "azurerm_network_security_rule" "cf-log" {
@@ -59,21 +59,21 @@ resource "azurerm_network_security_rule" "cf-log" {
   destination_port_range      = "4443"
   source_address_prefix       = "*"
   destination_address_prefix  = "*"
-  resource_group_name         = "${azurerm_resource_group.bosh.name}"
-  network_security_group_name = "${azurerm_network_security_group.cf.name}"
+  resource_group_name         = azurerm_resource_group.bosh.name
+  network_security_group_name = azurerm_network_security_group.cf.name
 }
 
 resource "azurerm_public_ip" "cf" {
   name                         = "${var.env_id}-cf-lb-ip"
-  location                     = "${var.region}"
-  resource_group_name          = "${azurerm_resource_group.bosh.name}"
+  location                     = var.region
+  resource_group_name          = azurerm_resource_group.bosh.name
   public_ip_address_allocation = "dynamic"
 }
 
 resource "azurerm_application_gateway" "cf" {
   name                = "${var.env_id}-app-gateway"
-  resource_group_name = "${azurerm_resource_group.bosh.name}"
-  location            = "${var.region}"
+  resource_group_name = azurerm_resource_group.bosh.name
+  location            = var.region
 
   sku {
     name     = "Standard_Small"
@@ -113,7 +113,7 @@ resource "azurerm_application_gateway" "cf" {
 
   frontend_ip_configuration {
     name                 = "${var.env_id}-cf-frontend-ip-configuration"
-    public_ip_address_id = "${azurerm_public_ip.cf.id}"
+    public_ip_address_id = azurerm_public_ip.cf.id
   }
 
   backend_address_pool {
@@ -131,8 +131,8 @@ resource "azurerm_application_gateway" "cf" {
 
   ssl_certificate {
     name     = "ssl-cert"
-    data     = "${var.pfx_cert_base64}"
-    password = "${var.pfx_password}"
+    data     = var.pfx_cert_base64
+    password = var.pfx_password
   }
 
   http_listener {
@@ -184,9 +184,9 @@ resource "azurerm_application_gateway" "cf" {
 }
 
 output "cf_app_gateway_name" {
-  value = "${azurerm_application_gateway.cf.name}"
+  value = azurerm_application_gateway.cf.name
 }
 
 output "cf_security_group" {
-  value = "${azurerm_network_security_group.cf.name}"
+  value = azurerm_network_security_group.cf.name
 }

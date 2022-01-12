@@ -15,6 +15,7 @@ func init() {
 		opCreateDBInstanceReadReplica,
 		opCopyDBClusterSnapshot,
 		opCreateDBCluster,
+		opStartDBInstanceAutomatedBackupsReplication,
 	}
 	initRequest = func(r *request.Request) {
 		for _, operation := range ops {
@@ -27,10 +28,11 @@ func init() {
 
 func fillPresignedURL(r *request.Request) {
 	fns := map[string]func(r *request.Request){
-		opCopyDBSnapshot:              copyDBSnapshotPresign,
-		opCreateDBInstanceReadReplica: createDBInstanceReadReplicaPresign,
-		opCopyDBClusterSnapshot:       copyDBClusterSnapshotPresign,
-		opCreateDBCluster:             createDBClusterPresign,
+		opCopyDBSnapshot:                             copyDBSnapshotPresign,
+		opCreateDBInstanceReadReplica:                createDBInstanceReadReplicaPresign,
+		opCopyDBClusterSnapshot:                      copyDBClusterSnapshotPresign,
+		opCreateDBCluster:                            createDBClusterPresign,
+		opStartDBInstanceAutomatedBackupsReplication: startDBInstanceAutomatedBackupsReplicationPresign,
 	}
 	if !r.ParamsFilled() {
 		return
@@ -48,6 +50,12 @@ func copyDBSnapshotPresign(r *request.Request) {
 	}
 
 	originParams.DestinationRegion = r.Config.Region
+
+	// preSignedUrl is not required for instances in the same region.
+	if *originParams.SourceRegion == *originParams.DestinationRegion {
+		return
+	}
+
 	newParams := awsutil.CopyOf(r.Params).(*CopyDBSnapshotInput)
 	originParams.PreSignedUrl = presignURL(r, originParams.SourceRegion, newParams)
 }
@@ -60,6 +68,11 @@ func createDBInstanceReadReplicaPresign(r *request.Request) {
 	}
 
 	originParams.DestinationRegion = r.Config.Region
+	// preSignedUrl is not required for instances in the same region.
+	if *originParams.SourceRegion == *originParams.DestinationRegion {
+		return
+	}
+
 	newParams := awsutil.CopyOf(r.Params).(*CreateDBInstanceReadReplicaInput)
 	originParams.PreSignedUrl = presignURL(r, originParams.SourceRegion, newParams)
 }
@@ -72,6 +85,11 @@ func copyDBClusterSnapshotPresign(r *request.Request) {
 	}
 
 	originParams.DestinationRegion = r.Config.Region
+	// preSignedUrl is not required for instances in the same region.
+	if *originParams.SourceRegion == *originParams.DestinationRegion {
+		return
+	}
+
 	newParams := awsutil.CopyOf(r.Params).(*CopyDBClusterSnapshotInput)
 	originParams.PreSignedUrl = presignURL(r, originParams.SourceRegion, newParams)
 }
@@ -84,7 +102,29 @@ func createDBClusterPresign(r *request.Request) {
 	}
 
 	originParams.DestinationRegion = r.Config.Region
+	// preSignedUrl is not required for instances in the same region.
+	if *originParams.SourceRegion == *originParams.DestinationRegion {
+		return
+	}
+
 	newParams := awsutil.CopyOf(r.Params).(*CreateDBClusterInput)
+	originParams.PreSignedUrl = presignURL(r, originParams.SourceRegion, newParams)
+}
+
+func startDBInstanceAutomatedBackupsReplicationPresign(r *request.Request) {
+	originParams := r.Params.(*StartDBInstanceAutomatedBackupsReplicationInput)
+
+	if originParams.SourceRegion == nil || originParams.PreSignedUrl != nil || originParams.DestinationRegion != nil {
+		return
+	}
+
+	originParams.DestinationRegion = r.Config.Region
+	// preSignedUrl is not required for instances in the same region.
+	if *originParams.SourceRegion == *originParams.DestinationRegion {
+		return
+	}
+
+	newParams := awsutil.CopyOf(r.Params).(*StartDBInstanceAutomatedBackupsReplicationInput)
 	originParams.PreSignedUrl = presignURL(r, originParams.SourceRegion, newParams)
 }
 
@@ -97,7 +137,7 @@ func presignURL(r *request.Request, sourceRegion *string, newParams interface{})
 
 	clientInfo := r.ClientInfo
 	resolved, err := r.Config.EndpointResolver.EndpointFor(
-		clientInfo.ServiceName, aws.StringValue(cfg.Region),
+		EndpointsID, aws.StringValue(cfg.Region),
 		func(opt *endpoints.Options) {
 			opt.DisableSSL = aws.BoolValue(cfg.DisableSSL)
 			opt.UseDualStack = aws.BoolValue(cfg.UseDualStack)

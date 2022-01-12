@@ -4,6 +4,12 @@ package elbv2
 
 const (
 
+	// ErrCodeALPNPolicyNotSupportedException for service response error code
+	// "ALPNPolicyNotFound".
+	//
+	// The specified ALPN policy is not supported.
+	ErrCodeALPNPolicyNotSupportedException = "ALPNPolicyNotFound"
+
 	// ErrCodeAllocationIdNotFoundException for service response error code
 	// "AllocationIdNotFound".
 	//
@@ -177,7 +183,8 @@ const (
 	// ErrCodeTooManyLoadBalancersException for service response error code
 	// "TooManyLoadBalancers".
 	//
-	// You've reached the limit on the number of load balancers for your AWS account.
+	// You've reached the limit on the number of load balancers for your Amazon
+	// Web Services account.
 	ErrCodeTooManyLoadBalancersException = "TooManyLoadBalancers"
 
 	// ErrCodeTooManyRegistrationsForTargetIdException for service response error code
@@ -202,7 +209,8 @@ const (
 	// ErrCodeTooManyTargetGroupsException for service response error code
 	// "TooManyTargetGroups".
 	//
-	// You've reached the limit on the number of target groups for your AWS account.
+	// You've reached the limit on the number of target groups for your Amazon Web
+	// Services account.
 	ErrCodeTooManyTargetGroupsException = "TooManyTargetGroups"
 
 	// ErrCodeTooManyTargetsException for service response error code
@@ -210,6 +218,14 @@ const (
 	//
 	// You've reached the limit on the number of targets.
 	ErrCodeTooManyTargetsException = "TooManyTargets"
+
+	// ErrCodeTooManyUniqueTargetGroupsPerLoadBalancerException for service response error code
+	// "TooManyUniqueTargetGroupsPerLoadBalancer".
+	//
+	// You've reached the limit on the number of unique target groups per load balancer
+	// across all listeners. If a target group is used by multiple actions for a
+	// load balancer, it is counted as only one use.
+	ErrCodeTooManyUniqueTargetGroupsPerLoadBalancerException = "TooManyUniqueTargetGroupsPerLoadBalancer"
 
 	// ErrCodeUnsupportedProtocolException for service response error code
 	// "UnsupportedProtocol".

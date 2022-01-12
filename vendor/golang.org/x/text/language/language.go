@@ -335,6 +335,11 @@ func (t Tag) Variants() []Variant {
 // Parent returns the CLDR parent of t. In CLDR, missing fields in data for a
 // specific language are substituted with fields from the parent language.
 // The parent for a language may change for newer versions of CLDR.
+//
+// Parent returns a tag for a less specific language that is mutually
+// intelligible or Und if there is no such language. This may not be the same as
+// simply stripping the last BCP 47 subtag. For instance, the parent of "zh-TW"
+// is "zh-Hant", and the parent of "zh-Hant" is "und".
 func (t Tag) Parent() Tag {
 	return Tag(compact.Tag(t).Parent())
 }
@@ -407,6 +412,10 @@ func (t Tag) Extensions() []Extension {
 // are of the allowed values defined for the Unicode locale extension ('u') in
 // https://www.unicode.org/reports/tr35/#Unicode_Language_and_Locale_Identifiers.
 // TypeForKey will traverse the inheritance chain to get the correct value.
+//
+// If there are multiple types associated with a key, only the first will be
+// returned. If there is no type associated with a key, it returns the empty
+// string.
 func (t Tag) TypeForKey(key string) string {
 	if !compact.Tag(t).MayHaveExtensions() {
 		if key != "rg" && key != "va" {
@@ -525,7 +534,7 @@ func (r Region) String() string {
 // Note that not all regions have a 3-letter ISO code.
 // In such cases this method returns "ZZZ".
 func (r Region) ISO3() string {
-	return r.regionID.String()
+	return r.regionID.ISO3()
 }
 
 // M49 returns the UN M.49 encoding of r, or 0 if this encoding

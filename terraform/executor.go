@@ -25,6 +25,7 @@ type Executor struct {
 	fs           fs
 	debug        bool
 	out          io.Writer
+	noConfirm    bool
 }
 
 type tfOutput struct {
@@ -48,7 +49,7 @@ type fs interface {
 	fileio.Stater
 }
 
-func NewExecutor(cli terraformCLI, bufferingCLI terraformCLI, stateStore stateStore, fs fs, debug bool, out io.Writer) Executor {
+func NewExecutor(cli terraformCLI, bufferingCLI terraformCLI, stateStore stateStore, fs fs, debug bool, out io.Writer, noConfirm bool) Executor {
 	return Executor{
 		cli:          cli,
 		bufferingCLI: bufferingCLI,
@@ -56,6 +57,7 @@ func NewExecutor(cli terraformCLI, bufferingCLI terraformCLI, stateStore stateSt
 		fs:           fs,
 		debug:        debug,
 		out:          out,
+		noConfirm:    noConfirm,
 	}
 }
 
@@ -105,7 +107,7 @@ func formatVars(inputs map[string]interface{}) string {
 		} else if valList, ok := value.([]string); ok {
 			value = fmt.Sprintf(`["%s"]`, strings.Join(valList, `","`))
 		}
-		formattedVars = fmt.Sprintf("%s\n%s=%s", formattedVars, name, value)
+		formattedVars = fmt.Sprintf("%s\n%s=%s", formattedVars, name, fmt.Sprint(value))
 	}
 	return formattedVars
 }
@@ -178,7 +180,10 @@ func (e Executor) Init() error {
 }
 
 func (e Executor) Apply(credentials map[string]string) error {
-	args := []string{"apply", "--auto-approve"}
+	args := []string{"apply"}
+	if e.noConfirm {
+		args = append(args, "--auto-approve")
+	}
 	for key, value := range credentials {
 		arg := fmt.Sprintf("%s=%s", key, value)
 		args = append(args, "-var", arg)

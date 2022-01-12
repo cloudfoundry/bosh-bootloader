@@ -40,6 +40,7 @@ $ brew install bbl
 - [Getting Started: AWS](docs/getting-started-aws.md)
 - [Getting Started: vSphere](docs/getting-started-vsphere.md)
 - [Getting Started: OpenStack](docs/getting-started-openstack.md)
+- [Getting Started: CloudStack](docs/getting-started-cloudstack.md)
 
 ### Managing state
 

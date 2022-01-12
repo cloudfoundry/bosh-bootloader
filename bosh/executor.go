@@ -1,3 +1,5 @@
+//go:generate packr2
+
 package bosh
 
 import (
@@ -141,6 +143,11 @@ func (e Executor) PlanJumpbox(input DirInput, deploymentDir, iaas string) error 
 			"-v", `openstack_username="${BBL_OPENSTACK_USERNAME}"`,
 			"-v", `openstack_password="${BBL_OPENSTACK_PASSWORD}"`,
 		)
+	case "cloudstack":
+		boshArgs = append(boshArgs,
+			"-v", `cloudstack_api_key="${BBL_CLOUDSTACK_API_KEY}"`,
+			"-v", `cloudstack_secret_access_key="${BBL_CLOUDSTACK_SECRET_ACCESS_KEY}"`,
+		)
 	}
 
 	boshPath := e.CLI.GetBOSHPath()
@@ -258,6 +265,11 @@ func (e Executor) PlanDirector(input DirInput, deploymentDir, iaas string) error
 			"-v", `openstack_username="${BBL_OPENSTACK_USERNAME}"`,
 			"-v", `openstack_password="${BBL_OPENSTACK_PASSWORD}"`,
 		)
+	case "cloudstack":
+		boshArgs = append(boshArgs,
+			"-v", `cloudstack_api_key="${BBL_CLOUDSTACK_API_KEY}"`,
+			"-v", `cloudstack_secret_access_key="${BBL_CLOUDSTACK_SECRET_ACCESS_KEY}"`,
+		)
 	}
 
 	boshPath := e.CLI.GetBOSHPath()
@@ -327,6 +339,9 @@ func (e Executor) CreateEnv(input DirInput, state storage.State) (string, error)
 	case "openstack":
 		os.Setenv("BBL_OPENSTACK_USERNAME", state.OpenStack.Username)
 		os.Setenv("BBL_OPENSTACK_PASSWORD", state.OpenStack.Password)
+	case "cloudstack":
+		os.Setenv("BBL_CLOUDSTACK_API_KEY", state.CloudStack.ApiKey)
+		os.Setenv("BBL_CLOUDSTACK_SECRET_ACCESS_KEY", state.CloudStack.SecretAccessKey)
 	}
 
 	cmd := exec.Command(createEnvScript)
@@ -377,6 +392,9 @@ func (e Executor) DeleteEnv(input DirInput, state storage.State) error {
 	case "vsphere":
 		os.Setenv("BBL_VSPHERE_VCENTER_USER", state.VSphere.VCenterUser)
 		os.Setenv("BBL_VSPHERE_VCENTER_PASSWORD", state.VSphere.VCenterPassword)
+	case "cloudstack":
+		os.Setenv("BBL_CLOUDSTACK_API_KEY", state.CloudStack.ApiKey)
+		os.Setenv("BBL_CLOUDSTACK_SECRET_ACCESS_KEY", state.CloudStack.SecretAccessKey)
 	}
 
 	cmd := exec.Command(deleteEnvScript)

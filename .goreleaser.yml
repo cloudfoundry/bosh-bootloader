@@ -1,0 +1,57 @@
+project_name: bosh-bootloader
+
+builds:
+  -
+    &template
+    id: binary
+    dir: bbl
+    binary: bbl
+    env:
+      - CGO_ENABLED=0
+      - TF_VERSION=0.15.3
+    ldflags:
+      - -s
+      - -w
+      - -X main.Version={{.Version}}-ora
+    hooks:
+      pre:
+        - cmd: ./scripts/terraform_dist
+          env:
+            - GOOS={{.Os}}
+            - GOARCH={{.Arch}}
+        - cmd: bash -c "source ./scripts/create_mod && create_mod"
+        - cmd: ./scripts/generate
+    goos:
+      - darwin
+      - linux
+    goarch:
+      - amd64
+
+archives:
+  - id: archives
+    builds:
+      - binary
+    format: "tar.gz"
+    name_template: '{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}'
+    wrap_in_directory: true
+    files:
+      - LICENSE*
+      - README*
+      - CHANGELOG*
+      - docs/*
+      - assets/*
+      - static/*
+      - templates/*
+      - ./*/static/*
+      - ./*/templates/*
+
+checksum:
+  name_template: checksums.txt
+  algorithm: sha256
+
+release:
+  github:
+    owner: orange-cloudfoundry
+    name: bosh-bootloader
+  prerelease: auto
+  name_template: '{{.Tag}}'

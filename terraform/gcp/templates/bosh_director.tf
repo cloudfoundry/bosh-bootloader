@@ -10,13 +10,13 @@ resource "google_compute_network" "bbl-network" {
 
 resource "google_compute_subnetwork" "bbl-subnet" {
   name          = "${var.env_id}-subnet"
-  ip_cidr_range = "${var.subnet_cidr}"
-  network       = "${google_compute_network.bbl-network.self_link}"
+  ip_cidr_range = var.subnet_cidr
+  network       = google_compute_network.bbl-network.self_link
 }
 
 resource "google_compute_firewall" "external" {
   name    = "${var.env_id}-external"
-  network = "${google_compute_network.bbl-network.name}"
+  network = google_compute_network.bbl-network.name
 
   source_ranges = ["0.0.0.0/0"]
 
@@ -30,7 +30,7 @@ resource "google_compute_firewall" "external" {
 
 resource "google_compute_firewall" "bosh-open" {
   name    = "${var.env_id}-bosh-open"
-  network = "${google_compute_network.bbl-network.name}"
+  network = google_compute_network.bbl-network.name
 
   source_tags = ["${var.env_id}-bosh-open"]
 
@@ -44,7 +44,7 @@ resource "google_compute_firewall" "bosh-open" {
 
 resource "google_compute_firewall" "bosh-director" {
   name    = "${var.env_id}-bosh-director"
-  network = "${google_compute_network.bbl-network.name}"
+  network = google_compute_network.bbl-network.name
 
   source_tags = ["${var.env_id}-bosh-director"]
 
@@ -57,7 +57,7 @@ resource "google_compute_firewall" "bosh-director" {
 
 resource "google_compute_firewall" "internal-to-director" {
   name    = "${var.env_id}-internal-to-director"
-  network = "${google_compute_network.bbl-network.name}"
+  network = google_compute_network.bbl-network.name
 
   source_tags = ["${var.env_id}-internal"]
 
@@ -71,7 +71,7 @@ resource "google_compute_firewall" "internal-to-director" {
 
 resource "google_compute_firewall" "jumpbox-to-all" {
   name    = "${var.env_id}-jumpbox-to-all"
-  network = "${google_compute_network.bbl-network.name}"
+  network = google_compute_network.bbl-network.name
 
   source_tags = ["${var.env_id}-jumpbox"]
 
@@ -85,7 +85,7 @@ resource "google_compute_firewall" "jumpbox-to-all" {
 
 resource "google_compute_firewall" "internal" {
   name    = "${var.env_id}-internal"
-  network = "${google_compute_network.bbl-network.name}"
+  network = google_compute_network.bbl-network.name
 
   source_tags = ["${var.env_id}-internal"]
 
@@ -105,19 +105,19 @@ resource "google_compute_firewall" "internal" {
 }
 
 output "network" {
-  value = "${google_compute_network.bbl-network.name}"
+  value = google_compute_network.bbl-network.name
 }
 
 output "subnetwork" {
-  value = "${google_compute_subnetwork.bbl-subnet.name}"
+  value = google_compute_subnetwork.bbl-subnet.name
 }
 
 output "internal_cidr" {
-  value = "${var.subnet_cidr}"
+  value = var.subnet_cidr
 }
 
 output "internal_gw" {
-  value = "${google_compute_subnetwork.bbl-subnet.gateway_address}"
+  value = google_compute_subnetwork.bbl-subnet.gateway_address
 }
 
 output "director_name" {
@@ -125,11 +125,11 @@ output "director_name" {
 }
 
 output "jumpbox__internal_ip" {
-  value = "${cidrhost(var.subnet_cidr, 5)}"
+  value = cidrhost(var.subnet_cidr, 5)
 }
 
 output "director__internal_ip" {
-  value = "${cidrhost(var.subnet_cidr, 6)}"
+  value = cidrhost(var.subnet_cidr, 6)
 }
 
 output "jumpbox__tags" {
@@ -144,5 +144,5 @@ output "director__tags" {
 }
 
 output "internal_tag_name" {
-  value = "${google_compute_firewall.internal.name}"
+  value = google_compute_firewall.internal.name
 }

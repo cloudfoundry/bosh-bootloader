@@ -1,0 +1,57 @@
+name: after-merge-dependabot
+
+on:
+  pull_request_target:
+    types: [closed]
+
+jobs:
+  check:
+    if: github.event.pull_request.merged && github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: dependabot-after-merge
+      cancel-in-progress: true
+    steps:
+      - name: Fetch dependabot metadata
+        id: dependabot-metadata
+        uses: dependabot/fetch-metadata@v1.1.1
+        with:
+          github-token: "${{ secrets.GITHUB_TOKEN }}"
+
+      - uses: oprypin/find-latest-tag@v1
+        id: octokit
+        with:
+          repository: ${{ github.repository }}
+          prefix: v
+
+      - name: Parse last release
+        id: semver_parser
+        uses: booxmedialtd/ws-action-parse-semver@v1
+        with:
+          input_string: '${{ steps.octokit.outputs.tag }}'
+          version_extractor_regex: 'v(.*)$'
+
+      - name: Compute tag
+        id: compte_tag
+        run: |
+          major=${{ steps.semver_parser.outputs.major }}
+          minor=${{ steps.semver_parser.outputs.minor }}
+          patch=${{ steps.semver_parser.outputs.patch }}
+          if [ "${{ steps.dependabot-metadata.outputs.update-type  }}" == "version-update:semver-minor" ]; then
+            minor=$((minor+1))
+            patch=0
+            echo "::warning::bumping minor version"
+          elif [ "${{ steps.dependabot-metadata.outputs.update-type  }}" == "version-update:semver-patch" ]; then
+            patch=$((patch+1))
+            echo "::warning::bumping patch version"
+          fi
+          tag="v${major}.${minor}.${patch}"
+          echo "::set-output name=tag::${tag}"
+          echo "::warning::tag == ${tag}"
+
+      - name: Create tag
+        uses: tvdias/github-tagger@v0.0.1
+        if: steps.compte_tag.outputs.tag != steps.semver_parser.outputs.fullversion
+        with:
+          repo-token: "${{ secrets.AUTO_MERGE_TOKEN }}"
+          tag: "${{ steps.compte_tag.outputs.tag }}"

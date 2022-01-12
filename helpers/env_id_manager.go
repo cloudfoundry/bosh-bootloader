@@ -71,6 +71,8 @@ func (e EnvIDManager) checkFastFail(iaas, envID string) error {
 		return nil
 	case "openstack":
 		return nil
+	case "cloudstack":
+		return nil
 	}
 
 	exists, err := e.networkClient.CheckExists(networkName)

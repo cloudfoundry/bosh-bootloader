@@ -147,6 +147,7 @@ var _ = Describe("Store", func() {
 				},
 				"vsphere": {},
 				"openstack": {},
+				"cloudstack": {},
 				"lb": {
 					"type": "some-type",
 					"cert": "some-cert",

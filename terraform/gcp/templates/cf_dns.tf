@@ -9,7 +9,7 @@ resource "google_dns_managed_zone" "env_dns_zone" {
 }
 
 output "system_domain_dns_servers" {
-  value = "${google_dns_managed_zone.env_dns_zone.name_servers}"
+  value = google_dns_managed_zone.env_dns_zone.name_servers
 }
 
 resource "google_dns_record_set" "wildcard-dns" {
@@ -18,7 +18,7 @@ resource "google_dns_record_set" "wildcard-dns" {
   type       = "A"
   ttl        = 300
 
-  managed_zone = "${google_dns_managed_zone.env_dns_zone.name}"
+  managed_zone = google_dns_managed_zone.env_dns_zone.name
 
   rrdatas = ["${google_compute_global_address.cf-address.address}"]
 }
@@ -29,7 +29,7 @@ resource "google_dns_record_set" "bosh-dns" {
   type       = "A"
   ttl        = 300
 
-  managed_zone = "${google_dns_managed_zone.env_dns_zone.name}"
+  managed_zone = google_dns_managed_zone.env_dns_zone.name
 
   rrdatas = ["${google_compute_address.jumpbox-ip.address}"]
 }
@@ -40,7 +40,7 @@ resource "google_dns_record_set" "cf-ssh-proxy" {
   type       = "A"
   ttl        = 300
 
-  managed_zone = "${google_dns_managed_zone.env_dns_zone.name}"
+  managed_zone = google_dns_managed_zone.env_dns_zone.name
 
   rrdatas = ["${google_compute_address.cf-ssh-proxy.address}"]
 }
@@ -51,7 +51,7 @@ resource "google_dns_record_set" "tcp-dns" {
   type       = "A"
   ttl        = 300
 
-  managed_zone = "${google_dns_managed_zone.env_dns_zone.name}"
+  managed_zone = google_dns_managed_zone.env_dns_zone.name
 
   rrdatas = ["${google_compute_address.cf-tcp-router.address}"]
 }
@@ -62,7 +62,7 @@ resource "google_dns_record_set" "doppler-dns" {
   type       = "A"
   ttl        = 300
 
-  managed_zone = "${google_dns_managed_zone.env_dns_zone.name}"
+  managed_zone = google_dns_managed_zone.env_dns_zone.name
 
   rrdatas = ["${google_compute_address.cf-ws.address}"]
 }
@@ -73,7 +73,7 @@ resource "google_dns_record_set" "loggregator-dns" {
   type       = "A"
   ttl        = 300
 
-  managed_zone = "${google_dns_managed_zone.env_dns_zone.name}"
+  managed_zone = google_dns_managed_zone.env_dns_zone.name
 
   rrdatas = ["${google_compute_address.cf-ws.address}"]
 }
@@ -84,7 +84,7 @@ resource "google_dns_record_set" "wildcard-ws-dns" {
   type       = "A"
   ttl        = 300
 
-  managed_zone = "${google_dns_managed_zone.env_dns_zone.name}"
+  managed_zone = google_dns_managed_zone.env_dns_zone.name
 
   rrdatas = ["${google_compute_address.cf-ws.address}"]
 }

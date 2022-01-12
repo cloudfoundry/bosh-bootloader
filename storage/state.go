@@ -11,6 +11,7 @@ type State struct {
 	GCP            GCP       `json:"gcp,omitempty"`
 	VSphere        VSphere   `json:"vsphere,omitempty"`
 	OpenStack      OpenStack `json:"openstack,omitempty"`
+	CloudStack     CloudStack `json:"cloudstack,omitempty"`
 	Jumpbox        Jumpbox   `json:"jumpbox,omitempty"`
 	BOSH           BOSH      `json:"bosh,omitempty"`
 	TFState        string    `json:"tfState"`

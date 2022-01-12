@@ -1,10 +1,10 @@
 resource "azurerm_network_security_group" "bosh" {
   name                = "${var.env_id}-bosh"
-  location            = "${var.region}"
-  resource_group_name = "${azurerm_resource_group.bosh.name}"
+  location            = var.region
+  resource_group_name = azurerm_resource_group.bosh.name
 
   tags {
-    environment = "${var.env_id}"
+    environment = var.env_id
   }
 }
 
@@ -18,8 +18,8 @@ resource "azurerm_network_security_rule" "ssh" {
   destination_port_range      = "22"
   source_address_prefix       = "*"
   destination_address_prefix  = "*"
-  resource_group_name         = "${azurerm_resource_group.bosh.name}"
-  network_security_group_name = "${azurerm_network_security_group.bosh.name}"
+  resource_group_name         = azurerm_resource_group.bosh.name
+  network_security_group_name = azurerm_network_security_group.bosh.name
 }
 
 resource "azurerm_network_security_rule" "bosh-agent" {
@@ -32,8 +32,8 @@ resource "azurerm_network_security_rule" "bosh-agent" {
   destination_port_range      = "6868"
   source_address_prefix       = "*"
   destination_address_prefix  = "*"
-  resource_group_name         = "${azurerm_resource_group.bosh.name}"
-  network_security_group_name = "${azurerm_network_security_group.bosh.name}"
+  resource_group_name         = azurerm_resource_group.bosh.name
+  network_security_group_name = azurerm_network_security_group.bosh.name
 }
 
 resource "azurerm_network_security_rule" "bosh-director" {
@@ -46,8 +46,8 @@ resource "azurerm_network_security_rule" "bosh-director" {
   destination_port_range      = "25555"
   source_address_prefix       = "*"
   destination_address_prefix  = "*"
-  resource_group_name         = "${azurerm_resource_group.bosh.name}"
-  network_security_group_name = "${azurerm_network_security_group.bosh.name}"
+  resource_group_name         = azurerm_resource_group.bosh.name
+  network_security_group_name = azurerm_network_security_group.bosh.name
 }
 
 resource "azurerm_network_security_rule" "dns" {
@@ -60,8 +60,8 @@ resource "azurerm_network_security_rule" "dns" {
   destination_port_range      = "53"
   source_address_prefix       = "*"
   destination_address_prefix  = "*"
-  resource_group_name         = "${azurerm_resource_group.bosh.name}"
-  network_security_group_name = "${azurerm_network_security_group.bosh.name}"
+  resource_group_name         = azurerm_resource_group.bosh.name
+  network_security_group_name = azurerm_network_security_group.bosh.name
 }
 
 resource "azurerm_network_security_rule" "credhub" {
@@ -74,6 +74,6 @@ resource "azurerm_network_security_rule" "credhub" {
   destination_port_range      = "8844"
   source_address_prefix       = "*"
   destination_address_prefix  = "*"
-  resource_group_name         = "${azurerm_resource_group.bosh.name}"
-  network_security_group_name = "${azurerm_network_security_group.bosh.name}"
+  resource_group_name         = azurerm_resource_group.bosh.name
+  network_security_group_name = azurerm_network_security_group.bosh.name
 }

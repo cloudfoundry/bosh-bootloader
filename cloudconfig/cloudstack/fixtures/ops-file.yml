@@ -1,0 +1,239 @@
+- path: /azs
+  type: replace
+  value:
+  - cloud_properties: {}
+    name: z1
+  - cloud_properties: {}
+    name: z2
+  - cloud_properties: {}
+    name: z3
+- path: /compilation
+  type: replace
+  value:
+    network: compilation
+    reuse_compilation_vms: true
+    vm_type: default
+    az: z1
+    workers: 5
+- path: /disk_types/name=default?
+  type: replace
+  value:
+    cloud_properties:
+      disk_offering: shared.custom
+    disk_size: 1024
+    name: default
+- path: /disk_types/name=1GB?
+  type: replace
+  value:
+    cloud_properties:
+      disk_offering: shared.custom
+    disk_size: 1024
+    name: 1GB
+- path: /disk_types/name=5GB?
+  type: replace
+  value:
+    cloud_properties:
+      disk_offering: shared.custom
+    disk_size: 5120
+    name: 5GB
+- path: /disk_types/name=10GB?
+  type: replace
+  value:
+    cloud_properties:
+      disk_offering: shared.small
+    disk_size: 10240
+    name: 10GB
+- path: /disk_types/name=50GB?
+  type: replace
+  value:
+    cloud_properties:
+      disk_offering: shared.medium
+    disk_size: 51200
+    name: 50GB
+- path: /disk_types/name=100GB?
+  type: replace
+  value:
+    cloud_properties:
+      disk_offering: shared.large
+    disk_size: 102400
+    name: 100GB
+- path: /disk_types/name=500GB?
+  type: replace
+  value:
+    cloud_properties:
+      disk_offering: shared.xxlarge
+    disk_size: 512000
+    name: 500GB
+- path: /disk_types/name=1TB?
+  type: replace
+  value:
+    cloud_properties:
+      disk_offering: shared.custom
+    disk_size: 1048576
+    name: 1TB
+- path: /vm_types/name=default/cloud_properties?
+  type: replace
+  value:
+    compute_offering: shared.medium
+- path: /vm_types/name=minimal/cloud_properties?
+  type: replace
+  value:
+    compute_offering: shared.small
+- path: /vm_types/name=small/cloud_properties?
+  type: replace
+  value:
+    compute_offering: shared.medium
+- path: /vm_types/name=small-highmem/cloud_properties?
+  type: replace
+  value:
+    compute_offering: shared.xlarge
+- path: /vm_types/name=medium/cloud_properties?
+  type: replace
+  value:
+    compute_offering: shared.xmedium
+- path: /vm_types/name=large/cloud_properties?
+  type: replace
+  value:
+    compute_offering: shared.xlarge
+- path: /vm_types/name=extra-large/cloud_properties?
+  type: replace
+  value:
+    compute_offering: shared.xlarge
+- path: /vm_extensions/name=1GB_ephemeral_disk/cloud_properties?
+  type: replace
+  value:
+    disk: 1024
+    ephemeral_disk_offering: shared.custom
+- path: /vm_extensions/name=5GB_ephemeral_disk/cloud_properties?
+  type: replace
+  value:
+    disk: 5120
+    ephemeral_disk_offering: shared.custom
+- path: /vm_extensions/name=10GB_ephemeral_disk/cloud_properties?
+  type: replace
+  value:
+    ephemeral_disk_offering: shared.small
+- path: /vm_extensions/name=50GB_ephemeral_disk/cloud_properties?
+  type: replace
+  value:
+    ephemeral_disk_offering: shared.medium
+- path: /vm_extensions/name=100GB_ephemeral_disk/cloud_properties?
+  type: replace
+  value:
+    ephemeral_disk_offering: shared.large
+- path: /vm_extensions/name=500GB_ephemeral_disk/cloud_properties?
+  type: replace
+  value:
+    ephemeral_disk_offering: shared.xxlarge
+- path: /vm_extensions/name=1TB_ephemeral_disk/cloud_properties?
+  type: replace
+  value:
+    disk: 1048576
+    ephemeral_disk_offering: shared.custom
+- path: /vm_extensions/-
+  type: replace
+  value:
+    name: cf-router-network-properties
+- path: /vm_extensions/-
+  type: replace
+  value:
+    name: cf-tcp-router-network-properties
+- path: /vm_extensions/-
+  type: replace
+  value:
+    name: diego-ssh-proxy-network-properties
+- path: /networks/-
+  type: replace
+  value:
+    name: default
+    subnets:
+    - azs:
+      - z1
+      - z2
+      - z3
+      cloud_properties:
+        name: myenv-control-plane
+      dns: ((dns))
+      gateway: ((gw_myenv-control-plane))
+      range: ((cidr_myenv-control-plane))
+      reserved:
+      - ((reserved_1_myenv-control-plane))
+      static:
+      - ((static_myenv-control-plane))
+    type: manual
+- path: /networks/-
+  type: replace
+  value:
+    name: control-plane
+    subnets:
+    - azs:
+      - z1
+      - z2
+      - z3
+      cloud_properties:
+        name: myenv-control-plane
+      dns: ((dns))
+      gateway: ((gw_myenv-control-plane))
+      range: ((cidr_myenv-control-plane))
+      reserved:
+      - ((reserved_1_myenv-control-plane))
+      static:
+      - ((static_myenv-control-plane))
+    type: manual
+- path: /networks/-
+  type: replace
+  value:
+    name: data-plane
+    subnets:
+    - azs:
+      - z1
+      - z2
+      - z3
+      cloud_properties:
+        name: myenv-data-plane
+      dns: ((dns))
+      gateway: ((gw_myenv-data-plane))
+      range: ((cidr_myenv-data-plane))
+      reserved:
+      - ((reserved_1_myenv-data-plane))
+      static:
+      - ((static_myenv-data-plane))
+    type: manual
+- path: /networks/-
+  type: replace
+  value:
+    name: bosh-subnet
+    subnets:
+    - azs:
+      - z1
+      - z2
+      - z3
+      cloud_properties:
+        name: myenv-bosh-subnet
+      dns: ((dns))
+      gateway: ((gw_myenv-bosh-subnet))
+      range: ((cidr_myenv-bosh-subnet))
+      reserved:
+      - ((reserved_1_myenv-bosh-subnet))
+      static:
+      - ((static_myenv-bosh-subnet))
+    type: manual
+- path: /networks/-
+  type: replace
+  value:
+    name: compilation
+    subnets:
+    - azs:
+      - z1
+      - z2
+      - z3
+      cloud_properties:
+        name: myenv-compilation-subnet
+      dns: ((dns))
+      gateway: ((gw_myenv-compilation-subnet))
+      range: ((cidr_myenv-compilation-subnet))
+      reserved:
+      - ((reserved_1_myenv-compilation-subnet))
+      static:
+      - ((static_myenv-compilation-subnet))
+    type: manual

@@ -7,18 +7,18 @@ const (
 	// ErrCodeAuthorizationAlreadyExistsFault for service response error code
 	// "AuthorizationAlreadyExists".
 	//
-	// The specified CIDRIP or Amazon EC2 security group is already authorized for
-	// the specified DB security group.
+	// The specified CIDR IP range or Amazon EC2 security group is already authorized
+	// for the specified DB security group.
 	ErrCodeAuthorizationAlreadyExistsFault = "AuthorizationAlreadyExists"
 
 	// ErrCodeAuthorizationNotFoundFault for service response error code
 	// "AuthorizationNotFound".
 	//
-	// The specified CIDRIP or Amazon EC2 security group isn't authorized for the
-	// specified DB security group.
+	// The specified CIDR IP range or Amazon EC2 security group might not be authorized
+	// for the specified DB security group.
 	//
-	// RDS also may not be authorized by using IAM to perform necessary actions
-	// on your behalf.
+	// Or, RDS might not be authorized to perform necessary actions using IAM on
+	// your behalf.
 	ErrCodeAuthorizationNotFoundFault = "AuthorizationNotFound"
 
 	// ErrCodeAuthorizationQuotaExceededFault for service response error code
@@ -27,11 +27,35 @@ const (
 	// The DB security group authorization quota has been reached.
 	ErrCodeAuthorizationQuotaExceededFault = "AuthorizationQuotaExceeded"
 
+	// ErrCodeBackupPolicyNotFoundFault for service response error code
+	// "BackupPolicyNotFoundFault".
+	ErrCodeBackupPolicyNotFoundFault = "BackupPolicyNotFoundFault"
+
 	// ErrCodeCertificateNotFoundFault for service response error code
 	// "CertificateNotFound".
 	//
 	// CertificateIdentifier doesn't refer to an existing certificate.
 	ErrCodeCertificateNotFoundFault = "CertificateNotFound"
+
+	// ErrCodeCustomAvailabilityZoneAlreadyExistsFault for service response error code
+	// "CustomAvailabilityZoneAlreadyExists".
+	//
+	// CustomAvailabilityZoneName is already used by an existing custom Availability
+	// Zone.
+	ErrCodeCustomAvailabilityZoneAlreadyExistsFault = "CustomAvailabilityZoneAlreadyExists"
+
+	// ErrCodeCustomAvailabilityZoneNotFoundFault for service response error code
+	// "CustomAvailabilityZoneNotFound".
+	//
+	// CustomAvailabilityZoneId doesn't refer to an existing custom Availability
+	// Zone identifier.
+	ErrCodeCustomAvailabilityZoneNotFoundFault = "CustomAvailabilityZoneNotFound"
+
+	// ErrCodeCustomAvailabilityZoneQuotaExceededFault for service response error code
+	// "CustomAvailabilityZoneQuotaExceeded".
+	//
+	// You have exceeded the maximum number of custom Availability Zones.
+	ErrCodeCustomAvailabilityZoneQuotaExceededFault = "CustomAvailabilityZoneQuotaExceeded"
 
 	// ErrCodeDBClusterAlreadyExistsFault for service response error code
 	// "DBClusterAlreadyExistsFault".
@@ -44,6 +68,24 @@ const (
 	//
 	// BacktrackIdentifier doesn't refer to an existing backtrack.
 	ErrCodeDBClusterBacktrackNotFoundFault = "DBClusterBacktrackNotFoundFault"
+
+	// ErrCodeDBClusterEndpointAlreadyExistsFault for service response error code
+	// "DBClusterEndpointAlreadyExistsFault".
+	//
+	// The specified custom endpoint can't be created because it already exists.
+	ErrCodeDBClusterEndpointAlreadyExistsFault = "DBClusterEndpointAlreadyExistsFault"
+
+	// ErrCodeDBClusterEndpointNotFoundFault for service response error code
+	// "DBClusterEndpointNotFoundFault".
+	//
+	// The specified custom endpoint doesn't exist.
+	ErrCodeDBClusterEndpointNotFoundFault = "DBClusterEndpointNotFoundFault"
+
+	// ErrCodeDBClusterEndpointQuotaExceededFault for service response error code
+	// "DBClusterEndpointQuotaExceededFault".
+	//
+	// The cluster already has the maximum number of custom endpoints.
+	ErrCodeDBClusterEndpointQuotaExceededFault = "DBClusterEndpointQuotaExceededFault"
 
 	// ErrCodeDBClusterNotFoundFault for service response error code
 	// "DBClusterNotFoundFault".
@@ -104,11 +146,46 @@ const (
 	// The user already has a DB instance with the given identifier.
 	ErrCodeDBInstanceAlreadyExistsFault = "DBInstanceAlreadyExists"
 
+	// ErrCodeDBInstanceAutomatedBackupNotFoundFault for service response error code
+	// "DBInstanceAutomatedBackupNotFound".
+	//
+	// No automated backup for this DB instance was found.
+	ErrCodeDBInstanceAutomatedBackupNotFoundFault = "DBInstanceAutomatedBackupNotFound"
+
+	// ErrCodeDBInstanceAutomatedBackupQuotaExceededFault for service response error code
+	// "DBInstanceAutomatedBackupQuotaExceeded".
+	//
+	// The quota for retained automated backups was exceeded. This prevents you
+	// from retaining any additional automated backups. The retained automated backups
+	// quota is the same as your DB Instance quota.
+	ErrCodeDBInstanceAutomatedBackupQuotaExceededFault = "DBInstanceAutomatedBackupQuotaExceeded"
+
 	// ErrCodeDBInstanceNotFoundFault for service response error code
 	// "DBInstanceNotFound".
 	//
 	// DBInstanceIdentifier doesn't refer to an existing DB instance.
 	ErrCodeDBInstanceNotFoundFault = "DBInstanceNotFound"
+
+	// ErrCodeDBInstanceRoleAlreadyExistsFault for service response error code
+	// "DBInstanceRoleAlreadyExists".
+	//
+	// The specified RoleArn or FeatureName value is already associated with the
+	// DB instance.
+	ErrCodeDBInstanceRoleAlreadyExistsFault = "DBInstanceRoleAlreadyExists"
+
+	// ErrCodeDBInstanceRoleNotFoundFault for service response error code
+	// "DBInstanceRoleNotFound".
+	//
+	// The specified RoleArn value doesn't match the specified feature for the DB
+	// instance.
+	ErrCodeDBInstanceRoleNotFoundFault = "DBInstanceRoleNotFound"
+
+	// ErrCodeDBInstanceRoleQuotaExceededFault for service response error code
+	// "DBInstanceRoleQuotaExceeded".
+	//
+	// You can't associate any more Amazon Web Services Identity and Access Management
+	// (IAM) roles with the DB instance because the quota has been reached.
+	ErrCodeDBInstanceRoleQuotaExceededFault = "DBInstanceRoleQuotaExceeded"
 
 	// ErrCodeDBLogFileNotFoundFault for service response error code
 	// "DBLogFileNotFoundFault".
@@ -134,6 +211,69 @@ const (
 	// The request would result in the user exceeding the allowed number of DB parameter
 	// groups.
 	ErrCodeDBParameterGroupQuotaExceededFault = "DBParameterGroupQuotaExceeded"
+
+	// ErrCodeDBProxyAlreadyExistsFault for service response error code
+	// "DBProxyAlreadyExistsFault".
+	//
+	// The specified proxy name must be unique for all proxies owned by your Amazon
+	// Web Services account in the specified Amazon Web Services Region.
+	ErrCodeDBProxyAlreadyExistsFault = "DBProxyAlreadyExistsFault"
+
+	// ErrCodeDBProxyEndpointAlreadyExistsFault for service response error code
+	// "DBProxyEndpointAlreadyExistsFault".
+	//
+	// The specified DB proxy endpoint name must be unique for all DB proxy endpoints
+	// owned by your Amazon Web Services account in the specified Amazon Web Services
+	// Region.
+	ErrCodeDBProxyEndpointAlreadyExistsFault = "DBProxyEndpointAlreadyExistsFault"
+
+	// ErrCodeDBProxyEndpointNotFoundFault for service response error code
+	// "DBProxyEndpointNotFoundFault".
+	//
+	// The DB proxy endpoint doesn't exist.
+	ErrCodeDBProxyEndpointNotFoundFault = "DBProxyEndpointNotFoundFault"
+
+	// ErrCodeDBProxyEndpointQuotaExceededFault for service response error code
+	// "DBProxyEndpointQuotaExceededFault".
+	//
+	// The DB proxy already has the maximum number of endpoints.
+	ErrCodeDBProxyEndpointQuotaExceededFault = "DBProxyEndpointQuotaExceededFault"
+
+	// ErrCodeDBProxyNotFoundFault for service response error code
+	// "DBProxyNotFoundFault".
+	//
+	// The specified proxy name doesn't correspond to a proxy owned by your Amazon
+	// Web Services account in the specified Amazon Web Services Region.
+	ErrCodeDBProxyNotFoundFault = "DBProxyNotFoundFault"
+
+	// ErrCodeDBProxyQuotaExceededFault for service response error code
+	// "DBProxyQuotaExceededFault".
+	//
+	// Your Amazon Web Services account already has the maximum number of proxies
+	// in the specified Amazon Web Services Region.
+	ErrCodeDBProxyQuotaExceededFault = "DBProxyQuotaExceededFault"
+
+	// ErrCodeDBProxyTargetAlreadyRegisteredFault for service response error code
+	// "DBProxyTargetAlreadyRegisteredFault".
+	//
+	// The proxy is already associated with the specified RDS DB instance or Aurora
+	// DB cluster.
+	ErrCodeDBProxyTargetAlreadyRegisteredFault = "DBProxyTargetAlreadyRegisteredFault"
+
+	// ErrCodeDBProxyTargetGroupNotFoundFault for service response error code
+	// "DBProxyTargetGroupNotFoundFault".
+	//
+	// The specified target group isn't available for a proxy owned by your Amazon
+	// Web Services account in the specified Amazon Web Services Region.
+	ErrCodeDBProxyTargetGroupNotFoundFault = "DBProxyTargetGroupNotFoundFault"
+
+	// ErrCodeDBProxyTargetNotFoundFault for service response error code
+	// "DBProxyTargetNotFoundFault".
+	//
+	// The specified RDS DB instance or Aurora DB cluster isn't available for a
+	// proxy owned by your Amazon Web Services account in the specified Amazon Web
+	// Services Region.
+	ErrCodeDBProxyTargetNotFoundFault = "DBProxyTargetNotFoundFault"
 
 	// ErrCodeDBSecurityGroupAlreadyExistsFault for service response error code
 	// "DBSecurityGroupAlreadyExists".
@@ -231,11 +371,76 @@ const (
 	// You have reached the maximum number of event subscriptions.
 	ErrCodeEventSubscriptionQuotaExceededFault = "EventSubscriptionQuotaExceeded"
 
+	// ErrCodeExportTaskAlreadyExistsFault for service response error code
+	// "ExportTaskAlreadyExists".
+	//
+	// You can't start an export task that's already running.
+	ErrCodeExportTaskAlreadyExistsFault = "ExportTaskAlreadyExists"
+
+	// ErrCodeExportTaskNotFoundFault for service response error code
+	// "ExportTaskNotFound".
+	//
+	// The export task doesn't exist.
+	ErrCodeExportTaskNotFoundFault = "ExportTaskNotFound"
+
+	// ErrCodeGlobalClusterAlreadyExistsFault for service response error code
+	// "GlobalClusterAlreadyExistsFault".
+	//
+	// The GlobalClusterIdentifier already exists. Choose a new global database
+	// identifier (unique name) to create a new global database cluster.
+	ErrCodeGlobalClusterAlreadyExistsFault = "GlobalClusterAlreadyExistsFault"
+
+	// ErrCodeGlobalClusterNotFoundFault for service response error code
+	// "GlobalClusterNotFoundFault".
+	//
+	// The GlobalClusterIdentifier doesn't refer to an existing global database
+	// cluster.
+	ErrCodeGlobalClusterNotFoundFault = "GlobalClusterNotFoundFault"
+
+	// ErrCodeGlobalClusterQuotaExceededFault for service response error code
+	// "GlobalClusterQuotaExceededFault".
+	//
+	// The number of global database clusters for this account is already at the
+	// maximum allowed.
+	ErrCodeGlobalClusterQuotaExceededFault = "GlobalClusterQuotaExceededFault"
+
+	// ErrCodeIamRoleMissingPermissionsFault for service response error code
+	// "IamRoleMissingPermissions".
+	//
+	// The IAM role requires additional permissions to export to an Amazon S3 bucket.
+	ErrCodeIamRoleMissingPermissionsFault = "IamRoleMissingPermissions"
+
+	// ErrCodeIamRoleNotFoundFault for service response error code
+	// "IamRoleNotFound".
+	//
+	// The IAM role is missing for exporting to an Amazon S3 bucket.
+	ErrCodeIamRoleNotFoundFault = "IamRoleNotFound"
+
+	// ErrCodeInstallationMediaAlreadyExistsFault for service response error code
+	// "InstallationMediaAlreadyExists".
+	//
+	// The specified installation medium has already been imported.
+	ErrCodeInstallationMediaAlreadyExistsFault = "InstallationMediaAlreadyExists"
+
+	// ErrCodeInstallationMediaNotFoundFault for service response error code
+	// "InstallationMediaNotFound".
+	//
+	// InstallationMediaID doesn't refer to an existing installation medium.
+	ErrCodeInstallationMediaNotFoundFault = "InstallationMediaNotFound"
+
 	// ErrCodeInstanceQuotaExceededFault for service response error code
 	// "InstanceQuotaExceeded".
 	//
 	// The request would result in the user exceeding the allowed number of DB instances.
 	ErrCodeInstanceQuotaExceededFault = "InstanceQuotaExceeded"
+
+	// ErrCodeInsufficientAvailableIPsInSubnetFault for service response error code
+	// "InsufficientAvailableIPsInSubnetFault".
+	//
+	// The requested operation can't be performed because there aren't enough available
+	// IP addresses in the proxy's subnets. Add more CIDR blocks to the VPC or remove
+	// IP address that aren't required from the subnets.
+	ErrCodeInsufficientAvailableIPsInSubnetFault = "InsufficientAvailableIPsInSubnetFault"
 
 	// ErrCodeInsufficientDBClusterCapacityFault for service response error code
 	// "InsufficientDBClusterCapacityFault".
@@ -258,6 +463,20 @@ const (
 	// Availability Zones that have more storage available.
 	ErrCodeInsufficientStorageClusterCapacityFault = "InsufficientStorageClusterCapacity"
 
+	// ErrCodeInvalidDBClusterCapacityFault for service response error code
+	// "InvalidDBClusterCapacityFault".
+	//
+	// Capacity isn't a valid Aurora Serverless DB cluster capacity. Valid capacity
+	// values are 2, 4, 8, 16, 32, 64, 128, and 256.
+	ErrCodeInvalidDBClusterCapacityFault = "InvalidDBClusterCapacityFault"
+
+	// ErrCodeInvalidDBClusterEndpointStateFault for service response error code
+	// "InvalidDBClusterEndpointStateFault".
+	//
+	// The requested operation can't be performed on the endpoint while the endpoint
+	// is in this state.
+	ErrCodeInvalidDBClusterEndpointStateFault = "InvalidDBClusterEndpointStateFault"
+
 	// ErrCodeInvalidDBClusterSnapshotStateFault for service response error code
 	// "InvalidDBClusterSnapshotStateFault".
 	//
@@ -267,13 +486,20 @@ const (
 	// ErrCodeInvalidDBClusterStateFault for service response error code
 	// "InvalidDBClusterStateFault".
 	//
-	// The DB cluster isn't in a valid state.
+	// The requested operation can't be performed while the cluster is in this state.
 	ErrCodeInvalidDBClusterStateFault = "InvalidDBClusterStateFault"
+
+	// ErrCodeInvalidDBInstanceAutomatedBackupStateFault for service response error code
+	// "InvalidDBInstanceAutomatedBackupState".
+	//
+	// The automated backup is in an invalid state. For example, this automated
+	// backup is associated with an active instance.
+	ErrCodeInvalidDBInstanceAutomatedBackupStateFault = "InvalidDBInstanceAutomatedBackupState"
 
 	// ErrCodeInvalidDBInstanceStateFault for service response error code
 	// "InvalidDBInstanceState".
 	//
-	// The specified DB instance isn't in the available state.
+	// The DB instance isn't in a valid state.
 	ErrCodeInvalidDBInstanceStateFault = "InvalidDBInstanceState"
 
 	// ErrCodeInvalidDBParameterGroupStateFault for service response error code
@@ -283,6 +509,19 @@ const (
 	// to delete the parameter group, you can't delete it when the parameter group
 	// is in this state.
 	ErrCodeInvalidDBParameterGroupStateFault = "InvalidDBParameterGroupState"
+
+	// ErrCodeInvalidDBProxyEndpointStateFault for service response error code
+	// "InvalidDBProxyEndpointStateFault".
+	//
+	// You can't perform this operation while the DB proxy endpoint is in a particular
+	// state.
+	ErrCodeInvalidDBProxyEndpointStateFault = "InvalidDBProxyEndpointStateFault"
+
+	// ErrCodeInvalidDBProxyStateFault for service response error code
+	// "InvalidDBProxyStateFault".
+	//
+	// The requested operation can't be performed while the proxy is in this state.
+	ErrCodeInvalidDBProxyStateFault = "InvalidDBProxyStateFault"
 
 	// ErrCodeInvalidDBSecurityGroupStateFault for service response error code
 	// "InvalidDBSecurityGroupState".
@@ -322,6 +561,32 @@ const (
 	// retry the action.
 	ErrCodeInvalidEventSubscriptionStateFault = "InvalidEventSubscriptionState"
 
+	// ErrCodeInvalidExportOnlyFault for service response error code
+	// "InvalidExportOnly".
+	//
+	// The export is invalid for exporting to an Amazon S3 bucket.
+	ErrCodeInvalidExportOnlyFault = "InvalidExportOnly"
+
+	// ErrCodeInvalidExportSourceStateFault for service response error code
+	// "InvalidExportSourceState".
+	//
+	// The state of the export snapshot is invalid for exporting to an Amazon S3
+	// bucket.
+	ErrCodeInvalidExportSourceStateFault = "InvalidExportSourceState"
+
+	// ErrCodeInvalidExportTaskStateFault for service response error code
+	// "InvalidExportTaskStateFault".
+	//
+	// You can't cancel an export task that has completed.
+	ErrCodeInvalidExportTaskStateFault = "InvalidExportTaskStateFault"
+
+	// ErrCodeInvalidGlobalClusterStateFault for service response error code
+	// "InvalidGlobalClusterStateFault".
+	//
+	// The global cluster is in an invalid state and can't perform the requested
+	// operation.
+	ErrCodeInvalidGlobalClusterStateFault = "InvalidGlobalClusterStateFault"
+
 	// ErrCodeInvalidOptionGroupStateFault for service response error code
 	// "InvalidOptionGroupStateFault".
 	//
@@ -359,7 +624,7 @@ const (
 	// ErrCodeKMSKeyNotAccessibleFault for service response error code
 	// "KMSKeyNotAccessibleFault".
 	//
-	// An error occurred accessing an AWS KMS key.
+	// An error occurred accessing an Amazon Web Services KMS key.
 	ErrCodeKMSKeyNotAccessibleFault = "KMSKeyNotAccessibleFault"
 
 	// ErrCodeOptionGroupAlreadyExistsFault for service response error code
@@ -377,7 +642,7 @@ const (
 	// ErrCodeOptionGroupQuotaExceededFault for service response error code
 	// "OptionGroupQuotaExceededFault".
 	//
-	// The quota of 20 option groups was exceeded for this AWS account.
+	// The quota of 20 option groups was exceeded for this Amazon Web Services account.
 	ErrCodeOptionGroupQuotaExceededFault = "OptionGroupQuotaExceededFault"
 
 	// ErrCodePointInTimeRestoreNotEnabledFault for service response error code

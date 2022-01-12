@@ -36,6 +36,8 @@ func (m Merger) MergeGlobalFlagsToState(globalFlags GlobalFlags, state storage.S
 		return m.updateVSphereState(globalFlags, state)
 	case "openstack":
 		return m.updateOpenStackState(globalFlags, state)
+	case "cloudstack":
+		return m.updateCloudStackState(globalFlags, state)
 	}
 
 	return state, nil
@@ -60,6 +62,19 @@ func copyFlagToStateWithDefault(source string, sink *string, def string) {
 	} else {
 		*sink = source
 	}
+}
+
+func (m Merger) updateCloudStackState(globalFlags GlobalFlags, state storage.State) (storage.State, error) {
+	copyFlagToState(globalFlags.CloudStackEndpoint, &state.CloudStack.Endpoint)
+	copyFlagToState(globalFlags.CloudStackSecretAccessKey, &state.CloudStack.SecretAccessKey)
+	copyFlagToState(globalFlags.CloudStackApiKey, &state.CloudStack.ApiKey)
+	copyFlagToState(globalFlags.CloudStackZone, &state.CloudStack.Zone)
+	copyFlagToState(globalFlags.CloudStackNetworkVpcOffering, &state.CloudStack.NetworkVpcOffering)
+	copyFlagToState(globalFlags.CloudStackComputeOffering, &state.CloudStack.ComputeOffering)
+	state.CloudStack.Secure = globalFlags.CloudStackSecure
+	state.CloudStack.IsoSegment = globalFlags.CloudStackIsoSegment
+
+	return state, nil
 }
 
 func (m Merger) updateOpenStackState(globalFlags GlobalFlags, state storage.State) (storage.State, error) {

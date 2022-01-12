@@ -1,0 +1,19 @@
+- path: /networks/-
+  type: replace
+  value:
+    name: data-plane-public
+    subnets:
+    - azs:
+      - z1
+      - z2
+      - z3
+      cloud_properties:
+        name: myenv-data-plane-public
+      dns: ((dns))
+      gateway: ((gw_myenv-data-plane-public))
+      range: ((cidr_myenv-data-plane-public))
+      reserved:
+      - ((reserved_1_myenv-data-plane-public))
+      static:
+      - ((static_myenv-data-plane-public))
+    type: manual

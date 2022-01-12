@@ -1,7 +1,7 @@
 resource "aws_security_group" "concourse_lb_internal_security_group" {
   name        = "${var.env_id}-concourse-lb-internal-security-group"
   description = "Concourse Internal"
-  vpc_id      = "${local.vpc_id}"
+  vpc_id      = local.vpc_id
 
   tags = {
     Name = "${var.env_id}-concourse-lb-internal-security-group"
@@ -19,7 +19,7 @@ resource "aws_security_group_rule" "concourse_lb_internal_80" {
   to_port     = 80
   cidr_blocks = ["0.0.0.0/0"]
 
-  security_group_id = "${aws_security_group.concourse_lb_internal_security_group.id}"
+  security_group_id = aws_security_group.concourse_lb_internal_security_group.id
 }
 
 resource "aws_security_group_rule" "concourse_lb_internal_2222" {
@@ -29,7 +29,7 @@ resource "aws_security_group_rule" "concourse_lb_internal_2222" {
   to_port     = 2222
   cidr_blocks = ["0.0.0.0/0"]
 
-  security_group_id = "${aws_security_group.concourse_lb_internal_security_group.id}"
+  security_group_id = aws_security_group.concourse_lb_internal_security_group.id
 }
 
 resource "aws_security_group_rule" "concourse_lb_internal_443" {
@@ -39,7 +39,7 @@ resource "aws_security_group_rule" "concourse_lb_internal_443" {
   to_port     = 443
   cidr_blocks = ["0.0.0.0/0"]
 
-  security_group_id = "${aws_security_group.concourse_lb_internal_security_group.id}"
+  security_group_id = aws_security_group.concourse_lb_internal_security_group.id
 }
 
 resource "aws_security_group_rule" "concourse_lb_internal_egress" {
@@ -49,7 +49,7 @@ resource "aws_security_group_rule" "concourse_lb_internal_egress" {
   to_port     = 0
   cidr_blocks = ["0.0.0.0/0"]
 
-  security_group_id = "${aws_security_group.concourse_lb_internal_security_group.id}"
+  security_group_id = aws_security_group.concourse_lb_internal_security_group.id
 }
 
 resource "aws_lb" "concourse_lb" {
@@ -63,13 +63,13 @@ resource "aws_lb" "concourse_lb" {
 }
 
 resource "aws_lb_listener" "concourse_lb_80" {
-  load_balancer_arn = "${aws_lb.concourse_lb.arn}"
+  load_balancer_arn = aws_lb.concourse_lb.arn
   protocol          = "TCP"
   port              = 80
 
   default_action {
     type             = "forward"
-    target_group_arn = "${aws_lb_target_group.concourse_lb_80.arn}"
+    target_group_arn = aws_lb_target_group.concourse_lb_80.arn
   }
 }
 
@@ -77,7 +77,7 @@ resource "aws_lb_target_group" "concourse_lb_80" {
   name     = "${var.short_env_id}-concourse80"
   port     = 80
   protocol = "TCP"
-  vpc_id   = "${local.vpc_id}"
+  vpc_id   = local.vpc_id
 
   health_check {
     healthy_threshold   = 10
@@ -92,13 +92,13 @@ resource "aws_lb_target_group" "concourse_lb_80" {
 }
 
 resource "aws_lb_listener" "concourse_lb_2222" {
-  load_balancer_arn = "${aws_lb.concourse_lb.arn}"
+  load_balancer_arn = aws_lb.concourse_lb.arn
   protocol          = "TCP"
   port              = 2222
 
   default_action {
     type             = "forward"
-    target_group_arn = "${aws_lb_target_group.concourse_lb_2222.arn}"
+    target_group_arn = aws_lb_target_group.concourse_lb_2222.arn
   }
 }
 
@@ -106,7 +106,7 @@ resource "aws_lb_target_group" "concourse_lb_2222" {
   name     = "${var.short_env_id}-concourse2222"
   port     = 2222
   protocol = "TCP"
-  vpc_id   = "${local.vpc_id}"
+  vpc_id   = local.vpc_id
 
   tags = {
     Name = "${var.env_id}"
@@ -114,13 +114,13 @@ resource "aws_lb_target_group" "concourse_lb_2222" {
 }
 
 resource "aws_lb_listener" "concourse_lb_443" {
-  load_balancer_arn = "${aws_lb.concourse_lb.arn}"
+  load_balancer_arn = aws_lb.concourse_lb.arn
   protocol          = "TCP"
   port              = 443
 
   default_action {
     type             = "forward"
-    target_group_arn = "${aws_lb_target_group.concourse_lb_443.arn}"
+    target_group_arn = aws_lb_target_group.concourse_lb_443.arn
   }
 }
 
@@ -128,7 +128,7 @@ resource "aws_lb_target_group" "concourse_lb_443" {
   name     = "${var.short_env_id}-concourse443"
   port     = 443
   protocol = "TCP"
-  vpc_id   = "${local.vpc_id}"
+  vpc_id   = local.vpc_id
 
   tags = {
     Name = "${var.env_id}"
@@ -142,7 +142,7 @@ resource "aws_security_group_rule" "concourse_lb_internal_8844" {
   to_port     = 8844
   cidr_blocks = ["0.0.0.0/0"]
 
-  security_group_id = "${aws_security_group.concourse_lb_internal_security_group.id}"
+  security_group_id = aws_security_group.concourse_lb_internal_security_group.id
 }
 
 resource "aws_security_group_rule" "concourse_lb_internal_8443" {
@@ -152,17 +152,17 @@ resource "aws_security_group_rule" "concourse_lb_internal_8443" {
   to_port     = 8443
   cidr_blocks = ["0.0.0.0/0"]
 
-  security_group_id = "${aws_security_group.concourse_lb_internal_security_group.id}"
+  security_group_id = aws_security_group.concourse_lb_internal_security_group.id
 }
 
 resource "aws_lb_listener" "concourse_lb_8844" {
-  load_balancer_arn = "${aws_lb.concourse_lb.arn}"
+  load_balancer_arn = aws_lb.concourse_lb.arn
   protocol          = "TCP"
   port              = 8844
 
   default_action {
     type             = "forward"
-    target_group_arn = "${aws_lb_target_group.concourse_lb_8844.arn}"
+    target_group_arn = aws_lb_target_group.concourse_lb_8844.arn
   }
 }
 
@@ -170,7 +170,7 @@ resource "aws_lb_target_group" "concourse_lb_8844" {
   name     = "${var.short_env_id}-concourse8844"
   port     = 8844
   protocol = "TCP"
-  vpc_id   = "${local.vpc_id}"
+  vpc_id   = local.vpc_id
 
   tags = {
     Name = "${var.env_id}"
@@ -178,13 +178,13 @@ resource "aws_lb_target_group" "concourse_lb_8844" {
 }
 
 resource "aws_lb_listener" "concourse_lb_8443" {
-  load_balancer_arn = "${aws_lb.concourse_lb.arn}"
+  load_balancer_arn = aws_lb.concourse_lb.arn
   protocol          = "TCP"
   port              = 8443
 
   default_action {
     type             = "forward"
-    target_group_arn = "${aws_lb_target_group.concourse_lb_8443.arn}"
+    target_group_arn = aws_lb_target_group.concourse_lb_8443.arn
   }
 }
 
@@ -192,7 +192,7 @@ resource "aws_lb_target_group" "concourse_lb_8443" {
   name     = "${var.short_env_id}-concourse8443"
   port     = 8443
   protocol = "TCP"
-  vpc_id   = "${local.vpc_id}"
+  vpc_id   = local.vpc_id
 
   tags = {
     Name = "${var.env_id}"
@@ -200,7 +200,7 @@ resource "aws_lb_target_group" "concourse_lb_8443" {
 }
 
 output "concourse_lb_internal_security_group" {
-  value = "${aws_security_group.concourse_lb_internal_security_group.name}"
+  value = aws_security_group.concourse_lb_internal_security_group.name
 }
 
 output "concourse_lb_target_groups" {
@@ -214,9 +214,9 @@ output "concourse_lb_target_groups" {
 }
 
 output "concourse_lb_name" {
-  value = "${aws_lb.concourse_lb.name}"
+  value = aws_lb.concourse_lb.name
 }
 
 output "concourse_lb_url" {
-  value = "${aws_lb.concourse_lb.dns_name}"
+  value = aws_lb.concourse_lb.dns_name
 }

@@ -1,0 +1,19 @@
+#!/bin/bash -e
+
+set -o pipefail
+
+ROOT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
+
+if [ -z "${TF_VERSION}" ] || [ -z "${GOOS}" ] || [ -z "${GOARCH}" ]; then
+  echo "error: missing required en variables: TF_VERSION, OS, ARCH"
+  exit 1
+fi
+
+path="${TF_VERSION}/terraform_${TF_VERSION}_${GOOS}_${GOARCH}.zip"
+url="https://releases.hashicorp.com/terraform/${path}"
+echo "downloading terraform from ${url}"
+
+rm -f ${ROOT_DIR}/terraform/binary_dist/terraform
+curl -fsSL "${url}" | \
+  gunzip -d -c | \
+  install /dev/stdin ${ROOT_DIR}/terraform/binary_dist/terraform
