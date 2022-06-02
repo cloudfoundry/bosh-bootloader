@@ -3,6 +3,7 @@ package runtimeconfig
 import (
 	"fmt"
 	"path/filepath"
+	"strings"
 
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/fileio"
@@ -90,7 +91,7 @@ func (m Manager) Update(state storage.State) error {
 
 	for _, file := range files {
 		name := file.Name()
-		if name != "runtime-config.yml" {
+		if name != "runtime-config.yml" && strings.HasSuffix(name, ".yml") {
 			opsFiles = append(opsFiles, filepath.Join(dir, name))
 		}
 	}
