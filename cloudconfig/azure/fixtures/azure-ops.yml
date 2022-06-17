@@ -1,4 +1,8 @@
 - type: replace
+  path: /compilation/vm_type
+  value: Standard_F2s_v2
+
+- type: replace
   path: /azs/-
   value:
     name: z1
@@ -61,7 +65,7 @@
   value:
     ephemeral_disk:
       size: 10240
-    instance_type: Standard_D2as_v4
+    instance_type: Standard_F2s_v2
 
 - type: replace
   path: /vm_types/name=medium/cloud_properties?
@@ -82,7 +86,7 @@
   value:
     ephemeral_disk:
       size: 10240
-    instance_type: Standard_E4s_v3
+    instance_type: Standard_E2s_v3
 
 - type: replace
   path: /vm_types/name=sharedcpu/cloud_properties?
