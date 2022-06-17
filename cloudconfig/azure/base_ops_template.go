@@ -3,6 +3,10 @@ package azure
 const (
 	BaseOps = `
 - type: replace
+  path: /compilation/vm_type
+  value: Standard_F2s_v2
+
+- type: replace
   path: /azs/-
   value:
     name: z1
@@ -58,7 +62,7 @@ const (
   value:
     ephemeral_disk:
       size: 10240
-    instance_type: Standard_F1s
+    instance_type: Standard_B1ms
 
 - type: replace
   path: /vm_types/name=small/cloud_properties?
@@ -86,7 +90,7 @@ const (
   value:
     ephemeral_disk:
       size: 10240
-    instance_type: Standard_GS2
+    instance_type: Standard_E2s_v3
 
 - type: replace
   path: /vm_types/name=sharedcpu/cloud_properties?
