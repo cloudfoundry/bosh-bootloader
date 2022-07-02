@@ -20,7 +20,7 @@ RUN \
       && \
       apt-get clean
 
-RUN go get -u github.com/jteeuwen/go-bindata/...
+RUN go install github.com/jteeuwen/go-bindata@latest
 
 # Install gcloud
 RUN echo "deb https://packages.cloud.google.com/apt cloud-sdk-trusty main" > /etc/apt/sources.list.d/google-cloud-sdk.list && \
@@ -35,4 +35,4 @@ ADD bosh-bootloader /go/src/github.com/cloudfoundry/bosh-bootloader
 
 RUN cp -r /go/src/github.com/cloudfoundry/bosh-bootloader /var/repos
 
-RUN go get -u github.com/pivotal-cf/texplate
+RUN go install github.com/pivotal-cf/texplate@latest
