@@ -179,6 +179,56 @@ const (
 - type: replace
   path: /vm_types/-
   value:
+    name: m5a.large
+    cloud_properties:
+      instance_type: m5a.large
+      ephemeral_disk:
+        size: 10240
+        type: gp3
+
+- type: replace
+  path: /vm_types/-
+  value:
+    name: m5a.xlarge
+    cloud_properties:
+      instance_type: m5a.xlarge
+      ephemeral_disk:
+        size: 10240
+        type: gp3
+
+- type: replace
+  path: /vm_types/-
+  value:
+    name: m5a.2xlarge
+    cloud_properties:
+      instance_type: m5a.2xlarge
+      ephemeral_disk:
+        size: 10240
+        type: gp3
+
+- type: replace
+  path: /vm_types/-
+  value:
+    name: m5a.4xlarge
+    cloud_properties:
+      instance_type: m5a.4xlarge
+      ephemeral_disk:
+        size: 10240
+        type: gp3
+
+- type: replace
+  path: /vm_types/-
+  value:
+    name: m5a.10xlarge
+    cloud_properties:
+      instance_type: m5a.10xlarge
+      ephemeral_disk:
+        size: 10240
+        type: gp3
+
+- type: replace
+  path: /vm_types/-
+  value:
     name: c4.large
     cloud_properties:
       instance_type: c4.large
@@ -222,6 +272,56 @@ const (
     name: c4.8xlarge
     cloud_properties:
       instance_type: c4.8xlarge
+      ephemeral_disk:
+        size: 10240
+        type: gp3
+
+- type: replace
+  path: /vm_types/-
+  value:
+    name: c5a.large
+    cloud_properties:
+      instance_type: c5a.large
+      ephemeral_disk:
+        size: 10240
+        type: gp3
+
+- type: replace
+  path: /vm_types/-
+  value:
+    name: c5a.xlarge
+    cloud_properties:
+      instance_type: c5a.xlarge
+      ephemeral_disk:
+        size: 10240
+        type: gp3
+
+- type: replace
+  path: /vm_types/-
+  value:
+    name: c5a.2xlarge
+    cloud_properties:
+      instance_type: c5a.2xlarge
+      ephemeral_disk:
+        size: 10240
+        type: gp3
+
+- type: replace
+  path: /vm_types/-
+  value:
+    name: c5a.4xlarge
+    cloud_properties:
+      instance_type: c5a.4xlarge
+      ephemeral_disk:
+        size: 10240
+        type: gp3
+
+- type: replace
+  path: /vm_types/-
+  value:
+    name: c5a.8xlarge
+    cloud_properties:
+      instance_type: c5a.8xlarge
       ephemeral_disk:
         size: 10240
         type: gp3
@@ -279,6 +379,56 @@ const (
 - type: replace
   path: /vm_types/-
   value:
+    name: r5a.large
+    cloud_properties:
+      instance_type: r5a.large
+      ephemeral_disk:
+        size: 10240
+        type: gp3
+
+- type: replace
+  path: /vm_types/-
+  value:
+    name: r5a.xlarge
+    cloud_properties:
+      instance_type: r5a.xlarge
+      ephemeral_disk:
+        size: 10240
+        type: gp3
+
+- type: replace
+  path: /vm_types/-
+  value:
+    name: r5a.2xlarge
+    cloud_properties:
+      instance_type: r5a.2xlarge
+      ephemeral_disk:
+        size: 10240
+        type: gp3
+
+- type: replace
+  path: /vm_types/-
+  value:
+    name: r5a.4xlarge
+    cloud_properties:
+      instance_type: r5a.4xlarge
+      ephemeral_disk:
+        size: 10240
+        type: gp3
+
+- type: replace
+  path: /vm_types/-
+  value:
+    name: r5a.8xlarge
+    cloud_properties:
+      instance_type: r5a.8xlarge
+      ephemeral_disk:
+        size: 10240
+        type: gp3
+
+- type: replace
+  path: /vm_types/-
+  value:
     name: t2.nano
     cloud_properties:
       instance_type: t2.nano
@@ -322,6 +472,56 @@ const (
     name: t2.large
     cloud_properties:
       instance_type: t2.large
+      ephemeral_disk:
+        size: 10240
+        type: gp3
+
+- type: replace
+  path: /vm_types/-
+  value:
+    name: t3a.nano
+    cloud_properties:
+      instance_type: t3a.nano
+      ephemeral_disk:
+        size: 10240
+        type: gp3
+
+- type: replace
+  path: /vm_types/-
+  value:
+    name: t3a.micro
+    cloud_properties:
+      instance_type: t3a.micro
+      ephemeral_disk:
+        size: 10240
+        type: gp3
+
+- type: replace
+  path: /vm_types/-
+  value:
+    name: t3a.small
+    cloud_properties:
+      instance_type: t3a.small
+      ephemeral_disk:
+        size: 10240
+        type: gp3
+
+- type: replace
+  path: /vm_types/-
+  value:
+    name: t3a.medium
+    cloud_properties:
+      instance_type: t3a.medium
+      ephemeral_disk:
+        size: 10240
+        type: gp3
+
+- type: replace
+  path: /vm_types/-
+  value:
+    name: t3a.large
+    cloud_properties:
+      instance_type: t3a.large
       ephemeral_disk:
         size: 10240
         type: gp3
