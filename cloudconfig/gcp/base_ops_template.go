@@ -265,6 +265,132 @@ const (
 - type: replace
   path: /vm_types/-
   value:
+    name: e2-standard-2
+    cloud_properties:
+      machine_type: e2-standard-2
+      root_disk_size_gb: 10
+      root_disk_type: pd-balanced
+
+- type: replace
+  path: /vm_types/-
+  value:
+    name: e2-standard-4
+    cloud_properties:
+      machine_type: e2-standard-4
+      root_disk_size_gb: 10
+      root_disk_type: pd-balanced
+
+- type: replace
+  path: /vm_types/-
+  value:
+    name: e2-standard-8
+    cloud_properties:
+      machine_type: e2-standard-8
+      root_disk_size_gb: 10
+      root_disk_type: pd-balanced
+
+- type: replace
+  path: /vm_types/-
+  value:
+    name: e2-standard-16
+    cloud_properties:
+      machine_type: e2-standard-16
+      root_disk_size_gb: 10
+      root_disk_type: pd-balanced
+
+- type: replace
+  path: /vm_types/-
+  value:
+    name: e2-standard-32
+    cloud_properties:
+      machine_type: e2-standard-32
+      root_disk_size_gb: 10
+      root_disk_type: pd-balanced
+
+- type: replace
+  path: /vm_types/-
+  value:
+    name: e2-highmem-2
+    cloud_properties:
+      machine_type: e2-highmem-2
+      root_disk_size_gb: 10
+      root_disk_type: pd-balanced
+
+- type: replace
+  path: /vm_types/-
+  value:
+    name: e2-highmem-4
+    cloud_properties:
+      machine_type: e2-highmem-4
+      root_disk_size_gb: 10
+      root_disk_type: pd-balanced
+
+- type: replace
+  path: /vm_types/-
+  value:
+    name: e2-highmem-8
+    cloud_properties:
+      machine_type: e2-highmem-8
+      root_disk_size_gb: 10
+      root_disk_type: pd-balanced
+
+- type: replace
+  path: /vm_types/-
+  value:
+    name: e2-highmem-16
+    cloud_properties:
+      machine_type: e2-highmem-16
+      root_disk_size_gb: 10
+      root_disk_type: pd-balanced
+
+- type: replace
+  path: /vm_types/-
+  value:
+    name: e2-highcpu-2
+    cloud_properties:
+      machine_type: e2-highcpu-2
+      root_disk_size_gb: 10
+      root_disk_type: pd-balanced
+
+- type: replace
+  path: /vm_types/-
+  value:
+    name: e2-highcpu-4
+    cloud_properties:
+      machine_type: e2-highcpu-4
+      root_disk_size_gb: 10
+      root_disk_type: pd-balanced
+
+- type: replace
+  path: /vm_types/-
+  value:
+    name: e2-highcpu-8
+    cloud_properties:
+      machine_type: e2-highcpu-8
+      root_disk_size_gb: 10
+      root_disk_type: pd-balanced
+
+- type: replace
+  path: /vm_types/-
+  value:
+    name: e2-highcpu-16
+    cloud_properties:
+      machine_type: e2-highcpu-16
+      root_disk_size_gb: 10
+      root_disk_type: pd-balanced
+
+- type: replace
+  path: /vm_types/-
+  value:
+    name: e2-highcpu-32
+    cloud_properties:
+      machine_type: e2-highcpu-32
+      root_disk_size_gb: 10
+      root_disk_type: pd-balanced
+
+- type: replace
+  path: /vm_types/-
+  value:
     name: f1-micro
     cloud_properties:
       machine_type: f1-micro
