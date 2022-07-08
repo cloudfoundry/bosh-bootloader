@@ -105,7 +105,7 @@ const (
 - type: replace
   path: /vm_types/name=medium/cloud_properties?
   value:
-    instance_type: m4.xlarge
+    instance_type: m5a.xlarge
     ephemeral_disk:
       size: 10240
       type: gp3
@@ -113,7 +113,7 @@ const (
 - type: replace
   path: /vm_types/name=large/cloud_properties?
   value:
-    instance_type: m4.2xlarge
+    instance_type: m5a.2xlarge
     ephemeral_disk:
       size: 10240
       type: gp3
@@ -121,10 +121,20 @@ const (
 - type: replace
   path: /vm_types/name=extra-large/cloud_properties?
   value:
-    instance_type: m4.4xlarge
+    instance_type: m5a.4xlarge
     ephemeral_disk:
       size: 10240
       type: gp3
+
+- type: replace
+  path: /vm_types/-
+  value:
+    name: medium-highmem
+    cloud_properties:
+      instance_type: r5a.xlarge
+      ephemeral_disk:
+        size: 10240
+        type: gp3
 
 - type: replace
   path: /vm_types/-
