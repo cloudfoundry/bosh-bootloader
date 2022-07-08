@@ -76,14 +76,14 @@ const (
   value:
     ephemeral_disk:
       size: 10240
-    instance_type: Standard_F4s_v2
+    instance_type: Standard_D4s_v3
 
 - type: replace
   path: /vm_types/name=large/cloud_properties?
   value:
     ephemeral_disk:
       size: 10240
-    instance_type: Standard_DS12_v2
+    instance_type: Standard_D8s_v3
 
 - type: replace
   path: /vm_types/name=small-highmem/cloud_properties?
@@ -98,6 +98,14 @@ const (
     ephemeral_disk:
       size: 10240
     instance_type: Standard_B1ms
+
+- type: replace
+  path: /vm_types/-
+  value:
+    name: medium-highmem
+    ephemeral_disk:
+      size: 10240
+    instance_type: Standard_E4s_v3
 
 - type: replace
   path: /vm_types/-
