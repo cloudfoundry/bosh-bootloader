@@ -1188,6 +1188,36 @@ jobs:
       - bbl-gcp-cf-bump-deployments
       # - bbl-lite-gcp-bump-deployments
 
+  - task: check-version
+    config:
+      platform: linux
+      image_resource:
+        type: registry-image
+        source:
+          repository: cloudfoundry/cf-deployment-concourse-tasks
+      inputs:
+      - name: bbl-release-official
+      - name: version
+      run:
+        path: /bin/bash
+        args:
+        - -c
+        - |
+          set -euo pipefail
+
+          LAST_RELEASE_VERSION="$(cat bbl-release-official/version)"
+          VERSION="$(cat version/number)"
+
+          if [[ "${LAST_RELEASE_VERSION}" != "${VERSION}" ]]; then
+            cat <<EOT
+          Version mismatch!
+
+          Last GitHub release version = ${LAST_RELEASE_VERSION}
+          Current version             = ${VERSION}
+          EOT
+            exit 1
+          fi
+
   - task: download-terraform
     file: bbl-ci/ci/tasks/download-terraform/task.yml
     params:
