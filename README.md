@@ -78,7 +78,7 @@ Once you are done kicking the tires on CF and BOSH, clean up your environment to
 
 1. You must first delete any deployments on BOSH. e.g. `bosh -d cf delete-deployment`
 
-1. `bbl down` with your IaaS user/account information.
+1. `bbl destroy` with your IaaS user/account information.
 
 ### Automating the automation tool
 
