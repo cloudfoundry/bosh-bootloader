@@ -2,10 +2,10 @@
 
 In addition to creating resources for deploying BOSH, bbl has two subcommands
 for assisting you in cleaning up an environment after you are done with it:
-`bbl down` and `bbl cleanup-leftovers`.
+`bbl destroy` and `bbl cleanup-leftovers`.
 
 
-## bbl down
+## bbl destroy
 
 If you have the state file for a working environment, then bbl will destroy
 everything it has created.
@@ -14,16 +14,16 @@ As a safety precaution, bbl will not delete the
 environment if there are running VMs deployed by the BOSH director.
 
 ```
-bbl down
+bbl destroy
 ```
 
 
 ## bbl cleanup-leftovers
 
-Sometimes, `bbl down` isn't enough to do the job.
+Sometimes, `bbl destroy` isn't enough to do the job.
 Perhaps you are in one of these situations:
 
-* `bbl down` failed during deletion and lost information.
+* `bbl destroy` failed during deletion and lost information.
 * The `bbl-state-dir` is on a computer that you no longer have access to.
 * You created resources outside of bbl that you want to nuke.
 * You are running bbl's acceptance tests and they failed, orphaning IaaS resources.
@@ -33,7 +33,7 @@ cli utility [leftovers](https://github.com/genevieve/leftovers) as a
 subcommand in bbl.
 
 You can think of `bbl cleanup-leftovers` as kind of like
-`bbl down --force`, but without the need for a `bbl-state-dir`.
+`bbl destroy --force`, but without the need for a `bbl-state-dir`.
 
 **The filter is very important!**
 
