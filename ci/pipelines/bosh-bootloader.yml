@@ -18,6 +18,7 @@ groups:
 - name: misc
   jobs:
   - bump-bbl-docs
+  - bump-bbl-deployment-image
 #  - bump-brew-tap
 
 resource_types:
@@ -27,6 +28,18 @@ resource_types:
     repository: cloudfoundry/bosh-deployment-resource
 
 resources:
+- name: once-a-day
+  type: time
+  source:
+    interval: 24h
+
+- name: cryogenics-bbl-deployment
+  type: docker-image
+  source:
+    repository: cryogenics/bbl-deployment
+    username: ((dockerhub.username))
+    password: ((dockerhub.password))
+
 - name: ubuntu-bionic-stemcell-gcp
   type: bosh-io-stemcell
   source:
@@ -199,6 +212,16 @@ resources:
     uri: https://github.com/cloudfoundry/runtime-ci
 
 jobs:
+- name: bump-bbl-deployment-image
+  plan:
+  - in_parallel:
+    - get: bosh-bootloader
+    - get: once-a-day
+      trigger: true
+  - put: cryogenics-bbl-deployment
+    params:
+      build: bosh-bootloader/ci/dockerfiles/deployment-8.4.x/
+
 - name: sync-version-bump-deployments
   serial: true
   public: true
