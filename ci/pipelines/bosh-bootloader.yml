@@ -1231,13 +1231,8 @@ jobs:
           LAST_RELEASE_VERSION="$(cat bbl-release-official/version)"
           VERSION="$(cat version/number)"
 
-          if [[ "${LAST_RELEASE_VERSION}" != "${VERSION}" ]]; then
-            cat <<EOT
-          Version mismatch!
-
-          Last GitHub release version = ${LAST_RELEASE_VERSION}
-          Current version             = ${VERSION}
-          EOT
+          if [[ "${LAST_RELEASE_VERSION}" == "${VERSION}" ]]; then
+            echo "Version hasn't been bumped since v${LAST_RELEASE_VERSION} was created."
             exit 1
           fi
 
