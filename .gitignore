@@ -8,6 +8,8 @@ _obj
 _test
 .idea
 ignored
+.direnv
+terraform-binaries
 
 # Architecture specific extensions/prefixes
 *.[568vq]

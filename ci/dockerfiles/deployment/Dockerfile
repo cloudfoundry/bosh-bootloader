@@ -93,8 +93,5 @@ RUN pip install -U awscli
 # Install ginkgo
 RUN go get -u github.com/onsi/ginkgo/ginkgo
 
-# Install packr2
-RUN go get -u github.com/gobuffalo/packr/v2/packr2
-
 RUN chown -R testuser:testuser /usr/local/go/pkg
 RUN chown -R testuser:testuser /go
