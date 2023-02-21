@@ -52,8 +52,7 @@ const (
 	boshDeploymentRepo    = "bosh-deployment"
 )
 
-//go:embed deployments/jumpbox-deployment
-//go:embed deployments/bosh-deployment
+//go:embed deployments/*
 var content embed.FS
 
 func NewExecutor(cmd cli, fs executorFs) Executor {
@@ -65,24 +64,18 @@ func NewExecutor(cmd cli, fs executorFs) Executor {
 	}
 }
 func extractNestedFiles(fs embed.FS, source_entry fs.DirEntry, fileList []setupFile, path string, trimPrefix string, destPath string) []setupFile {
-	subDir, err := fs.ReadDir(path)
-	if err != nil {
-		panic(err)
-	}
-	for _, entry := range subDir {
-		if entry.IsDir() {
-			fileList = extractNestedFiles(fs, entry, fileList, filepath.Join(path, entry.Name()), trimPrefix, destPath)
-		} else {
-			contents, err := fs.ReadFile(filepath.Join(path, entry.Name()))
-			if err != nil {
-				panic(err)
-			}
-			fileList = append(fileList, setupFile{
-				source:   entry.Name(),
-				dest:     filepath.Join(destPath, strings.TrimPrefix(path, trimPrefix), entry.Name()),
-				contents: contents,
-			})
+	if source_entry.IsDir() {
+		fileList = extractNestedFiles(fs, source_entry, fileList, filepath.Join(path, source_entry.Name()), trimPrefix, destPath)
+	} else {
+		contents, err := fs.ReadFile(filepath.Join(path, source_entry.Name()))
+		if err != nil {
+			panic(err)
 		}
+		fileList = append(fileList, setupFile{
+			source:   source_entry.Name(),
+			dest:     filepath.Join(destPath, strings.TrimPrefix(path, trimPrefix), source_entry.Name()),
+			contents: contents,
+		})
 	}
 	return fileList
 }
@@ -91,28 +84,13 @@ func (e Executor) getSetupFiles(sourcePath, destPath string) []setupFile {
 	fullPath := filepath.Join(e.EmbedDataPrefix, sourcePath)
 
 	assetNames, err := e.EmbedData.ReadDir(fullPath)
+	prefix := filepath.Join(e.EmbedDataPrefix, sourcePath)
 	if err != nil {
 		panic(err)
 	}
 	for _, asset := range assetNames {
-
-		if asset.IsDir() {
-			prefix := filepath.Join(e.EmbedDataPrefix, sourcePath)
-			files = extractNestedFiles(e.EmbedData, asset, files, filepath.Join(fullPath, asset.Name()), prefix, destPath)
-		} else {
-			contents, err := e.EmbedData.ReadFile(filepath.Join(fullPath, asset.Name()))
-			if err != nil {
-
-				panic(err) // this panic is intentional as it was exactly the same way MustAsset worked previously in go-bindata
-			}
-			files = append(files, setupFile{
-				source:   asset.Name(),
-				dest:     filepath.Join(destPath, strings.TrimPrefix(asset.Name(), e.EmbedDataPrefix)),
-				contents: contents,
-			})
-		}
+		files = extractNestedFiles(e.EmbedData, asset, files, filepath.Join(fullPath, sourcePath), prefix, destPath)
 	}
-
 	return files
 }
 
@@ -124,7 +102,7 @@ func (e Executor) PlanJumpbox(input DirInput, deploymentDir, iaas string) error 
 		os.MkdirAll(filepath.Dir(f.dest), os.ModePerm)
 		err := e.FS.WriteFile(f.dest, f.contents, storage.StateMode)
 		if err != nil {
-			return fmt.Errorf("Jumpbox write setup file: %s", err) //not tested
+			return fmt.Errorf("jumpbox write setup file: %s", err) //not tested
 		}
 	}
 
@@ -140,7 +118,7 @@ func (e Executor) PlanJumpbox(input DirInput, deploymentDir, iaas string) error 
 		sharedArgs = append(sharedArgs, "-o", vSphereJumpboxNetworkOpsPath)
 		err := e.FS.WriteFile(vSphereJumpboxNetworkOpsPath, []byte(VSphereJumpboxNetworkOps), os.ModePerm)
 		if err != nil {
-			return fmt.Errorf("Jumpbox write vsphere network ops file: %s", err) //not tested
+			return fmt.Errorf("jumpbox write vsphere network ops file: %s", err) //not tested
 		}
 	}
 
@@ -248,7 +226,7 @@ func (e Executor) PlanDirector(input DirInput, deploymentDir, iaas string) error
 			os.MkdirAll(filepath.Dir(f.dest), storage.StateMode)
 		}
 		if err := e.FS.WriteFile(f.dest, f.contents, storage.StateMode); err != nil {
-			return fmt.Errorf("Director write setup file: %s", err) //not tested
+			return fmt.Errorf("director write setup file: %s", err) //not tested
 		}
 	}
 
@@ -330,7 +308,7 @@ func (e Executor) WriteDeploymentVars(input DirInput, deploymentVars string) err
 	varsFilePath := filepath.Join(input.VarsDir, fmt.Sprintf("%s-vars-file.yml", input.Deployment))
 	err := e.FS.WriteFile(varsFilePath, []byte(deploymentVars), storage.StateMode)
 	if err != nil {
-		return fmt.Errorf("Write vars file: %s", err) // not tested
+		return fmt.Errorf("write vars file: %s", err) // not tested
 	}
 	return nil
 }
@@ -371,7 +349,7 @@ func (e Executor) CreateEnv(input DirInput, state storage.State) (string, error)
 
 	err = cmd.Run()
 	if err != nil {
-		return "", fmt.Errorf("Running %s: %s", createEnvScript, err)
+		return "", fmt.Errorf("running %s: %s", createEnvScript, err)
 	}
 
 	name := fmt.Sprintf("%s-vars-store.yml", input.Deployment)
