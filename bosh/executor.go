@@ -63,20 +63,28 @@ func NewExecutor(cmd cli, fs executorFs) Executor {
 		EmbedDataPrefix: "deployments/",
 	}
 }
-func extractNestedFiles(fs embed.FS, source_entry fs.DirEntry, fileList []setupFile, path string, trimPrefix string, destPath string) []setupFile {
-	if source_entry.IsDir() {
-		fileList = extractNestedFiles(fs, source_entry, fileList, filepath.Join(path, source_entry.Name()), trimPrefix, destPath)
-	} else {
-		contents, err := fs.ReadFile(filepath.Join(path, source_entry.Name()))
-		if err != nil {
-			panic(err)
+func extractNestedFiles(fs embed.FS, fileList []setupFile, path string, trimPrefix string, destPath string, source_entries ...fs.DirEntry) []setupFile {
+	for _, source_entry := range source_entries {
+		if source_entry.IsDir() {
+			dirContents, err := fs.ReadDir(fmt.Sprintf("%v/%v", path, source_entry.Name()))
+			if err != nil {
+				panic(err)
+			}
+			fileList = extractNestedFiles(fs, fileList, filepath.Join(path, source_entry.Name()), trimPrefix, destPath, dirContents...)
+		} else {
+			contents, err := fs.ReadFile(filepath.Join(path, source_entry.Name()))
+			if err != nil {
+				panic(err)
+			}
+			fileList = append(fileList, setupFile{
+				source:   source_entry.Name(),
+				dest:     filepath.Join(destPath, strings.TrimPrefix(path, trimPrefix), source_entry.Name()),
+				contents: contents,
+			})
 		}
-		fileList = append(fileList, setupFile{
-			source:   source_entry.Name(),
-			dest:     filepath.Join(destPath, strings.TrimPrefix(path, trimPrefix), source_entry.Name()),
-			contents: contents,
-		})
+
 	}
+
 	return fileList
 }
 func (e Executor) getSetupFiles(sourcePath, destPath string) []setupFile {
@@ -85,13 +93,11 @@ func (e Executor) getSetupFiles(sourcePath, destPath string) []setupFile {
 
 	assetNames, err := e.EmbedData.ReadDir(fullPath)
 	prefix := filepath.Join(e.EmbedDataPrefix, sourcePath)
+
 	if err != nil {
 		panic(err)
 	}
-	for _, asset := range assetNames {
-		files = extractNestedFiles(e.EmbedData, asset, files, filepath.Join(fullPath, sourcePath), prefix, destPath)
-	}
-	return files
+	return extractNestedFiles(e.EmbedData, files, fullPath, prefix, destPath, assetNames...)
 }
 
 func (e Executor) PlanJumpbox(input DirInput, deploymentDir, iaas string) error {

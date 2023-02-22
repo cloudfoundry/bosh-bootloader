@@ -647,7 +647,7 @@ var _ = Describe("Executor", func() {
 
 			It("returns an error", func() {
 				vars, err := executor.CreateEnv(dirInput, state)
-				Expect(err).To(MatchError(fmt.Sprintf("Running %s: exit status 1", createEnvPath)))
+				Expect(err).To(MatchError(fmt.Sprintf("running %s: exit status 1", createEnvPath)))
 				Expect(vars).To(Equal(""))
 			})
 		})
