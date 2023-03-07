@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"os/user"
@@ -50,7 +49,7 @@ var _ = Describe("Upgrade", func() {
 		resp, err := http.Get(bblBinaryLocation)
 		Expect(err).NotTo(HaveOccurred())
 
-		f, err = ioutil.TempFile("", "")
+		f, err = os.CreateTemp("", "")
 		Expect(err).NotTo(HaveOccurred())
 
 		_, err = io.Copy(f, resp.Body)
@@ -121,7 +120,7 @@ var _ = Describe("Upgrade", func() {
 
 		By("cleaning out an installation directory holding onto old golang", func() {
 			removeInstallation := func(stateFileName string) {
-				stateJSON, err := ioutil.ReadFile(filepath.Join(configuration.StateFileDir, "vars", stateFileName))
+				stateJSON, err := os.ReadFile(filepath.Join(configuration.StateFileDir, "vars", stateFileName))
 				Expect(err).NotTo(HaveOccurred())
 
 				var state struct {

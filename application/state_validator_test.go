@@ -2,7 +2,6 @@ package application_test
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -22,7 +21,7 @@ var _ = Describe("StateValidator", func() {
 
 	BeforeEach(func() {
 		var err error
-		tempDirectory, err = ioutil.TempDir("", "")
+		tempDirectory, err = os.MkdirTemp("", "")
 		Expect(err).NotTo(HaveOccurred())
 
 		stateValidator = application.NewStateValidator(tempDirectory)
@@ -30,7 +29,7 @@ var _ = Describe("StateValidator", func() {
 
 	Context("when state file exists", func() {
 		BeforeEach(func() {
-			err := ioutil.WriteFile(filepath.Join(tempDirectory, "bbl-state.json"), []byte(""), storage.StateMode)
+			err := os.WriteFile(filepath.Join(tempDirectory, "bbl-state.json"), []byte(""), storage.StateMode)
 			Expect(err).NotTo(HaveOccurred())
 		})
 

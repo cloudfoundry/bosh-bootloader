@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"crypto/rand"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -104,7 +103,7 @@ func main() {
 		out = os.Stdout
 	} else {
 		terraformCLI = bufferingCLI
-		out = ioutil.Discard
+		out = io.Discard
 	}
 	terraformExecutor := terraform.NewExecutor(terraformCLI, bufferingCLI, stateStore, afs, appConfig.Global.Debug, out)
 

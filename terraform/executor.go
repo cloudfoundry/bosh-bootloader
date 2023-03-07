@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -330,7 +329,7 @@ func (e Executor) IsPaved() (bool, error) {
 		return false, err
 	}
 
-	err = e.cli.Run(ioutil.Discard, terraformDir, []string{"init"})
+	err = e.cli.Run(io.Discard, terraformDir, []string{"init"})
 	if err != nil {
 		return false, fmt.Errorf("Run terraform init in terraform dir: %s", err)
 	}

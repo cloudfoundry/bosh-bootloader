@@ -1,7 +1,6 @@
 package storage_test
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -27,14 +26,14 @@ var _ = Describe("StateBootstrap", func() {
 			bootstrap = storage.NewStateBootstrap(logger, latestVersion)
 
 			var err error
-			tempDir, err = ioutil.TempDir("", "")
+			tempDir, err = os.MkdirTemp("", "")
 
 			Expect(err).NotTo(HaveOccurred())
 		})
 
 		Context("when there is a completely empty state file", func() {
 			BeforeEach(func() {
-				err := ioutil.WriteFile(filepath.Join(tempDir, "bbl-state.json"), []byte(`{}`), storage.StateMode)
+				err := os.WriteFile(filepath.Join(tempDir, "bbl-state.json"), []byte(`{}`), storage.StateMode)
 				Expect(err).NotTo(HaveOccurred())
 			})
 
@@ -50,7 +49,7 @@ var _ = Describe("StateBootstrap", func() {
 
 		Context("when there is a pre v3 state file", func() {
 			BeforeEach(func() {
-				err := ioutil.WriteFile(filepath.Join(tempDir, "bbl-state.json"), []byte(`{
+				err := os.WriteFile(filepath.Join(tempDir, "bbl-state.json"), []byte(`{
 					"version": 2
 				}`), storage.StateMode)
 				Expect(err).NotTo(HaveOccurred())
@@ -64,7 +63,7 @@ var _ = Describe("StateBootstrap", func() {
 
 		Context("when there is a current version state file", func() {
 			BeforeEach(func() {
-				err := ioutil.WriteFile(filepath.Join(tempDir, "bbl-state.json"), []byte(`{
+				err := os.WriteFile(filepath.Join(tempDir, "bbl-state.json"), []byte(`{
 					"version": 13,
 					"bblVersion": "some-bbl-version",
 					"iaas": "aws",
@@ -106,7 +105,7 @@ var _ = Describe("StateBootstrap", func() {
 
 		Context("when there is a state file missing BBL version", func() {
 			BeforeEach(func() {
-				err := ioutil.WriteFile(filepath.Join(tempDir, "bbl-state.json"), []byte(`{
+				err := os.WriteFile(filepath.Join(tempDir, "bbl-state.json"), []byte(`{
 					"version": 12
 				}`), storage.StateMode)
 				Expect(err).NotTo(HaveOccurred())
@@ -125,7 +124,7 @@ var _ = Describe("StateBootstrap", func() {
 
 		Context("when there is a state file with a newer version than internal version", func() {
 			BeforeEach(func() {
-				err := ioutil.WriteFile(filepath.Join(tempDir, "bbl-state.json"), []byte(`{
+				err := os.WriteFile(filepath.Join(tempDir, "bbl-state.json"), []byte(`{
 					"version": 999,
 					"bblVersion": "9.9.9"
 				}`), storage.StateMode)
@@ -148,7 +147,7 @@ var _ = Describe("StateBootstrap", func() {
 
 			Context("when state.json exists", func() {
 				BeforeEach(func() {
-					err := ioutil.WriteFile(filepath.Join(tempDir, "state.json"), []byte(`{
+					err := os.WriteFile(filepath.Join(tempDir, "state.json"), []byte(`{
 						"version": 2,
 						"aws": {
 							"accessKeyId": "some-aws-access-key-id",
@@ -193,7 +192,7 @@ var _ = Describe("StateBootstrap", func() {
 
 			Context("when it fails to decode the bbl-state.json file", func() {
 				It("returns an error", func() {
-					err := ioutil.WriteFile(filepath.Join(tempDir, "bbl-state.json"), []byte(`%%%%`), storage.StateMode)
+					err := os.WriteFile(filepath.Join(tempDir, "bbl-state.json"), []byte(`%%%%`), storage.StateMode)
 					Expect(err).NotTo(HaveOccurred())
 
 					_, err = bootstrap.GetState(tempDir)

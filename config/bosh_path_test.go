@@ -1,7 +1,6 @@
 package config_test
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -20,12 +19,12 @@ var _ = Describe("GetBOSHPath", func() {
 	BeforeEach(func() {
 		originalPath = os.Getenv("PATH")
 
-		tempDir, err := ioutil.TempDir("", "")
+		tempDir, err := os.MkdirTemp("", "")
 		Expect(err).NotTo(HaveOccurred())
 
 		pathToBOSH = filepath.Join(tempDir, "bosh")
 
-		err = ioutil.WriteFile(pathToBOSH, []byte("fake"), os.ModePerm)
+		err = os.WriteFile(pathToBOSH, []byte("fake"), os.ModePerm)
 		Expect(err).NotTo(HaveOccurred())
 	})
 

@@ -3,7 +3,7 @@ package aws_test
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -218,7 +218,7 @@ iso_az_subnet_id_mapping:
 		Context("when there are no lbs", func() {
 			BeforeEach(func() {
 				var err error
-				baseOpsYAMLContents, err := ioutil.ReadFile(filepath.Join("fixtures", "aws-ops.yml"))
+				baseOpsYAMLContents, err := os.ReadFile(filepath.Join("fixtures", "aws-ops.yml"))
 				Expect(err).NotTo(HaveOccurred())
 				expectedOpsYAML = string(baseOpsYAMLContents)
 			})
@@ -233,9 +233,9 @@ iso_az_subnet_id_mapping:
 
 		Context("when there are cf lbs", func() {
 			BeforeEach(func() {
-				baseOpsYAMLContents, err := ioutil.ReadFile(filepath.Join("fixtures", "aws-ops.yml"))
+				baseOpsYAMLContents, err := os.ReadFile(filepath.Join("fixtures", "aws-ops.yml"))
 				Expect(err).NotTo(HaveOccurred())
-				lbsOpsYAMLContents, err := ioutil.ReadFile(filepath.Join("fixtures", "terraform-aws-cf-lb-ops.yml"))
+				lbsOpsYAMLContents, err := os.ReadFile(filepath.Join("fixtures", "terraform-aws-cf-lb-ops.yml"))
 				Expect(err).NotTo(HaveOccurred())
 				expectedOpsYAML = strings.Join([]string{string(baseOpsYAMLContents), string(lbsOpsYAMLContents)}, "\n")
 			})
@@ -251,9 +251,9 @@ iso_az_subnet_id_mapping:
 
 		Context("when there is a concourse lb", func() {
 			BeforeEach(func() {
-				baseOpsYAMLContents, err := ioutil.ReadFile(filepath.Join("fixtures", "aws-ops.yml"))
+				baseOpsYAMLContents, err := os.ReadFile(filepath.Join("fixtures", "aws-ops.yml"))
 				Expect(err).NotTo(HaveOccurred())
-				lbsOpsYAMLContents, err := ioutil.ReadFile(filepath.Join("fixtures", "aws-concourse-lb-ops.yml"))
+				lbsOpsYAMLContents, err := os.ReadFile(filepath.Join("fixtures", "aws-concourse-lb-ops.yml"))
 				Expect(err).NotTo(HaveOccurred())
 				expectedOpsYAML = strings.Join([]string{string(baseOpsYAMLContents), string(lbsOpsYAMLContents)}, "\n")
 			})
