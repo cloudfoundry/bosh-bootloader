@@ -6,5 +6,5 @@ ROOT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 rm -rf ${ROOT_DIR}/bosh/deployments/bosh-deployment/.git
 rm -rf ${ROOT_DIR}/bosh/deployments/jumpbox-deployment/.git
 
-packr2 install -ldflags="-X main.Version=$(git rev-parse --short=7 HEAD)" github.com/cloudfoundry/bosh-bootloader/bbl
+go install -ldflags="-X main.Version=$(git rev-parse --short=7 HEAD)"
 $GOPATH/bin/bbl "${@:-"-v"}"

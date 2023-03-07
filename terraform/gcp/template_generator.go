@@ -1,16 +1,17 @@
 package gcp
 
 import (
+	"embed"
 	"fmt"
 	"strings"
 
 	"github.com/cloudfoundry/bosh-bootloader/storage"
-	"github.com/gobuffalo/packr/v2"
 )
 
 const templatesPath = "./templates"
 
 type templates struct {
+	versions     string
 	vars         string
 	jumpbox      string
 	boshDirector string
@@ -20,12 +21,17 @@ type templates struct {
 }
 
 type TemplateGenerator struct {
-	box *packr.Box
+	EmbedData embed.FS
+	Path      string
 }
+
+//go:embed templates
+var contents embed.FS
 
 func NewTemplateGenerator() TemplateGenerator {
 	return TemplateGenerator{
-		box: packr.New("gcp-templates", templatesPath),
+		EmbedData: contents,
+		Path:      "templates",
 	}
 }
 
@@ -109,13 +115,22 @@ func (t TemplateGenerator) readTemplates() templates {
 
 	var errors []error
 	for item := range listings {
-		content, err := t.box.FindString(item)
+		content, err := t.EmbedData.ReadDir(t.Path)
+		for _, embedDataEntry := range content {
+			if strings.Contains(embedDataEntry.Name(), item) {
+				out, err := t.EmbedData.ReadFile(fmt.Sprintf("%s/%s", t.Path, embedDataEntry.Name()))
+				if err != nil {
+					errors = append(errors, err)
+					break
+				}
+				listings[item] = string(out)
+				break
+			}
+		}
 		if err != nil {
 			errors = append(errors, err)
 			continue
 		}
-
-		listings[item] = content
 	}
 
 	if errors != nil {

@@ -350,7 +350,8 @@ var _ = Describe("CertificateValidator", func() {
 					err := certificateValidator.Validate(invalidCert, realKey, []byte{})
 
 					expectedErr := multierror.NewMultiError("")
-					expectedErr.Add(errors.New("asn1: syntax error: sequence truncated"))
+					expectedErr.Add(errors.New("x509: malformed certificate"))
+					expectedErr.Add(errors.New("failed to parse certificate: x509: malformed certificate"))
 					Expect(err).To(Equal(expectedErr))
 				})
 			})

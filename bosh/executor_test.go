@@ -1,6 +1,7 @@
 package bosh_test
 
 import (
+	"embed"
 	"errors"
 	"fmt"
 	"io"
@@ -11,12 +12,14 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/fileio"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
-	"github.com/gobuffalo/packr/v2"
 	"github.com/spf13/afero"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
+
+//go:embed assets/*
+var content embed.FS
 
 var _ = Describe("Executor", func() {
 	var (
@@ -63,14 +66,12 @@ var _ = Describe("Executor", func() {
 			StateDir: stateDir,
 		}
 
-		box := packr.New("some-name", "./deployments")
-		box.AddString("jumpbox-deployment/no-external-ip.yml", "no-ip")
-		box.AddString("jumpbox-deployment/aws/cpi.yml", "vsphere-cpi")
-		box.AddString("jumpbox-deployment/azure/cpi.yml", "azure-cpi")
-		box.AddString("bosh-deployment/vsphere/cpi.yml", "vsphere-cpi")
-		box.AddString("bosh-deployment/LICENSE", "my-license")
-
-		executor = bosh.Executor{CLI: cli, FS: fs, Box: box}
+		executor = bosh.Executor{
+			CLI:             cli,
+			FS:              fs,
+			EmbedData:       content,
+			EmbedDataPrefix: "assets/",
+		}
 	})
 
 	Describe("PlanJumpbox", func() {
@@ -89,7 +90,7 @@ var _ = Describe("Executor", func() {
 
 				contents, err = fs.ReadFile(nestedPath)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(string(contents)).To(Equal("vsphere-cpi"))
+				Expect(string(contents)).To(Equal("aws-cpi"))
 			})
 
 			By("writing create-env and delete-env scripts", func() {
@@ -468,12 +469,11 @@ var _ = Describe("Executor", func() {
 			stateDir, err = fs.TempDir("", "")
 			Expect(err).NotTo(HaveOccurred())
 
-			box := packr.New("another-test", "./deployments")
-
 			executor = bosh.Executor{
-				CLI: cli,
-				FS:  fs,
-				Box: box,
+				CLI:             cli,
+				FS:              fs,
+				EmbedData:       content,
+				EmbedDataPrefix: "assets/",
 			}
 
 			dirInput = bosh.DirInput{
@@ -674,12 +674,11 @@ var _ = Describe("Executor", func() {
 			stateDir, err = fs.TempDir("", "")
 			Expect(err).NotTo(HaveOccurred())
 
-			box := packr.New("best-test-box", "./deployments")
-
 			executor = bosh.Executor{
-				CLI: cli,
-				FS:  fs,
-				Box: box,
+				CLI:             cli,
+				FS:              fs,
+				EmbedData:       content,
+				EmbedDataPrefix: "assets/",
 			}
 
 			dirInput = bosh.DirInput{

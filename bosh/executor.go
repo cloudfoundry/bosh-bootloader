@@ -2,9 +2,11 @@ package bosh
 
 import (
 	"bytes"
+	"embed"
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -13,7 +15,6 @@ import (
 
 	"github.com/cloudfoundry/bosh-bootloader/fileio"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
-	"github.com/gobuffalo/packr/v2"
 )
 
 type executorFs interface {
@@ -23,9 +24,10 @@ type executorFs interface {
 }
 
 type Executor struct {
-	CLI cli
-	FS  executorFs
-	Box *packr.Box
+	CLI             cli
+	FS              executorFs
+	EmbedData       embed.FS
+	EmbedDataPrefix string
 }
 
 type DirInput struct {
@@ -50,41 +52,59 @@ const (
 	boshDeploymentRepo    = "bosh-deployment"
 )
 
+//go:embed deployments/*
+var content embed.FS
+
 func NewExecutor(cmd cli, fs executorFs) Executor {
 	return Executor{
-		CLI: cmd,
-		FS:  fs,
-		Box: packr.New("setup-files", "./deployments"),
+		CLI:             cmd,
+		FS:              fs,
+		EmbedData:       content,
+		EmbedDataPrefix: "deployments/",
 	}
 }
-
-func (e Executor) getSetupFiles(sourcePath, destPath string) []setupFile {
-	files := []setupFile{}
-
-	assetNames := e.Box.List()
-
-	for _, asset := range assetNames {
-		if strings.Contains(asset, sourcePath) {
-			fileContents, err := e.Box.Find(asset)
+func extractNestedFiles(fs embed.FS, fileList []setupFile, path string, trimPrefix string, destPath string, source_entries ...fs.DirEntry) []setupFile {
+	for _, source_entry := range source_entries {
+		if source_entry.IsDir() {
+			dirContents, err := fs.ReadDir(fmt.Sprintf("%v/%v", path, source_entry.Name()))
 			if err != nil {
-				panic(err) // this panic is intentional as it was exactly the same way MustAsset worked previously in go-bindata
+				panic(err)
 			}
-
-			files = append(files, setupFile{
-				source:   strings.TrimPrefix(asset, sourcePath),
-				dest:     filepath.Join(destPath, strings.TrimPrefix(asset, sourcePath)),
-				contents: fileContents,
+			fileList = extractNestedFiles(fs, fileList, filepath.Join(path, source_entry.Name()), trimPrefix, destPath, dirContents...)
+		} else {
+			contents, err := fs.ReadFile(filepath.Join(path, source_entry.Name()))
+			if err != nil {
+				panic(err)
+			}
+			fileList = append(fileList, setupFile{
+				source:   source_entry.Name(),
+				dest:     filepath.Join(destPath, strings.TrimPrefix(path, trimPrefix), source_entry.Name()),
+				contents: contents,
 			})
 		}
+
 	}
 
-	return files
+	return fileList
+}
+func (e Executor) getSetupFiles(sourcePath, destPath string) []setupFile {
+	files := []setupFile{}
+	fullPath := filepath.Join(e.EmbedDataPrefix, sourcePath)
+
+	assetNames, err := e.EmbedData.ReadDir(fullPath)
+	prefix := filepath.Join(e.EmbedDataPrefix, sourcePath)
+
+	if err != nil {
+		panic(err)
+	}
+	return extractNestedFiles(e.EmbedData, files, fullPath, prefix, destPath, assetNames...)
 }
 
 func (e Executor) PlanJumpbox(input DirInput, deploymentDir, iaas string) error {
 	setupFiles := e.getSetupFiles(jumpboxDeploymentRepo, deploymentDir)
 
 	for _, f := range setupFiles {
+		// ignore error if dir already exists
 		os.MkdirAll(filepath.Dir(f.dest), os.ModePerm)
 		err := e.FS.WriteFile(f.dest, f.contents, storage.StateMode)
 		if err != nil {

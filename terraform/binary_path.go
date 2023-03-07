@@ -1,21 +1,20 @@
 package terraform
 
 import (
+	"embed"
+	"errors"
 	"fmt"
 	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/gobuffalo/packr/v2"
 	"github.com/spf13/afero"
 )
 
 const (
 	tfBinDataAssetName = "terraform"
 	bblTfBinaryName    = "bbl-terraform"
-	terraformBinary    = "./binary_dist"
 	terraformModTime   = "terraform-mod-time"
 )
 
@@ -28,35 +27,38 @@ type tfBinaryPathFs interface {
 }
 
 type Binary struct {
-	Box  *packr.Box
-	FS   tfBinaryPathFs
-	Path string
+	FS        tfBinaryPathFs
+	EmbedData embed.FS
+	Path      string
 }
+
+//go:embed binary_dist
+var content embed.FS
 
 func NewBinary() *Binary {
 	fs := afero.Afero{Fs: afero.NewOsFs()}
 	return &Binary{
-		Box:  packr.New("terraform", terraformBinary),
-		FS:   fs,
-		Path: filepath.Join(fs.GetTempDir(""), bblTfBinaryName),
+		FS:        fs,
+		Path:      "binary_dist",
+		EmbedData: content,
 	}
 }
 
 func (binary *Binary) BinaryPath() (string, error) {
-	exists, err := binary.FS.Exists(binary.Path)
+	destinationPath := fmt.Sprintf("%s/%s", binary.FS.GetTempDir(os.TempDir()), bblTfBinaryName)
+	exists, err := binary.FS.Exists(destinationPath)
 	if err != nil {
 		return "", err
 	}
 
 	if !exists {
-		return binary.Path, binary.installTfBinary()
+		return destinationPath, binary.installTfBinary()
 	}
 
-	foundBinaryFileInfo, err := binary.FS.Stat(binary.Path)
+	foundBinaryFileInfo, err := binary.FS.Stat(destinationPath)
 	if err != nil {
 		return "", err
 	}
-
 	distModTime, err := binary.RetrieveModTime()
 	if err != nil {
 		return "", err
@@ -64,41 +66,41 @@ func (binary *Binary) BinaryPath() (string, error) {
 
 	foundBinaryModTime := foundBinaryFileInfo.ModTime()
 	if !distModTime.After(foundBinaryModTime) {
-		return binary.Path, nil
+		return destinationPath, nil
 	}
 
-	return binary.Path, binary.installTfBinary()
+	return destinationPath, binary.installTfBinary()
 }
 
 func (binary *Binary) installTfBinary() error {
-	terraBytes, err := binary.Box.Find(tfBinDataAssetName)
+	destinationPath := fmt.Sprintf("%s/%s", binary.FS.GetTempDir(os.TempDir()), bblTfBinaryName)
+	sourcePath := fmt.Sprintf("%s/%s", binary.Path, tfBinDataAssetName)
+	terraBytes, err := binary.EmbedData.ReadFile(sourcePath)
+	if err != nil {
+		return errors.New("missing terraform")
+	}
+
+	err = binary.FS.WriteFile(destinationPath, terraBytes, os.ModePerm)
 	if err != nil {
 		return err
 	}
-
-	err = binary.FS.WriteFile(binary.Path, terraBytes, os.ModePerm)
-	if err != nil {
-		return err
-	}
-
 	m, err := binary.RetrieveModTime()
 	if err != nil {
 		return err
 	}
 
-	return binary.FS.Chtimes(binary.Path, time.Now(), m)
+	return binary.FS.Chtimes(destinationPath, time.Now(), m)
 }
 
 func (binary *Binary) RetrieveModTime() (time.Time, error) {
-	timeStr, err := binary.Box.FindString(terraformModTime)
+	timeStr, err := binary.EmbedData.ReadFile(fmt.Sprintf("%s/%s", binary.Path, terraformModTime))
 	if err != nil {
 		return time.Time{}, fmt.Errorf("could not find %s file", terraformModTime)
 	}
 
-	tmNum, err := strconv.ParseInt(strings.TrimSpace(timeStr), 10, 64)
+	tmNum, err := strconv.ParseInt(strings.TrimSpace(string(timeStr)), 10, 64)
 	if err != nil {
 		return time.Time{}, fmt.Errorf("incorrect format of time in terraform-mod-time: %s", err)
 	}
-
 	return time.Unix(tmNum, 0), nil
 }
