@@ -68,11 +68,9 @@ function build_bbl() {
 
   echo "Building amd64 for $2"
   CGO_ENABLED=0 GOARCH="amd64" GOOS="$2" \
-    packr2 build \
+    go build \
     -ldflags "-X main.Version=${BBL_VERSION}" \
     -o "${build_path}" .
-
-  packr2 clean
 }
 
 function determine_build_path() {
