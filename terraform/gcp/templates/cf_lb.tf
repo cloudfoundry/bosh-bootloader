@@ -28,7 +28,7 @@ output "ws_lb_ip" {
 
 resource "google_compute_firewall" "firewall-cf" {
   name       = "${var.env_id}-cf-open"
-  depends_on = ["google_compute_network.bbl-network"]
+  depends_on = [google_compute_network.bbl-network]
   network    = "${google_compute_network.bbl-network.name}"
 
   allow {
@@ -106,7 +106,7 @@ resource "google_compute_http_health_check" "cf-public-health-check" {
 
 resource "google_compute_firewall" "cf-health-check" {
   name       = "${var.env_id}-cf-health-check"
-  depends_on = ["google_compute_network.bbl-network"]
+  depends_on = [google_compute_network.bbl-network]
   network    = "${google_compute_network.bbl-network.name}"
 
   allow {
@@ -128,7 +128,7 @@ resource "google_compute_address" "cf-ssh-proxy" {
 
 resource "google_compute_firewall" "cf-ssh-proxy" {
   name       = "${var.env_id}-cf-ssh-proxy-open"
-  depends_on = ["google_compute_network.bbl-network"]
+  depends_on = [google_compute_network.bbl-network]
   network    = "${google_compute_network.bbl-network.name}"
 
   allow {
@@ -161,7 +161,7 @@ output "tcp_router_target_pool" {
 
 resource "google_compute_firewall" "cf-tcp-router" {
   name       = "${var.env_id}-cf-tcp-router"
-  depends_on = ["google_compute_network.bbl-network"]
+  depends_on = [google_compute_network.bbl-network]
   network    = "${google_compute_network.bbl-network.name}"
 
   allow {

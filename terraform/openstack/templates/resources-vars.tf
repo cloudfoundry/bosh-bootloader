@@ -11,7 +11,7 @@ variable "availability_zone" {
 variable "dns_nameservers" {
   description = "List of DNS server IPs"
   default = ["8.8.8.8"]
-  type = "list"
+  type = list
 }
 
 variable "ext_net_name" {

@@ -171,7 +171,7 @@ resource "aws_security_group_rule" "isolation_segments_to_bosh_all_traffic_rule"
 
   description = "ALL traffic from iso-sg to bosh"
 
-  depends_on               = ["aws_security_group.bosh_security_group"]
+  depends_on               = [aws_security_group.bosh_security_group]
   security_group_id        = "${aws_security_group.bosh_security_group.id}"
   type                     = "ingress"
   protocol                 = "-1"
@@ -185,7 +185,7 @@ resource "aws_security_group_rule" "shared_diego_bbs_to_isolated_cells_rule" {
 
   description = "TCP traffic from shared diego bbs to iso-sg"
 
-  depends_on               = ["aws_security_group.iso_security_group"]
+  depends_on               = [aws_security_group.iso_security_group]
   security_group_id        = "${aws_security_group.iso_security_group.id}"
   type                     = "ingress"
   protocol                 = "tcp"

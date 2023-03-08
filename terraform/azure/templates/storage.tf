@@ -17,7 +17,7 @@ resource "azurerm_storage_account" "bosh" {
   }
 
   lifecycle {
-    ignore_changes = ["name"]
+    ignore_changes = [name]
   }
 }
 
