@@ -75,7 +75,7 @@ resource "aws_security_group" "nat_security_group" {
   }
 
   lifecycle {
-    ignore_changes = ["name"]
+    ignore_changes = [name]
   }
 }
 
@@ -399,7 +399,7 @@ resource "aws_subnet" "internal_subnets" {
   }
 
   lifecycle {
-    ignore_changes = ["cidr_block", "availability_zone"]
+    ignore_changes = [cidr_block, availability_zone]
   }
 }
 

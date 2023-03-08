@@ -6,6 +6,13 @@ provider "openstack" {
   domain_name = "${var.domain_name}"
   insecure    = "${var.insecure}"
   cacert_file = "${var.cacert_file}"
+}
 
-  version = "~> 1.16, < 1.44"
+terraform {
+  required_providers {
+    openstack = {
+      source = "terraform-provider-openstack/openstack"
+      version = ">= 1.50.0"
+    }
+  }
 }
