@@ -3,7 +3,7 @@ package gcp_test
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -133,7 +133,7 @@ concourse_target_pool: some-concourse-target-pool
 
 		BeforeEach(func() {
 			var err error
-			expectedOpsFile, err = ioutil.ReadFile(filepath.Join("fixtures", "gcp-ops.yml"))
+			expectedOpsFile, err = os.ReadFile(filepath.Join("fixtures", "gcp-ops.yml"))
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -146,7 +146,7 @@ concourse_target_pool: some-concourse-target-pool
 		DescribeTable("returns an ops file with additional vm extensions to support lb",
 			func(lbType string) {
 				incomingState.LB.Type = lbType
-				expectedLBOpsFile, err := ioutil.ReadFile(filepath.Join("fixtures", fmt.Sprintf("gcp-%s-lb-ops.yml", lbType)))
+				expectedLBOpsFile, err := os.ReadFile(filepath.Join("fixtures", fmt.Sprintf("gcp-%s-lb-ops.yml", lbType)))
 				Expect(err).NotTo(HaveOccurred())
 				expectedOps := strings.Join([]string{string(expectedOpsFile), string(expectedLBOpsFile)}, "\n")
 

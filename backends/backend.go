@@ -3,7 +3,6 @@ package backends
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	"github.com/araddon/gou"
@@ -111,7 +110,7 @@ func (g gcsStateBackend) getGCPServiceAccountKey(key string) (string, error) {
 		return key, nil
 	}
 
-	keyBytes, err := ioutil.ReadFile(key)
+	keyBytes, err := os.ReadFile(key)
 	if err != nil {
 		return "", fmt.Errorf("Reading key: %v", err)
 	}

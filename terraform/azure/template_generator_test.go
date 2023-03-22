@@ -2,7 +2,7 @@ package azure_test
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"strings"
 
 	"github.com/cloudfoundry/bosh-bootloader/storage"
@@ -66,7 +66,7 @@ var _ = Describe("TemplateGenerator", func() {
 func expectTemplate(parts ...string) string {
 	var contents []string
 	for _, p := range parts {
-		content, err := ioutil.ReadFile(fmt.Sprintf("templates/%s.tf", p))
+		content, err := os.ReadFile(fmt.Sprintf("templates/%s.tf", p))
 		Expect(err).NotTo(HaveOccurred())
 		contents = append(contents, string(content))
 	}

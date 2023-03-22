@@ -2,7 +2,6 @@ package storage_test
 
 import (
 	"errors"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -25,7 +24,7 @@ var _ = Describe("Store", func() {
 
 	BeforeEach(func() {
 		var err error
-		tempDir, err = ioutil.TempDir("", "")
+		tempDir, err = os.MkdirTemp("", "")
 
 		fileIO = &fakes.FileIO{}
 		garbageCollector = &fakes.GarbageCollector{}

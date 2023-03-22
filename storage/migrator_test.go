@@ -2,7 +2,6 @@ package storage_test
 
 import (
 	"errors"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -32,7 +31,7 @@ var _ = Describe("Migrator", func() {
 		migrator = storage.NewMigrator(store, fileIO)
 
 		var err error
-		stateDir, err = ioutil.TempDir("", "")
+		stateDir, err = os.MkdirTemp("", "")
 		Expect(err).NotTo(HaveOccurred())
 
 		cloudConfigDir = filepath.Join(stateDir, "cloud-config")

@@ -2,7 +2,6 @@ package bosh_test
 
 import (
 	"errors"
-	"io/ioutil"
 	"os"
 
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
@@ -511,7 +510,7 @@ director_ssl:
 
 		BeforeEach(func() {
 			var err error
-			varsDir, err = ioutil.TempDir("", "")
+			varsDir, err = os.MkdirTemp("", "")
 			Expect(err).NotTo(HaveOccurred())
 
 			stateStore.GetVarsDirCall.Returns.Directory = varsDir

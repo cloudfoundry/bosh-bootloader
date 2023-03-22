@@ -3,7 +3,6 @@ package acceptance
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	. "github.com/onsi/ginkgo"
@@ -82,7 +81,7 @@ func LoadConfig() (Config, error) {
 	}
 
 	if config.StateFileDir == "" {
-		dir, err := ioutil.TempDir("", "")
+		dir, err := os.MkdirTemp("", "")
 		if err != nil {
 			return Config{}, err
 		}

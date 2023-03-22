@@ -1,7 +1,6 @@
 package config
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -68,7 +67,7 @@ func ParseArgs(args []string) (GlobalFlags, []string, error) {
 	}
 
 	if globals.StateBucket != "" && globals.StateDir == "" {
-		tempDir, err := ioutil.TempDir("", "bbl-state")
+		tempDir, err := os.MkdirTemp("", "bbl-state")
 		if err != nil {
 			return GlobalFlags{}, remainingArgs, err // not tested
 		}

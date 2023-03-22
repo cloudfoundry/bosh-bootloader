@@ -1,7 +1,6 @@
 package acceptance_test
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -69,7 +68,7 @@ var _ = Describe("plan", func() {
 
 		By("modifying artifacts", func() {
 			for _, f := range expectedArtifacts {
-				err := ioutil.WriteFile(f, []byte("modified after plan"), storage.StateMode)
+				err := os.WriteFile(f, []byte("modified after plan"), storage.StateMode)
 				Expect(err).NotTo(HaveOccurred())
 			}
 		})
@@ -90,7 +89,7 @@ var _ = Describe("plan", func() {
 
 		By("verifying that modified artifacts were overwritten", func() {
 			for _, f := range expectedArtifacts {
-				contents, err := ioutil.ReadFile(f)
+				contents, err := os.ReadFile(f)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(string(contents)).NotTo(ContainSubstring("modified after plan"))
 			}

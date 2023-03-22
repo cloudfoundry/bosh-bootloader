@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"strings"
@@ -184,9 +183,9 @@ func (b BBL) SaveDirectorCA() string {
 	}, stdout, os.Stderr)
 	Eventually(session, 10*time.Minute).Should(gexec.Exit(0))
 
-	file, err := ioutil.TempFile("", "")
-	defer file.Close()
+	file, err := os.CreateTemp("", "")
 	Expect(err).NotTo(HaveOccurred())
+	defer file.Close()
 
 	file.Write(stdout.Bytes())
 

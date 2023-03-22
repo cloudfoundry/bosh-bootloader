@@ -7,7 +7,7 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"strings"
 
@@ -190,7 +190,7 @@ func readFile(propertyName string, flagName string, filePath string) ([]byte, er
 		return []byte{}, fmt.Errorf(`%s is not a regular file: %q`, propertyName, filePath)
 	}
 
-	fileData, err := ioutil.ReadAll(file)
+	fileData, err := io.ReadAll(file)
 	if err != nil {
 		return []byte{}, fmt.Errorf("%s: %s", err, filePath)
 	}
