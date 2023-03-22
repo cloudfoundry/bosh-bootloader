@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"os/user"
@@ -42,15 +41,15 @@ var _ = Describe("Upgrade", func() {
 		Expect(err).NotTo(HaveOccurred())
 		var bblBinaryLocation string
 		if runtime.GOOS == "darwin" {
-			bblBinaryLocation = fmt.Sprintf(BBLReleaseURL, "v8.4.41", "bbl-v8.4.41_osx")
+			bblBinaryLocation = fmt.Sprintf(BBLReleaseURL, "v8.4.111", "bbl-v8.4.111_osx")
 		} else {
-			bblBinaryLocation = fmt.Sprintf(BBLReleaseURL, "v8.4.41", "bbl-v8.4.41_linux_x86-64")
+			bblBinaryLocation = fmt.Sprintf(BBLReleaseURL, "v8.4.111", "bbl-v8.4.111_linux_x86-64")
 		}
 
 		resp, err := http.Get(bblBinaryLocation)
 		Expect(err).NotTo(HaveOccurred())
 
-		f, err = ioutil.TempFile("", "")
+		f, err = os.CreateTemp("", "")
 		Expect(err).NotTo(HaveOccurred())
 
 		_, err = io.Copy(f, resp.Body)
@@ -121,7 +120,7 @@ var _ = Describe("Upgrade", func() {
 
 		By("cleaning out an installation directory holding onto old golang", func() {
 			removeInstallation := func(stateFileName string) {
-				stateJSON, err := ioutil.ReadFile(filepath.Join(configuration.StateFileDir, "vars", stateFileName))
+				stateJSON, err := os.ReadFile(filepath.Join(configuration.StateFileDir, "vars", stateFileName))
 				Expect(err).NotTo(HaveOccurred())
 
 				var state struct {

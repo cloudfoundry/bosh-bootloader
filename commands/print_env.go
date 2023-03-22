@@ -3,7 +3,7 @@ package commands
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"strings"
 
 	"github.com/cloudfoundry/bosh-bootloader/fileio"
@@ -116,7 +116,7 @@ func (p PrintEnv) Execute(args []string, state storage.State) error {
 			IaasType string            `json:"iaas_type"`
 			Bosh     map[string]string `json:"bosh"`
 		}
-		metadataContents, err := ioutil.ReadFile(metadataFile)
+		metadataContents, err := os.ReadFile(metadataFile)
 		if err != nil {
 			p.stderrLogger.Println(fmt.Sprintf("Failed to read %s: %s", metadataFile, err))
 			return err
@@ -138,7 +138,7 @@ func (p PrintEnv) Execute(args []string, state storage.State) error {
 		variables["CREDHUB_CA_CERT"] = metadata.Bosh["credhub_ca_cert"]
 
 		privateKeyPath := fmt.Sprintf("/tmp/%s.priv", metadata.Name)
-		err = ioutil.WriteFile(privateKeyPath, []byte(metadata.Bosh["jumpbox_private_key"]), 0600)
+		err = os.WriteFile(privateKeyPath, []byte(metadata.Bosh["jumpbox_private_key"]), 0600)
 		if err != nil {
 			p.stderrLogger.Println(fmt.Sprintf("Failed to write private key to %s: %s", privateKeyPath, err))
 			return err

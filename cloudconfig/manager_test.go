@@ -2,7 +2,6 @@ package cloudconfig_test
 
 import (
 	"errors"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -60,7 +59,7 @@ var _ = Describe("Manager", func() {
 		opsGenerator.GenerateVarsCall.Returns.VarsYAML = "some-vars"
 
 		var err error
-		baseCloudConfig, err = ioutil.ReadFile("fixtures/base-cloud-config.yml")
+		baseCloudConfig, err = os.ReadFile("fixtures/base-cloud-config.yml")
 		Expect(err).NotTo(HaveOccurred())
 
 		manager = cloudconfig.NewManager(logger, configUpdater, dirProvider, opsGenerator, terraformManager, fileIO)

@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -137,7 +136,7 @@ var _ = Describe("PrintEnv", func() {
 
 			BeforeEach(func() {
 				var err error
-				tmpDir, err = ioutil.TempDir("", "")
+				tmpDir, err = os.MkdirTemp("", "")
 				Expect(err).NotTo(HaveOccurred())
 
 				metadataState = map[string]interface{}{
@@ -165,7 +164,7 @@ var _ = Describe("PrintEnv", func() {
 
 				metadataFilePath = filepath.Join(tmpDir, "metadata.json")
 
-				err = ioutil.WriteFile(metadataFilePath, metadataJson, 0660)
+				err = os.WriteFile(metadataFilePath, metadataJson, 0660)
 				Expect(err).NotTo(HaveOccurred())
 			})
 
@@ -192,7 +191,7 @@ var _ = Describe("PrintEnv", func() {
 				Expect(logger.PrintlnCall.Messages).To(ContainElement(`export JUMPBOX_PRIVATE_KEY=/tmp/sweetsixteen.priv`))
 				Expect(logger.PrintlnCall.Messages).To(ContainElement(`export BOSH_ALL_PROXY=ssh+socks5://jumpbox@8.8.8.8:22?private-key=/tmp/sweetsixteen.priv`))
 
-				contents, err := ioutil.ReadFile("/tmp/sweetsixteen.priv")
+				contents, err := os.ReadFile("/tmp/sweetsixteen.priv")
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(string(contents)).To(Equal("-----BEGIN RSA PRIVATE KEY-----\nsome-jumpbox-private-key\n-----END RSA PRIVATE KEY-----\n"))
@@ -222,7 +221,7 @@ var _ = Describe("PrintEnv", func() {
 				Context("when unmarshalling fails", func() {
 					BeforeEach(func() {
 						badJsonFilePath := filepath.Join(tmpDir, "bad.json")
-						err := ioutil.WriteFile(badJsonFilePath, []byte(`{"name": "", asdf}`), 0660)
+						err := os.WriteFile(badJsonFilePath, []byte(`{"name": "", asdf}`), 0660)
 						Expect(err).NotTo(HaveOccurred())
 					})
 

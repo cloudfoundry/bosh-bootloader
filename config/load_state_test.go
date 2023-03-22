@@ -3,7 +3,6 @@ package config_test
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -279,7 +278,7 @@ var _ = Describe("LoadState", func() {
 				var stateDir string
 				BeforeEach(func() {
 					var err error
-					stateDir, err = ioutil.TempDir("", "my-state-dir-")
+					stateDir, err = os.MkdirTemp("", "my-state-dir-")
 					Expect(err).NotTo(HaveOccurred())
 				})
 
@@ -821,7 +820,7 @@ var _ = Describe("LoadState", func() {
 			)
 			BeforeEach(func() {
 				var err error
-				tempFile, err = ioutil.TempFile("", "temp")
+				tempFile, err = os.CreateTemp("", "temp")
 				Expect(err).NotTo(HaveOccurred())
 				serviceAccountKey = `{"project_id": "some-project-id"}`
 

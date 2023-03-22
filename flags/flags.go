@@ -2,7 +2,7 @@ package flags
 
 import (
 	"flag"
-	"io/ioutil"
+	"io"
 )
 
 type Flags struct {
@@ -12,7 +12,7 @@ type Flags struct {
 func New(name string) Flags {
 	set := flag.NewFlagSet(name, flag.ContinueOnError)
 	set.Usage = func() {}
-	set.SetOutput(ioutil.Discard)
+	set.SetOutput(io.Discard)
 
 	return Flags{
 		set: set,

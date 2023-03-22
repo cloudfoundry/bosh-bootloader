@@ -3,7 +3,7 @@ package actors
 import (
 	"context"
 	"encoding/json"
-	"io/ioutil"
+	"os"
 
 	"golang.org/x/oauth2/google"
 
@@ -22,7 +22,7 @@ type gcpLBHelper struct {
 }
 
 func NewGCPLBHelper(config acceptance.Config) gcpLBHelper {
-	rawServiceAccountKey, err := ioutil.ReadFile(config.GCPServiceAccountKey)
+	rawServiceAccountKey, err := os.ReadFile(config.GCPServiceAccountKey)
 	if err != nil {
 		rawServiceAccountKey = []byte(config.GCPServiceAccountKey)
 	}

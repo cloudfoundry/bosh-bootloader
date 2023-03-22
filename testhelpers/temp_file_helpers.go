@@ -1,18 +1,17 @@
 package testhelpers
 
 import (
-	"io/ioutil"
 	"os"
 )
 
 func WriteByteContentsToTempFile(contents []byte) (string, error) {
-	tempFile, err := ioutil.TempFile("", "")
+	tempFile, err := os.CreateTemp("", "")
 	if err != nil {
 		return "", err
 	}
 	defer tempFile.Close()
 
-	err = ioutil.WriteFile(tempFile.Name(), contents, os.ModePerm)
+	err = os.WriteFile(tempFile.Name(), contents, os.ModePerm)
 	if err != nil {
 		return "", err
 	}

@@ -4,7 +4,6 @@ import (
 	"crypto/md5"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -36,7 +35,7 @@ func NewState(stateDirectory string) State {
 }
 
 func (s State) Checksum() string {
-	buf, err := ioutil.ReadFile(s.stateFilePath)
+	buf, err := os.ReadFile(s.stateFilePath)
 	Expect(err).NotTo(HaveOccurred())
 	return fmt.Sprintf("%x", md5.Sum(buf))
 }

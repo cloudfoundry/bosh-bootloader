@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -47,11 +46,11 @@ var _ = Describe("Executor", func() {
 		debugFalse = terraform.NewExecutor(cli, bufferingCLI, stateStore, fileIO, false, nil)
 
 		var err error
-		terraformDir, err = ioutil.TempDir("", "terraform")
+		terraformDir, err = os.MkdirTemp("", "terraform")
 		Expect(err).NotTo(HaveOccurred())
 		stateStore.GetTerraformDirCall.Returns.Directory = terraformDir
 
-		varsDir, err = ioutil.TempDir("", "vars")
+		varsDir, err = os.MkdirTemp("", "vars")
 		Expect(err).NotTo(HaveOccurred())
 		stateStore.GetVarsDirCall.Returns.Directory = varsDir
 
@@ -197,10 +196,10 @@ var _ = Describe("Executor", func() {
 					FileName: "bbl.tfvars",
 				},
 			}
-			err := ioutil.WriteFile(tfStatePath, []byte("some-updated-terraform-state"), storage.StateMode)
+			err := os.WriteFile(tfStatePath, []byte("some-updated-terraform-state"), storage.StateMode)
 			Expect(err).NotTo(HaveOccurred())
 
-			err = ioutil.WriteFile(tfVarsPath, []byte("some-tfvars"), storage.StateMode)
+			err = os.WriteFile(tfVarsPath, []byte("some-tfvars"), storage.StateMode)
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -272,7 +271,7 @@ var _ = Describe("Executor", func() {
 
 		Context("when terraform command run fails", func() {
 			BeforeEach(func() {
-				err := ioutil.WriteFile(tfStatePath, []byte("some-tf-state"), storage.StateMode)
+				err := os.WriteFile(tfStatePath, []byte("some-tf-state"), storage.StateMode)
 				Expect(err).NotTo(HaveOccurred())
 
 				cli.RunCall.Returns.Errors = []error{errors.New("the-executor-error")}
@@ -303,10 +302,10 @@ var _ = Describe("Executor", func() {
 					FileName: "bbl.tfvars",
 				},
 			}
-			err := ioutil.WriteFile(tfStatePath, []byte("some-updated-terraform-state"), storage.StateMode)
+			err := os.WriteFile(tfStatePath, []byte("some-updated-terraform-state"), storage.StateMode)
 			Expect(err).NotTo(HaveOccurred())
 
-			err = ioutil.WriteFile(tfVarsPath, []byte("some-tfvars"), storage.StateMode)
+			err = os.WriteFile(tfVarsPath, []byte("some-tfvars"), storage.StateMode)
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -382,7 +381,7 @@ var _ = Describe("Executor", func() {
 
 		Context("when terraform command run fails", func() {
 			BeforeEach(func() {
-				err := ioutil.WriteFile(tfStatePath, []byte("some-tf-state"), storage.StateMode)
+				err := os.WriteFile(tfStatePath, []byte("some-tf-state"), storage.StateMode)
 				Expect(err).NotTo(HaveOccurred())
 
 				cli.RunCall.Returns.Errors = []error{errors.New("the-executor-error")}
@@ -464,7 +463,7 @@ var _ = Describe("Executor", func() {
 
 			Context("when command run fails", func() {
 				BeforeEach(func() {
-					err := ioutil.WriteFile(tfStatePath, []byte("some-tf-state"), storage.StateMode)
+					err := os.WriteFile(tfStatePath, []byte("some-tf-state"), storage.StateMode)
 					Expect(err).NotTo(HaveOccurred())
 					cli.RunCall.Returns.Errors = []error{errors.New("the-executor-error")}
 				})
@@ -533,7 +532,7 @@ var _ = Describe("Executor", func() {
 
 	Describe("Output", func() {
 		BeforeEach(func() {
-			err := ioutil.WriteFile(tfStatePath, []byte("some-tf-state"), storage.StateMode)
+			err := os.WriteFile(tfStatePath, []byte("some-tf-state"), storage.StateMode)
 			Expect(err).NotTo(HaveOccurred())
 		})
 

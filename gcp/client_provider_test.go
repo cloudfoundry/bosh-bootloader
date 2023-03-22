@@ -3,9 +3,9 @@ package gcp_test
 import (
 	"crypto/tls"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"os"
 
 	"github.com/cloudfoundry/bosh-bootloader/gcp"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
@@ -21,7 +21,7 @@ var _ = Describe("NewClient", func() {
 	)
 
 	BeforeEach(func() {
-		privateKeyContents, err := ioutil.ReadFile("fixtures/service-account-key")
+		privateKeyContents, err := os.ReadFile("fixtures/service-account-key")
 		Expect(err).NotTo(HaveOccurred())
 		serviceAccountKey = fmt.Sprintf(`{
 				"type": "service_account",

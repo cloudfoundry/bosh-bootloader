@@ -2,7 +2,7 @@ package azure_test
 
 import (
 	"errors"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 
 	"github.com/cloudfoundry/bosh-bootloader/cloudconfig/azure"
@@ -37,7 +37,7 @@ var _ = Describe("AzureOpsGenerator", func() {
 		}}
 
 		var err error
-		expectedOpsFile, err = ioutil.ReadFile(filepath.Join("fixtures", "azure-ops.yml"))
+		expectedOpsFile, err = os.ReadFile(filepath.Join("fixtures", "azure-ops.yml"))
 		Expect(err).NotTo(HaveOccurred())
 
 		opsGenerator = azure.NewOpsGenerator(terraformManager)

@@ -4,7 +4,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"os"
 
 	"github.com/cloudfoundry/bosh-bootloader/certs"
 	"github.com/cloudfoundry/bosh-bootloader/testhelpers"
@@ -317,10 +317,10 @@ var _ = Describe("CertificateValidator", func() {
 
 			BeforeEach(func() {
 				var err error
-				cert, err = ioutil.ReadFile("fixtures/pkcs8.crt")
+				cert, err = os.ReadFile("fixtures/pkcs8.crt")
 				Expect(err).NotTo(HaveOccurred())
 
-				key, err = ioutil.ReadFile("fixtures/pkcs8.key")
+				key, err = os.ReadFile("fixtures/pkcs8.key")
 				Expect(err).NotTo(HaveOccurred())
 			})
 
