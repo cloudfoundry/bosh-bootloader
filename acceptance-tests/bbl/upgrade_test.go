@@ -93,7 +93,7 @@ var _ = Describe("Upgrade", func() {
 		Expect(err).NotTo(HaveOccurred())
 	})
 
-	FIt("is able to upgrade from an environment bbl'd up with an older version of bbl", func() {
+	It("is able to upgrade from an environment bbl'd up with an older version of bbl", func() {
 		By("cleaning up any leftovers", func() {
 			session := newBBL.CleanupLeftovers(newBBL.PredefinedEnvID())
 			Eventually(session, bblLeftoversTimeout).Should(gexec.Exit())
