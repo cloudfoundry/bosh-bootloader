@@ -4,11 +4,12 @@ platform: linux
 image_resource:
   type: docker-image
   source:
-    repository: cfinfrastructure/golang
+    repository: bosh/integration
+    tag: main
 
 inputs:
 - name: bbl-ci
-- name: bbl-release
+- name: bbl-release-official
 - name: bosh-bootloader
 - name: bosh-deployment
 - name: jumpbox-deployment

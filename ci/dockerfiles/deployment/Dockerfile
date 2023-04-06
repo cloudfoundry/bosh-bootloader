@@ -1,8 +1,8 @@
-FROM golang:1.13
-MAINTAINER https://github.com/cloudfoundry/bosh-bootloader
+FROM golang:1.19
+LABEL maintainer="https://github.com/cloudfoundry/bosh-bootloader"
 
 ARG GITHUB_TOKEN
-ENV TERRAFORM_VERSION 0.15.3
+ENV TERRAFORM_VERSION 1.3.9
 ENV RUBY_VERSION 3.0.1
 
 # Create testuser
