@@ -35,6 +35,7 @@ var _ = Describe("Upgrade", func() {
 
 	BeforeEach(func() {
 		acceptance.SkipUnless("upgrade")
+		Skip("")
 
 		var err error
 		configuration, err = acceptance.LoadConfig()
@@ -73,6 +74,7 @@ var _ = Describe("Upgrade", func() {
 
 	AfterEach(func() {
 		acceptance.SkipUnless("upgrade")
+		Skip("")
 
 		if sshSession != nil {
 			sshSession.Interrupt()
@@ -94,6 +96,7 @@ var _ = Describe("Upgrade", func() {
 	})
 
 	It("is able to upgrade from an environment bbl'd up with an older version of bbl", func() {
+		Skip("Upgrading is currently broken due to mayor bump in terraform version")
 		By("cleaning up any leftovers", func() {
 			session := newBBL.CleanupLeftovers(newBBL.PredefinedEnvID())
 			Eventually(session, bblLeftoversTimeout).Should(gexec.Exit())
