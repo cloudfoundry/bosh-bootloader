@@ -29,7 +29,7 @@ var _ = Describe("plan", func() {
 
 		stateDir = configuration.StateFileDir
 
-		configuration.BBLStateBucket = "bbl-acceptance-test-states"
+		configuration.BBLStateBucket = "bbl-acceptance-test-states-cff"
 
 		stateFileName := fmt.Sprintf("fixture-state-%s", iaas)
 		bbl = actors.NewBBL(stateDir, pathToBBL, configuration, stateFileName, true)
