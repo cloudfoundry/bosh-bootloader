@@ -15,6 +15,7 @@ resource "google_compute_firewall" "firewall-concourse" {
     ports    = ["80", "443", "2222", "8443", "8844"]
   }
 
+  source_ranges = ["0.0.0.0/0"]
   target_tags = ["concourse"]
 }
 

@@ -15,6 +15,7 @@ resource "google_compute_firewall" "firewall-prometheus" {
     ports    = ["3000", "9090", "9093"]
   }
 
+  source_ranges = ["0.0.0.0/0"]
   target_tags = ["prometheus"]
 }
 
