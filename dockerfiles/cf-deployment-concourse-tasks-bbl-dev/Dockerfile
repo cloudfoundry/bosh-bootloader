@@ -26,6 +26,9 @@ RUN echo "deb https://packages.cloud.google.com/apt cloud-sdk main" | tee -a /et
   apt-get update && \
   apt-get -qqy install google-cloud-cli
 
+# needed in the task 'create-bosh-source-file'
+RUN go install github.com/pivotal-cf/texplate@latest
+
 # add bbl from latest commit
 ADD bbl /usr/local/bin/
 
