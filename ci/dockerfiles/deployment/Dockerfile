@@ -22,7 +22,6 @@ RUN \
             tree \
             host \
             python3 \
-            libpython-dev \
             python3-distutils \
             ruby \
             netcat-openbsd \
@@ -30,10 +29,10 @@ RUN \
       apt-get clean
 
 # Install bundler
-RUN gem install bundler --no-rdoc --no-ri
+RUN gem install bundler -no-ri-no-rdoc
 
 # Install bosh_cli v1
-RUN gem install bosh_cli --no-rdoc --no-ri
+RUN gem install bosh_cli -no-ri-no-rdoc
 
 # Install terraform
 RUN wget https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip && \
@@ -42,10 +41,10 @@ RUN wget https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform
   mv terraform /usr/local/bin/terraform
 
 # Install gcloud
-RUN echo "deb https://packages.cloud.google.com/apt cloud-sdk-trusty main" > /etc/apt/sources.list.d/google-cloud-sdk.list && \
+RUN echo "deb https://packages.cloud.google.com/apt cloud-sdk main" | tee -a /etc/apt/sources.list.d/google-cloud-sdk.list && \
   curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add - && \
   apt-get update && \
-  apt-get -qqy install google-cloud-sdk
+  apt-get -qqy install google-cloud-cli
 
 # Install jq
 RUN wget https://github.com/stedolan/jq/releases/download/jq-1.5/jq-linux64 && \
@@ -57,7 +56,7 @@ RUN curl -L "https://s3.amazonaws.com/bosh-cli-artifacts/bosh-cli-$(curl -s http
   chmod +x "/usr/local/bin/bosh"
 
 # Install bbl
-RUN curl -H "Authorization: token ${GITHUB_TOKEN}" -s https://api.github.com/repos/cloudfoundry/bosh-bootloader/releases/latest | \
+RUN curl -s https://api.github.com/repos/cloudfoundry/bosh-bootloader/releases/latest | \
   jq -r '.assets[] | .browser_download_url | select(contains("linux"))' | \
   xargs wget && \
   mv bbl-* /usr/local/bin/bbl && \
@@ -73,15 +72,13 @@ RUN curl -L "https://cli.run.pivotal.io/stable?release=linux64-binary&source=git
   mv cf /usr/local/bin/cf
 
 # Install Credhub
-RUN CREDHUB_CLI_REPO="cloudfoundry-incubator/credhub-cli" && \
-    CREDHUB_CLI_VERSION="$(curl -s https://api.github.com/repos/${CREDHUB_CLI_REPO}/releases | jq -r '.[0].name' | tr -d 'v')" && \
-    wget -c "https://github.com/${CREDHUB_CLI_REPO}/releases/download/${CREDHUB_CLI_VERSION}/credhub-linux-${CREDHUB_CLI_VERSION}.tgz" -O - | tar -zx && \
-    mv credhub /usr/local/bin/credhub && \
-    chmod +x /usr/local/bin/credhub
+RUN curl -s https://api.github.com/repos/cloudfoundry/credhub-cli/releases/latest | \
+  jq -r '.assets[] | .browser_download_url | select(contains("linux"))' | \
+  xargs wget && \
+  mv credhub-* /usr/local/bin/credhub && \
+  chmod +x /usr/local/bin/credhub
 
-RUN go get -u github.com/pivotal-cf/texplate
-
-RUN go get -u github.com/jteeuwen/go-bindata/...
+RUN go install github.com/pivotal-cf/texplate@latest
 
 # Install pip
 RUN curl https://bootstrap.pypa.io/get-pip.py | python3
@@ -91,7 +88,7 @@ RUN pip install yq
 RUN pip install -U awscli
 
 # Install ginkgo
-RUN go get -u github.com/onsi/ginkgo/ginkgo
+RUN go install github.com/onsi/ginkgo/ginkgo@v1
 
 RUN chown -R testuser:testuser /usr/local/go/pkg
 RUN chown -R testuser:testuser /go
