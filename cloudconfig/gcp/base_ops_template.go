@@ -58,63 +58,63 @@ const (
   path: /vm_types/name=default/cloud_properties?
   value:
     machine_type: n1-standard-1
-    root_disk_size_gb: 10
+    root_disk_size_gb: 20
     root_disk_type: pd-balanced
 
 - type: replace
   path: /vm_types/name=minimal/cloud_properties?
   value:
     machine_type: e2-small
-    root_disk_size_gb: 10
+    root_disk_size_gb: 20
     root_disk_type: pd-balanced
 
 - type: replace
   path: /vm_types/name=sharedcpu/cloud_properties?
   value:
     machine_type: g1-small
-    root_disk_size_gb: 10
+    root_disk_size_gb: 20
     root_disk_type: pd-balanced
 
 - type: replace
   path: /vm_types/name=small/cloud_properties?
   value:
     machine_type: e2-medium
-    root_disk_size_gb: 10
+    root_disk_size_gb: 20
     root_disk_type: pd-balanced
 
 - type: replace
   path: /vm_types/name=small-highmem/cloud_properties?
   value:
     machine_type: e2-highmem-2
-    root_disk_size_gb: 10
+    root_disk_size_gb: 20
     root_disk_type: pd-balanced
 
 - type: replace
   path: /vm_types/name=small-highcpu?/cloud_properties
   value:
     machine_type: e2-highcpu-2
-    root_disk_size_gb: 10
+    root_disk_size_gb: 20
     root_disk_type: pd-balanced
 
 - type: replace
   path: /vm_types/name=medium/cloud_properties?
   value:
     machine_type: e2-standard-4
-    root_disk_size_gb: 10
+    root_disk_size_gb: 20
     root_disk_type: pd-balanced
 
 - type: replace
   path: /vm_types/name=large/cloud_properties?
   value:
     machine_type: e2-standard-8
-    root_disk_size_gb: 10
+    root_disk_size_gb: 20
     root_disk_type: pd-balanced
 
 - type: replace
   path: /vm_types/name=extra-large/cloud_properties?
   value:
     machine_type: e2-standard-16
-    root_disk_size_gb: 10
+    root_disk_size_gb: 20
     root_disk_type: pd-balanced
 
 - type: replace
@@ -123,7 +123,7 @@ const (
     name: medium-highmem
     cloud_properties:
       machine_type: e2-highmem-4
-      root_disk_size_gb: 10
+      root_disk_size_gb: 20
       root_disk_type: pd-balanced
 
 - type: replace
@@ -132,7 +132,7 @@ const (
     name: n1-standard-1
     cloud_properties:
       machine_type: n1-standard-1
-      root_disk_size_gb: 10
+      root_disk_size_gb: 20
       root_disk_type: pd-balanced
 
 - type: replace
@@ -141,7 +141,7 @@ const (
     name: n1-standard-2
     cloud_properties:
       machine_type: n1-standard-2
-      root_disk_size_gb: 10
+      root_disk_size_gb: 20
       root_disk_type: pd-balanced
 
 - type: replace
@@ -150,7 +150,7 @@ const (
     name: n1-standard-4
     cloud_properties:
       machine_type: n1-standard-4
-      root_disk_size_gb: 10
+      root_disk_size_gb: 20
       root_disk_type: pd-balanced
 
 - type: replace
@@ -159,7 +159,7 @@ const (
     name: n1-standard-8
     cloud_properties:
       machine_type: n1-standard-8
-      root_disk_size_gb: 10
+      root_disk_size_gb: 20
       root_disk_type: pd-balanced
 
 - type: replace
@@ -168,7 +168,7 @@ const (
     name: n1-standard-16
     cloud_properties:
       machine_type: n1-standard-16
-      root_disk_size_gb: 10
+      root_disk_size_gb: 20
       root_disk_type: pd-balanced
 
 - type: replace
@@ -177,7 +177,7 @@ const (
     name: n1-standard-32
     cloud_properties:
       machine_type: n1-standard-32
-      root_disk_size_gb: 10
+      root_disk_size_gb: 20
       root_disk_type: pd-balanced
 
 
@@ -187,7 +187,7 @@ const (
     name: n1-highmem-2
     cloud_properties:
       machine_type: n1-highmem-2
-      root_disk_size_gb: 10
+      root_disk_size_gb: 20
       root_disk_type: pd-balanced
 
 - type: replace
@@ -196,7 +196,7 @@ const (
     name: n1-highmem-4
     cloud_properties:
       machine_type: n1-highmem-4
-      root_disk_size_gb: 10
+      root_disk_size_gb: 20
       root_disk_type: pd-balanced
 
 - type: replace
@@ -205,7 +205,7 @@ const (
     name: n1-highmem-8
     cloud_properties:
       machine_type: n1-highmem-8
-      root_disk_size_gb: 10
+      root_disk_size_gb: 20
       root_disk_type: pd-balanced
 
 - type: replace
@@ -214,7 +214,7 @@ const (
     name: n1-highmem-16
     cloud_properties:
       machine_type: n1-highmem-16
-      root_disk_size_gb: 10
+      root_disk_size_gb: 20
       root_disk_type: pd-balanced
 
 - type: replace
@@ -223,7 +223,7 @@ const (
     name: n1-highmem-32
     cloud_properties:
       machine_type: n1-highmem-32
-      root_disk_size_gb: 10
+      root_disk_size_gb: 20
       root_disk_type: pd-balanced
 
 - type: replace
@@ -232,7 +232,7 @@ const (
     name: n1-highcpu-2
     cloud_properties:
       machine_type: n1-highcpu-2
-      root_disk_size_gb: 10
+      root_disk_size_gb: 20
       root_disk_type: pd-balanced
 
 - type: replace
@@ -241,7 +241,7 @@ const (
     name: n1-highcpu-4
     cloud_properties:
       machine_type: n1-highcpu-4
-      root_disk_size_gb: 10
+      root_disk_size_gb: 20
       root_disk_type: pd-balanced
 
 - type: replace
@@ -250,7 +250,7 @@ const (
     name: n1-highcpu-8
     cloud_properties:
       machine_type: n1-highcpu-8
-      root_disk_size_gb: 10
+      root_disk_size_gb: 20
       root_disk_type: pd-balanced
 
 - type: replace
@@ -259,7 +259,7 @@ const (
     name: n1-highcpu-16
     cloud_properties:
       machine_type: n1-highcpu-16
-      root_disk_size_gb: 10
+      root_disk_size_gb: 20
       root_disk_type: pd-balanced
 
 - type: replace
@@ -268,7 +268,7 @@ const (
     name: n1-highcpu-32
     cloud_properties:
       machine_type: n1-highcpu-32
-      root_disk_size_gb: 10
+      root_disk_size_gb: 20
       root_disk_type: pd-balanced
 
 - type: replace
@@ -277,7 +277,7 @@ const (
     name: e2-standard-2
     cloud_properties:
       machine_type: e2-standard-2
-      root_disk_size_gb: 10
+      root_disk_size_gb: 20
       root_disk_type: pd-balanced
 
 - type: replace
@@ -286,7 +286,7 @@ const (
     name: e2-standard-4
     cloud_properties:
       machine_type: e2-standard-4
-      root_disk_size_gb: 10
+      root_disk_size_gb: 20
       root_disk_type: pd-balanced
 
 - type: replace
@@ -295,7 +295,7 @@ const (
     name: e2-standard-8
     cloud_properties:
       machine_type: e2-standard-8
-      root_disk_size_gb: 10
+      root_disk_size_gb: 20
       root_disk_type: pd-balanced
 
 - type: replace
@@ -304,7 +304,7 @@ const (
     name: e2-standard-16
     cloud_properties:
       machine_type: e2-standard-16
-      root_disk_size_gb: 10
+      root_disk_size_gb: 20
       root_disk_type: pd-balanced
 
 - type: replace
@@ -313,7 +313,7 @@ const (
     name: e2-standard-32
     cloud_properties:
       machine_type: e2-standard-32
-      root_disk_size_gb: 10
+      root_disk_size_gb: 20
       root_disk_type: pd-balanced
 
 - type: replace
@@ -322,7 +322,7 @@ const (
     name: e2-highmem-2
     cloud_properties:
       machine_type: e2-highmem-2
-      root_disk_size_gb: 10
+      root_disk_size_gb: 20
       root_disk_type: pd-balanced
 
 - type: replace
@@ -331,7 +331,7 @@ const (
     name: e2-highmem-4
     cloud_properties:
       machine_type: e2-highmem-4
-      root_disk_size_gb: 10
+      root_disk_size_gb: 20
       root_disk_type: pd-balanced
 
 - type: replace
@@ -340,7 +340,7 @@ const (
     name: e2-highmem-8
     cloud_properties:
       machine_type: e2-highmem-8
-      root_disk_size_gb: 10
+      root_disk_size_gb: 20
       root_disk_type: pd-balanced
 
 - type: replace
@@ -349,7 +349,7 @@ const (
     name: e2-highmem-16
     cloud_properties:
       machine_type: e2-highmem-16
-      root_disk_size_gb: 10
+      root_disk_size_gb: 20
       root_disk_type: pd-balanced
 
 - type: replace
@@ -358,7 +358,7 @@ const (
     name: e2-highcpu-2
     cloud_properties:
       machine_type: e2-highcpu-2
-      root_disk_size_gb: 10
+      root_disk_size_gb: 20
       root_disk_type: pd-balanced
 
 - type: replace
@@ -367,7 +367,7 @@ const (
     name: e2-highcpu-4
     cloud_properties:
       machine_type: e2-highcpu-4
-      root_disk_size_gb: 10
+      root_disk_size_gb: 20
       root_disk_type: pd-balanced
 
 - type: replace
@@ -376,7 +376,7 @@ const (
     name: e2-highcpu-8
     cloud_properties:
       machine_type: e2-highcpu-8
-      root_disk_size_gb: 10
+      root_disk_size_gb: 20
       root_disk_type: pd-balanced
 
 - type: replace
@@ -385,7 +385,7 @@ const (
     name: e2-highcpu-16
     cloud_properties:
       machine_type: e2-highcpu-16
-      root_disk_size_gb: 10
+      root_disk_size_gb: 20
       root_disk_type: pd-balanced
 
 - type: replace
@@ -394,7 +394,7 @@ const (
     name: e2-highcpu-32
     cloud_properties:
       machine_type: e2-highcpu-32
-      root_disk_size_gb: 10
+      root_disk_size_gb: 20
       root_disk_type: pd-balanced
 
 - type: replace
@@ -403,7 +403,7 @@ const (
     name: f1-micro
     cloud_properties:
       machine_type: f1-micro
-      root_disk_size_gb: 10
+      root_disk_size_gb: 20
       root_disk_type: pd-balanced
 
 - type: replace
@@ -412,7 +412,7 @@ const (
     name: g1-small
     cloud_properties:
       machine_type: g1-small
-      root_disk_size_gb: 10
+      root_disk_size_gb: 20
       root_disk_type: pd-balanced
 
 - type: replace
@@ -421,7 +421,7 @@ const (
     name: m3.medium
     cloud_properties:
       machine_type: n1-standard-1
-      root_disk_size_gb: 10
+      root_disk_size_gb: 20
       root_disk_type: pd-balanced
 
 - type: replace
@@ -430,7 +430,7 @@ const (
     name: m3.large
     cloud_properties:
       machine_type: n1-standard-2
-      root_disk_size_gb: 10
+      root_disk_size_gb: 20
       root_disk_type: pd-balanced
 
 - type: replace
@@ -439,7 +439,7 @@ const (
     name: c3.large
     cloud_properties:
       machine_type: n1-highcpu-2
-      root_disk_size_gb: 10
+      root_disk_size_gb: 20
       root_disk_type: pd-balanced
 
 - type: replace
@@ -448,7 +448,7 @@ const (
     name: r3.xlarge
     cloud_properties:
       machine_type: n1-highmem-4
-      root_disk_size_gb: 10
+      root_disk_size_gb: 20
       root_disk_type: pd-balanced
 
 - type: replace
@@ -457,7 +457,7 @@ const (
     name: t2.small
     cloud_properties:
       machine_type: g1-small
-      root_disk_size_gb: 10
+      root_disk_size_gb: 20
       root_disk_type: pd-balanced
 
 - type: replace

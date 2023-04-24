@@ -61,42 +61,42 @@ const (
   path: /vm_types/name=minimal/cloud_properties?
   value:
     ephemeral_disk:
-      size: 10240
+      size: 20480
     instance_type: Standard_B1ms
 
 - type: replace
   path: /vm_types/name=small/cloud_properties?
   value:
     ephemeral_disk:
-      size: 10240
+      size: 20480
     instance_type: Standard_F2s_v2
 
 - type: replace
   path: /vm_types/name=medium/cloud_properties?
   value:
     ephemeral_disk:
-      size: 10240
+      size: 20480
     instance_type: Standard_D4s_v3
 
 - type: replace
   path: /vm_types/name=large/cloud_properties?
   value:
     ephemeral_disk:
-      size: 10240
+      size: 20480
     instance_type: Standard_D8s_v3
 
 - type: replace
   path: /vm_types/name=small-highmem/cloud_properties?
   value:
     ephemeral_disk:
-      size: 10240
+      size: 20480
     instance_type: Standard_E2s_v3
 
 - type: replace
   path: /vm_types/name=sharedcpu/cloud_properties?
   value:
     ephemeral_disk:
-      size: 10240
+      size: 20480
     instance_type: Standard_B1ms
 
 - type: replace
@@ -104,7 +104,7 @@ const (
   value:
     name: medium-highmem
     ephemeral_disk:
-      size: 10240
+      size: 20480
     instance_type: Standard_E4s_v3
 
 - type: replace
@@ -112,7 +112,7 @@ const (
   value:
     name: Standard_F2s_v2
     ephemeral_disk:
-      size: 10240
+      size: 20480
     instance_type: Standard_F2s_v2
 
 - type: replace
@@ -120,7 +120,7 @@ const (
   value:
     name: Standard_F4s_v2
     ephemeral_disk:
-      size: 10240
+      size: 20480
     instance_type: Standard_F4s_v2
 
 - type: replace
@@ -128,7 +128,7 @@ const (
   value:
     name: Standard_F8s_v2
     ephemeral_disk:
-      size: 10240
+      size: 20480
     instance_type: Standard_F8s_v2
 
 - type: replace
@@ -136,7 +136,7 @@ const (
   value:
     name: Standard_E2s_v3
     ephemeral_disk:
-      size: 10240
+      size: 20480
     instance_type: Standard_E2s_v3
 
 - type: replace
@@ -144,7 +144,7 @@ const (
   value:
     name: Standard_E4s_v3
     ephemeral_disk:
-      size: 10240
+      size: 20480
     instance_type: Standard_E4s_v3
 
 - type: replace
@@ -152,7 +152,7 @@ const (
   value:
     name: Standard_E8s_v3
     ephemeral_disk:
-      size: 10240
+      size: 20480
     instance_type: Standard_E8s_v3
 
 - type: replace
@@ -160,7 +160,7 @@ const (
   value:
     name: Standard_B1s
     ephemeral_disk:
-      size: 10240
+      size: 20480
     instance_type: Standard_B1s
 
 - type: replace
@@ -168,7 +168,7 @@ const (
   value:
     name: Standard_B1ms
     ephemeral_disk:
-      size: 10240
+      size: 20480
     instance_type: Standard_B1ms
 
 - type: replace
@@ -176,7 +176,7 @@ const (
   value:
     name: Standard_B2s
     ephemeral_disk:
-      size: 10240
+      size: 20480
     instance_type: Standard_B2s
 
 - type: replace
@@ -184,7 +184,7 @@ const (
   value:
     name: Standard_D2_v3
     ephemeral_disk:
-      size: 10240
+      size: 20480
     instance_type: Standard_D2_v3
 
 - type: replace
@@ -192,7 +192,7 @@ const (
   value:
     name: Standard_D4_v3
     ephemeral_disk:
-      size: 10240
+      size: 20480
     instance_type: Standard_D4_v3
 
 - type: replace
@@ -200,7 +200,7 @@ const (
   value:
     name: Standard_D8_v3
     ephemeral_disk:
-      size: 10240
+      size: 20480
     instance_type: Standard_D8_v3
 `
 )

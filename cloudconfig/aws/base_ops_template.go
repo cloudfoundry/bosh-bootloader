@@ -59,7 +59,7 @@ const (
   value:
     instance_type: m4.large
     ephemeral_disk:
-      size: 10240
+      size: 20480
       type: gp3
 
 - type: replace
@@ -67,7 +67,7 @@ const (
   value:
     instance_type: t3a.small
     ephemeral_disk:
-      size: 10240
+      size: 20480
       type: gp3
 
 - type: replace
@@ -75,7 +75,7 @@ const (
   value:
     instance_type: t3a.small
     ephemeral_disk:
-      size: 10240
+      size: 20480
       type: gp3
 
 - type: replace
@@ -83,7 +83,7 @@ const (
   value:
     instance_type: t3a.medium
     ephemeral_disk:
-      size: 10240
+      size: 20480
       type: gp3
 
 - type: replace
@@ -91,7 +91,7 @@ const (
   value:
     instance_type: r5a.large
     ephemeral_disk:
-      size: 10240
+      size: 20480
       type: gp3
 
 - type: replace
@@ -99,7 +99,7 @@ const (
   value:
     instance_type: c4.large
     ephemeral_disk:
-      size: 10240
+      size: 20480
       type: gp3
 
 - type: replace
@@ -107,7 +107,7 @@ const (
   value:
     instance_type: m5a.xlarge
     ephemeral_disk:
-      size: 10240
+      size: 20480
       type: gp3
 
 - type: replace
@@ -115,7 +115,7 @@ const (
   value:
     instance_type: m5a.2xlarge
     ephemeral_disk:
-      size: 10240
+      size: 20480
       type: gp3
 
 - type: replace
@@ -123,7 +123,7 @@ const (
   value:
     instance_type: m5a.4xlarge
     ephemeral_disk:
-      size: 10240
+      size: 20480
       type: gp3
 
 - type: replace
@@ -133,7 +133,7 @@ const (
     cloud_properties:
       instance_type: r5a.xlarge
       ephemeral_disk:
-        size: 10240
+        size: 20480
         type: gp3
 
 - type: replace
@@ -143,7 +143,7 @@ const (
     cloud_properties:
       instance_type: m4.large
       ephemeral_disk:
-        size: 10240
+        size: 20480
         type: gp3
 
 - type: replace
@@ -153,7 +153,7 @@ const (
     cloud_properties:
       instance_type: m4.xlarge
       ephemeral_disk:
-        size: 10240
+        size: 20480
         type: gp3
 
 - type: replace
@@ -163,7 +163,7 @@ const (
     cloud_properties:
       instance_type: m4.2xlarge
       ephemeral_disk:
-        size: 10240
+        size: 20480
         type: gp3
 
 - type: replace
@@ -173,7 +173,7 @@ const (
     cloud_properties:
       instance_type: m4.4xlarge
       ephemeral_disk:
-        size: 10240
+        size: 20480
         type: gp3
 
 - type: replace
@@ -183,7 +183,7 @@ const (
     cloud_properties:
       instance_type: m4.10xlarge
       ephemeral_disk:
-        size: 10240
+        size: 20480
         type: gp3
 
 - type: replace
@@ -193,7 +193,7 @@ const (
     cloud_properties:
       instance_type: m5a.large
       ephemeral_disk:
-        size: 10240
+        size: 20480
         type: gp3
 
 - type: replace
@@ -203,7 +203,7 @@ const (
     cloud_properties:
       instance_type: m5a.xlarge
       ephemeral_disk:
-        size: 10240
+        size: 20480
         type: gp3
 
 - type: replace
@@ -213,7 +213,7 @@ const (
     cloud_properties:
       instance_type: m5a.2xlarge
       ephemeral_disk:
-        size: 10240
+        size: 20480
         type: gp3
 
 - type: replace
@@ -223,7 +223,7 @@ const (
     cloud_properties:
       instance_type: m5a.4xlarge
       ephemeral_disk:
-        size: 10240
+        size: 20480
         type: gp3
 
 - type: replace
@@ -233,7 +233,7 @@ const (
     cloud_properties:
       instance_type: m5a.10xlarge
       ephemeral_disk:
-        size: 10240
+        size: 20480
         type: gp3
 
 - type: replace
@@ -243,7 +243,7 @@ const (
     cloud_properties:
       instance_type: c4.large
       ephemeral_disk:
-        size: 10240
+        size: 20480
         type: gp3
 
 - type: replace
@@ -253,7 +253,7 @@ const (
     cloud_properties:
       instance_type: c4.xlarge
       ephemeral_disk:
-        size: 10240
+        size: 20480
         type: gp3
 
 - type: replace
@@ -263,7 +263,7 @@ const (
     cloud_properties:
       instance_type: c4.2xlarge
       ephemeral_disk:
-        size: 10240
+        size: 20480
         type: gp3
 
 - type: replace
@@ -273,7 +273,7 @@ const (
     cloud_properties:
       instance_type: c4.4xlarge
       ephemeral_disk:
-        size: 10240
+        size: 20480
         type: gp3
 
 - type: replace
@@ -283,7 +283,7 @@ const (
     cloud_properties:
       instance_type: c4.8xlarge
       ephemeral_disk:
-        size: 10240
+        size: 20480
         type: gp3
 
 - type: replace
@@ -293,7 +293,7 @@ const (
     cloud_properties:
       instance_type: c5a.large
       ephemeral_disk:
-        size: 10240
+        size: 20480
         type: gp3
 
 - type: replace
@@ -303,7 +303,7 @@ const (
     cloud_properties:
       instance_type: c5a.xlarge
       ephemeral_disk:
-        size: 10240
+        size: 20480
         type: gp3
 
 - type: replace
@@ -313,7 +313,7 @@ const (
     cloud_properties:
       instance_type: c5a.2xlarge
       ephemeral_disk:
-        size: 10240
+        size: 20480
         type: gp3
 
 - type: replace
@@ -323,7 +323,7 @@ const (
     cloud_properties:
       instance_type: c5a.4xlarge
       ephemeral_disk:
-        size: 10240
+        size: 20480
         type: gp3
 
 - type: replace
@@ -333,7 +333,7 @@ const (
     cloud_properties:
       instance_type: c5a.8xlarge
       ephemeral_disk:
-        size: 10240
+        size: 20480
         type: gp3
 
 - type: replace
@@ -343,7 +343,7 @@ const (
     cloud_properties:
       instance_type: r3.large
       ephemeral_disk:
-        size: 10240
+        size: 20480
         type: gp3
 
 - type: replace
@@ -353,7 +353,7 @@ const (
     cloud_properties:
       instance_type: r3.xlarge
       ephemeral_disk:
-        size: 10240
+        size: 20480
         type: gp3
 
 - type: replace
@@ -363,7 +363,7 @@ const (
     cloud_properties:
       instance_type: r3.2xlarge
       ephemeral_disk:
-        size: 10240
+        size: 20480
         type: gp3
 
 - type: replace
@@ -373,7 +373,7 @@ const (
     cloud_properties:
       instance_type: r3.4xlarge
       ephemeral_disk:
-        size: 10240
+        size: 20480
         type: gp3
 
 - type: replace
@@ -383,7 +383,7 @@ const (
     cloud_properties:
       instance_type: r3.8xlarge
       ephemeral_disk:
-        size: 10240
+        size: 20480
         type: gp3
 
 - type: replace
@@ -393,7 +393,7 @@ const (
     cloud_properties:
       instance_type: r5a.large
       ephemeral_disk:
-        size: 10240
+        size: 20480
         type: gp3
 
 - type: replace
@@ -403,7 +403,7 @@ const (
     cloud_properties:
       instance_type: r5a.xlarge
       ephemeral_disk:
-        size: 10240
+        size: 20480
         type: gp3
 
 - type: replace
@@ -413,7 +413,7 @@ const (
     cloud_properties:
       instance_type: r5a.2xlarge
       ephemeral_disk:
-        size: 10240
+        size: 20480
         type: gp3
 
 - type: replace
@@ -423,7 +423,7 @@ const (
     cloud_properties:
       instance_type: r5a.4xlarge
       ephemeral_disk:
-        size: 10240
+        size: 20480
         type: gp3
 
 - type: replace
@@ -433,7 +433,7 @@ const (
     cloud_properties:
       instance_type: r5a.8xlarge
       ephemeral_disk:
-        size: 10240
+        size: 20480
         type: gp3
 
 - type: replace
@@ -443,7 +443,7 @@ const (
     cloud_properties:
       instance_type: t2.nano
       ephemeral_disk:
-        size: 10240
+        size: 20480
         type: gp3
 
 - type: replace
@@ -453,7 +453,7 @@ const (
     cloud_properties:
       instance_type: t2.micro
       ephemeral_disk:
-        size: 10240
+        size: 20480
         type: gp3
 
 - type: replace
@@ -463,7 +463,7 @@ const (
     cloud_properties:
       instance_type: t2.small
       ephemeral_disk:
-        size: 10240
+        size: 20480
         type: gp3
 
 - type: replace
@@ -473,7 +473,7 @@ const (
     cloud_properties:
       instance_type: t2.medium
       ephemeral_disk:
-        size: 10240
+        size: 20480
         type: gp3
 
 - type: replace
@@ -483,7 +483,7 @@ const (
     cloud_properties:
       instance_type: t2.large
       ephemeral_disk:
-        size: 10240
+        size: 20480
         type: gp3
 
 - type: replace
@@ -493,7 +493,7 @@ const (
     cloud_properties:
       instance_type: t3a.nano
       ephemeral_disk:
-        size: 10240
+        size: 20480
         type: gp3
 
 - type: replace
@@ -503,7 +503,7 @@ const (
     cloud_properties:
       instance_type: t3a.micro
       ephemeral_disk:
-        size: 10240
+        size: 20480
         type: gp3
 
 - type: replace
@@ -513,7 +513,7 @@ const (
     cloud_properties:
       instance_type: t3a.small
       ephemeral_disk:
-        size: 10240
+        size: 20480
         type: gp3
 
 - type: replace
@@ -523,7 +523,7 @@ const (
     cloud_properties:
       instance_type: t3a.medium
       ephemeral_disk:
-        size: 10240
+        size: 20480
         type: gp3
 
 - type: replace
@@ -533,7 +533,7 @@ const (
     cloud_properties:
       instance_type: t3a.large
       ephemeral_disk:
-        size: 10240
+        size: 20480
         type: gp3
 
 - type: replace
