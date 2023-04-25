@@ -1,6 +1,7 @@
 package terraform
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"os/exec"
@@ -38,5 +39,10 @@ func (c CLI) RunWithEnv(stdout io.Writer, workingDirectory string, args []string
 	command.Stdout = io.MultiWriter(stdout, c.outputBuffer)
 	command.Stderr = c.errorBuffer
 
-	return command.Run()
+	err = command.Run()
+	if err != nil {
+		return fmt.Errorf("command execution failed got: %s stderr:\n %s", err, c.errorBuffer)
+	}
+
+	return nil
 }
