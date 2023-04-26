@@ -40,10 +40,10 @@ resources:
 #     username: ((dockerhub.username))
 #     password: ((dockerhub.password))
 
-- name: ubuntu-bionic-stemcell-gcp
+- name: ubuntu-jammy-stemcell-gcp
   type: bosh-io-stemcell
   source:
-    name: bosh-google-kvm-ubuntu-bionic-go_agent
+    name: bosh-google-kvm-ubuntu-jammy-go_agent
 
 # - name: ubuntu-xenial-stemcell-aws
 #   type: bosh-io-stemcell
@@ -64,6 +64,13 @@ resources:
     # ignore_paths:
     #   - docs/**
     #   - README.md
+
+- name: bosh-bootloader-ci
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/bosh-bootloader.git
+    branch: main
+    private_key: ((github.private_key))
 
 # - name: bosh-bootloader-including-docs
 #   type: git
@@ -162,7 +169,8 @@ resources:
 - name: cf-deployment-concourse-tasks-bbl-dev
   type: docker-image
   source:
-    repository: relintdockerhubpushbot/cf-deployment-concourse-tasks-bbl-dev
+    repository: cfinfrastructure/cf-deployment-concourse-tasks-bbl-dev
+    tag: main
     username: ((dockerhub_username))
     password: ((dockerhub_password))
     email: cf-release-integration+dockerhub-push-bot@pivotal.io
@@ -244,7 +252,7 @@ jobs:
   plan:
   - in_parallel:
     - get: bbl-ci
-      resource: bosh-bootloader
+      resource: bosh-bootloader-ci
     - get: bosh-bootloader
     - get: version-bump-deployments
       passed:
@@ -281,7 +289,7 @@ jobs:
   plan:
   - in_parallel:
     - get: bbl-ci
-      resource: bosh-bootloader
+      resource: bosh-bootloader-ci
     - get: bosh-bootloader
       resource: bosh-bootloader-bump-deployments-ci
       trigger: true
@@ -303,7 +311,7 @@ jobs:
 #       - test-bosh-bootloader-bump-deployments
 #       trigger: true
 #     - get: bbl-ci
-#       resource: bosh-bootloader
+#       resource: bosh-bootloader-ci
 #     - get: version
 #       resource: version-bump-deployments
 #       passed:
@@ -312,7 +320,7 @@ jobs:
 #   - task: download-terraform
 #     file: bbl-ci/ci/tasks/download-terraform/task.yml
 #     params:
-#       TF_VERSION: 1.3.9
+#       TF_VERSION: 1.4.5
 #
 #   - in_parallel:
 #     - task: plan
@@ -370,7 +378,7 @@ jobs:
       - test-bosh-bootloader-bump-deployments
       trigger: true
     - get: bbl-ci
-      resource: bosh-bootloader
+      resource: bosh-bootloader-ci
     - get: version
       resource: version-bump-deployments
       passed:
@@ -379,7 +387,7 @@ jobs:
   - task: download-terraform
     file: bbl-ci/ci/tasks/download-terraform/task.yml
     params:
-      TF_VERSION: 1.3.9
+      TF_VERSION: 1.4.5
 
   - task: bbl-tests
     file: bbl-ci/ci/tasks/acceptance/task.yml
@@ -402,7 +410,7 @@ jobs:
       trigger: true
     - get: cf-deployment-concourse-tasks-docker-image
     - get: bbl-ci
-      resource: bosh-bootloader
+      resource: bosh-bootloader-ci
     - get: cf-deployment-concourse-tasks-bbl-dev-dockerfile
       trigger: true
     - get: version
@@ -414,7 +422,7 @@ jobs:
   - task: download-terraform
     file: bbl-ci/ci/tasks/download-terraform/task.yml
     params:
-      TF_VERSION: 1.3.9
+      TF_VERSION: 1.4.5
 
   - task: generate-version-from-sha
     file: bbl-ci/ci/tasks/generate-version-from-sha/task.yml
@@ -439,6 +447,7 @@ jobs:
     params:
       build: docker-workspace
       cache: false
+      # tag: main
 
 # - name: bbl-aws-cf-bump-deployments
 #   serial: true
@@ -455,7 +464,7 @@ jobs:
 #       passed:
 #       - bbl-downstream-docker-image-bump-deployments
 #     - get: bbl-ci
-#       resource: bosh-bootloader
+#       resource: bosh-bootloader-ci
 #     - get: cf-deployment
 #     - get: ops-files
 #       resource: cf-deployment
@@ -604,7 +613,7 @@ jobs:
 #       passed:
 #       - bbl-downstream-docker-image-bump-deployments
 #     - get: bbl-ci
-#       resource: bosh-bootloader
+#       resource: bosh-bootloader-ci
 #     - get: ubuntu-xenial-stemcell-aws
 #     - get: concourse-smoke-tests
 #     - get: version
@@ -723,7 +732,7 @@ jobs:
       passed:
       - bbl-downstream-docker-image-bump-deployments
     - get: bbl-ci
-      resource: bosh-bootloader
+      resource: bosh-bootloader-ci
     - get: cf-deployment
     - get: ops-files
       resource: cf-deployment
@@ -756,11 +765,12 @@ jobs:
       BBL_GCP_REGION: us-central1
       BBL_LB_CERT: ((bbl_lb_cert.certificate))
       BBL_LB_KEY: ((bbl_lb_cert.private_key))
-      LB_DOMAIN: bosh-bootloader-cf.ci.cloudfoundry.org
+      LB_DOMAIN: bump-deployments-cf.bbl.ci.cloudfoundry.org
       BBL_ENV_NAME: bump-deployments-downstream
       BBL_STATE_DIR: bump-deployments/bbl-gcp-cf
       GIT_COMMIT_EMAIL: cf-infrastructure@pivotal.io
       GIT_COMMIT_USERNAME: CI Infra Bot
+      DELETE_TERRAFORM_PLUGINS: false
     input_mapping:
       bbl-state: relint-envs
       bbl-config: relint-envs
@@ -784,9 +794,9 @@ jobs:
     image: cf-deployment-concourse-tasks-bbl-dev
     params:
       BBL_STATE_DIR: bump-deployments/bbl-gcp-cf
-      GCP_DNS_SERVICE_ACCOUNT_KEY: ((bbl_dns.service_account_json))
-      GCP_DNS_ZONE_NAME: infrastructure
-      GCP_DNS_RECORD_SET_NAME: bump-deployments-cf.infrastructure.cf-app.com
+      GCP_DNS_SERVICE_ACCOUNT_KEY: ((bbl_dns_json_key))
+      GCP_DNS_ZONE_NAME: bootloader-ci
+      GCP_DNS_RECORD_SET_NAME: bump-deployments-cf.bbl.ci.cloudfoundry.org
       ACTION: add
     input_mapping:
       bbl-state: updated-bbl-state
@@ -813,9 +823,11 @@ jobs:
     params:
       BBL_STATE_DIR: bump-deployments/bbl-gcp-cf
       BBL_GCP_SERVICE_ACCOUNT_KEY: ((gcp_json_key))
-      SYSTEM_DOMAIN: bump-deployments-cf.infrastructure.cf-app.com
+      SYSTEM_DOMAIN: bump-deployments-cf.bbl.ci.cloudfoundry.org
       VARS_STORE_FILE: bump-deployments/bbl-gcp-cf/deployment-vars.yml
-      OPS_FILES: "operations/use-compiled-releases.yml"
+      OPS_FILES:
+        - "operations/use-compiled-releases.yml"
+        - "operations/experimental/fast-deploy-with-downtime-and-danger.yml"
     on_failure:
       do:
       - task: remove-from-gcp-dns
@@ -823,9 +835,9 @@ jobs:
         image: cf-deployment-concourse-tasks-bbl-dev
         params:
           BBL_STATE_DIR: bump-deployments/bbl-gcp-cf
-          GCP_DNS_SERVICE_ACCOUNT_KEY: ((bbl_dns.service_account_json))
-          GCP_DNS_ZONE_NAME: infrastructure
-          GCP_DNS_RECORD_SET_NAME: bump-deployments-cf.infrastructure.cf-app.com
+          GCP_DNS_SERVICE_ACCOUNT_KEY: ((bbl_dns_json_key))
+          GCP_DNS_ZONE_NAME: bootloader-ci
+          GCP_DNS_RECORD_SET_NAME: bump-deployments-cf.bbl.ci.cloudfoundry.org
           ACTION: remove
         input_mapping:
           bbl-state: updated-bbl-state
@@ -897,9 +909,9 @@ jobs:
         image: cf-deployment-concourse-tasks-bbl-dev
         params:
           BBL_STATE_DIR: bump-deployments/bbl-gcp-cf
-          GCP_DNS_SERVICE_ACCOUNT_KEY: ((bbl_dns.service_account_json))
-          GCP_DNS_ZONE_NAME: infrastructure
-          GCP_DNS_RECORD_SET_NAME: bump-deployments-cf.infrastructure.cf-app.com
+          GCP_DNS_SERVICE_ACCOUNT_KEY: ((bbl_dns_json_key))
+          GCP_DNS_ZONE_NAME: bootloader-ci
+          GCP_DNS_RECORD_SET_NAME: bump-deployments-cf.bbl.ci.cloudfoundry.org
           ACTION: remove
         input_mapping:
           bbl-state: updated-bbl-state
@@ -935,8 +947,8 @@ jobs:
       passed:
       - bbl-downstream-docker-image-bump-deployments
     - get: bbl-ci
-      resource: bosh-bootloader
-    - get: ubuntu-bionic-stemcell-gcp
+      resource: bosh-bootloader-ci
+    - get: ubuntu-jammy-stemcell-gcp
     - get: concourse-smoke-tests
     - get: version
       resource: version-bump-deployments
@@ -962,6 +974,7 @@ jobs:
       BBL_GCP_REGION: us-central1
       BBL_ENV_NAME: bump-deployments-gcp-concourse
       BBL_STATE_DIR: bump-deployments/bbl-gcp-concourse
+      DELETE_TERRAFORM_PLUGINS: false
     input_mapping:
       bbl-state: relint-envs
     on_failure:
@@ -981,6 +994,7 @@ jobs:
 
   - task: create-bosh-source-file
     file: bbl-ci/ci/tasks/create-bosh-deployment-source-file/task.yml
+    image: cf-deployment-concourse-tasks-bbl-dev
     params:
       BBL_STATE_DIR: bump-deployments/bbl-gcp-concourse
     input_mapping:
@@ -988,6 +1002,7 @@ jobs:
 
   - task: get-concourse-test-vars
     file: bbl-ci/ci/tasks/get-concourse-test-vars/task.yml
+    image: cf-deployment-concourse-tasks-bbl-dev
     params:
       BBL_STATE_DIR: bump-deployments/bbl-gcp-concourse
     input_mapping:
@@ -998,7 +1013,7 @@ jobs:
       source_file: source-file/bosh-source.json
       manifest: concourse-deployment/cluster/concourse.yml
       stemcells:
-      - ubuntu-bionic-stemcell-gcp/stemcell.tgz
+      - ubuntu-jammy-stemcell-gcp/stemcell.tgz
       vars_files:
         - concourse-deployment/versions.yml
         - concourse-vars/vars.yml
@@ -1051,7 +1066,7 @@ jobs:
 #       passed:
 #       - bbl-downstream-docker-image-bump-deployments
 #     - get: bbl-ci
-#       resource: bosh-bootloader
+#       resource: bosh-bootloader-ci
 #     - get: cf-deployment
 #     - get: ops-files
 #       resource: cf-deployment
@@ -1190,7 +1205,7 @@ jobs:
   plan:
   - in_parallel:
     - get: bbl-ci
-      resource: bosh-bootloader
+      resource: bosh-bootloader-ci
     - get: bbl-release-official
     - get: bosh-bootloader
       resource: bosh-bootloader-bump-deployments-ci
@@ -1243,7 +1258,7 @@ jobs:
   - task: download-terraform
     file: bbl-ci/ci/tasks/download-terraform/task.yml
     params:
-      TF_VERSION: 1.3.9
+      TF_VERSION: 1.4.5
 
   - task: build-binaries
     file: bbl-ci/ci/tasks/build-release/task.yml
@@ -1266,7 +1281,7 @@ jobs:
   plan:
   - in_parallel:
     - get: bbl-ci
-      resource: bosh-bootloader
+      resource: bosh-bootloader-ci
     - get: bosh-bootloader-bumped
       resource: bosh-bootloader-bump-deployments-ci
       passed:
@@ -1290,7 +1305,7 @@ jobs:
           tag: bbl-release/number
       # trigger: true
     - get: bbl-ci
-      resource: bosh-bootloader
+      resource: bosh-bootloader-ci
     - get: bbl-docs-repo
       resource: bbl-docs
 
@@ -1317,7 +1332,7 @@ jobs:
 #         - bbl-*_windows
 #       # trigger: true
 #     - get: bbl-ci
-#       resource: bosh-bootloader
+#       resource: bosh-bootloader-ci
 
 #   - task: update-brew-formula
 #     file: bbl-ci/ci/tasks/bump-brew-tap/task.yml
