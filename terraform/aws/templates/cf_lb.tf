@@ -82,7 +82,7 @@ resource "aws_elb" "cf_ssh_lb" {
   }
 
   security_groups = ["${aws_security_group.cf_ssh_lb_security_group.id}"]
-  subnets         = ["${aws_subnet.lb_subnets.*.id}"]
+  subnets         = flatten(["${aws_subnet.lb_subnets.*.id}"])
 
   tags = {
     Name = "${var.env_id}"
@@ -211,7 +211,7 @@ resource "aws_elb" "cf_router_lb" {
   }
 
   security_groups = ["${aws_security_group.cf_router_lb_security_group.id}"]
-  subnets         = ["${aws_subnet.lb_subnets.*.id}"]
+  subnets         = flatten(["${aws_subnet.lb_subnets.*.id}"])
 
   tags = {
     Name = "${var.env_id}"
@@ -1025,7 +1025,7 @@ resource "aws_elb" "cf_tcp_lb" {
   }
 
   security_groups = ["${aws_security_group.cf_tcp_lb_security_group.id}"]
-  subnets         = ["${aws_subnet.lb_subnets.*.id}"]
+  subnets         = flatten(["${aws_subnet.lb_subnets.*.id}"])
 
   tags = {
     Name = "${var.env_id}"
