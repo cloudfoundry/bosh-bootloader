@@ -39,6 +39,7 @@ type terraformCLI interface {
 type stateStore interface {
 	GetTerraformDir() (string, error)
 	GetVarsDir() (string, error)
+	GetStateDir() string
 }
 
 type fs interface {
@@ -257,17 +258,12 @@ func (e Executor) Version() (string, error) {
 }
 
 func (e Executor) Output(outputName string) (string, error) {
-	terraformDir, err := e.stateStore.GetTerraformDir()
-	if err != nil {
-		return "", err
-	}
-
 	varsDir, err := e.stateStore.GetVarsDir()
 	if err != nil {
 		return "", err
 	}
 
-	err = e.cli.Run(e.out, terraformDir, []string{"init"})
+	err = e.cli.Run(e.out, e.stateStore.GetStateDir(), []string{"init"})
 	if err != nil {
 		return "", fmt.Errorf("Run terraform init in terraform dir: %s", err)
 	}
@@ -278,7 +274,7 @@ func (e Executor) Output(outputName string) (string, error) {
 		args = append(args, "-state", filepath.Join(varsDir, "terraform.tfstate"))
 	}
 	buffer := bytes.NewBuffer([]byte{})
-	err = e.bufferingCLI.Run(buffer, terraformDir, args)
+	err = e.bufferingCLI.Run(buffer, e.stateStore.GetStateDir(), args)
 	if err != nil {
 		return "", fmt.Errorf("Run terraform output -state: %s", err)
 	}
@@ -287,11 +283,6 @@ func (e Executor) Output(outputName string) (string, error) {
 }
 
 func (e Executor) Outputs() (map[string]interface{}, error) {
-	terraformDir, err := e.stateStore.GetTerraformDir()
-	if err != nil {
-		return map[string]interface{}{}, err
-	}
-
 	varsDir, err := e.stateStore.GetVarsDir()
 	if err != nil {
 		return map[string]interface{}{}, err
@@ -303,7 +294,7 @@ func (e Executor) Outputs() (map[string]interface{}, error) {
 	if err == nil {
 		args = append(args, "-state", filepath.Join(varsDir, "terraform.tfstate"))
 	}
-	err = e.bufferingCLI.Run(buffer, terraformDir, args)
+	err = e.bufferingCLI.Run(buffer, e.stateStore.GetStateDir(), args)
 	if err != nil {
 		return map[string]interface{}{}, fmt.Errorf("Run terraform output --json in vars dir: %s", err)
 	}

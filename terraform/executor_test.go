@@ -537,6 +537,7 @@ var _ = Describe("Executor", func() {
 		})
 
 		It("returns an output from the terraform state", func() {
+			stateStore.GetStateDirCall.Returns.Directory = "some-bbl-state-dir"
 			bufferingCLI.RunCall.Stub = func(stdout io.Writer) {
 				fmt.Fprintf(stdout, "some-external-ip\n")
 			}
@@ -544,23 +545,12 @@ var _ = Describe("Executor", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(output).To(Equal("some-external-ip"))
 
-			Expect(bufferingCLI.RunCall.Receives.WorkingDirectory).To(Equal(terraformDir))
+			Expect(bufferingCLI.RunCall.Receives.WorkingDirectory).To(Equal("some-bbl-state-dir"))
 			Expect(bufferingCLI.RunCall.Receives.Args).To(Equal([]string{"output", "external_ip", "-state", tfStatePath}))
 			Expect(cli.RunCall.Receives.Args).To(Equal([]string{"init"}))
 		})
 
 		Context("when an error occurs", func() {
-			Context("when it fails to get terraform dir", func() {
-				BeforeEach(func() {
-					stateStore.GetTerraformDirCall.Returns.Error = errors.New("failed")
-				})
-
-				It("returns an error", func() {
-					_, err := executor.Output("external_ip")
-					Expect(err).To(MatchError("failed"))
-				})
-			})
-
 			Context("when it fails to get vars dir", func() {
 				BeforeEach(func() {
 					stateStore.GetVarsDirCall.Returns.Error = errors.New("failed")
@@ -615,6 +605,7 @@ var _ = Describe("Executor", func() {
 		})
 
 		It("returns all outputs from the terraform state", func() {
+			stateStore.GetStateDirCall.Returns.Directory = "some-bbl-state-dir"
 			outputs, err := executor.Outputs()
 			Expect(err).NotTo(HaveOccurred())
 
@@ -623,7 +614,7 @@ var _ = Describe("Executor", func() {
 				"external_ip":      "some-external-ip",
 			}))
 
-			Expect(bufferingCLI.RunCall.Receives.WorkingDirectory).To(Equal(terraformDir))
+			Expect(bufferingCLI.RunCall.Receives.WorkingDirectory).To(Equal("some-bbl-state-dir"))
 			Expect(bufferingCLI.RunCall.Receives.Args).To(Equal([]string{
 				"output", "--json", "-state", tfStatePath,
 			}))
