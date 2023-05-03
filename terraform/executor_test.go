@@ -629,6 +629,45 @@ var _ = Describe("Executor", func() {
 			}))
 		})
 
+		When("the .terraform diretory is present", func() {
+			It("does not run an unnecessary terraform init", func() {
+				_, err := executor.Outputs()
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(cli.RunCall.CallCount).To(Equal(0))
+			})
+		})
+
+		When("the .terraform directory is missing", func() {
+			BeforeEach(func() {
+				fileIO.StatCall.Fake = func(s string) (os.FileInfo, error) {
+					if strings.HasSuffix(s, ".terraform") {
+						return nil, os.ErrNotExist
+					}
+					return nil, nil
+				}
+			})
+
+			It("runs terraform init ", func() {
+				_, err := executor.Outputs()
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(cli.RunCall.CallCount).To(Equal(1))
+				Expect(cli.RunCall.Receives.Args).To(Equal([]string{"init", "--upgrade"}))
+			})
+
+			When("running terraform init fails", func() {
+				It("returns an error", func() {
+					cli.RunCall.Returns.Errors = []error{
+						errors.New("kiwi"),
+					}
+
+					_, err := executor.Outputs()
+					Expect(err).To(MatchError("Run terraform init --upgrade: kiwi"))
+				})
+			})
+		})
+
 		Context("when an error occurs", func() {
 			Context("when it fails to get vars dir", func() {
 				BeforeEach(func() {

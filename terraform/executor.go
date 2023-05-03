@@ -286,10 +286,23 @@ func (e Executor) Output(outputName string) (string, error) {
 	return strings.TrimSuffix(buffer.String(), "\n"), nil
 }
 
+func (e Executor) terraformInitIfNeeded(terraformDir string) error {
+	_, err := e.fs.Stat(filepath.Join(terraformDir, ".terraform"))
+	if err == nil {
+		return nil
+	}
+
+	return e.Init()
+}
+
 func (e Executor) Outputs() (map[string]interface{}, error) {
 	terraformDir, err := e.stateStore.GetTerraformDir()
 	if err != nil {
 		return map[string]interface{}{}, err
+	}
+
+	if err = e.terraformInitIfNeeded(terraformDir); err != nil {
+		return nil, err
 	}
 
 	varsDir, err := e.stateStore.GetVarsDir()
