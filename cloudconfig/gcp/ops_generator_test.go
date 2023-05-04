@@ -71,7 +71,6 @@ internal_gw: 10.0.0.1
 subnetwork_reserved_ips: 10.0.0.1-10.0.0.255
 subnetwork_static_ips: 10.0.255.0-10.0.255.254
 internal_tag_name: some-internal-tag
-internal_tag_name: some-internal-tag
 router_backend_service: some-backend-service
 ws_target_pool: some-ws-target-pool
 ssh_proxy_target_pool: some-proxy-target-pool
