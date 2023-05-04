@@ -3,7 +3,7 @@ resource "azurerm_network_security_group" "bosh" {
   location            = "${var.region}"
   resource_group_name = "${azurerm_resource_group.bosh.name}"
 
-  tags {
+  tags = {
     environment = "${var.env_id}"
   }
 }

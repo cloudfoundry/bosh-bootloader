@@ -7,7 +7,7 @@ resource "azurerm_virtual_network" "bosh" {
 
 resource "azurerm_subnet" "bosh" {
   name                 = "${var.env_id}-bosh-sn"
-  address_prefix       = "${cidrsubnet(var.network_cidr, 8, 0)}"
+  address_prefixes     = ["${cidrsubnet(var.network_cidr, 8, 0)}"]
   resource_group_name  = "${azurerm_resource_group.bosh.name}"
   virtual_network_name = "${azurerm_virtual_network.bosh.name}"
 }
