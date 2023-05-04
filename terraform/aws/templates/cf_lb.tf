@@ -1,3 +1,8 @@
+variable "elb_idle_timeout" {
+  type = number
+  default = 60
+}
+
 resource "aws_security_group" "cf_ssh_lb_security_group" {
   name        = "${var.env_id}-cf-ssh-lb-security-group"
   description = "CF SSH"
@@ -80,6 +85,8 @@ resource "aws_elb" "cf_ssh_lb" {
     lb_port           = 2222
     lb_protocol       = "tcp"
   }
+
+  idle_timeout = "${var.elb_idle_timeout}"
 
   security_groups = ["${aws_security_group.cf_ssh_lb_security_group.id}"]
   subnets         = flatten(["${aws_subnet.lb_subnets.*.id}"])
@@ -209,6 +216,8 @@ resource "aws_elb" "cf_router_lb" {
     lb_protocol        = "ssl"
     ssl_certificate_id = "${aws_iam_server_certificate.lb_cert.arn}"
   }
+
+  idle_timeout = "${var.elb_idle_timeout}"
 
   security_groups = ["${aws_security_group.cf_router_lb_security_group.id}"]
   subnets         = flatten(["${aws_subnet.lb_subnets.*.id}"])
@@ -1023,6 +1032,8 @@ resource "aws_elb" "cf_tcp_lb" {
     lb_port           = 1123
     lb_protocol       = "tcp"
   }
+
+  idle_timeout = "${var.elb_idle_timeout}"
 
   security_groups = ["${aws_security_group.cf_tcp_lb_security_group.id}"]
   subnets         = flatten(["${aws_subnet.lb_subnets.*.id}"])
