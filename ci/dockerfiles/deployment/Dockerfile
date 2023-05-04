@@ -87,8 +87,5 @@ RUN curl https://bootstrap.pypa.io/get-pip.py | python3
 RUN pip install yq
 RUN pip install -U awscli
 
-# Install ginkgo
-RUN go install github.com/onsi/ginkgo/ginkgo@v1
-
 RUN chown -R testuser:testuser /usr/local/go/pkg
 RUN chown -R testuser:testuser /go
