@@ -13,7 +13,7 @@ import "encoding/binary"
 // a rune to a uint16. The values take two forms.  For v >= 0x8000:
 //   bits
 //   15:    1 (inverse of NFD_QC bit of qcInfo)
-//   13..7: qcInfo (see below). isYesD is always true (no decompostion).
+//   13..7: qcInfo (see below). isYesD is always true (no decomposition).
 //    6..0: ccc (compressed CCC value).
 // For v < 0x8000, the respective rune has a decomposition and v is an index
 // into a byte array of UTF-8 decomposition sequences and additional info and
@@ -110,10 +110,11 @@ func (p Properties) BoundaryAfter() bool {
 }
 
 // We pack quick check data in 4 bits:
-//   5:    Combines forward  (0 == false, 1 == true)
-//   4..3: NFC_QC Yes(00), No (10), or Maybe (11)
-//   2:    NFD_QC Yes (0) or No (1). No also means there is a decomposition.
-//   1..0: Number of trailing non-starters.
+//
+//	5:    Combines forward  (0 == false, 1 == true)
+//	4..3: NFC_QC Yes(00), No (10), or Maybe (11)
+//	2:    NFD_QC Yes (0) or No (1). No also means there is a decomposition.
+//	1..0: Number of trailing non-starters.
 //
 // When all 4 bits are zero, the character is inert, meaning it is never
 // influenced by normalization.
@@ -199,9 +200,14 @@ func buildRecompMap() {
 // Note that the recomposition map for NFC and NFKC are identical.
 
 // combine returns the combined rune or 0 if it doesn't exist.
+//
+// The caller is responsible for calling
+// recompMapOnce.Do(buildRecompMap) sometime before this is called.
 func combine(a, b rune) rune {
 	key := uint32(uint16(a))<<16 + uint32(uint16(b))
-	recompMapOnce.Do(buildRecompMap)
+	if recompMap == nil {
+		panic("caller error") // see func comment
+	}
 	return recompMap[key]
 }
 

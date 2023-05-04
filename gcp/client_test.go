@@ -7,7 +7,7 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/gcp"
 	compute "google.golang.org/api/compute/v1"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 

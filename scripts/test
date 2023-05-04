@@ -25,10 +25,10 @@ function main() {
 
   pushd "${ROOT_DIR}" > /dev/null
     echo "Unit tests"
-    ginkgo -p -r -race -randomizeAllSpecs -randomizeSuites -skipPackage acceptance-test ${@}
+    go run github.com/onsi/ginkgo/v2/ginkgo -p -r --race --randomize-all --randomize-suites --skip-package=acceptance-test ${@}
 
     echo "Test compilation of acceptance-tests"
-    ginkgo -r -p -dryRun acceptance-tests
+    go run github.com/onsi/ginkgo/v2/ginkgo -r --dry-run acceptance-tests
   popd > /dev/null
 }
 

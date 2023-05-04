@@ -6,7 +6,7 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/cloudconfig/vsphere"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 

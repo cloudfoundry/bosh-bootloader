@@ -9,8 +9,7 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	uuid "github.com/nu7hatch/gouuid"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/ginkgo/extensions/table"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 

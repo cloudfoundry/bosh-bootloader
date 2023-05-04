@@ -14,7 +14,7 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/spf13/afero"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
