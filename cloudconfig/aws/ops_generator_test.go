@@ -125,7 +125,6 @@ az6_reserved_1: 10.1.48.2-10.1.48.3
 az6_reserved_2: 10.1.63.255
 az6_static: 10.1.63.190-10.1.63.254
 az6_subnet: some-iso-seg-subnet-id-3
-internal_security_group: some-internal-security-group
 iso_security_group_id: some-iso-seg-security-group
 iso_shared_security_group_id: some-iso-shared-security-group
 cf_router_lb_name: some-cf-router-lb-name
