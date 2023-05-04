@@ -8,7 +8,7 @@ resource "azurerm_dns_zone" "cf" {
   name                = "${var.system_domain}"
   resource_group_name = "${azurerm_resource_group.bosh.name}"
 
-  tags {
+  tags = {
     environment = "${var.env_id}"
   }
 }

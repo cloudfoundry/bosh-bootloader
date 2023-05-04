@@ -6,7 +6,7 @@ variable "pfx_password" {}
 
 resource "azurerm_subnet" "cf-sn" {
   name                 = "${var.env_id}-cf-sn"
-  address_prefix       = "${cidrsubnet(var.network_cidr, 8, 1)}"
+  address_prefixes     = ["${cidrsubnet(var.network_cidr, 8, 1)}"]
   resource_group_name  = "${azurerm_resource_group.bosh.name}"
   virtual_network_name = "${azurerm_virtual_network.bosh.name}"
 }
@@ -16,7 +16,7 @@ resource "azurerm_network_security_group" "cf" {
   location            = "${var.region}"
   resource_group_name = "${azurerm_resource_group.bosh.name}"
 
-  tags {
+  tags = {
     environment = "${var.env_id}"
   }
 }
@@ -67,7 +67,7 @@ resource "azurerm_public_ip" "cf" {
   name                         = "${var.env_id}-cf-lb-ip"
   location                     = "${var.region}"
   resource_group_name          = "${azurerm_resource_group.bosh.name}"
-  public_ip_address_allocation = "dynamic"
+  allocation_method            = "Dynamic"
 }
 
 resource "azurerm_application_gateway" "cf" {
