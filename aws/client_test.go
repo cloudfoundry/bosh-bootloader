@@ -12,7 +12,7 @@ import (
 	awsec2 "github.com/aws/aws-sdk-go/service/ec2"
 	awsroute53 "github.com/aws/aws-sdk-go/service/route53"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 

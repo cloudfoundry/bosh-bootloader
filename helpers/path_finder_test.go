@@ -4,7 +4,7 @@ import (
 	"crypto/rand"
 
 	"github.com/cloudfoundry/bosh-bootloader/helpers"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
