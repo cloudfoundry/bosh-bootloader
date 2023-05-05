@@ -15,6 +15,9 @@ provider "aws" {
   access_key = "${var.access_key}"
   secret_key = "${var.secret_key}"
   region     = "${var.region}"
+  assume_role {
+    role_arn = "${var.role_arn}"
+  }
 }
 
 variable "access_key" {
@@ -27,6 +30,11 @@ variable "secret_key" {
 
 variable "region" {
   type = string
+}
+
+variable "role_arn" {
+  type = string
+  default = ""
 }
 
 variable "bosh_inbound_cidr" {
