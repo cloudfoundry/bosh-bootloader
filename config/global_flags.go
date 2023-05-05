@@ -13,6 +13,7 @@ type GlobalFlags struct {
 	AWSAccessKeyID     string `long:"aws-access-key-id"       env:"BBL_AWS_ACCESS_KEY_ID"`
 	AWSSecretAccessKey string `long:"aws-secret-access-key"   env:"BBL_AWS_SECRET_ACCESS_KEY"`
 	AWSRegion          string `long:"aws-region"              env:"BBL_AWS_REGION"`
+	AWSAssumeRole      string `long:"aws-assume-role"         env:"BBL_AWS_ASSUME_ROLE"`
 
 	AzureClientID       string `long:"azure-client-id"        env:"BBL_AZURE_CLIENT_ID"`
 	AzureClientSecret   string `long:"azure-client-secret"    env:"BBL_AZURE_CLIENT_SECRET"`

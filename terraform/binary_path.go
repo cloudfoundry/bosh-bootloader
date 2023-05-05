@@ -15,7 +15,7 @@ import (
 const (
 	tfBinDataAssetName = "terraform"
 	bblTfBinaryName    = "bbl-terraform"
-	terraformModTime = "terraform-mod-time"
+	terraformModTime   = "terraform-mod-time"
 )
 
 type tfBinaryPathFs interface {

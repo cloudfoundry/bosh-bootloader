@@ -99,6 +99,7 @@ func (m Merger) updateVSphereState(globalFlags GlobalFlags, state storage.State)
 func (m Merger) updateAWSState(globalFlags GlobalFlags, state storage.State) (storage.State, error) {
 	copyFlagToState(globalFlags.AWSAccessKeyID, &state.AWS.AccessKeyID)
 	copyFlagToState(globalFlags.AWSSecretAccessKey, &state.AWS.SecretAccessKey)
+	copyFlagToState(globalFlags.AWSAssumeRole, &state.AWS.AssumeRoleArn)
 
 	if globalFlags.AWSRegion != "" {
 		if state.AWS.Region != "" && globalFlags.AWSRegion != state.AWS.Region {
