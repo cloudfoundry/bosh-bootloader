@@ -8,6 +8,7 @@ import (
 
 	awslib "github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
 	"github.com/aws/aws-sdk-go/aws/session"
 	awsec2 "github.com/aws/aws-sdk-go/service/ec2"
 	awsroute53 "github.com/aws/aws-sdk-go/service/route53"
@@ -43,14 +44,19 @@ type Client struct {
 }
 
 func NewClient(creds storage.AWS, logger logger) Client {
-	config := &awslib.Config{
-		Credentials: credentials.NewStaticCredentials(creds.AccessKeyID, creds.SecretAccessKey, ""),
-		Region:      awslib.String(creds.Region),
+	config := awslib.NewConfig().
+		WithCredentials(credentials.NewStaticCredentials(creds.AccessKeyID, creds.SecretAccessKey, "")).
+		WithRegion(creds.Region)
+	awsSession := session.Must(session.NewSession(config))
+
+	if creds.AssumeRoleArn != "" {
+		stsCredentials := stscreds.NewCredentials(awsSession, creds.AssumeRoleArn)
+		awsSession = session.Must(session.NewSession(awslib.NewConfig().WithCredentials(stsCredentials).WithRegion(creds.Region)))
 	}
 
 	return Client{
-		ec2Client:     awsec2.New(session.Must(session.NewSession(config))),
-		route53Client: awsroute53.New(session.Must(session.NewSession(config))),
+		ec2Client:     awsec2.New(awsSession),
+		route53Client: awsroute53.New(awsSession),
 		logger:        logger,
 	}
 }

@@ -193,6 +193,7 @@ var _ = Describe("LoadState", func() {
 					Expect(flags.EnvID).To(Equal("some-name"))
 					Expect(flags.AWSAccessKeyID).To(Equal("some-aws-access-key"))
 					Expect(flags.AWSSecretAccessKey).To(Equal("some-aws-secret-access-key"))
+					Expect(flags.AWSAssumeRole).To(Equal("some-aws-assume-role"))
 				})
 			})
 		})

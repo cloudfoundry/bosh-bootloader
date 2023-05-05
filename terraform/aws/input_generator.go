@@ -66,5 +66,6 @@ func (i InputGenerator) Credentials(state storage.State) map[string]string {
 	return map[string]string{
 		"access_key": state.AWS.AccessKeyID,
 		"secret_key": state.AWS.SecretAccessKey,
+		"role_arn":   state.AWS.AssumeRoleArn,
 	}
 }
