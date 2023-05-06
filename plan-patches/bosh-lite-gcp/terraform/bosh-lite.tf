@@ -27,7 +27,7 @@ resource "google_compute_route" "bosh-lite-vms" {
   next_hop_ip = "10.0.0.6"
   priority    = 1
 
-  depends_on = ["google_compute_subnetwork.bbl-subnet"]
+  depends_on = [google_compute_subnetwork.bbl-subnet]
 }
 
 resource "google_compute_firewall" "bosh-director-lite-tcp-routing" {
@@ -46,10 +46,6 @@ resource "google_compute_firewall" "bosh-director-lite-tcp-routing" {
 
 output "director__external_ip" {
   value = "${google_compute_address.bosh-director-ip.address}"
-}
-
-output "external_ip" {
-  value = "${google_compute_address.jumpbox-ip.address}"
 }
 
 output "jumpbox__external_ip" {
