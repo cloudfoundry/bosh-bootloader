@@ -75,55 +75,102 @@ var _ = Describe("Executor", func() {
 	})
 
 	Describe("PlanJumpbox", func() {
-		It("writes bosh-deployment assets to the deployment dir", func() {
-			err := executor.PlanJumpbox(dirInput, deploymentDir, "aws")
-			Expect(err).NotTo(HaveOccurred())
-
-			By("writing bosh-deployment assets to the deployment dir", func() {
-				simplePath := filepath.Join(deploymentDir, "no-external-ip.yml")
-
-				contents, err := fs.ReadFile(simplePath)
+		Context("on aws", func() {
+			It("writes bosh-deployment assets to the deployment dir", func() {
+				err := executor.PlanJumpbox(dirInput, deploymentDir, "aws")
 				Expect(err).NotTo(HaveOccurred())
-				Expect(string(contents)).To(Equal("no-ip"))
 
-				nestedPath := filepath.Join(deploymentDir, "aws", "cpi.yml")
+				By("writing bosh-deployment assets to the deployment dir", func() {
+					simplePath := filepath.Join(deploymentDir, "no-external-ip.yml")
 
-				contents, err = fs.ReadFile(nestedPath)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(string(contents)).To(Equal("aws-cpi"))
+					contents, err := fs.ReadFile(simplePath)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(string(contents)).To(Equal("no-ip"))
+
+					nestedPath := filepath.Join(deploymentDir, "aws", "cpi.yml")
+
+					contents, err = fs.ReadFile(nestedPath)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(string(contents)).To(Equal("aws-cpi"))
+				})
+
+				By("writing create-env and delete-env scripts", func() {
+					expectedArgs := []string{
+						fmt.Sprintf("%s/jumpbox.yml", relativeDeploymentDir),
+						"--state", fmt.Sprintf("%s/jumpbox-state.json", relativeVarsDir),
+						"--vars-store", fmt.Sprintf("%s/jumpbox-vars-store.yml", relativeVarsDir),
+						"--vars-file", fmt.Sprintf("%s/jumpbox-vars-file.yml", relativeVarsDir),
+						"-o", fmt.Sprintf("%s/aws/cpi.yml", relativeDeploymentDir),
+						"-v", `access_key_id="${BBL_AWS_ACCESS_KEY_ID}"`,
+						"-v", `secret_access_key="${BBL_AWS_SECRET_ACCESS_KEY}"`,
+					}
+
+					expectedScript := formatScript("create-env", stateDir, expectedArgs)
+					scriptPath := fmt.Sprintf("%s/create-jumpbox.sh", stateDir)
+					shellScript, err := fs.ReadFile(scriptPath)
+					Expect(err).NotTo(HaveOccurred())
+
+					fileinfo, err := fs.Stat(scriptPath)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(fileinfo.Mode().String()).To(Equal("-rwxr-x---"))
+					Expect(string(shellScript)).To(Equal(expectedScript))
+
+					expectedScript = formatScript("delete-env", stateDir, expectedArgs)
+					scriptPath = fmt.Sprintf("%s/delete-jumpbox.sh", stateDir)
+					shellScript, err = fs.ReadFile(scriptPath)
+					Expect(err).NotTo(HaveOccurred())
+
+					fileinfo, err = fs.Stat(scriptPath)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(fileinfo.Mode().String()).To(Equal("-rwxr-x---"))
+					Expect(err).NotTo(HaveOccurred())
+					Expect(string(shellScript)).To(Equal(expectedScript))
+				})
 			})
 
-			By("writing create-env and delete-env scripts", func() {
-				expectedArgs := []string{
-					fmt.Sprintf("%s/jumpbox.yml", relativeDeploymentDir),
-					"--state", fmt.Sprintf("%s/jumpbox-state.json", relativeVarsDir),
-					"--vars-store", fmt.Sprintf("%s/jumpbox-vars-store.yml", relativeVarsDir),
-					"--vars-file", fmt.Sprintf("%s/jumpbox-vars-file.yml", relativeVarsDir),
-					"-o", fmt.Sprintf("%s/aws/cpi.yml", relativeDeploymentDir),
-					"-v", `access_key_id="${BBL_AWS_ACCESS_KEY_ID}"`,
-					"-v", `secret_access_key="${BBL_AWS_SECRET_ACCESS_KEY}"`,
-				}
+			Context("when assume role is set", func() {
+				It("writes create-env and delete-env scripts with the assume role ops files and variables", func() {
+					state := storage.State{
+						AWS: storage.AWS{
+							AssumeRoleArn: "some-aws-assume-role",
+						},
+					}
+					err := executor.PlanJumpboxWithState(dirInput, deploymentDir, "aws", state)
+					Expect(err).NotTo(HaveOccurred())
 
-				expectedScript := formatScript("create-env", stateDir, expectedArgs)
-				scriptPath := fmt.Sprintf("%s/create-jumpbox.sh", stateDir)
-				shellScript, err := fs.ReadFile(scriptPath)
-				Expect(err).NotTo(HaveOccurred())
+					expectedArgs := []string{
+						fmt.Sprintf("%s/jumpbox.yml", relativeDeploymentDir),
+						"--state", fmt.Sprintf("%s/jumpbox-state.json", relativeVarsDir),
+						"--vars-store", fmt.Sprintf("%s/jumpbox-vars-store.yml", relativeVarsDir),
+						"--vars-file", fmt.Sprintf("%s/jumpbox-vars-file.yml", relativeVarsDir),
+						"-o", fmt.Sprintf("%s/aws/cpi.yml", relativeDeploymentDir),
+						"-o", fmt.Sprintf("%s/aws/cpi-assume-role-credentials.yml", relativeDeploymentDir),
+						"-v", `access_key_id="${BBL_AWS_ACCESS_KEY_ID}"`,
+						"-v", `secret_access_key="${BBL_AWS_SECRET_ACCESS_KEY}"`,
+						"-v", `role_arn="${BBL_AWS_ASSUME_ROLE}"`,
+					}
 
-				fileinfo, err := fs.Stat(scriptPath)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(fileinfo.Mode().String()).To(Equal("-rwxr-x---"))
-				Expect(string(shellScript)).To(Equal(expectedScript))
+					expectedScript := formatScript("create-env", stateDir, expectedArgs)
+					scriptPath := fmt.Sprintf("%s/create-jumpbox.sh", stateDir)
+					shellScript, err := fs.ReadFile(scriptPath)
+					Expect(err).NotTo(HaveOccurred())
 
-				expectedScript = formatScript("delete-env", stateDir, expectedArgs)
-				scriptPath = fmt.Sprintf("%s/delete-jumpbox.sh", stateDir)
-				shellScript, err = fs.ReadFile(scriptPath)
-				Expect(err).NotTo(HaveOccurred())
+					fileinfo, err := fs.Stat(scriptPath)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(fileinfo.Mode().String()).To(Equal("-rwxr-x---"))
+					Expect(string(shellScript)).To(Equal(expectedScript))
 
-				fileinfo, err = fs.Stat(scriptPath)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(fileinfo.Mode().String()).To(Equal("-rwxr-x---"))
-				Expect(err).NotTo(HaveOccurred())
-				Expect(string(shellScript)).To(Equal(expectedScript))
+					expectedScript = formatScript("delete-env", stateDir, expectedArgs)
+					scriptPath = fmt.Sprintf("%s/delete-jumpbox.sh", stateDir)
+					shellScript, err = fs.ReadFile(scriptPath)
+					Expect(err).NotTo(HaveOccurred())
+
+					fileinfo, err = fs.Stat(scriptPath)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(fileinfo.Mode().String()).To(Equal("-rwxr-x---"))
+					Expect(err).NotTo(HaveOccurred())
+					Expect(string(shellScript)).To(Equal(expectedScript))
+				})
 			})
 		})
 
@@ -314,7 +361,7 @@ var _ = Describe("Executor", func() {
 					"-v", `secret_access_key="${BBL_AWS_SECRET_ACCESS_KEY}"`,
 				}
 
-				behavesLikePlan(expectedArgs, cli, fs, executor, dirInput, deploymentDir, "aws", stateDir)
+				behavesLikePlan(expectedArgs, cli, fs, executor, dirInput, deploymentDir, "aws", stateDir, storage.State{})
 			})
 
 			It("writes aws-specific ops files", func() {
@@ -330,6 +377,35 @@ var _ = Describe("Executor", func() {
   path: /resource_pools/name=vms/cloud_properties/auto_assign_public_ip?
   value: true
 `))
+			})
+
+			Context("when assume role is set", func() {
+				It("writes create-director.sh and delete-director.sh including the assume role ops files and variables", func() {
+					expectedArgs := []string{
+						filepath.Join(relativeDeploymentDir, "bosh.yml"),
+						"--state", filepath.Join(relativeVarsDir, "bosh-state.json"),
+						"--vars-store", filepath.Join(relativeVarsDir, "director-vars-store.yml"),
+						"--vars-file", filepath.Join(relativeVarsDir, "director-vars-file.yml"),
+						"-o", filepath.Join(relativeDeploymentDir, "aws", "cpi.yml"),
+						"-o", filepath.Join(relativeDeploymentDir, "jumpbox-user.yml"),
+						"-o", filepath.Join(relativeDeploymentDir, "uaa.yml"),
+						"-o", filepath.Join(relativeDeploymentDir, "credhub.yml"),
+						"-o", filepath.Join(relativeStateDir, "bbl-ops-files", "aws", "bosh-director-ephemeral-ip-ops.yml"),
+						"-o", filepath.Join(relativeDeploymentDir, "aws", "iam-instance-profile.yml"),
+						"-o", filepath.Join(relativeDeploymentDir, "aws", "encrypted-disk.yml"),
+						"-o", filepath.Join(relativeDeploymentDir, "aws", "cpi-assume-role-credentials.yml"),
+						"-v", `access_key_id="${BBL_AWS_ACCESS_KEY_ID}"`,
+						"-v", `secret_access_key="${BBL_AWS_SECRET_ACCESS_KEY}"`,
+						"-v", `role_arn="${BBL_AWS_ASSUME_ROLE}"`,
+					}
+
+					state := storage.State{
+						AWS: storage.AWS{
+							AssumeRoleArn: "some-aws-assume-role",
+						},
+					}
+					behavesLikePlan(expectedArgs, cli, fs, executor, dirInput, deploymentDir, "aws", stateDir, state)
+				})
 			})
 		})
 
@@ -350,7 +426,7 @@ var _ = Describe("Executor", func() {
 					"-v", `zone="${BBL_GCP_ZONE}"`,
 				}
 
-				behavesLikePlan(expectedArgs, cli, fs, executor, dirInput, deploymentDir, "gcp", stateDir)
+				behavesLikePlan(expectedArgs, cli, fs, executor, dirInput, deploymentDir, "gcp", stateDir, storage.State{})
 			})
 
 			It("writes gcp-specific ops files", func() {
@@ -386,7 +462,7 @@ var _ = Describe("Executor", func() {
 					"-v", `tenant_id="${BBL_AZURE_TENANT_ID}"`,
 				}
 
-				behavesLikePlan(expectedArgs, cli, fs, executor, dirInput, deploymentDir, "azure", stateDir)
+				behavesLikePlan(expectedArgs, cli, fs, executor, dirInput, deploymentDir, "azure", stateDir, storage.State{})
 			})
 		})
 
@@ -406,7 +482,7 @@ var _ = Describe("Executor", func() {
 					"-v", `vcenter_password="${BBL_VSPHERE_VCENTER_PASSWORD}"`,
 				}
 
-				behavesLikePlan(expectedArgs, cli, fs, executor, dirInput, deploymentDir, "vsphere", stateDir)
+				behavesLikePlan(expectedArgs, cli, fs, executor, dirInput, deploymentDir, "vsphere", stateDir, storage.State{})
 			})
 		})
 
@@ -425,7 +501,7 @@ var _ = Describe("Executor", func() {
 					"-v", `openstack_password="${BBL_OPENSTACK_PASSWORD}"`,
 				}
 
-				behavesLikePlan(expectedArgs, cli, fs, executor, dirInput, deploymentDir, "openstack", stateDir)
+				behavesLikePlan(expectedArgs, cli, fs, executor, dirInput, deploymentDir, "openstack", stateDir, storage.State{})
 			})
 		})
 	})
@@ -945,13 +1021,13 @@ type behavesLikePlanFs interface {
 	fileio.Stater
 }
 
-func behavesLikePlan(expectedArgs []string, cli *fakes.BOSHCLI, fs behavesLikePlanFs, executor bosh.Executor, input bosh.DirInput, deploymentDir, iaas, stateDir string) {
+func behavesLikePlan(expectedArgs []string, cli *fakes.BOSHCLI, fs behavesLikePlanFs, executor bosh.Executor, input bosh.DirInput, deploymentDir, iaas, stateDir string, state storage.State) {
 	cli.RunStub = func(stdout io.Writer, workingDirectory string, args []string) error {
 		stdout.Write([]byte("some-manifest"))
 		return nil
 	}
 
-	err := executor.PlanDirector(input, deploymentDir, iaas)
+	err := executor.PlanDirectorWithState(input, deploymentDir, iaas, state)
 	Expect(err).NotTo(HaveOccurred())
 	Expect(cli.RunCallCount()).To(Equal(0))
 

@@ -146,11 +146,12 @@ var _ = Describe("InputGenerator", func() {
 	})
 
 	Describe("Credentials", func() {
-		It("returns the access key and secret key", func() {
+		It("returns the access key, secret key, and role arn", func() {
 			state := storage.State{
 				AWS: storage.AWS{
 					AccessKeyID:     "some-access-key-id",
 					SecretAccessKey: "some-secret-access-key",
+					AssumeRoleArn:   "some-assume-role-arn",
 					Region:          "some-region",
 				},
 			}
@@ -160,6 +161,7 @@ var _ = Describe("InputGenerator", func() {
 			Expect(credentials).To(Equal(map[string]string{
 				"access_key": "some-access-key-id",
 				"secret_key": "some-secret-access-key",
+				"role_arn":   "some-assume-role-arn",
 			}))
 		})
 	})

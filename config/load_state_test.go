@@ -184,6 +184,7 @@ var _ = Describe("LoadState", func() {
 						"--name", "some-name",
 						"--aws-access-key-id", "some-aws-access-key",
 						"--aws-secret-access-key", "some-aws-secret-access-key",
+						"--aws-assume-role", "some-aws-assume-role",
 					}))
 					Expect(err).NotTo(HaveOccurred())
 

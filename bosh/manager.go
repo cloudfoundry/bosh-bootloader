@@ -40,8 +40,8 @@ type directorVars struct {
 }
 
 type executor interface {
-	PlanDirector(DirInput, string, string) error
-	PlanJumpbox(DirInput, string, string) error
+	PlanDirectorWithState(DirInput, string, string, storage.State) error
+	PlanJumpboxWithState(DirInput, string, string, storage.State) error
 	CreateEnv(DirInput, storage.State) (string, error)
 	DeleteEnv(DirInput, storage.State) error
 	WriteDeploymentVars(DirInput, string) error
@@ -107,7 +107,7 @@ func (m *Manager) InitializeJumpbox(state storage.State) error {
 		VarsDir:  varsDir,
 	}
 
-	err = m.executor.PlanJumpbox(iaasInputs, deploymentDir, state.IAAS)
+	err = m.executor.PlanJumpboxWithState(iaasInputs, deploymentDir, state.IAAS, state)
 	if err != nil {
 		return fmt.Errorf("Jumpbox interpolate: %s", err)
 	}
@@ -186,7 +186,7 @@ func (m *Manager) InitializeDirector(state storage.State) error {
 		VarsDir:  varsDir,
 	}
 
-	err = m.executor.PlanDirector(iaasInputs, directorDeploymentDir, state.IAAS)
+	err = m.executor.PlanDirectorWithState(iaasInputs, directorDeploymentDir, state.IAAS, state)
 	if err != nil {
 		return err
 	}
