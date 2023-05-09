@@ -29,24 +29,26 @@ type BOSHExecutor struct {
 		}
 	}
 
-	PlanJumpboxCall struct {
+	PlanJumpboxWithStateCall struct {
 		CallCount int
 		Receives  struct {
 			DirInput      bosh.DirInput
 			DeploymentDir string
 			Iaas          string
+			State         storage.State
 		}
 		Returns struct {
 			Error error
 		}
 	}
 
-	PlanDirectorCall struct {
+	PlanDirectorWithStateCall struct {
 		CallCount int
 		Receives  struct {
 			DirInput      bosh.DirInput
 			DeploymentDir string
 			Iaas          string
+			State         storage.State
 		}
 		Returns struct {
 			Error error
@@ -104,22 +106,24 @@ func (e *BOSHExecutor) DeleteEnv(input bosh.DirInput, state storage.State) error
 	return e.DeleteEnvCall.Returns.Error
 }
 
-func (e *BOSHExecutor) PlanJumpbox(input bosh.DirInput, deploymentDir, iaas string) error {
-	e.PlanJumpboxCall.CallCount++
-	e.PlanJumpboxCall.Receives.DirInput = input
-	e.PlanJumpboxCall.Receives.DeploymentDir = deploymentDir
-	e.PlanJumpboxCall.Receives.Iaas = iaas
+func (e *BOSHExecutor) PlanJumpboxWithState(input bosh.DirInput, deploymentDir, iaas string, state storage.State) error {
+	e.PlanJumpboxWithStateCall.CallCount++
+	e.PlanJumpboxWithStateCall.Receives.DirInput = input
+	e.PlanJumpboxWithStateCall.Receives.DeploymentDir = deploymentDir
+	e.PlanJumpboxWithStateCall.Receives.Iaas = iaas
+	e.PlanJumpboxWithStateCall.Receives.State = state
 
-	return e.PlanJumpboxCall.Returns.Error
+	return e.PlanJumpboxWithStateCall.Returns.Error
 }
 
-func (e *BOSHExecutor) PlanDirector(input bosh.DirInput, deploymentDir, iaas string) error {
-	e.PlanDirectorCall.CallCount++
-	e.PlanDirectorCall.Receives.DirInput = input
-	e.PlanDirectorCall.Receives.DeploymentDir = deploymentDir
-	e.PlanDirectorCall.Receives.Iaas = iaas
+func (e *BOSHExecutor) PlanDirectorWithState(input bosh.DirInput, deploymentDir, iaas string, state storage.State) error {
+	e.PlanDirectorWithStateCall.CallCount++
+	e.PlanDirectorWithStateCall.Receives.DirInput = input
+	e.PlanDirectorWithStateCall.Receives.DeploymentDir = deploymentDir
+	e.PlanDirectorWithStateCall.Receives.Iaas = iaas
+	e.PlanDirectorWithStateCall.Receives.State = state
 
-	return e.PlanDirectorCall.Returns.Error
+	return e.PlanDirectorWithStateCall.Returns.Error
 }
 
 func (e *BOSHExecutor) Path() string {
