@@ -102,17 +102,17 @@ director_ssl:
 			It("Calls PlanDirector", func() {
 				err := boshManager.InitializeDirector(state)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(boshExecutor.PlanDirectorCall.Receives.DirInput.VarsDir).To(Equal("some-bbl-vars-dir"))
-				Expect(boshExecutor.PlanDirectorCall.Receives.DirInput.StateDir).To(Equal("some-state-dir"))
-				Expect(boshExecutor.PlanDirectorCall.Receives.DeploymentDir).To(Equal("some-director-deployment-dir"))
-				Expect(boshExecutor.PlanJumpboxCall.CallCount).To(Equal(0))
+				Expect(boshExecutor.PlanDirectorWithStateCall.Receives.DirInput.VarsDir).To(Equal("some-bbl-vars-dir"))
+				Expect(boshExecutor.PlanDirectorWithStateCall.Receives.DirInput.StateDir).To(Equal("some-state-dir"))
+				Expect(boshExecutor.PlanDirectorWithStateCall.Receives.DeploymentDir).To(Equal("some-director-deployment-dir"))
+				Expect(boshExecutor.PlanJumpboxWithStateCall.CallCount).To(Equal(0))
 
 				Expect(boshExecutor.CreateEnvCall.CallCount).To(Equal(0))
 			})
 
 			Context("when create env args fails", func() {
 				BeforeEach(func() {
-					boshExecutor.PlanDirectorCall.Returns.Error = errors.New("failed to interpolate")
+					boshExecutor.PlanDirectorWithStateCall.Returns.Error = errors.New("failed to interpolate")
 				})
 
 				It("returns an error", func() {
@@ -238,13 +238,13 @@ director_ssl:
 		})
 
 		Describe("InitializeJumpbox", func() {
-			It("calls PlanJumpboxCall appropriately", func() {
+			It("calls PlanJumpboxWithStateCall appropriately", func() {
 				err := boshManager.InitializeJumpbox(state)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(boshExecutor.PlanJumpboxCall.Receives.DeploymentDir).To(Equal("some-jumpbox-deployment-dir"))
-				Expect(boshExecutor.PlanJumpboxCall.Receives.DirInput.VarsDir).To(Equal("some-bbl-vars-dir"))
-				Expect(boshExecutor.PlanJumpboxCall.Receives.DirInput.StateDir).To(Equal("some-state-dir"))
+				Expect(boshExecutor.PlanJumpboxWithStateCall.Receives.DeploymentDir).To(Equal("some-jumpbox-deployment-dir"))
+				Expect(boshExecutor.PlanJumpboxWithStateCall.Receives.DirInput.VarsDir).To(Equal("some-bbl-vars-dir"))
+				Expect(boshExecutor.PlanJumpboxWithStateCall.Receives.DirInput.StateDir).To(Equal("some-state-dir"))
 			})
 
 			Context("when an error occurs", func() {

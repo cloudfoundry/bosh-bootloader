@@ -101,6 +101,10 @@ func (e Executor) getSetupFiles(sourcePath, destPath string) []setupFile {
 }
 
 func (e Executor) PlanJumpbox(input DirInput, deploymentDir, iaas string) error {
+	return e.PlanJumpboxWithState(input, deploymentDir, iaas, storage.State{})
+}
+
+func (e Executor) PlanJumpboxWithState(input DirInput, deploymentDir, iaas string, state storage.State) error {
 	setupFiles := e.getSetupFiles(jumpboxDeploymentRepo, deploymentDir)
 
 	for _, f := range setupFiles {
@@ -128,6 +132,12 @@ func (e Executor) PlanJumpbox(input DirInput, deploymentDir, iaas string) error 
 		}
 	}
 
+	if iaas == "aws" {
+		if state.AWS.AssumeRoleArn != "" {
+			sharedArgs = append(sharedArgs, "-o", filepath.Join(deploymentDir, "aws", "cpi-assume-role-credentials.yml"))
+		}
+	}
+
 	jumpboxState := filepath.Join(input.VarsDir, "jumpbox-state.json")
 
 	boshArgs := append([]string{filepath.Join(deploymentDir, "jumpbox.yml"), "--state", jumpboxState}, sharedArgs...)
@@ -138,6 +148,11 @@ func (e Executor) PlanJumpbox(input DirInput, deploymentDir, iaas string) error 
 			"-v", `access_key_id="${BBL_AWS_ACCESS_KEY_ID}"`,
 			"-v", `secret_access_key="${BBL_AWS_SECRET_ACCESS_KEY}"`,
 		)
+		if state.AWS.AssumeRoleArn != "" {
+			boshArgs = append(boshArgs,
+				"-v", `role_arn="${BBL_AWS_ASSUME_ROLE}"`,
+			)
+		}
 	case "azure":
 		boshArgs = append(boshArgs,
 			"-v", `subscription_id="${BBL_AZURE_SUBSCRIPTION_ID}"`,
@@ -210,7 +225,7 @@ func (e Executor) getDirectorSetupFiles(stateDir, deploymentDir, iaas string) []
 	return files
 }
 
-func (e Executor) getDirectorOpsFiles(stateDir, deploymentDir, iaas string) []string {
+func (e Executor) getDirectorOpsFiles(stateDir, deploymentDir, iaas string, state storage.State) []string {
 	files := []string{
 		filepath.Join(deploymentDir, iaas, "cpi.yml"),
 		filepath.Join(deploymentDir, "jumpbox-user.yml"),
@@ -223,6 +238,9 @@ func (e Executor) getDirectorOpsFiles(stateDir, deploymentDir, iaas string) []st
 		files = append(files, filepath.Join(stateDir, "bbl-ops-files", iaas, "bosh-director-ephemeral-ip-ops.yml"))
 		files = append(files, filepath.Join(deploymentDir, iaas, "iam-instance-profile.yml"))
 		files = append(files, filepath.Join(deploymentDir, iaas, "encrypted-disk.yml"))
+		if state.AWS.AssumeRoleArn != "" {
+			files = append(files, filepath.Join(deploymentDir, iaas, "cpi-assume-role-credentials.yml"))
+		}
 	} else if iaas == "vsphere" {
 		files = append(files, filepath.Join(deploymentDir, "vsphere", "resource-pool.yml"))
 	}
@@ -230,6 +248,10 @@ func (e Executor) getDirectorOpsFiles(stateDir, deploymentDir, iaas string) []st
 }
 
 func (e Executor) PlanDirector(input DirInput, deploymentDir, iaas string) error {
+	return e.PlanDirectorWithState(input, deploymentDir, iaas, storage.State{})
+}
+
+func (e Executor) PlanDirectorWithState(input DirInput, deploymentDir, iaas string, state storage.State) error {
 	setupFiles := e.getDirectorSetupFiles(input.StateDir, deploymentDir, iaas)
 
 	for _, f := range setupFiles {
@@ -246,7 +268,7 @@ func (e Executor) PlanDirector(input DirInput, deploymentDir, iaas string) error
 		"--vars-file", filepath.Join(input.VarsDir, "director-vars-file.yml"),
 	}
 
-	for _, f := range e.getDirectorOpsFiles(input.StateDir, deploymentDir, iaas) {
+	for _, f := range e.getDirectorOpsFiles(input.StateDir, deploymentDir, iaas, state) {
 		sharedArgs = append(sharedArgs, "-o", f)
 	}
 
@@ -260,6 +282,11 @@ func (e Executor) PlanDirector(input DirInput, deploymentDir, iaas string) error
 			"-v", `access_key_id="${BBL_AWS_ACCESS_KEY_ID}"`,
 			"-v", `secret_access_key="${BBL_AWS_SECRET_ACCESS_KEY}"`,
 		)
+		if state.AWS.AssumeRoleArn != "" {
+			boshArgs = append(boshArgs,
+				"-v", `role_arn="${BBL_AWS_ASSUME_ROLE}"`,
+			)
+		}
 	case "azure":
 		boshArgs = append(boshArgs,
 			"-v", `subscription_id="${BBL_AZURE_SUBSCRIPTION_ID}"`,
