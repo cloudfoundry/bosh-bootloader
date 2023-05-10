@@ -24,14 +24,6 @@ resource "azurerm_storage_account" "bosh" {
   resource_group_name = "${data.azurerm_resource_group.bosh.name}"
 }
 
-resource "azurerm_storage_container" "bosh" {
-  resource_group_name = "${data.azurerm_resource_group.bosh.name}"
-}
-
-resource "azurerm_storage_container" "stemcell" {
-  resource_group_name = "${data.azurerm_resource_group.bosh.name}"
-}
-
 resource "azurerm_network_security_group" "bosh" {
   resource_group_name = "${data.azurerm_resource_group.bosh.name}"
 }
