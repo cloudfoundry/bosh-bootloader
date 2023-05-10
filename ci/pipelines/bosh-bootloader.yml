@@ -825,9 +825,7 @@ jobs:
       BBL_GCP_SERVICE_ACCOUNT_KEY: ((gcp_json_key))
       SYSTEM_DOMAIN: bump-deployments-cf.bbl.ci.cloudfoundry.org
       VARS_STORE_FILE: bump-deployments/bbl-gcp-cf/deployment-vars.yml
-      OPS_FILES:
-        - "operations/use-compiled-releases.yml"
-        - "operations/experimental/fast-deploy-with-downtime-and-danger.yml"
+      OPS_FILES: operations/use-compiled-releases.yml operations/experimental/fast-deploy-with-downtime-and-danger.yml
     on_failure:
       do:
       - task: remove-from-gcp-dns
