@@ -18,7 +18,7 @@ groups:
 - name: misc
   jobs:
   - bump-bbl-docs
-  # - bump-bbl-deployment-image
+  - bump-bbl-deployment-image
 #  - bump-brew-tap
 
 resource_types:
@@ -28,17 +28,12 @@ resource_types:
     repository: cloudfoundry/bosh-deployment-resource
 
 resources:
-# - name: once-a-day
-#   type: time
-#   source:
-#     interval: 24h
-
-# - name: cryogenics-bbl-deployment
-#   type: docker-image
-#   source:
-#     repository: cryogenics/bbl-deployment
-#     username: ((dockerhub.username))
-#     password: ((dockerhub.password))
+- name: docker-bbl-deployment
+  type: docker-image
+  source:
+    repository: cloudfoundry/bbl-deployment
+    username: ((foundationalinfrastructure-dockerhub_username))
+    password: ((foundationalinfrastructure-dockerhub_password))
 
 - name: ubuntu-jammy-stemcell-gcp
   type: bosh-io-stemcell
@@ -120,7 +115,7 @@ resources:
 #     owner: cloudfoundry
 #     repository: bosh-bootloader
 #     access_token: ((cf_deployment_release_bot_access_token))
-#     drafts: true
+#     drafts: false
 
 - name: bbl-release-official
   type: github-release
@@ -220,16 +215,16 @@ resources:
     uri: https://github.com/cloudfoundry/runtime-ci
 
 jobs:
-# - name: bump-bbl-deployment-image
-#   plan:
-#   - in_parallel:
-#     - get: bosh-bootloader
-#     - get: once-a-day
-#       trigger: true
-#   - put: cryogenics-bbl-deployment
-#     params:
-#       tag: master
-#       build: bosh-bootloader/ci/dockerfiles/deployment/
+- name: bump-bbl-deployment-image
+  plan:
+  - in_parallel:
+    - get: bosh-bootloader
+    - get: bbl-release-official
+      trigger: true
+  - put: docker-bbl-deployment
+    params:
+      # tag: main
+      build: bosh-bootloader/ci/dockerfiles/deployment/
 
 - name: sync-version-bump-deployments
   serial: true
