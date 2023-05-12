@@ -20,4 +20,5 @@ output "s3_blobstore_access_key_id" {
 
 output "s3_blobstore_secret_access_key" {
   value = "${aws_iam_access_key.blobstore_access.secret}"
+  sensitive = true
 }
