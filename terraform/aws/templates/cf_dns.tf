@@ -19,8 +19,8 @@ output "env_dns_zone_name_servers" {
 }
 
 locals {
-  zone_id      = "${var.parent_zone == "" ? element(concat(aws_route53_zone.env_dns_zone.*.zone_id, tolist([""])), 0) : element(concat(data.aws_route53_zone.parent.*.zone_id, tolist([""])), 0)}"
-  name_servers = "${var.parent_zone == "" ? join(",", flatten(concat(aws_route53_zone.env_dns_zone.*.name_servers, tolist([list([""])])))) :  join(",", flatten(concat(data.aws_route53_zone.env_dns_zone.*.name_servers, tolist([list([""])]))))}"
+  zone_id      = one(try(aws_route53_zone.env_dns_zone[*].zone_id, data.aws_route53_zone.parent[*].zone_id))
+  name_servers = join(",", flatten(concat(try(aws_route53_zone.env_dns_zone[*].name_servers, data.aws_route53_zone.parent[*].name_servers), tolist([tolist([""])]))))
 }
 
 resource "aws_route53_zone" "env_dns_zone" {
@@ -88,5 +88,5 @@ resource "aws_route53_record" "iso" {
   type    = "CNAME"
   ttl     = 300
 
-  records = ["${aws_elb.iso_router_lb.dns_name}"]
+  records = [one(aws_elb.iso_router_lb[*].dns_name)]
 }

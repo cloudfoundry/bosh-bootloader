@@ -208,11 +208,11 @@ resource "aws_security_group_rule" "nat_to_isolated_cells_rule" {
 }
 
 output "cf_iso_router_lb_name" {
-  value = "${element(concat(aws_elb.iso_router_lb.*.name, tolist([""])), 0)}"
+  value = one(aws_elb.iso_router_lb[*].name)
 }
 
 output "iso_security_group_id" {
-  value = "${element(concat(aws_security_group.iso_security_group.*.id, tolist([""])), 0)}"
+  value = one(aws_security_group.iso_security_group[*].id)
 }
 
 output "iso_az_subnet_id_mapping" {
@@ -228,5 +228,5 @@ output "iso_az_subnet_cidr_mapping" {
 }
 
 output "iso_shared_security_group_id" {
-  value = "${element(concat(aws_security_group.iso_shared_security_group.*.id, tolist([""])), 0)}"
+  value = one(aws_security_group.iso_shared_security_group[*].id)
 }
