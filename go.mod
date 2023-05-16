@@ -1,6 +1,6 @@
 module github.com/cloudfoundry/bosh-bootloader
 
-go 1.19
+go 1.20
 
 require (
 	github.com/Azure/azure-sdk-for-go v12.5.0-beta+incompatible
@@ -18,7 +18,6 @@ require (
 	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d
 	github.com/onsi/ginkgo/v2 v2.9.4
 	github.com/onsi/gomega v1.27.6
-	github.com/pivotal-cf-experimental/gomegamatchers v0.0.0-20180326192815-e36bfcc98c3a
 	github.com/pmezard/go-difflib v1.0.0
 	github.com/spf13/afero v1.2.0
 	golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2

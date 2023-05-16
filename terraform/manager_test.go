@@ -7,11 +7,19 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/cloudfoundry/bosh-bootloader/terraform"
-	"github.com/pivotal-cf-experimental/gomegamatchers"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
+
+func IndexOf(stringSlice []string, searchValue string) int {
+	for index, currentValue := range stringSlice {
+		if currentValue == searchValue {
+			return index
+		}
+	}
+	return -1
+}
 
 var _ = Describe("Manager", func() {
 	var (
@@ -78,11 +86,16 @@ var _ = Describe("Manager", func() {
 				"system_domain": incomingState.LB.Domain,
 			}))
 
-			Expect(logger.StepCall.Messages).To(gomegamatchers.ContainSequence([]string{
+			Expect(logger.StepCall.Messages).To(ContainElements(
 				"generating terraform template",
 				"generating terraform variables",
 				"terraform init",
-			}))
+			))
+			templateIndex := IndexOf(logger.StepCall.Messages, "generating terraform template")
+			variablesIndex := IndexOf(logger.StepCall.Messages, "generating terraform variables")
+			initIndex := IndexOf(logger.StepCall.Messages, "terraform init")
+			Expect(templateIndex).To(Equal(variablesIndex - 1))
+			Expect(templateIndex).To(Equal(initIndex - 2))
 		})
 
 		Context("failure cases", func() {
@@ -150,9 +163,7 @@ var _ = Describe("Manager", func() {
 			Expect(executor.ApplyCall.Receives.Credentials).To(Equal(credentials))
 			Expect(err).NotTo(HaveOccurred())
 			Expect(state).To(Equal(expectedState))
-			Expect(logger.StepCall.Messages).To(gomegamatchers.ContainSequence([]string{
-				"terraform apply",
-			}))
+			Expect(logger.StepCall.Messages).To(ContainElement("terraform apply"))
 		})
 
 		Context("when executor apply fails", func() {
@@ -197,10 +208,14 @@ var _ = Describe("Manager", func() {
 
 			Expect(executor.DestroyCall.CallCount).To(Equal(1))
 			Expect(executor.DestroyCall.Receives.Credentials).To(Equal(credentials))
-			Expect(logger.StepCall.Messages).To(gomegamatchers.ContainSequence([]string{
+			Expect(logger.StepCall.Messages).To(ContainElements(
 				"terraform destroy",
 				"finished destroying infrastructure",
-			}))
+			))
+
+			destroyIndex := IndexOf(logger.StepCall.Messages, "terraform destroy")
+			finishedIndex := IndexOf(logger.StepCall.Messages, "finished destroying infrastructure")
+			Expect(destroyIndex).To(Equal(finishedIndex - 1))
 
 			Expect(newBBLState).To(Equal(expectedState))
 		})
@@ -247,9 +262,7 @@ var _ = Describe("Manager", func() {
 			Expect(executor.ValidateCall.Receives.Credentials).To(Equal(credentials))
 			Expect(err).NotTo(HaveOccurred())
 			Expect(state).To(Equal(expectedState))
-			Expect(logger.StepCall.Messages).To(gomegamatchers.ContainSequence([]string{
-				"terraform validate",
-			}))
+			Expect(logger.StepCall.Messages).To(ContainElement("terraform validate"))
 		})
 
 		Context("when executor validate fails", func() {

@@ -10,8 +10,16 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/terraform"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/pivotal-cf-experimental/gomegamatchers"
 )
+
+func IndexOf(stringSlice []string, searchValue string) int {
+	for index, currentValue := range stringSlice {
+		if currentValue == searchValue {
+			return index
+		}
+	}
+	return -1
+}
 
 var _ = Describe("Manager", func() {
 	var (
@@ -145,7 +153,11 @@ director_ssl:
 				stateWithDirector, err := boshManager.CreateDirector(state, terraformOutputs)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(logger.StepCall.Messages).To(gomegamatchers.ContainSequence([]string{"creating bosh director", "created bosh director"}))
+				Expect(logger.StepCall.Messages).To(ContainElements("creating bosh director", "created bosh director"))
+
+				creatingIndex := IndexOf(logger.StepCall.Messages, "creating bosh director")
+				createdIndex := IndexOf(logger.StepCall.Messages, "created bosh director")
+				Expect(creatingIndex).To(Equal(createdIndex - 1))
 
 				Expect(boshExecutor.CreateEnvCall.CallCount).To(Equal(1))
 				Expect(boshExecutor.CreateEnvCall.Receives.DirInput.Deployment).To(Equal("director"))
@@ -265,10 +277,10 @@ director_ssl:
 				Expect(osSetenvKey).To(Equal("BOSH_ALL_PROXY"))
 				Expect(osSetenvValue).To(Equal("ssh+socks5://jumpbox@some-jumpbox-url:22?private-key=/fake/file/bosh-jumpbox/bosh_jumpbox_private.key"))
 
-				Expect(logger.StepCall.Messages).To(gomegamatchers.ContainSequence([]string{
-					"creating jumpbox",
-					"created jumpbox",
-				}))
+				Expect(logger.StepCall.Messages).To(ContainElements("creating jumpbox", "created jumpbox"))
+				creatingIndex := IndexOf(logger.StepCall.Messages, "creating jumpbox")
+				createdIndex := IndexOf(logger.StepCall.Messages, "created jumpbox")
+				Expect(creatingIndex).To(Equal(createdIndex - 1))
 			})
 
 			It("returns a bbl state with bosh and jumpbox deployment values", func() {
@@ -414,9 +426,7 @@ director_ssl:
 				err := boshManager.CleanUpDirector(state)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(logger.StepCall.Messages).To(gomegamatchers.ContainSequence([]string{
-					"cleaning up director resources",
-				}))
+				Expect(logger.StepCall.Messages).To(ContainElement("cleaning up director resources"))
 			})
 
 			Context("when an error occurs", func() {
