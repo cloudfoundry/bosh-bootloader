@@ -244,12 +244,6 @@ github.com/pborman/uuid
 ## explicit
 github.com/pierrec/lz4
 github.com/pierrec/lz4/internal/xxh32
-# github.com/pivotal-cf-experimental/gomegamatchers v0.0.0-20180326192815-e36bfcc98c3a
-## explicit
-github.com/pivotal-cf-experimental/gomegamatchers
-github.com/pivotal-cf-experimental/gomegamatchers/internal/deepequal
-github.com/pivotal-cf-experimental/gomegamatchers/internal/diff
-github.com/pivotal-cf-experimental/gomegamatchers/internal/prettyprint
 # github.com/pmezard/go-difflib v1.0.0
 ## explicit
 github.com/pmezard/go-difflib/difflib
