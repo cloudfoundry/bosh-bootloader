@@ -64,9 +64,9 @@ func (u Up) Execute(args []string, state storage.State) error {
 	}
 
 	state, err = u.boshManager.CreateJumpbox(state, terraformOutputs)
-	switch err.(type) {
+	switch err.(type) { //nolint:gosimple
 	case bosh.ManagerCreateError:
-		bcErr := err.(bosh.ManagerCreateError)
+		bcErr := err.(bosh.ManagerCreateError) //nolint:gosimple
 		if setErr := u.stateStore.Set(bcErr.State()); setErr != nil {
 			return fmt.Errorf("Save state after jumpbox create error: %s, %s", err, setErr)
 		}
@@ -81,9 +81,9 @@ func (u Up) Execute(args []string, state storage.State) error {
 	}
 
 	state, err = u.boshManager.CreateDirector(state, terraformOutputs)
-	switch err.(type) {
+	switch err.(type) { //nolint:gosimple
 	case bosh.ManagerCreateError:
-		bcErr := err.(bosh.ManagerCreateError)
+		bcErr := err.(bosh.ManagerCreateError) //nolint:gosimple
 		if setErr := u.stateStore.Set(bcErr.State()); setErr != nil {
 			return fmt.Errorf("Save state after bosh director create error: %s, %s", err, setErr)
 		}

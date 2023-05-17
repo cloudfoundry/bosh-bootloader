@@ -4,7 +4,6 @@ import (
 	"errors"
 
 	"github.com/cloudfoundry/bosh-bootloader/storage"
-	yaml "gopkg.in/yaml.v2"
 )
 
 type SSHKey struct {
@@ -17,8 +16,6 @@ type SSHKey struct {
 type sshKeyGetter interface {
 	Get(string) (string, error)
 }
-
-var unmarshal = yaml.Unmarshal
 
 func NewSSHKey(logger logger, stateValidator stateValidator, sshKeyGetter sshKeyGetter) SSHKey {
 	return SSHKey{

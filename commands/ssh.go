@@ -151,7 +151,7 @@ func (s SSH) Execute(args []string, state storage.State) error {
 	}
 	defer func() {
 		if backgroundTunnel != nil {
-			backgroundTunnel.Process.Signal(syscall.SIGINT)
+			backgroundTunnel.Process.Signal(syscall.SIGINT) //nolint:errcheck
 		} // removing this will break the acceptance test
 	}()
 

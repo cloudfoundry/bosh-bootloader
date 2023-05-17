@@ -124,7 +124,7 @@ func (m *Manager) CreateJumpbox(state storage.State, terraformOutputs terraform.
 	}
 
 	stateDir := m.stateStore.GetStateDir()
-	osUnsetenv("BOSH_ALL_PROXY")
+	osUnsetenv("BOSH_ALL_PROXY") //nolint:errcheck
 	dirInput := DirInput{
 		Deployment: "jumpbox",
 		StateDir:   stateDir,
@@ -163,7 +163,7 @@ func (m *Manager) CreateJumpbox(state storage.State, terraformOutputs terraform.
 		return storage.State{}, fmt.Errorf("Write jumpbox private key: %s", err)
 	}
 
-	osSetenv("BOSH_ALL_PROXY", fmt.Sprintf("ssh+socks5://jumpbox@%s?private-key=%s", state.Jumpbox.URL, privateKeyPath))
+	osSetenv("BOSH_ALL_PROXY", fmt.Sprintf("ssh+socks5://jumpbox@%s?private-key=%s", state.Jumpbox.URL, privateKeyPath)) //nolint:errcheck
 
 	return state, nil
 }
@@ -316,7 +316,7 @@ func (m *Manager) DeleteDirector(state storage.State, terraformOutputs terraform
 		return fmt.Errorf("Write jumpbox private key: %s", err)
 	}
 
-	osSetenv("BOSH_ALL_PROXY", fmt.Sprintf("ssh+socks5://jumpbox@%s?private-key=%s", state.Jumpbox.URL, privateKeyPath))
+	osSetenv("BOSH_ALL_PROXY", fmt.Sprintf("ssh+socks5://jumpbox@%s?private-key=%s", state.Jumpbox.URL, privateKeyPath)) //nolint:errcheck
 
 	err = m.executor.DeleteEnv(dirInput, state)
 	if err != nil {

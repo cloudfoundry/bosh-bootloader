@@ -7,7 +7,6 @@ import (
 )
 
 type factory struct {
-	platform  string
 	envGetter helpers.EnvGetter
 }
 

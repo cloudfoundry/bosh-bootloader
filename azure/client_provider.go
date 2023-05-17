@@ -1,9 +1,9 @@
 package azure
 
 import (
-	"github.com/Azure/azure-sdk-for-go/arm/compute"
-	"github.com/Azure/azure-sdk-for-go/arm/resources/resources"
-	azurestorage "github.com/Azure/azure-sdk-for-go/arm/storage"
+	"github.com/Azure/azure-sdk-for-go/arm/compute"              //nolint:staticcheck
+	"github.com/Azure/azure-sdk-for-go/arm/resources/resources"  //nolint:staticcheck
+	azurestorage "github.com/Azure/azure-sdk-for-go/arm/storage" //nolint:staticcheck
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/adal"
 	"github.com/Azure/go-autorest/autorest/azure"

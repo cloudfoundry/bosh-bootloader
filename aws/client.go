@@ -49,8 +49,8 @@ func NewClient(creds storage.AWS, logger logger) Client {
 	}
 
 	return Client{
-		ec2Client:     awsec2.New(session.New(config)),
-		route53Client: awsroute53.New(session.New(config)),
+		ec2Client:     awsec2.New(session.Must(session.NewSession(config))),
+		route53Client: awsroute53.New(session.Must(session.NewSession(config))),
 		logger:        logger,
 	}
 }

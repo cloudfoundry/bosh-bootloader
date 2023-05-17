@@ -24,10 +24,6 @@ type PrintEnv struct {
 	rendererFactory  renderers.Factory
 }
 
-type envSetter interface {
-	Set(key, value string) error
-}
-
 type credhubGetter interface {
 	GetServer() (string, error)
 	GetCerts() (string, error)

@@ -187,7 +187,7 @@ func (b BBL) SaveDirectorCA() string {
 	Expect(err).NotTo(HaveOccurred())
 	defer file.Close()
 
-	file.Write(stdout.Bytes())
+	file.Write(stdout.Bytes()) //nolint:errcheck
 
 	return file.Name()
 }
@@ -195,13 +195,13 @@ func (b BBL) SaveDirectorCA() string {
 func (b BBL) ExportBoshAllProxy() string {
 	lines := strings.Split(b.PrintEnv(), "\n")
 	value := getExport("BOSH_ALL_PROXY", lines)
-	os.Setenv("BOSH_ALL_PROXY", value)
+	os.Setenv("BOSH_ALL_PROXY", value) //nolint:errcheck
 	return value
 }
 
 func (b BBL) StartSSHTunnel() *gexec.Session {
 	printEnvLines := strings.Split(b.PrintEnv(), "\n")
-	os.Setenv("BOSH_ALL_PROXY", getExport("BOSH_ALL_PROXY", printEnvLines))
+	os.Setenv("BOSH_ALL_PROXY", getExport("BOSH_ALL_PROXY", printEnvLines)) //nolint:errcheck
 
 	var sshArgs []string
 	for i := 0; i < len(printEnvLines); i++ {
@@ -251,7 +251,7 @@ func (b BBL) fetchValueFromRemoteBBLState(value string) string {
 	b.execute(args, stdout, stderr).Wait(30 * time.Second)
 	fmt.Println(stderr)
 
-	return strings.TrimSpace(string(stdout.Bytes()))
+	return strings.TrimSpace(stdout.String())
 }
 func (b BBL) fetchValueFromLocalBBLState(value string) string {
 	args := []string{
@@ -263,7 +263,7 @@ func (b BBL) fetchValueFromLocalBBLState(value string) string {
 	stderr := bytes.NewBuffer([]byte{})
 	b.execute(args, stdout, stderr).Wait(30 * time.Second)
 
-	return strings.TrimSpace(string(stdout.Bytes()))
+	return strings.TrimSpace(stdout.String())
 }
 
 func (b BBL) execute(args []string, stdout io.Writer, stderr io.Writer) *gexec.Session {

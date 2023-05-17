@@ -398,7 +398,7 @@ var _ = Describe("Destroy", func() {
 
 			Context("when state store fails to set the state before destroying infrastructure", func() {
 				It("returns an error", func() {
-					stateStore.SetCall.Returns = []fakes.SetCallReturn{{errors.New("failed to set state")}}
+					stateStore.SetCall.Returns = []fakes.SetCallReturn{{Error: errors.New("failed to set state")}}
 
 					err := destroy.Execute([]string{}, storage.State{})
 					Expect(err).To(MatchError("failed to set state"))
@@ -458,7 +458,7 @@ var _ = Describe("Destroy", func() {
 
 				Context("when the state fails to be set", func() {
 					It("returns an error containing both messages", func() {
-						stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {errors.New("failed to set state")}}
+						stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {Error: errors.New("failed to set state")}}
 						err := destroy.Execute([]string{}, storage.State{
 							IAAS: "gcp",
 						})
@@ -501,7 +501,7 @@ var _ = Describe("Destroy", func() {
 					Context("when it can't set the state", func() {
 						BeforeEach(func() {
 							stateStore.SetCall.Returns = []fakes.SetCallReturn{{
-								errors.New("saving state failed"),
+								Error: errors.New("saving state failed"),
 							}}
 						})
 						It("returns an error", func() {

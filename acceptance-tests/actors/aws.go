@@ -36,7 +36,7 @@ func NewAWSLBHelper(c acceptance.Config) awsLBHelper {
 	}
 	return awsLBHelper{
 		client:    client,
-		elbClient: elb.New(session.New(elbConfig)),
+		elbClient: elb.New(session.Must(session.NewSession(elbConfig))),
 	}
 }
 

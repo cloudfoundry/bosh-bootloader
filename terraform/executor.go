@@ -97,7 +97,7 @@ func formatVars(inputs map[string]interface{}) string {
 	for name, value := range inputs {
 		if vString, ok := value.(string); ok {
 			vString = fmt.Sprintf(`"%s"`, vString)
-			if strings.Contains(vString, "\n") {
+			if strings.Contains(vString, "\n") { //nolint:gosimple
 				vString = strings.Replace(vString, "\n", "\\n", -1)
 			}
 			value = vString
@@ -363,7 +363,7 @@ func (e Executor) IsPaved() (bool, error) {
 		return false, fmt.Errorf("Run terraform show: %s", err)
 	}
 
-	if strings.TrimSpace(string(buffer.Bytes())) == "No state." {
+	if strings.TrimSpace(buffer.String()) == "No state." {
 		return false, nil
 	}
 
