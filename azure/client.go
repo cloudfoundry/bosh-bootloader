@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/Azure/azure-sdk-for-go/arm/compute"
+	"github.com/Azure/azure-sdk-for-go/arm/compute" //nolint:staticcheck
 	"github.com/Azure/go-autorest/autorest"
 )
 

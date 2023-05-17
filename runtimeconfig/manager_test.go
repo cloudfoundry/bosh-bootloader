@@ -79,7 +79,7 @@ var _ = Describe("Manager", func() {
 
 		Context("runtime-config/runtime-config.yml could not be written", func() {
 			It("should return a descriptive error", func() {
-				fileIO.WriteFileCall.Returns = []fakes.WriteFileReturn{{errors.New("some-error")}}
+				fileIO.WriteFileCall.Returns = []fakes.WriteFileReturn{{Error: errors.New("some-error")}}
 				err := manager.Initialize(incomingState)
 				Expect(err).To(MatchError("failed to write runtime config: some-error"))
 			})

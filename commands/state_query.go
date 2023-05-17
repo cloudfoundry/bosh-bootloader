@@ -29,8 +29,6 @@ type StateQuery struct {
 	propertyName     string
 }
 
-type getPropertyFunc func(storage.State) string
-
 func NewStateQuery(logger logger, stateValidator stateValidator, terraformManager terraformManager, propertyName string) StateQuery {
 	return StateQuery{
 		logger:           logger,

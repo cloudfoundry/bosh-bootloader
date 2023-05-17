@@ -8,8 +8,6 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
-const templatesPath = "./templates"
-
 type templates struct {
 	providerVars     string
 	provider         string

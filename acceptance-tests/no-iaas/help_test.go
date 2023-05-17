@@ -3,7 +3,6 @@ package acceptance_test
 import (
 	"fmt"
 	"os/exec"
-	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -123,12 +122,3 @@ var _ = Describe("bbl", func() {
 		)
 	})
 })
-
-func executeCommand(args []string, exitCode int) *gexec.Session {
-	cmd := exec.Command(pathToBBL, args...)
-	session, err := gexec.Start(cmd, GinkgoWriter, GinkgoWriter)
-	Expect(err).NotTo(HaveOccurred())
-	Eventually(session, 10*time.Second).Should(gexec.Exit(exitCode))
-
-	return session
-}

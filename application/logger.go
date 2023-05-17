@@ -27,18 +27,18 @@ func (l *Logger) clear() {
 		return
 	}
 
-	l.writer.Write([]byte("\n"))
+	l.writer.Write([]byte("\n")) //nolint:errcheck
 	l.newline = true
 }
 
 func (l *Logger) Step(message string, a ...interface{}) {
 	l.clear()
-	fmt.Fprintf(l.writer, "step: %s\n", fmt.Sprintf(message, a...))
+	fmt.Fprintf(l.writer, "step: %s\n", fmt.Sprintf(message, a...)) //nolint:errcheck
 	l.newline = true
 }
 
 func (l *Logger) Dot() {
-	l.writer.Write([]byte("\u2022"))
+	l.writer.Write([]byte("\u2022")) //nolint:errcheck
 	l.newline = false
 }
 
@@ -49,7 +49,7 @@ func (l *Logger) Printf(message string, a ...interface{}) {
 
 func (l *Logger) Println(message string) {
 	l.clear()
-	fmt.Fprintf(l.writer, "%s\n", message)
+	fmt.Fprintf(l.writer, "%s\n", message) //nolint:errcheck
 }
 
 func (l *Logger) NoConfirm() {

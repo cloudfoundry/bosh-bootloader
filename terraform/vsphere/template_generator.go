@@ -1,8 +1,6 @@
 package vsphere
 
 import (
-	"fmt"
-
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
@@ -13,7 +11,7 @@ func NewTemplateGenerator() TemplateGenerator {
 }
 
 func (t TemplateGenerator) Generate(state storage.State) string {
-	return fmt.Sprint(`
+	return `
 variable "env_id" {}
 variable "director_internal_ip" {}
 variable "internal_gw" {}
@@ -47,5 +45,5 @@ output "vcenter_ip" { value = "${var.vcenter_ip}" }
 output "vcenter_dc" { value = "${var.vcenter_dc}" }
 output "vcenter_rp" { value = "${var.vcenter_rp}" }
 output "vcenter_ds" { value = "${var.vcenter_ds}" }
-`)
+`
 }

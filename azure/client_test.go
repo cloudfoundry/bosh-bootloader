@@ -3,7 +3,7 @@ package azure_test
 import (
 	"errors"
 
-	"github.com/Azure/azure-sdk-for-go/arm/compute"
+	"github.com/Azure/azure-sdk-for-go/arm/compute" //nolint:staticcheck
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/mocks"
 	"github.com/cloudfoundry/bosh-bootloader/azure"

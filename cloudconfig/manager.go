@@ -2,7 +2,6 @@ package cloudconfig
 
 import (
 	"fmt"
-	"io"
 	"path/filepath"
 
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
@@ -35,17 +34,9 @@ type logger interface {
 	Step(string, ...interface{})
 }
 
-type command interface {
-	Run(stdout io.Writer, cloudConfigDirectory string, args []string) error
-}
-
 type OpsGenerator interface {
 	Generate(state storage.State) (string, error)
 	GenerateVars(state storage.State) (string, error)
-}
-
-type boshCLIProvider interface {
-	Client(jumpbox storage.Jumpbox, directorAddress, directorUsername, directorPassword, caCert string) (configUpdater, error)
 }
 
 type terraformManager interface {
@@ -115,7 +106,7 @@ func (m Manager) IsPresentCloudConfigVars() bool {
 	}
 
 	_, err = m.fs.Stat(filepath.Join(varsDir, "cloud-config-vars.yml"))
-	if err != nil {
+	if err != nil { //nolint:gosimple
 		return false
 	}
 

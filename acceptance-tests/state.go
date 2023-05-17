@@ -5,18 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"path/filepath"
 
-	"github.com/cloudfoundry/bosh-bootloader/storage"
 	. "github.com/onsi/gomega"
 )
 
 type State struct {
 	stateFilePath string
-}
-
-type keyPair struct {
-	PublicKey string `json:"publicKey"`
 }
 
 type state struct {
@@ -26,12 +20,6 @@ type state struct {
 		State    map[string]interface{} `json:"state"`
 		Manifest string                 `json:"manifest"`
 	} `json:"bosh"`
-}
-
-func NewState(stateDirectory string) State {
-	return State{
-		stateFilePath: filepath.Join(stateDirectory, storage.STATE_FILE),
-	}
 }
 
 func (s State) Checksum() string {

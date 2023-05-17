@@ -3,7 +3,7 @@ package actors
 import (
 	"fmt"
 
-	"github.com/Azure/azure-sdk-for-go/arm/network"
+	"github.com/Azure/azure-sdk-for-go/arm/network" //nolint:staticcheck
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/adal"
 	"github.com/Azure/go-autorest/autorest/azure"
@@ -40,19 +40,6 @@ func NewAzureLBHelper(config acceptance.Config) azureLBHelper {
 
 func (z azureLBHelper) getLoadBalancer(resourceGroupName, loadBalancerName string) (bool, error) {
 	_, err := z.loadBalancersClient.Get(fmt.Sprintf("%s-bosh", resourceGroupName), loadBalancerName, "")
-	if err != nil {
-		if aerr, ok := err.(autorest.DetailedError); ok {
-			if aerr.StatusCode.(int) == 404 {
-				return false, nil
-			}
-		}
-		return false, err
-	}
-	return true, nil
-}
-
-func (z azureLBHelper) getApplicationGateway(resourceGroupName, applicationGatewayName string) (bool, error) {
-	_, err := z.applicationGatewaysClient.Get(fmt.Sprintf("%s-bosh", resourceGroupName), applicationGatewayName)
 	if err != nil {
 		if aerr, ok := err.(autorest.DetailedError); ok {
 			if aerr.StatusCode.(int) == 404 {

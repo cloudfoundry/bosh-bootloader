@@ -19,10 +19,6 @@ type Destroy struct {
 	networkDeletionValidator NetworkDeletionValidator
 }
 
-type destroyConfig struct {
-	NoConfirm bool
-}
-
 type NetworkDeletionValidator interface {
 	ValidateSafeToDelete(networkName string, envID string) error
 }
@@ -132,9 +128,9 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
 	}
 
 	state, err = d.deleteBOSH(state, terraformOutputs)
-	switch err.(type) {
+	switch err.(type) { //nolint:gosimple
 	case bosh.ManagerDeleteError:
-		mdErr := err.(bosh.ManagerDeleteError)
+		mdErr := err.(bosh.ManagerDeleteError) //nolint:gosimple
 		setErr := d.stateStore.Set(mdErr.State())
 		if setErr != nil {
 			errorList := helpers.Errors{}

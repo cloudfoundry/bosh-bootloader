@@ -1,6 +1,8 @@
 package fakes
 
-import compute "github.com/Azure/azure-sdk-for-go/arm/compute"
+import (
+	"github.com/Azure/azure-sdk-for-go/arm/compute" //nolint:staticcheck
+)
 
 type AzureVMsClient struct {
 	ListCall struct {

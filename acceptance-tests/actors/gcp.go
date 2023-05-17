@@ -15,10 +15,9 @@ import (
 )
 
 type gcpLBHelper struct {
-	service               *compute.Service
-	projectID             string
-	region                string
-	serviceAccountKeyPath string
+	service   *compute.Service
+	projectID string
+	region    string
 }
 
 func NewGCPLBHelper(config acceptance.Config) gcpLBHelper {

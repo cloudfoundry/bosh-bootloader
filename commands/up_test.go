@@ -290,7 +290,7 @@ var _ = Describe("Up", func() {
 
 				Context("when we fail to set the bbl state", func() {
 					BeforeEach(func() {
-						stateStore.SetCall.Returns = []fakes.SetCallReturn{{errors.New("failed to set bbl state")}}
+						stateStore.SetCall.Returns = []fakes.SetCallReturn{{Error: errors.New("failed to set bbl state")}}
 					})
 
 					It("saves the bbl state and returns the error", func() {
@@ -319,7 +319,7 @@ var _ = Describe("Up", func() {
 
 				Context("when it fails to save the state", func() {
 					BeforeEach(func() {
-						stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {errors.New("lychee")}}
+						stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {Error: errors.New("lychee")}}
 					})
 
 					It("returns a compound error", func() {
@@ -351,7 +351,7 @@ var _ = Describe("Up", func() {
 
 				Context("when it fails to save the state", func() {
 					BeforeEach(func() {
-						stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {}, {errors.New("lychee")}}
+						stateStore.SetCall.Returns = []fakes.SetCallReturn{{}, {}, {Error: errors.New("lychee")}}
 					})
 
 					It("returns a compound error", func() {

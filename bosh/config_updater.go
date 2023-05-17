@@ -10,7 +10,6 @@ import (
 
 type ConfigUpdater struct {
 	boshCLIProvider boshCLIProvider
-	boshCLI         AuthenticatedCLIRunner
 }
 
 type boshCLIProvider interface {

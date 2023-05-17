@@ -17,7 +17,7 @@ var _ = Describe("state query against a bbl 6.10.46 state file", func() {
 
 	BeforeEach(func() {
 		stateDir, err := os.MkdirTemp("", "")
-		os.WriteFile(filepath.Join(stateDir, "bbl-state.json"), []byte(BBL_STATE_6_10_46), storage.StateMode)
+		os.WriteFile(filepath.Join(stateDir, "bbl-state.json"), []byte(BBL_STATE_6_10_46), storage.StateMode) //nolint:errcheck
 		Expect(err).NotTo(HaveOccurred())
 		bbl = actors.NewBBL(stateDir, pathToBBL, acceptance.Config{}, "no-env", false)
 	})

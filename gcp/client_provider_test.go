@@ -41,7 +41,7 @@ var _ = Describe("NewClient", func() {
 		server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			switch r.URL.Path {
 			case "/proj-id/regions/some-region":
-				w.Write([]byte(`{}`))
+				w.Write([]byte(`{}`)) //nolint:errcheck
 			default:
 				w.WriteHeader(http.StatusNotFound)
 			}

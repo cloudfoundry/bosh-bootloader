@@ -31,7 +31,7 @@ var _ = Describe("ssh", func() {
 	}
 
 	removeKnownHost := func() {
-		exec.Command("ssh-keygen", "-R", bbl.JumpboxAddress()).Output()
+		exec.Command("ssh-keygen", "-R", bbl.JumpboxAddress()).Output() //nolint:errcheck
 	}
 
 	BeforeEach(func() {

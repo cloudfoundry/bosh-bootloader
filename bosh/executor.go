@@ -105,7 +105,7 @@ func (e Executor) PlanJumpbox(input DirInput, deploymentDir, iaas string) error 
 
 	for _, f := range setupFiles {
 		// ignore error if dir already exists
-		os.MkdirAll(filepath.Dir(f.dest), os.ModePerm)
+		os.MkdirAll(filepath.Dir(f.dest), os.ModePerm) //nolint:errcheck
 		err := e.FS.WriteFile(f.dest, f.contents, storage.StateMode)
 		if err != nil {
 			return fmt.Errorf("jumpbox write setup file: %s", err) //not tested
@@ -229,7 +229,7 @@ func (e Executor) PlanDirector(input DirInput, deploymentDir, iaas string) error
 
 	for _, f := range setupFiles {
 		if f.source != "" {
-			os.MkdirAll(filepath.Dir(f.dest), storage.StateMode)
+			os.MkdirAll(filepath.Dir(f.dest), storage.StateMode) //nolint:errcheck
 		}
 		if err := e.FS.WriteFile(f.dest, f.contents, storage.StateMode); err != nil {
 			return fmt.Errorf("director write setup file: %s", err) //not tested

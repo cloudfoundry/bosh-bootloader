@@ -485,14 +485,14 @@ var _ = Describe("Executor", func() {
 			createEnvPath = filepath.Join(stateDir, "create-some-deployment.sh")
 			createEnvContents := fmt.Sprintf("#!/bin/bash\necho 'some-vars-store-contents' > %s/some-deployment-vars-store.yml\n", varsDir)
 
-			fs.WriteFile(createEnvPath, []byte(createEnvContents), storage.ScriptMode)
+			fs.WriteFile(createEnvPath, []byte(createEnvContents), storage.ScriptMode) //nolint:errcheck
 		})
 
 		AfterEach(func() {
-			fs.Remove(filepath.Join(varsDir, "some-deployment-vars-store.yml"))
-			fs.Remove(createEnvPath)
-			fs.Remove(filepath.Join(stateDir, "create-some-deployment-override.sh"))
-			os.Unsetenv("BBL_STATE_DIR")
+			fs.Remove(filepath.Join(varsDir, "some-deployment-vars-store.yml"))      //nolint:errcheck
+			fs.Remove(createEnvPath)                                                 //nolint:errcheck
+			fs.Remove(filepath.Join(stateDir, "create-some-deployment-override.sh")) //nolint:errcheck
+			os.Unsetenv("BBL_STATE_DIR")                                             //nolint:errcheck
 		})
 
 		Context("when the user provides a create-env override", func() {
@@ -500,7 +500,7 @@ var _ = Describe("Executor", func() {
 				overridePath := filepath.Join(stateDir, "create-some-deployment-override.sh")
 				overrideContents := fmt.Sprintf("#!/bin/bash\necho 'override-vars-store-contents' > %s/some-deployment-vars-store.yml\n", varsDir)
 
-				fs.WriteFile(overridePath, []byte(overrideContents), storage.ScriptMode)
+				fs.WriteFile(overridePath, []byte(overrideContents), storage.ScriptMode) //nolint:errcheck
 			})
 
 			It("runs the create-env-override.sh script", func() {
@@ -518,10 +518,10 @@ var _ = Describe("Executor", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				state.IAAS = "some-fictional-iaas"
-				overrideContents := fmt.Sprintf("#!/bin/bash\n [ \"${BBL_IAAS}\" = \"some-fictional-iaas\" ]")
+				overrideContents := "#!/bin/bash\n [ \"${BBL_IAAS}\" = \"some-fictional-iaas\" ]"
 
 				overridePath := filepath.Join(stateDir, "create-some-deployment-override.sh")
-				fs.WriteFile(overridePath, []byte(overrideContents), storage.ScriptMode)
+				fs.WriteFile(overridePath, []byte(overrideContents), storage.ScriptMode) //nolint:errcheck
 			})
 
 			It("runs the create-env-override.sh script", func() {
@@ -642,7 +642,7 @@ var _ = Describe("Executor", func() {
 		Context("when the create-env script returns an error", func() {
 			BeforeEach(func() {
 				createEnvContents := "#!/bin/bash\nexit 1\n"
-				fs.WriteFile(createEnvPath, []byte(createEnvContents), storage.ScriptMode)
+				fs.WriteFile(createEnvPath, []byte(createEnvContents), storage.ScriptMode) //nolint:errcheck
 			})
 
 			It("returns an error", func() {
@@ -693,15 +693,15 @@ var _ = Describe("Executor", func() {
 
 			deleteEnvPath = filepath.Join(stateDir, "delete-director.sh")
 			deleteEnvContents := "#!/bin/bash\necho delete-env > /dev/null\n"
-			fs.WriteFile(deleteEnvPath, []byte(deleteEnvContents), storage.ScriptMode)
+			fs.WriteFile(deleteEnvPath, []byte(deleteEnvContents), storage.ScriptMode) //nolint:errcheck
 
 			deploymentStateJson := filepath.Join(varsDir, "bosh-state.json")
-			fs.WriteFile(deploymentStateJson, []byte("some: deployment"), storage.StateMode)
+			fs.WriteFile(deploymentStateJson, []byte("some: deployment"), storage.StateMode) //nolint:errcheck
 		})
 
 		AfterEach(func() {
-			os.Unsetenv("BBL_STATE_DIR")
-			fs.Remove(filepath.Join(stateDir, "delete-director.sh"))
+			os.Unsetenv("BBL_STATE_DIR")                             //nolint:errcheck
+			fs.Remove(filepath.Join(stateDir, "delete-director.sh")) //nolint:errcheck
 		})
 
 		Context("when the user provides a delete-env override", func() {
@@ -709,12 +709,12 @@ var _ = Describe("Executor", func() {
 				overridePath := filepath.Join(stateDir, "delete-director-override.sh")
 				overrideContents := fmt.Sprintf("#!/bin/bash\necho 'override' > %s/delete-env-output\n", varsDir)
 
-				fs.WriteFile(overridePath, []byte(overrideContents), storage.ScriptMode)
+				fs.WriteFile(overridePath, []byte(overrideContents), storage.ScriptMode) //nolint:errcheck
 			})
 
 			AfterEach(func() {
-				fs.Remove(filepath.Join(varsDir, "delete-env-output"))
-				fs.Remove(filepath.Join(stateDir, "delete-director-override.sh"))
+				fs.Remove(filepath.Join(varsDir, "delete-env-output"))            //nolint:errcheck
+				fs.Remove(filepath.Join(stateDir, "delete-director-override.sh")) //nolint:errcheck
 			})
 
 			It("runs the delete-env-override.sh script", func() {
@@ -734,15 +734,15 @@ var _ = Describe("Executor", func() {
 				dirInput.Deployment = "jumpbox"
 				deleteEnvPath = filepath.Join(stateDir, "delete-jumpbox.sh")
 				deleteEnvContents := "#!/bin/bash\necho delete-env > /dev/null\n"
-				fs.WriteFile(deleteEnvPath, []byte(deleteEnvContents), storage.ScriptMode)
+				fs.WriteFile(deleteEnvPath, []byte(deleteEnvContents), storage.ScriptMode) //nolint:errcheck
 
 				deploymentStateJson := filepath.Join(varsDir, "jumpbox-state.json")
-				fs.WriteFile(deploymentStateJson, []byte("some: deployment"), storage.StateMode)
+				fs.WriteFile(deploymentStateJson, []byte("some: deployment"), storage.StateMode) //nolint:errcheck
 			})
 
 			AfterEach(func() {
-				fs.Remove(filepath.Join(stateDir, "delete-jumpbox.sh"))
-				fs.Remove(filepath.Join(stateDir, "jumpbox-state.json"))
+				fs.Remove(filepath.Join(stateDir, "delete-jumpbox.sh"))  //nolint:errcheck
+				fs.Remove(filepath.Join(stateDir, "jumpbox-state.json")) //nolint:errcheck
 			})
 
 			It("deletes a bosh environment with the delete-env script", func() {
@@ -864,7 +864,7 @@ var _ = Describe("Executor", func() {
 		Context("when the create-env script returns an error", func() {
 			BeforeEach(func() {
 				deleteEnvContents := "#!/bin/bash\nexit 1\n"
-				fs.WriteFile(deleteEnvPath, []byte(deleteEnvContents), storage.ScriptMode)
+				fs.WriteFile(deleteEnvPath, []byte(deleteEnvContents), storage.ScriptMode) //nolint:errcheck
 			})
 
 			It("returns an error", func() {
@@ -882,7 +882,7 @@ var _ = Describe("Executor", func() {
 		BeforeEach(func() {
 			cli = &fakes.BOSHCLI{}
 			cli.RunStub = func(stdout io.Writer, workingDirectory string, args []string) error {
-				stdout.Write([]byte("some-text version 1.1.1 some-other-text"))
+				stdout.Write([]byte("some-text version 1.1.1 some-other-text")) //nolint:errcheck
 				return nil
 			}
 
@@ -947,7 +947,7 @@ type behavesLikePlanFs interface {
 
 func behavesLikePlan(expectedArgs []string, cli *fakes.BOSHCLI, fs behavesLikePlanFs, executor bosh.Executor, input bosh.DirInput, deploymentDir, iaas, stateDir string) {
 	cli.RunStub = func(stdout io.Writer, workingDirectory string, args []string) error {
-		stdout.Write([]byte("some-manifest"))
+		stdout.Write([]byte("some-manifest")) //nolint:errcheck
 		return nil
 	}
 

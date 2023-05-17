@@ -1,10 +1,11 @@
 package helpers
 
-import "strings"
+import (
+	"strings"
+)
 
 type Errors struct {
 	errors []string
-	length int
 }
 
 func NewErrors(args ...string) Errors {

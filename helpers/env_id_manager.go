@@ -79,7 +79,7 @@ func (e EnvIDManager) checkFastFail(iaas, envID string) error {
 	}
 
 	if exists {
-		return errors.New(fmt.Sprintf("It looks like a bbl environment already exists with the name '%s'. Please provide a different name.", envID))
+		return fmt.Errorf("It looks like a bbl environment already exists with the name '%s'. Please provide a different name.", envID)
 	}
 
 	return nil

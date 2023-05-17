@@ -49,23 +49,6 @@ type envIDManager interface {
 	Sync(storage.State, string) (storage.State, error)
 }
 
-type environmentValidator interface {
-	Validate(state storage.State) error
-}
-
-type terraformManagerError interface {
-	Error() string
-	BBLState() (storage.State, error)
-}
-
-type vpcStatusChecker interface {
-	ValidateSafeToDelete(vpcID string, envID string) error
-}
-
-type certificateDeleter interface {
-	Delete(certificateName string) error
-}
-
 type stateValidator interface {
 	Validate() error
 }
@@ -80,10 +63,6 @@ type certificateValidator interface {
 type lbArgsHandler interface {
 	GetLBState(string, LBArgs) (storage.LB, error)
 	Merge(storage.LB, storage.LB) storage.LB
-}
-
-type createLBsCmd interface {
-	Execute(state storage.State) error
 }
 
 type logger interface {

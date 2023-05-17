@@ -350,7 +350,7 @@ director_ssl:
 
 				Context("when writing the jumpbox private key fails", func() {
 					BeforeEach(func() {
-						fs.WriteFileCall.Returns = []fakes.WriteFileReturn{{errors.New("starfruit")}}
+						fs.WriteFileCall.Returns = []fakes.WriteFileReturn{{Error: errors.New("starfruit")}}
 					})
 
 					It("returns a helpful error", func() {
@@ -377,7 +377,7 @@ director_ssl:
 			})
 
 			It("does nothing", func() {
-				boshManager.CleanUpDirector(state)
+				boshManager.CleanUpDirector(state) //nolint:errcheck
 
 				Expect(logger.StepCall.CallCount).To(Equal(0))
 				Expect(boshCLIProvider.AuthenticatedCLICall.CallCount).To(Equal(0))
@@ -597,7 +597,7 @@ director_ssl:
 
 			Context("when writing the jumpbox private key fails", func() {
 				BeforeEach(func() {
-					fs.WriteFileCall.Returns = []fakes.WriteFileReturn{{errors.New("starfruit")}}
+					fs.WriteFileCall.Returns = []fakes.WriteFileReturn{{Error: errors.New("starfruit")}}
 				})
 
 				It("returns a helpful error", func() {
