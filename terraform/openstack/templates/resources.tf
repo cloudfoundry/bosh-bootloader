@@ -17,7 +17,7 @@ resource "openstack_networking_subnet_v2" "bosh_subnet" {
   cidr             = "10.0.1.0/24"
   ip_version       = 4
   name             = "${var.env_id}-subnet"
-  allocation_pools = {
+  allocation_pool {
     start = "10.0.1.200"
     end   = "10.0.1.254"
   }
