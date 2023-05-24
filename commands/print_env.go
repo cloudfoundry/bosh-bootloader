@@ -137,7 +137,7 @@ func (p PrintEnv) Execute(args []string, state storage.State) error {
 		variables["CREDHUB_SERVER"] = metadata.Bosh["credhub_server"]
 		variables["CREDHUB_CA_CERT"] = metadata.Bosh["credhub_ca_cert"]
 
-		privateKeyPath := fmt.Sprintf("/tmp/%s.priv", metadata.Name)
+		privateKeyPath := fmt.Sprintf("%s/%s.priv", os.TempDir(), metadata.Name)
 		err = os.WriteFile(privateKeyPath, []byte(metadata.Bosh["jumpbox_private_key"]), 0600)
 		if err != nil {
 			p.stderrLogger.Println(fmt.Sprintf("Failed to write private key to %s: %s", privateKeyPath, err))
