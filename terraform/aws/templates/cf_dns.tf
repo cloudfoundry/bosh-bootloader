@@ -15,12 +15,12 @@ data "aws_route53_zone" "parent" {
 }
 
 output "env_dns_zone_name_servers" {
-  value = ["${split(",", local.name_servers)}"]
+  value = local.name_servers
 }
 
 locals {
-  zone_id      = one(try(aws_route53_zone.env_dns_zone[*].zone_id, data.aws_route53_zone.parent[*].zone_id))
-  name_servers = join(",", flatten(concat(try(aws_route53_zone.env_dns_zone[*].name_servers, data.aws_route53_zone.parent[*].name_servers), tolist([tolist([""])]))))
+  zone_id      = var.parent_zone == "" ? aws_route53_zone.env_dns_zone[0].zone_id : data.aws_route53_zone.parent[0].zone_id
+  name_servers = var.parent_zone == "" ? aws_route53_zone.env_dns_zone[0].name_servers : data.aws_route53_zone.parent[0].name_servers
 }
 
 resource "aws_route53_zone" "env_dns_zone" {
@@ -31,17 +31,6 @@ resource "aws_route53_zone" "env_dns_zone" {
   tags = {
     Name = "${var.env_id}-hosted-zone"
   }
-}
-
-resource "aws_route53_record" "dns" {
-  count = "${var.parent_zone == "" ? 1 : 0}"
-
-  zone_id = "${local.zone_id}"
-  name    = "${var.system_domain}"
-  type    = "NS"
-  ttl     = 300
-
-  records = ["${local.name_servers}"]
 }
 
 resource "aws_route53_record" "wildcard_dns" {
