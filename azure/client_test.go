@@ -3,9 +3,8 @@ package azure_test
 import (
 	"errors"
 
-	"github.com/Azure/azure-sdk-for-go/arm/compute" //nolint:staticcheck
-	"github.com/Azure/go-autorest/autorest"
-	"github.com/Azure/go-autorest/autorest/mocks"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute"     //nolint:staticcheck
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources" //nolint:staticcheck
 	"github.com/cloudfoundry/bosh-bootloader/azure"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	. "github.com/onsi/ginkgo/v2"
@@ -23,8 +22,8 @@ var _ = Describe("Client", func() {
 			azureClient = &fakes.AzureGroupsClient{}
 			client = azure.NewClientWithInjectedGroupsClient(azureClient)
 
-			azureClient.CheckExistenceCall.Returns.Response = autorest.Response{
-				Response: mocks.NewResponseWithStatus("some-message", 404),
+			azureClient.CheckExistenceCall.Returns.Response = armresources.ResourceGroupsClientCheckExistenceResponse{
+				Success: false,
 			}
 		})
 
@@ -39,8 +38,8 @@ var _ = Describe("Client", func() {
 
 		Context("when the resource group already exists", func() {
 			BeforeEach(func() {
-				azureClient.CheckExistenceCall.Returns.Response = autorest.Response{
-					Response: mocks.NewResponseWithStatus("some-message", 200),
+				azureClient.CheckExistenceCall.Returns.Response = armresources.ResourceGroupsClientCheckExistenceResponse{
+					Success: true,
 				}
 			})
 			It("returns true", func() {
@@ -78,15 +77,15 @@ var _ = Describe("Client", func() {
 				boshString := "bosh"
 				jumpboxString := "jumpbox"
 
-				azureClient.ListCall.Returns.Result = compute.VirtualMachineListResult{
-					Value: &[]compute.VirtualMachine{
+				azureClient.ListCall.Returns.Result = armcompute.VirtualMachineListResult{
+					Value: []*armcompute.VirtualMachine{
 						{
-							Tags: &map[string]*string{
+							Tags: map[string]*string{
 								"job": &boshString,
 							},
 						},
 						{
-							Tags: &map[string]*string{
+							Tags: map[string]*string{
 								"job": &jumpboxString,
 							},
 						},
@@ -109,16 +108,16 @@ var _ = Describe("Client", func() {
 				deploymentString := "some-deployment"
 				vmNameString := "some-other-vm"
 
-				azureClient.ListCall.Returns.Result = compute.VirtualMachineListResult{
-					Value: &[]compute.VirtualMachine{
+				azureClient.ListCall.Returns.Result = armcompute.VirtualMachineListResult{
+					Value: []*armcompute.VirtualMachine{
 						{
-							Tags: &map[string]*string{
+							Tags: map[string]*string{
 								"job": &boshString,
 							},
 						},
 						{
 							Name: &vmNameString,
-							Tags: &map[string]*string{
+							Tags: map[string]*string{
 								"job":        &jobString,
 								"deployment": &deploymentString,
 							},
@@ -136,11 +135,11 @@ var _ = Describe("Client", func() {
 		Context("when some other non-bosh deployed vm exists in the network", func() {
 			BeforeEach(func() {
 				vmNameString := "some-other-vm"
-				azureClient.ListCall.Returns.Result = compute.VirtualMachineListResult{
-					Value: &[]compute.VirtualMachine{
+				azureClient.ListCall.Returns.Result = armcompute.VirtualMachineListResult{
+					Value: []*armcompute.VirtualMachine{
 						{
 							Name: &vmNameString,
-							Tags: &map[string]*string{},
+							Tags: map[string]*string{},
 						},
 					},
 				}

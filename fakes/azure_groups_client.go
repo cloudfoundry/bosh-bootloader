@@ -1,7 +1,9 @@
 package fakes
 
 import (
-	"github.com/Azure/go-autorest/autorest"
+	"context"
+
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources"
 )
 
 type AzureGroupsClient struct {
@@ -11,13 +13,13 @@ type AzureGroupsClient struct {
 			ResourceGroup string
 		}
 		Returns struct {
-			Response autorest.Response
+			Response armresources.ResourceGroupsClientCheckExistenceResponse
 			Error    error
 		}
 	}
 }
 
-func (a *AzureGroupsClient) CheckExistence(resourceGroup string) (autorest.Response, error) {
+func (a *AzureGroupsClient) CheckExistence(ctx context.Context, resourceGroup string, options *armresources.ResourceGroupsClientCheckExistenceOptions) (armresources.ResourceGroupsClientCheckExistenceResponse, error) {
 	a.CheckExistenceCall.CallCount++
 	a.CheckExistenceCall.Receives.ResourceGroup = resourceGroup
 	return a.CheckExistenceCall.Returns.Response, a.CheckExistenceCall.Returns.Error

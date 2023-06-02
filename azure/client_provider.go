@@ -1,44 +1,46 @@
 package azure
 
 import (
-	"github.com/Azure/azure-sdk-for-go/arm/compute"              //nolint:staticcheck
-	"github.com/Azure/azure-sdk-for-go/arm/resources/resources"  //nolint:staticcheck
-	azurestorage "github.com/Azure/azure-sdk-for-go/arm/storage" //nolint:staticcheck
-	"github.com/Azure/go-autorest/autorest"
-	"github.com/Azure/go-autorest/autorest/adal"
-	"github.com/Azure/go-autorest/autorest/azure"
+	"context"
+	"log"
+
+	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"                             //nolint:staticcheck
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/compute/armcompute"     //nolint:staticcheck
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/resources/armresources" //nolint:staticcheck
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/storage/armstorage"     //nolint:staticcheck
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
 func NewClient(azureConfig storage.Azure) (Client, error) {
-	oauthConfig, err := adal.NewOAuthConfig(azure.PublicCloud.ActiveDirectoryEndpoint, azureConfig.TenantID)
+
+	credential, err := azidentity.NewClientSecretCredential(azureConfig.TenantID, azureConfig.ClientID, azureConfig.ClientSecret, nil)
 	if err != nil {
-		return Client{}, err
+		log.Fatal(err)
 	}
 
-	servicePrincipalToken, err := adal.NewServicePrincipalToken(*oauthConfig, azureConfig.ClientID, azureConfig.ClientSecret, azure.PublicCloud.ResourceManagerEndpoint)
+	ac, err := armstorage.NewAccountsClient(azureConfig.SubscriptionID, credential, nil)
 	if err != nil {
-		return Client{}, err
+		log.Fatal(err)
 	}
+	acWrapper := AzureStorageClientWrapper{Client: ac}
 
-	ac := azurestorage.NewAccountsClient(azureConfig.SubscriptionID)
-	ac.Authorizer = autorest.NewBearerAuthorizer(servicePrincipalToken)
-	ac.Sender = autorest.CreateSender(autorest.AsIs())
+	vmsClient, err := armcompute.NewVirtualMachinesClient(azureConfig.SubscriptionID, credential, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	vmsClientWrapper := AzureVMsClientWrapper{Client: vmsClient}
 
-	vmsClient := compute.NewVirtualMachinesClient(azureConfig.SubscriptionID)
-	vmsClient.Authorizer = autorest.NewBearerAuthorizer(servicePrincipalToken)
-	vmsClient.Sender = autorest.CreateSender(autorest.AsIs())
-
-	groupsClient := resources.NewGroupsClient(azureConfig.SubscriptionID)
-	groupsClient.Authorizer = autorest.NewBearerAuthorizer(servicePrincipalToken)
-	groupsClient.Sender = autorest.CreateSender(autorest.AsIs())
+	groupsClient, err := armresources.NewResourceGroupsClient(azureConfig.SubscriptionID, credential, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	client := Client{
-		azureVMsClient:    vmsClient,
+		azureVMsClient:    vmsClientWrapper,
 		azureGroupsClient: groupsClient,
 	}
 
-	_, err = ac.List()
+	_, err = acWrapper.List(context.Background())
 	if err != nil {
 		return Client{}, err
 	}
