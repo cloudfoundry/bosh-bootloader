@@ -52,6 +52,16 @@ func (l *Logger) Println(message string) {
 	fmt.Fprintf(l.writer, "%s\n", message) //nolint:errcheck
 }
 
+func (l *Logger) Debugf(message string, a ...interface{}) {
+	l.clear()
+	fmt.Fprintf(l.writer, "%s\n", message)
+}
+
+func (l *Logger) Debugln(message string) {
+	l.clear()
+	fmt.Fprintf(l.writer, "%s\n", message)
+}
+
 func (l *Logger) NoConfirm() {
 	l.noConfirm = true
 }
