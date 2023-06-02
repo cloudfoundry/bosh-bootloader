@@ -43,4 +43,3 @@ func (c AzureStorageClientWrapper) List(ctx context.Context) (armstorage.Account
 
 	return armstorage.AccountListResult{Value: result}, nil
 }
-
