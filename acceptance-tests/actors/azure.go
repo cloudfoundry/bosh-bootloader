@@ -1,51 +1,49 @@
 package actors
 
 import (
+	"context"
 	"fmt"
 
-	"github.com/Azure/azure-sdk-for-go/arm/network" //nolint:staticcheck
-	"github.com/Azure/go-autorest/autorest"
-	"github.com/Azure/go-autorest/autorest/adal"
-	"github.com/Azure/go-autorest/autorest/azure"
+	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"                         //nolint:staticcheck
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork" //nolint:staticcheck
 	acceptance "github.com/cloudfoundry/bosh-bootloader/acceptance-tests"
 
 	. "github.com/onsi/gomega"
 )
 
 type azureLBHelper struct {
-	applicationGatewaysClient *network.ApplicationGatewaysClient
-	loadBalancersClient       *network.LoadBalancersClient
+	applicationGatewaysClient *armnetwork.ApplicationGatewaysClient
+	loadBalancersClient       *armnetwork.LoadBalancersClient
 }
 
 func NewAzureLBHelper(config acceptance.Config) azureLBHelper {
-	oauthConfig, err := adal.NewOAuthConfig(azure.PublicCloud.ActiveDirectoryEndpoint, config.AzureTenantID)
+	credential, err := azidentity.NewClientSecretCredential(config.AzureTenantID, config.AzureClientID, config.AzureClientSecret, nil)
 	Expect(err).NotTo(HaveOccurred())
 
-	servicePrincipalToken, err := adal.NewServicePrincipalToken(*oauthConfig, config.AzureClientID, config.AzureClientSecret, azure.PublicCloud.ResourceManagerEndpoint)
+	agc, err := armnetwork.NewApplicationGatewaysClient(config.AzureTenantID, credential, nil)
 	Expect(err).NotTo(HaveOccurred())
 
-	agc := network.NewApplicationGatewaysClient(config.AzureSubscriptionID)
-	agc.ManagementClient.Authorizer = autorest.NewBearerAuthorizer(servicePrincipalToken)
-	agc.ManagementClient.Sender = autorest.CreateSender(autorest.AsIs())
-
-	lbc := network.NewLoadBalancersClient(config.AzureSubscriptionID)
-	lbc.ManagementClient.Authorizer = autorest.NewBearerAuthorizer(servicePrincipalToken)
-	lbc.ManagementClient.Sender = autorest.CreateSender(autorest.AsIs())
+	lbc, err := armnetwork.NewLoadBalancersClient(config.AzureTenantID, credential, nil)
+	Expect(err).NotTo(HaveOccurred())
 
 	return azureLBHelper{
-		loadBalancersClient:       &lbc,
-		applicationGatewaysClient: &agc,
+		loadBalancersClient:       lbc,
+		applicationGatewaysClient: agc,
 	}
 }
 
 func (z azureLBHelper) getLoadBalancer(resourceGroupName, loadBalancerName string) (bool, error) {
-	_, err := z.loadBalancersClient.Get(fmt.Sprintf("%s-bosh", resourceGroupName), loadBalancerName, "")
+	_, err := z.loadBalancersClient.Get(context.TODO(), fmt.Sprintf("%s-bosh", resourceGroupName), loadBalancerName, nil)
 	if err != nil {
-		if aerr, ok := err.(autorest.DetailedError); ok {
-			if aerr.StatusCode.(int) == 404 {
-				return false, nil
-			}
-		}
+		return false, err
+	}
+
+	return true, nil
+}
+
+func (z azureLBHelper) getApplicationGateway(resourceGroupName, applicationGatewayName string) (bool, error) {
+	_, err := z.applicationGatewaysClient.Get(context.TODO(), fmt.Sprintf("%s-bosh", resourceGroupName), applicationGatewayName, nil)
+	if err != nil {
 		return false, err
 	}
 	return true, nil
