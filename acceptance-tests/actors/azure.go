@@ -41,15 +41,8 @@ func (z azureLBHelper) getLoadBalancer(resourceGroupName, loadBalancerName strin
 	return true, nil
 }
 
-func (z azureLBHelper) getApplicationGateway(resourceGroupName, applicationGatewayName string) (bool, error) {
-	_, err := z.applicationGatewaysClient.Get(context.TODO(), fmt.Sprintf("%s-bosh", resourceGroupName), applicationGatewayName, nil)
-	if err != nil {
-		return false, err
-	}
-	return true, nil
-}
-
-func (z azureLBHelper) GetLBArgs() []string {
+// GetLBArgs Unused: required by interface for acceptance-tests/actors/iaas_helper.go:23
+func (z azureLBHelper) GetLBArgs() []string { //nolint:unused
 	return []string{"--lb-type", "concourse"}
 }
 

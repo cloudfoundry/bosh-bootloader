@@ -29,7 +29,7 @@ func (c Client) CheckExists(envID string) (bool, error) {
 		return false, fmt.Errorf("Check existence for resource group %s: %s", resourceGroupName, err)
 	}
 
-	if response.Success == true {
+	if response.Success {
 		return true, nil
 	}
 
