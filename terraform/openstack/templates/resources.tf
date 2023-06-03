@@ -11,17 +11,18 @@ resource "openstack_networking_network_v2" "bosh" {
   admin_state_up = "true"
 }
 
+# subnet
 resource "openstack_networking_subnet_v2" "bosh_subnet" {
   region           = "${var.region_name}"
   network_id       = "${openstack_networking_network_v2.bosh.id}"
-  cidr             = "10.0.1.0/24"
+  cidr             = "${var.subnet_cidr}"
   ip_version       = 4
   name             = "${var.env_id}-subnet"
   allocation_pool {
-    start = "10.0.1.200"
-    end   = "10.0.1.254"
+    start = "${var.subnet_allocation_pool_start}"
+    end   = "${var.subnet_allocation_pool_end}"
   }
-  gateway_ip       = "10.0.1.1"
+  gateway_ip       = "${var.subnet_gateway_ip}"
   enable_dhcp      = "true"
   dns_nameservers  = "${var.dns_nameservers}"
 }
