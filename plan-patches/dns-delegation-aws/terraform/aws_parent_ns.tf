@@ -1,5 +1,5 @@
 variable "parent_zone_id" {
-  type        = "string"
+  type        = string
   description = "The AWS Route53 hosted zone ID for the 'parent' of the zone that bbl will create, used to set up DNS delegation"
 }
 
