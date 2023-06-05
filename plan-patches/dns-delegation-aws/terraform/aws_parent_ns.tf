@@ -9,5 +9,5 @@ resource "aws_route53_record" "perf-test" {
   type            = "NS"
   zone_id         = "${var.parent_zone_id}"
 
-  records = ["${aws_route53_zone.env_dns_zone.name_servers}"]
+  records = aws_route53_zone.env_dns_zone[0].name_servers
 }
