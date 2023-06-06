@@ -82,3 +82,7 @@ output "env_id" {
 output "director_name" {
   value = "${var.env_id}"
 }
+
+output "dns_nameservers" {
+  value = "${var.dns_nameservers}"
+}
