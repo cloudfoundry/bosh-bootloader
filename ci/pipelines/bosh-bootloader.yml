@@ -1267,6 +1267,7 @@ jobs:
       body: github-release-assets/body
       globs:
       - github-release-assets/bin/bbl-*
+      generate_release_notes: true
 
 - name: merge-bump-deployments-change
   serial: true
