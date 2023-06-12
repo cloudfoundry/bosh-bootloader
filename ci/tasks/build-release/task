@@ -3,9 +3,9 @@
 ROOT="${PWD}"
 BUILDS_PATH="${ROOT}/builds"
 BBL_VERSION="$(cat ${ROOT}/version/number)"
-BBL_LINUX_BUILD_PATH="${BUILDS_PATH}/bin/bbl-v${BBL_VERSION}_linux_x86-64"
+BBL_LINUX_BUILD_PATH="${BUILDS_PATH}/bin/bbl-v${BBL_VERSION}_linux"
 BBL_OSX_BUILD_PATH="${BUILDS_PATH}/bin/bbl-v${BBL_VERSION}_osx"
-BBL_WINDOWS_BUILD_PATH="${BUILDS_PATH}/bin/bbl-v${BBL_VERSION}_windows.exe"
+BBL_WINDOWS_BUILD_PATH="${BUILDS_PATH}/bin/bbl-v${BBL_VERSION}_windows_amd64.exe"
 BUILD_PATH=""
 
 function main() {
@@ -27,13 +27,19 @@ function main() {
     rm -rf ./bosh/deployments/jumpbox-deployment/.git
 
     for platform in "darwin" "windows" "linux"; do
-      # copy binaries
-      mv ${ROOT}/terraform-binaries/terraform_${platform}* ./terraform/binary_dist/terraform
-      create_mod
-      pushd "bbl/" > /dev/null
-        determine_build_path ${platform}
-        build_bbl ${BUILD_PATH} ${platform}
-      popd > /dev/null
+      for arch in "amd64" "arm64"; do
+        if [[ ${platform} == "windows" && ${arch} == "arm64" ]]; then
+          continue
+        fi
+
+        # copy binaries
+        mv ${ROOT}/terraform-binaries/terraform_${platform}_${arch}* ./terraform/binary_dist/terraform
+        create_mod
+        pushd "bbl/" > /dev/null
+        determine_build_path ${platform} ${arch}
+        build_bbl ${BUILD_PATH} ${platform} ${arch}
+        popd > /dev/null
+      done
     done
   popd > /dev/null
 
@@ -49,12 +55,16 @@ function main() {
 
     echo "- Includes terraform binaries from ${TF_URL}" >> body
 
-    linux_sha=$(shasum -a 256 "${BBL_LINUX_BUILD_PATH}" | cut -d ' ' -f 1)
-    osx_sha=$(shasum -a 256 "${BBL_OSX_BUILD_PATH}" | cut -d ' ' -f 1)
+    for arch in "amd64" "arm64"; do
+      linux_sha=$(shasum -a 256 "${BBL_LINUX_BUILD_PATH}_${arch}" | cut -d ' ' -f 1)
+      osx_sha=$(shasum -a 256 "${BBL_OSX_BUILD_PATH}_${arch}" | cut -d ' ' -f 1)
+
+      echo "- *Linux_${arch} sha256: \`${linux_sha}\`*" >> body
+      echo "- *OSX_${arch} sha256: \`${osx_sha}\`*" >> body
+    done
+
     windows_sha=$(shasum -a 256 "${BBL_WINDOWS_BUILD_PATH}" | cut -d ' ' -f 1)
 
-    echo "- *Linux sha256: \`${linux_sha}\`*" >> body
-    echo "- *OSX sha256: \`${osx_sha}\`*" >> body
     echo "- *Windows sha256: \`${windows_sha}\`*" >> body
     echo "*Known Issues:* Windows support is incomplete." >> body
   popd > /dev/null
@@ -66,8 +76,8 @@ function build_bbl() {
   local build_path
   build_path="$1"
 
-  echo "Building amd64 for $2"
-  CGO_ENABLED=0 GOARCH="amd64" GOOS="$2" \
+  echo "Building $3 for $2"
+  CGO_ENABLED=0 GOARCH="$3" GOOS="$2" \
     go build \
     -ldflags "-X main.Version=${BBL_VERSION}" \
     -o "${build_path}" .
@@ -77,13 +87,14 @@ function determine_build_path() {
   local platform
   local build_path
   platform=$1
+  arch=$2
   build_path="${BUILDS_PATH}/bin/bbl-v${BBL_VERSION}_"
   if [[ $platform == "darwin" ]]; then
-    build_path+="osx"
+    build_path+="osx_${arch}"
   elif [[ $platform == "linux" ]]; then
-    build_path+="linux_x86-64"
+    build_path+="linux_${arch}"
   elif [[ $platform == "windows" ]]; then
-    build_path+="windows.exe"
+    build_path+="windows_${arch}.exe"
   fi
 
   BUILD_PATH="${build_path}"
