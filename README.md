@@ -66,11 +66,11 @@ bucket.
 
 ### Troubleshooting
 
-To turn on bbl debugging traces, use `bbl --debug` flag.
-
-To turn on [bosh debugging](https://bosh.io/docs/build-cpi/#debugging) traces, export the `BOSH_LOG_LEVEL=debug` environment variable in the related bbl shell script, such as `create-jumpbox.sh`. 
- 
-To turn on the cpi traces, override or set cpi configuration, e.g. for vsphere cpi within `jumpbox-deployment/vsphere/cpi.yml` set `http_logging: true` according to [vsphere cpi documentation](https://bosh.io/docs/vsphere-cpi/#global)  
+To turn on debugging traces:
+- **BBL**: use `bbl --debug` flag.
+- [**BOSH**](https://bosh.io/docs/build-cpi/#debugging): export the `BOSH_LOG_LEVEL=debug` and the `BOSH_LOG_PATH=bosh.log` environment variables in the related bbl shell script, such as `create-jumpbox.sh`.
+- [**TERRAFORM**](https://developer.hashicorp.com/terraform/internals/debugging): export the `TF_LOG=TRACE` and the `TF_LOG_PATH=terraform.log` environment variables in the related bbl shell script, such as `create-jumpbox.sh`.
+- [**CPI**](https://bosh.io/docs/build-cpi/#debugging): override or set cpi configuration, e.g. for vsphere cpi within `jumpbox-deployment/vsphere/cpi.yml` set `http_logging: true` according to [vsphere cpi documentation](https://bosh.io/docs/vsphere-cpi/#global)  
 
 ### Tearing down an environment
 
