@@ -1,3 +1,5 @@
+[![Build](https://bosh.ci.cloudfoundry.org/api/v1/teams/main/pipelines/bosh-bootloader/badge)](https://bosh.ci.cloudfoundry.org/teams/main/pipelines/bosh-bootloader)
+
 # bosh-bootloader
 Also known as `bbl` *(pronounced: "bubble")*, bosh-bootloader is a command line utility for standing up BOSH
 on an IaaS. `bbl` currently supports AWS, GCP, Microsoft Azure, Openstack and vSphere.
