@@ -11,7 +11,7 @@ pushd "${GOPATH}/src/github.com/cloudfoundry" > /dev/null
   export TF_LOG_PATH="${ROOT}/tf-logs.txt"
   export BOSH_LOG_LEVEL=debug
   export BOSH_LOG_PATH="${ROOT}/bosh-logs/bosh-logs.txt"
-  export TERRAFORM_BINARY_PATH=${ROOT}/terraform-binaries/terraform_linux
+  export TERRAFORM_BINARY_PATH=${ROOT}/terraform-binaries/terraform_linux_amd64
 
   cp  "${TERRAFORM_BINARY_PATH}" ./bosh-bootloader/terraform/binary_dist/terraform
 
