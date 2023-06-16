@@ -57,7 +57,7 @@ RUN curl -L "https://s3.amazonaws.com/bosh-cli-artifacts/bosh-cli-$(curl -s http
 
 # Install bbl
 RUN curl -s https://api.github.com/repos/cloudfoundry/bosh-bootloader/releases/latest | \
-  jq -r '.assets[] | .browser_download_url | select(contains("linux"))' | \
+  jq -r '.assets[] | .browser_download_url | select(contains("linux_amd64"))' | \
   xargs wget && \
   mv bbl-* /usr/local/bin/bbl && \
   chmod +x /usr/local/bin/bbl
