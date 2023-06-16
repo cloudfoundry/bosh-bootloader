@@ -214,6 +214,13 @@ resources:
   source:
     uri: https://github.com/cloudfoundry/runtime-ci
 
+- name: bi-weekly
+  type: time
+  source:
+    days:
+    - Monday
+    interval: 336h
+
 jobs:
 - name: bump-bbl-deployment-image
   plan:
@@ -233,10 +240,9 @@ jobs:
   - in_parallel:
     - get: bbl-release-official
     - get: bosh-deployment
-      trigger: true
     - get: jumpbox-deployment
+    - get: bi-weekly
       trigger: true
-
   - put: version-bump-deployments
     params:
       file: bbl-release-official/version
