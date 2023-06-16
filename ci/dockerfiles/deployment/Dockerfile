@@ -1,4 +1,4 @@
-FROM golang:1.19
+FROM golang:1.20
 LABEL maintainer="https://github.com/cloudfoundry/bosh-bootloader"
 
 ARG GITHUB_TOKEN
@@ -80,12 +80,12 @@ RUN curl -s https://api.github.com/repos/cloudfoundry/credhub-cli/releases/lates
 
 RUN go install github.com/pivotal-cf/texplate@latest
 
-# Install pip
-RUN curl https://bootstrap.pypa.io/get-pip.py | python3
-
 # Install yq
-RUN pip install yq
-RUN pip install -U awscli
+RUN wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/bin/yq && \
+    chmod +x /usr/bin/yq
+
+RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && \
+    unzip awscliv2.zip && ./aws/install
 
 RUN chown -R testuser:testuser /usr/local/go/pkg
 RUN chown -R testuser:testuser /go
