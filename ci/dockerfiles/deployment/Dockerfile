@@ -78,11 +78,16 @@ RUN curl -s https://api.github.com/repos/cloudfoundry/credhub-cli/releases/lates
   mv credhub-* /usr/local/bin/credhub && \
   chmod +x /usr/local/bin/credhub
 
-RUN go install github.com/pivotal-cf/texplate@latest
-
 # Install yq
 RUN wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/bin/yq && \
     chmod +x /usr/bin/yq
+
+# Install ytt
+RUN curl -s https://api.github.com/repos/carvel-dev/ytt/releases/latest | \
+  jq -r '.assets[] | .browser_download_url | select(contains("linux-amd64"))' | \
+  xargs wget && \
+  mv ytt-* /usr/local/bin/ytt && \
+  chmod +x /usr/local/bin/ytt
 
 RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && \
     unzip awscliv2.zip && ./aws/install

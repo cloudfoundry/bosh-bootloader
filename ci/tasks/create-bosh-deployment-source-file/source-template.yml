@@ -1,7 +1,8 @@
 ---
-target: {{ env "TARGET" }}
-client: {{ env "CLIENT" }}
-client_secret: {{ env "CLIENT_SECRET" }}
-ca_cert: {{ toJson (env "CA_CERT") }}
-jumpbox_url: {{ env "JUMPBOX_URL" }}:22
-jumpbox_ssh_key: {{ toJson (env "JUMPBOX_SSH_KEY") }}
+#@ load("@ytt:data", "data")
+target: #@ data.values.TARGET
+client: #@ data.values.CLIENT
+client_secret: #@ data.values.CLIENT_SECRET
+ca_cert: #@ data.values.CA_CERT
+jumpbox_url: #@ data.values.JUMPBOX_URL + ":22"
+jumpbox_ssh_key: #@ data.values.JUMPBOX_SSH_KEY

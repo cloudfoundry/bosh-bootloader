@@ -1,5 +1,5 @@
 FROM cloudfoundry/cf-deployment-concourse-tasks
-MAINTAINER https://github.com/cloudfoundry/bosh-bootloader
+LABEL maintainer="https://github.com/cloudfoundry/bosh-bootloader"
 
 # Create directory for GOPATH
 RUN mkdir -p /go/bin
@@ -26,8 +26,12 @@ RUN echo "deb https://packages.cloud.google.com/apt cloud-sdk main" | tee -a /et
   apt-get update && \
   apt-get -qqy install google-cloud-cli
 
-# needed in the task 'create-bosh-source-file'
-RUN go install github.com/pivotal-cf/texplate@latest
+# Install ytt
+RUN curl -s https://api.github.com/repos/carvel-dev/ytt/releases/latest | \
+  jq -r '.assets[] | .browser_download_url | select(contains("linux-amd64"))' | \
+  xargs wget && \
+  mv ytt-* /usr/local/bin/ytt && \
+  chmod +x /usr/local/bin/ytt
 
 # add bbl from latest commit
 ADD bbl /usr/local/bin/
