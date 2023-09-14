@@ -13,12 +13,12 @@ func NewTemplateGenerator() TemplateGenerator {
 func (t TemplateGenerator) Generate(state storage.State) string {
 	return `
 variable "env_id" {}
-variable "director_internal_ip" {}
+variable "vsphere_subnet_cidr" {}
 variable "internal_gw" {}
 variable "jumpbox_ip" {}
+variable "director_internal_ip" {}
 variable "network_name" {}
 variable "vcenter_cluster" {}
-variable "vsphere_subnet_cidr" {}
 variable "vcenter_user" {}
 variable "vcenter_password" {}
 variable "vcenter_ip" {}
