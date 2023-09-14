@@ -37,9 +37,51 @@ var _ = Describe("InputGenerator", func() {
 			Expect(inputs).To(Equal(map[string]interface{}{
 				"env_id":               "banana",
 				"vsphere_subnet_cidr":  "10.0.0.0/24",
+				"internal_gw":          "10.0.0.1",
 				"jumpbox_ip":           "10.0.0.5",
 				"director_internal_ip": "10.0.0.6",
-				"internal_gw":          "10.0.0.1",
+				"network_name":         "the-network",
+				"vcenter_cluster":      "the-cluster",
+				"vcenter_ip":           "the-ip",
+				"vcenter_dc":           "the-datacenter",
+				"vcenter_rp":           "the-resource-pool",
+				"vcenter_ds":           "the-datastore",
+				"vcenter_disks":        "the-disks",
+				"vcenter_templates":    "the-templates",
+				"vcenter_vms":          "the-vms",
+			}))
+		})
+	})
+	Describe("Generate with customizing", func() {
+		It("receives state and returns a map of terraform variables", func() {
+			inputs, err := inputGenerator.Generate(storage.State{
+				EnvID: "banana",
+				VSphere: storage.VSphere{
+					SubnetCIDR:         "10.0.0.0/24",
+					InternalGW:         "10.0.0.11",
+					JumpboxIP:          "10.0.0.12",
+					DirectorInternalIP: "10.0.0.13",
+					Network:            "the-network",
+					VCenterCluster:     "the-cluster",
+					VCenterUser:        "the-user",
+					VCenterPassword:    "the-password",
+					VCenterIP:          "the-ip",
+					VCenterDC:          "the-datacenter",
+					VCenterRP:          "the-resource-pool",
+					VCenterDS:          "the-datastore",
+					VCenterDisks:       "the-disks",
+					VCenterTemplates:   "the-templates",
+					VCenterVMs:         "the-vms",
+				},
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(inputs).To(Equal(map[string]interface{}{
+				"env_id":               "banana",
+				"vsphere_subnet_cidr":  "10.0.0.0/24",
+				"internal_gw":          "10.0.0.11",
+				"jumpbox_ip":           "10.0.0.12",
+				"director_internal_ip": "10.0.0.13",
 				"network_name":         "the-network",
 				"vcenter_cluster":      "the-cluster",
 				"vcenter_ip":           "the-ip",

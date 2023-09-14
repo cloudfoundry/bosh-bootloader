@@ -32,6 +32,11 @@ It does not create any networks, security groups, or load balancers on vSphere.
     export BBL_VSPHERE_VCENTER_DISKS
     export BBL_VSPHERE_VCENTER_TEMPLATES
     export BBL_VSPHERE_VCENTER_VMS
+
+    ### Use optionally to customize:
+    # export BBL_VSPHERE_INTERNAL_GW
+    # export BBL_VSPHERE_JUMPBOX_IP
+    # export BBL_VSPHERE_DIRECTOR_INTERNAL_IP
     ```
 
     or powershell:
@@ -50,6 +55,11 @@ It does not create any networks, security groups, or load balancers on vSphere.
     $env:BBL_VSPHERE_VCENTER_DISKS=
     $env:BBL_VSPHERE_VCENTER_TEMPLATES=
     $env:BBL_VSPHERE_VCENTER_VMS=
+
+    ### Use optionally to customize:
+    # $env:BBL_VSPHERE_INTERNAL_GW=
+    # $env:BBL_VSPHERE_JUMPBOX_IP=
+    # $env:BBL_VSPHERE_DIRECTOR_INTERNAL_IP=
     ```
 
 1. Create jumpbox and bosh director.

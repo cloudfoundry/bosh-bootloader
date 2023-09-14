@@ -26,6 +26,9 @@ const (
   --vsphere-network                  vSphere Network                  env: $BBL_VSPHERE_NETWORK
   --vsphere-vcenter-ds               vSphere vCenter Datastore        env: $BBL_VSPHERE_VCENTER_DS
   --vsphere-subnet-cidr              vSphere Subnet CIDR              env: $BBL_VSPHERE_SUBNET_CIDR
+  --vsphere-internal-gw              vSphere Internal Gateway         env: $BBL_VSPHERE_INTERNAL_GW
+  --vsphere-jumpbox-ip               vSphere Jumpbox IP               env: $BBL_VSPHERE_JUMPBOX_IP
+  --vsphere-director-internal-ip     vSphere Director Internal IP     env: $BBL_VSPHERE_DIRECTOR_INTERNAL_IP
   --vsphere-vcenter-disks            vSphere vCenter Disks            env: $BBL_VSPHERE_VCENTER_DISKS
   --vsphere-vcenter-templates        vSphere vCenter Templates        env: $BBL_VSPHERE_VCENTER_TEMPLATES
   --vsphere-vcenter-vms              vSphere vCenter VMs              env: $BBL_VSPHERE_VCENTER_VMS

@@ -15,12 +15,24 @@ func NewInputGenerator() InputGenerator {
 func (i InputGenerator) Generate(state storage.State) (map[string]interface{}, error) {
 	cidr := state.VSphere.SubnetCIDR
 	parsedCIDR, _ := bosh.ParseCIDRBlock(cidr)
+	jumpboxIP := state.VSphere.JumpboxIP
+	if jumpboxIP == "" {
+		jumpboxIP = parsedCIDR.GetNthIP(5).String()
+	}
+	directorInternalIP := state.VSphere.DirectorInternalIP
+	if directorInternalIP == "" {
+		directorInternalIP = parsedCIDR.GetNthIP(6).String()
+	}
+	internalGW := state.VSphere.InternalGW
+	if internalGW == "" {
+		internalGW = parsedCIDR.GetNthIP(1).String()
+	}
 	return map[string]interface{}{
 		"env_id":               state.EnvID,
 		"vsphere_subnet_cidr":  cidr,
-		"jumpbox_ip":           parsedCIDR.GetNthIP(5).String(),
-		"director_internal_ip": parsedCIDR.GetNthIP(6).String(),
-		"internal_gw":          parsedCIDR.GetNthIP(1).String(),
+		"internal_gw":          internalGW,
+		"jumpbox_ip":           jumpboxIP,
+		"director_internal_ip": directorInternalIP,
 		"network_name":         state.VSphere.Network,
 		"vcenter_cluster":      state.VSphere.VCenterCluster,
 		"vcenter_ip":           state.VSphere.VCenterIP,
