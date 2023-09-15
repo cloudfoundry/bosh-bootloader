@@ -23,8 +23,12 @@ type GlobalFlags struct {
 	GCPServiceAccountKey string `long:"gcp-service-account-key" env:"BBL_GCP_SERVICE_ACCOUNT_KEY"`
 	GCPRegion            string `long:"gcp-region"              env:"BBL_GCP_REGION"`
 
-	VSphereNetwork          string `long:"vsphere-network"            env:"BBL_VSPHERE_NETWORK"`
-	VSphereSubnetCIDR       string `long:"vsphere-subnet-cidr"        env:"BBL_VSPHERE_SUBNET_CIDR"`
+	VSphereNetwork            string `long:"vsphere-network"            env:"BBL_VSPHERE_NETWORK"`
+	VSphereSubnetCIDR         string `long:"vsphere-subnet-cidr"        env:"BBL_VSPHERE_SUBNET_CIDR"`
+	VSphereInternalGW         string `long:"vsphere-internal-gw"        env:"BBL_VSPHERE_INTERNAL_GW"`
+	VSphereJumpboxIP          string `long:"vsphere-jumpbox-ip"        env:"BBL_VSPHERE_JUMPBOX_IP"`
+	VSphereDirectorInternalIP string `long:"vsphere-director-internal-ip"        env:"BBL_VSPHERE_DIRECTOR_INTERNAL_IP"`
+
 	VSphereVCenterCluster   string `long:"vsphere-vcenter-cluster"    env:"BBL_VSPHERE_VCENTER_CLUSTER"`
 	VSphereVCenterDC        string `long:"vsphere-vcenter-dc"         env:"BBL_VSPHERE_VCENTER_DC"`
 	VSphereVCenterDS        string `long:"vsphere-vcenter-ds"         env:"BBL_VSPHERE_VCENTER_DS"`
