@@ -25,18 +25,21 @@ type Config struct {
 	GCPServiceAccountKey string
 	GCPRegion            string
 
-	VSphereNetwork          string
-	VSphereSubnetCIDR       string
-	VSphereVCenterIP        string
-	VSphereVCenterUser      string
-	VSphereVCenterPassword  string
-	VSphereVCenterDC        string
-	VSphereVCenterCluster   string
-	VSphereVCenterRP        string
-	VSphereVCenterDS        string
-	VSphereVCenterDisks     string
-	VSphereVCenterVMs       string
-	VSphereVCenterTemplates string
+	VSphereNetwork            string
+	VSphereSubnetCIDR         string
+	VSphereInternalGW         string
+	VSphereJumpboxIP          string
+	VSphereDirectorInternalIP string
+	VSphereVCenterIP          string
+	VSphereVCenterUser        string
+	VSphereVCenterPassword    string
+	VSphereVCenterDC          string
+	VSphereVCenterCluster     string
+	VSphereVCenterRP          string
+	VSphereVCenterDS          string
+	VSphereVCenterDisks       string
+	VSphereVCenterVMs         string
+	VSphereVCenterTemplates   string
 
 	OpenStackAuthURL     string
 	OpenStackAZ          string
@@ -237,18 +240,21 @@ func loadConfigFromEnvVars() Config {
 		GCPServiceAccountKey: os.Getenv("BBL_GCP_SERVICE_ACCOUNT_KEY"),
 		GCPRegion:            os.Getenv("BBL_GCP_REGION"),
 
-		VSphereNetwork:          os.Getenv("BBL_VSPHERE_NETWORK"),
-		VSphereSubnetCIDR:       os.Getenv("BBL_VSPHERE_SUBNET_CIDR"),
-		VSphereVCenterIP:        os.Getenv("BBL_VSPHERE_VCENTER_IP"),
-		VSphereVCenterUser:      os.Getenv("BBL_VSPHERE_VCENTER_USER"),
-		VSphereVCenterPassword:  os.Getenv("BBL_VSPHERE_VCENTER_PASSWORD"),
-		VSphereVCenterDC:        os.Getenv("BBL_VSPHERE_VCENTER_DC"),
-		VSphereVCenterCluster:   os.Getenv("BBL_VSPHERE_VCENTER_CLUSTER"),
-		VSphereVCenterRP:        os.Getenv("BBL_VSPHERE_VCENTER_RP"),
-		VSphereVCenterDS:        os.Getenv("BBL_VSPHERE_VCENTER_DS"),
-		VSphereVCenterDisks:     os.Getenv("BBL_VSPHERE_VCENTER_DISKS"),
-		VSphereVCenterVMs:       os.Getenv("BBL_VSPHERE_VCENTER_VMS"),
-		VSphereVCenterTemplates: os.Getenv("BBL_VSPHERE_VCENTER_TEMPLATES"),
+		VSphereNetwork:            os.Getenv("BBL_VSPHERE_NETWORK"),
+		VSphereSubnetCIDR:         os.Getenv("BBL_VSPHERE_SUBNET_CIDR"),
+		VSphereInternalGW:         os.Getenv("BBL_VSPHERE_INTERNAL_GW"),
+		VSphereJumpboxIP:          os.Getenv("BBL_VSPHERE_JUMPBOX_IP"),
+		VSphereDirectorInternalIP: os.Getenv("BBL_VSPHERE_DIRECTOR_INTERNAL_IP"),
+		VSphereVCenterIP:          os.Getenv("BBL_VSPHERE_VCENTER_IP"),
+		VSphereVCenterUser:        os.Getenv("BBL_VSPHERE_VCENTER_USER"),
+		VSphereVCenterPassword:    os.Getenv("BBL_VSPHERE_VCENTER_PASSWORD"),
+		VSphereVCenterDC:          os.Getenv("BBL_VSPHERE_VCENTER_DC"),
+		VSphereVCenterCluster:     os.Getenv("BBL_VSPHERE_VCENTER_CLUSTER"),
+		VSphereVCenterRP:          os.Getenv("BBL_VSPHERE_VCENTER_RP"),
+		VSphereVCenterDS:          os.Getenv("BBL_VSPHERE_VCENTER_DS"),
+		VSphereVCenterDisks:       os.Getenv("BBL_VSPHERE_VCENTER_DISKS"),
+		VSphereVCenterVMs:         os.Getenv("BBL_VSPHERE_VCENTER_VMS"),
+		VSphereVCenterTemplates:   os.Getenv("BBL_VSPHERE_VCENTER_TEMPLATES"),
 
 		OpenStackAuthURL:     os.Getenv("BBL_OPENSTACK_AUTH_URL"),
 		OpenStackAZ:          os.Getenv("BBL_OPENSTACK_AZ"),
