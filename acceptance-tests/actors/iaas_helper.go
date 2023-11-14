@@ -27,6 +27,8 @@ func NewIAASLBHelper(iaas string, configuration acceptance.Config) IAASLBHelper 
 		return NewVSphereLBHelper()
 	case "openstack":
 		return NewOpenStackLBHelper()
+	case "cloudstack":
+		return NewCloudStackLBHelper()
 	default:
 		panic(fmt.Sprintf("%s is not a supported iaas", iaas))
 	}

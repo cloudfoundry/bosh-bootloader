@@ -20,8 +20,10 @@ func ValidateIAAS(state storage.State) error {
 		err = vsphere(state.VSphere)
 	case "openstack":
 		err = openstack(state.OpenStack)
+	case "cloudstack":
+		err = cloudstack(state.CloudStack)
 	default:
-		err = errors.New("--iaas [gcp, aws, azure, vsphere, openstack] must be provided or BBL_IAAS must be set")
+		err = errors.New("--iaas [gcp, aws, azure, vsphere, openstack, cloudstack] must be provided or BBL_IAAS must be set")
 	}
 
 	if err != nil {
@@ -133,6 +135,22 @@ func vsphere(state storage.VSphere) error {
 	}
 	if state.SubnetCIDR == "" {
 		return fmt.Errorf(CRED_ERROR, "--vsphere-subnet-cidr")
+	}
+	return nil
+}
+
+func cloudstack(state storage.CloudStack) error {
+	if state.Endpoint == "" {
+		return fmt.Errorf(CRED_ERROR, "--cloudstack-endpoint")
+	}
+	if state.ApiKey == "" {
+		return fmt.Errorf(CRED_ERROR, "--cloudstack-api-key")
+	}
+	if state.SecretAccessKey == "" {
+		return fmt.Errorf(CRED_ERROR, "--cloudstack-secret-access-key")
+	}
+	if state.Zone == "" {
+		return fmt.Errorf(CRED_ERROR, "--cloudstack-zone")
 	}
 	return nil
 }
