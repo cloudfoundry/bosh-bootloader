@@ -43,7 +43,7 @@ var _ = Describe("Executor", func() {
 		fileIO = &fakes.FileIO{}
 
 		executor = terraform.NewExecutor(cli, bufferingCLI, stateStore, fileIO, true, os.Stdout)
-		debugFalse = terraform.NewExecutor(cli, bufferingCLI, stateStore, fileIO, false, nil)
+		debugFalse = terraform.NewExecutor(cli, bufferingCLI, stateStore, fileIO, false, os.Stdout)
 
 		var err error
 		terraformDir, err = os.MkdirTemp("", "terraform")
