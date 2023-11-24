@@ -553,7 +553,7 @@
       static:
       - ((subnetwork_static_ips))
       cloud_properties:
-        ephemeral_external_ip: true
+        ephemeral_external_ip: false
         network_name: ((network))
         subnetwork_name: ((subnetwork))
         tags:
@@ -573,7 +573,7 @@
       static:
       - ((subnetwork_static_ips))
       cloud_properties:
-        ephemeral_external_ip: true
+        ephemeral_external_ip: false
         network_name: ((network))
         subnetwork_name: ((subnetwork))
         tags:
