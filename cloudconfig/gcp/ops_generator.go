@@ -168,7 +168,7 @@ func (o *OpsGenerator) generateGCPOps(state storage.State) ([]op, error) {
 			"((subnetwork_static_ips))",
 		},
 		CloudProperties: subnetCloudProperties{
-			EphemeralExternalIP: true,
+			EphemeralExternalIP: false,
 			NetworkName:         "((network))",
 			SubnetworkName:      "((subnetwork))",
 			Tags:                []string{"((internal_tag_name))"},
