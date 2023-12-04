@@ -25,7 +25,7 @@ function main() {
 
   pushd "${ROOT_DIR}/acceptance-tests" > /dev/null
     create_mod
-    go run github.com/onsi/ginkgo/v2/ginkgo -r -v ${parallelFlag} --race --fail-fast --randomize-all --randomize-suites --skip-package=no-iaas
+    go run github.com/onsi/ginkgo/v2/ginkgo -r -timeout=2h -v ${parallelFlag} --race --fail-fast --randomize-all --randomize-suites --skip-package=no-iaas
     cleanup_mod
   popd > /dev/null
 }
