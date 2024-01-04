@@ -22,7 +22,6 @@
 package transport
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -35,40 +34,15 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/metadata"
-	"google.golang.org/grpc/resolver"
 	"google.golang.org/grpc/stats"
 	"google.golang.org/grpc/status"
 	"google.golang.org/grpc/tap"
 )
 
-const logLevel = 2
-
-type bufferPool struct {
-	pool sync.Pool
-}
-
-func newBufferPool() *bufferPool {
-	return &bufferPool{
-		pool: sync.Pool{
-			New: func() interface{} {
-				return new(bytes.Buffer)
-			},
-		},
-	}
-}
-
-func (p *bufferPool) get() *bytes.Buffer {
-	return p.pool.Get().(*bytes.Buffer)
-}
-
-func (p *bufferPool) put(b *bytes.Buffer) {
-	p.pool.Put(b)
-}
-
 // recvMsg represents the received msg from the transport. All transport
 // protocol specific info has been removed.
 type recvMsg struct {
-	buffer *bytes.Buffer
+	data []byte
 	// nil: received some data
 	// io.EOF: stream is completed. data is nil.
 	// other non-nil error: transport failure. data is nil.
@@ -76,11 +50,10 @@ type recvMsg struct {
 }
 
 // recvBuffer is an unbounded channel of recvMsg structs.
-//
-// Note: recvBuffer differs from buffer.Unbounded only in the fact that it
-// holds a channel of recvMsg structs instead of objects implementing "item"
-// interface. recvBuffer is written to much more often and using strict recvMsg
-// structs helps avoid allocation in "recvBuffer.put"
+// Note recvBuffer differs from controlBuffer only in that recvBuffer
+// holds a channel of only recvMsg structs instead of objects implementing "item" interface.
+// recvBuffer is written to much more often than
+// controlBuffer and using strict recvMsg structs helps avoid allocation in "recvBuffer.put"
 type recvBuffer struct {
 	c       chan recvMsg
 	mu      sync.Mutex
@@ -137,16 +110,15 @@ func (b *recvBuffer) get() <-chan recvMsg {
 	return b.c
 }
 
+//
 // recvBufferReader implements io.Reader interface to read the data from
 // recvBuffer.
 type recvBufferReader struct {
-	closeStream func(error) // Closes the client transport stream with the given error and nil trailer metadata.
-	ctx         context.Context
-	ctxDone     <-chan struct{} // cache of ctx.Done() (for performance).
-	recv        *recvBuffer
-	last        *bytes.Buffer // Stores the remaining data in the previous calls.
-	err         error
-	freeBuffer  func(*bytes.Buffer)
+	ctx     context.Context
+	ctxDone <-chan struct{} // cache of ctx.Done() (for performance).
+	recv    *recvBuffer
+	last    []byte // Stores the remaining data in the previous calls.
+	err     error
 }
 
 // Read reads the next len(p) bytes from last. If last is drained, it tries to
@@ -156,72 +128,29 @@ func (r *recvBufferReader) Read(p []byte) (n int, err error) {
 	if r.err != nil {
 		return 0, r.err
 	}
-	if r.last != nil {
-		// Read remaining data left in last call.
-		copied, _ := r.last.Read(p)
-		if r.last.Len() == 0 {
-			r.freeBuffer(r.last)
-			r.last = nil
-		}
-		return copied, nil
-	}
-	if r.closeStream != nil {
-		n, r.err = r.readClient(p)
-	} else {
-		n, r.err = r.read(p)
-	}
+	n, r.err = r.read(p)
 	return n, r.err
 }
 
 func (r *recvBufferReader) read(p []byte) (n int, err error) {
+	if r.last != nil && len(r.last) > 0 {
+		// Read remaining data left in last call.
+		copied := copy(p, r.last)
+		r.last = r.last[copied:]
+		return copied, nil
+	}
 	select {
 	case <-r.ctxDone:
 		return 0, ContextErr(r.ctx.Err())
 	case m := <-r.recv.get():
-		return r.readAdditional(m, p)
+		r.recv.load()
+		if m.err != nil {
+			return 0, m.err
+		}
+		copied := copy(p, m.data)
+		r.last = m.data[copied:]
+		return copied, nil
 	}
-}
-
-func (r *recvBufferReader) readClient(p []byte) (n int, err error) {
-	// If the context is canceled, then closes the stream with nil metadata.
-	// closeStream writes its error parameter to r.recv as a recvMsg.
-	// r.readAdditional acts on that message and returns the necessary error.
-	select {
-	case <-r.ctxDone:
-		// Note that this adds the ctx error to the end of recv buffer, and
-		// reads from the head. This will delay the error until recv buffer is
-		// empty, thus will delay ctx cancellation in Recv().
-		//
-		// It's done this way to fix a race between ctx cancel and trailer. The
-		// race was, stream.Recv() may return ctx error if ctxDone wins the
-		// race, but stream.Trailer() may return a non-nil md because the stream
-		// was not marked as done when trailer is received. This closeStream
-		// call will mark stream as done, thus fix the race.
-		//
-		// TODO: delaying ctx error seems like a unnecessary side effect. What
-		// we really want is to mark the stream as done, and return ctx error
-		// faster.
-		r.closeStream(ContextErr(r.ctx.Err()))
-		m := <-r.recv.get()
-		return r.readAdditional(m, p)
-	case m := <-r.recv.get():
-		return r.readAdditional(m, p)
-	}
-}
-
-func (r *recvBufferReader) readAdditional(m recvMsg, p []byte) (n int, err error) {
-	r.recv.load()
-	if m.err != nil {
-		return 0, m.err
-	}
-	copied, _ := m.buffer.Read(p)
-	if m.buffer.Len() == 0 {
-		r.freeBuffer(m.buffer)
-		r.last = nil
-	} else {
-		r.last = m.buffer
-	}
-	return copied, nil
 }
 
 type streamState uint32
@@ -237,11 +166,9 @@ const (
 type Stream struct {
 	id           uint32
 	st           ServerTransport    // nil for client side Stream
-	ct           *http2Client       // nil for server side Stream
 	ctx          context.Context    // the associated context of the stream
 	cancel       context.CancelFunc // always nil for client side Stream
 	done         chan struct{}      // closed at the end of stream to unblock writers. On the client side.
-	doneFunc     func()             // invoked at the end of stream on client side.
 	ctxDone      <-chan struct{}    // same as done chan but for server side. Cache of ctx.Done() (for performance)
 	method       string             // the associated RPC method of the stream
 	recvCompress string
@@ -255,12 +182,8 @@ type Stream struct {
 	// is used to adjust flow control, if needed.
 	requestRead func(int)
 
-	headerChan       chan struct{} // closed to indicate the end of header metadata.
-	headerChanClosed uint32        // set when headerChan is closed. Used to avoid closing headerChan multiple times.
-	// headerValid indicates whether a valid header was received.  Only
-	// meaningful after headerChan is closed (always call waitOnHeader() before
-	// reading its value).  Not valid on server side.
-	headerValid bool
+	headerChan chan struct{} // closed to indicate the end of header metadata.
+	headerDone uint32        // set when headerChan is closed. Used to avoid closing headerChan multiple times.
 
 	// hdrMu protects header and trailer metadata on the server-side.
 	hdrMu sync.Mutex
@@ -313,28 +236,26 @@ func (s *Stream) getState() streamState {
 	return streamState(atomic.LoadUint32((*uint32)(&s.state)))
 }
 
-func (s *Stream) waitOnHeader() {
+func (s *Stream) waitOnHeader() error {
 	if s.headerChan == nil {
 		// On the server headerChan is always nil since a stream originates
 		// only after having received headers.
-		return
+		return nil
 	}
 	select {
 	case <-s.ctx.Done():
-		// Close the stream to prevent headers/trailers from changing after
-		// this function returns.
-		s.ct.CloseStream(s, ContextErr(s.ctx.Err()))
-		// headerChan could possibly not be closed yet if closeStream raced
-		// with operateHeaders; wait until it is closed explicitly here.
-		<-s.headerChan
+		return ContextErr(s.ctx.Err())
 	case <-s.headerChan:
+		return nil
 	}
 }
 
 // RecvCompress returns the compression algorithm applied to the inbound
 // message. It is empty string if there is no compression applied.
 func (s *Stream) RecvCompress() string {
-	s.waitOnHeader()
+	if err := s.waitOnHeader(); err != nil {
+		return ""
+	}
 	return s.recvCompress
 }
 
@@ -355,27 +276,37 @@ func (s *Stream) Done() <-chan struct{} {
 // available. It blocks until i) the metadata is ready or ii) there is no header
 // metadata or iii) the stream is canceled/expired.
 //
-// On server side, it returns the out header after t.WriteHeader is called.  It
-// does not block and must not be called until after WriteHeader.
+// On server side, it returns the out header after t.WriteHeader is called.
 func (s *Stream) Header() (metadata.MD, error) {
-	if s.headerChan == nil {
+	if s.headerChan == nil && s.header != nil {
 		// On server side, return the header in stream. It will be the out
 		// header after t.WriteHeader is called.
 		return s.header.Copy(), nil
 	}
-	s.waitOnHeader()
-	if !s.headerValid {
-		return nil, s.status.Err()
+	err := s.waitOnHeader()
+	// Even if the stream is closed, header is returned if available.
+	select {
+	case <-s.headerChan:
+		if s.header == nil {
+			return nil, nil
+		}
+		return s.header.Copy(), nil
+	default:
 	}
-	return s.header.Copy(), nil
+	return nil, err
 }
 
 // TrailersOnly blocks until a header or trailers-only frame is received and
 // then returns true if the stream was trailers-only.  If the stream ends
-// before headers are received, returns true, nil.  Client-side only.
-func (s *Stream) TrailersOnly() bool {
-	s.waitOnHeader()
-	return s.noHeaders
+// before headers are received, returns true, nil.  If a context error happens
+// first, returns it as a status error.  Client-side only.
+func (s *Stream) TrailersOnly() (bool, error) {
+	err := s.waitOnHeader()
+	if err != nil {
+		return false, err
+	}
+	// if !headerDone, some other connection error occurred.
+	return s.noHeaders && atomic.LoadUint32(&s.headerDone) == 1, nil
 }
 
 // Trailer returns the cached trailer metedata. Note that if it is not called
@@ -529,7 +460,6 @@ type ServerConfig struct {
 	ReadBufferSize        int
 	ChannelzParentID      int64
 	MaxHeaderListSize     *uint32
-	HeaderTableSize       *uint32
 }
 
 // NewServerTransport creates a ServerTransport with conn or non-nil error
@@ -570,14 +500,19 @@ type ConnectOptions struct {
 	ChannelzParentID int64
 	// MaxHeaderListSize sets the max (uncompressed) size of header list that is prepared to be received.
 	MaxHeaderListSize *uint32
-	// UseProxy specifies if a proxy should be used.
-	UseProxy bool
+}
+
+// TargetInfo contains the information of the target such as network address and metadata.
+type TargetInfo struct {
+	Addr      string
+	Metadata  interface{}
+	Authority string
 }
 
 // NewClientTransport establishes the transport with the required ConnectOptions
 // and returns it to the caller.
-func NewClientTransport(connectCtx, ctx context.Context, addr resolver.Address, opts ConnectOptions, onPrefaceReceipt func(), onGoAway func(GoAwayReason), onClose func()) (ClientTransport, error) {
-	return newHTTP2Client(connectCtx, ctx, addr, opts, onPrefaceReceipt, onGoAway, onClose)
+func NewClientTransport(connectCtx, ctx context.Context, target TargetInfo, opts ConnectOptions, onSuccess func(), onGoAway func(GoAwayReason), onClose func()) (ClientTransport, error) {
+	return newHTTP2Client(connectCtx, ctx, target, opts, onSuccess, onGoAway, onClose)
 }
 
 // Options provides additional hints and information for message
@@ -612,8 +547,6 @@ type CallHdr struct {
 	ContentSubtype string
 
 	PreviousAttempts int // value of grpc-previous-rpc-attempts header to set
-
-	DoneFunc func() // called when the stream is finished
 }
 
 // ClientTransport is the common interface for all gRPC client-side transport
@@ -622,14 +555,11 @@ type ClientTransport interface {
 	// Close tears down this transport. Once it returns, the transport
 	// should not be accessed any more. The caller must make sure this
 	// is called only once.
-	Close(err error)
+	Close() error
 
-	// GracefulClose starts to tear down the transport: the transport will stop
-	// accepting new RPCs and NewStream will return error. Once all streams are
-	// finished, the transport will close.
-	//
-	// It does not block.
-	GracefulClose()
+	// GracefulClose starts to tear down the transport. It stops accepting
+	// new RPCs and wait the completion of the pending RPCs.
+	GracefulClose() error
 
 	// Write sends the data for the given stream. A nil stream indicates
 	// the write is to be performed on the transport as a whole.
@@ -656,12 +586,8 @@ type ClientTransport interface {
 	// HTTP/2).
 	GoAway() <-chan struct{}
 
-	// GetGoAwayReason returns the reason why GoAway frame was received, along
-	// with a human readable string with debug info.
-	GetGoAwayReason() (GoAwayReason, string)
-
-	// RemoteAddr returns the remote network address.
-	RemoteAddr() net.Addr
+	// GetGoAwayReason returns the reason why GoAway frame was received.
+	GetGoAwayReason() GoAwayReason
 
 	// IncrMsgSent increments the number of message sent through this transport.
 	IncrMsgSent()
