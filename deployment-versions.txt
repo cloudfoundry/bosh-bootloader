@@ -1,2 +1,2 @@
-- *Current jumpbox-deployment: cloudfoundry/jumpbox-deployment@8b5b8e97d55bf79fee1ef26e69c33f5695082aee*
-- *Current bosh-deployment: cloudfoundry/bosh-deployment@c9fd9d595978809c301d7ac7c55af55aa05fef7f*
+- *Current jumpbox-deployment: cloudfoundry/jumpbox-deployment@8efec88b808f82c4936ad7aeb56f23e5e1bbb9dd*
+- *Current bosh-deployment: cloudfoundry/bosh-deployment@78a216982c5d738392a0da28961e333428d279fd*
