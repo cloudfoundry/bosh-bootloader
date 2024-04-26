@@ -5,7 +5,6 @@ set -eu
 fly -t production set-pipeline -n \
  -p compiled-releases-3586 \
  -c ./pipeline-3586.yml \
- -l <(lpass show --note "concourse:production pipeline:compiled-releases")
 
 fly -t production check-resource -r compiled-releases-3586/uaa-release -f version:52.2
 fly -t production check-resource -r compiled-releases-3586/credhub-release -f version:1.6.0
@@ -14,8 +13,7 @@ fly -t production check-resource -r compiled-releases-3586/ubuntu-trusty-stemcel
 
 fly -t production set-pipeline -n \
  -p compiled-releases-3541 \
- -c ./pipeline-3541.yml \
- -l <(lpass show --note "concourse:production pipeline:compiled-releases")
+ -c ./pipeline-3541.yml
 
 fly -t production check-resource -r compiled-releases-3541/bosh-release -f version:263.4.0
 fly -t production check-resource -r compiled-releases-3541/uaa-release -f version:52.2
@@ -29,8 +27,7 @@ fly -t production check-resource -r compiled-releases-3541/ubuntu-trusty-stemcel
 
 fly -t production set-pipeline -n \
  -p compiled-releases-3468 \
- -c ./pipeline-3468.yml \
- -l <(lpass show --note "concourse:production pipeline:compiled-releases")
+ -c ./pipeline-3468.yml
 
 fly -t production check-resource -r compiled-releases-3468/bosh-release -f version:263.4.0
 fly -t production check-resource -r compiled-releases-3468/uaa-release -f version:52.2
@@ -39,8 +36,7 @@ fly -t production check-resource -r compiled-releases-3468/ubuntu-trusty-stemcel
 
 fly -t production set-pipeline -n \
  -p compiled-releases-3445 \
- -c ./pipeline-3445.yml \
- -l <(lpass show --note "concourse:production pipeline:compiled-releases")
+ -c ./pipeline-3445.yml
 
 fly -t production check-resource -r compiled-releases-3445/bosh-release -f version:263
 fly -t production check-resource -r compiled-releases-3445/uaa-release -f version:45.4
@@ -49,8 +45,7 @@ fly -t production check-resource -r compiled-releases-3445/ubuntu-trusty-stemcel
 
 fly -t production set-pipeline -n \
  -p compiled-releases-3421 \
- -c ./pipeline-3421.yml \
- -l <(lpass show --note "concourse:production pipeline:compiled-releases")
+ -c ./pipeline-3421.yml
 
 fly -t production check-resource -r compiled-releases-3421/bosh-release -f version:262.4
 fly -t production check-resource -r compiled-releases-3421/uaa-release -f version:41.1
@@ -59,8 +54,7 @@ fly -t production check-resource -r compiled-releases-3421/ubuntu-trusty-stemcel
 
 fly -t production set-pipeline -n \
  -p compiled-releases-3363 \
- -c ./pipeline-3363.yml \
- -l <(lpass show --note "concourse:production pipeline:compiled-releases")
+ -c ./pipeline-3363.yml
 
 fly -t production check-resource -r compiled-releases-3363/bosh-release -f version:260.8
 fly -t production check-resource -r compiled-releases-3363/uaa-release -f version:24.12
