@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"strconv"
 	"strings"
 	"time"
@@ -45,6 +46,12 @@ func NewBinary() *Binary {
 }
 
 func (binary *Binary) BinaryPath() (string, error) {
+	// if user has a terraform use it
+	userTerraform, err := exec.LookPath("terraform")
+	if err == nil && userTerraform != "" {
+		return userTerraform, nil
+	}
+
 	destinationPath := fmt.Sprintf("%s/%s", binary.FS.GetTempDir(os.TempDir()), bblTfBinaryName)
 	exists, err := binary.FS.Exists(destinationPath)
 	if err != nil {
