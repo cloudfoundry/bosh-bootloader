@@ -50,10 +50,10 @@ func NewBinary(tfUseLocalBinary bool) *Binary {
 func (binary *Binary) BinaryPath() (string, error) {
 	// if user has a terraform use it
 	if binary.UseLocalBinary {
-	    userTerraform, err := exec.LookPath(tfBinDataAssetName)
-	    if err == nil && userTerraform != "" {
-		    return userTerraform, nil
-	    }
+		userTerraform, err := exec.LookPath(tfBinDataAssetName)
+		if err == nil && userTerraform != "" {
+			return userTerraform, nil
+		}
 	}
 
 	destinationPath := fmt.Sprintf("%s/%s", binary.FS.GetTempDir(os.TempDir()), bblTfBinaryName)
