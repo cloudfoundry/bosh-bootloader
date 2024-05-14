@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"strconv"
 	"strings"
 	"time"
@@ -27,24 +28,34 @@ type tfBinaryPathFs interface {
 }
 
 type Binary struct {
-	FS        tfBinaryPathFs
-	EmbedData embed.FS
-	Path      string
+	FS             tfBinaryPathFs
+	EmbedData      embed.FS
+	Path           string
+	UseLocalBinary bool
 }
 
 //go:embed binary_dist
 var content embed.FS
 
-func NewBinary() *Binary {
+func NewBinary(tfUseLocalBinary bool) *Binary {
 	fs := afero.Afero{Fs: afero.NewOsFs()}
 	return &Binary{
-		FS:        fs,
-		Path:      "binary_dist",
-		EmbedData: content,
+		FS:             fs,
+		Path:           "binary_dist",
+		EmbedData:      content,
+		UseLocalBinary: tfUseLocalBinary,
 	}
 }
 
 func (binary *Binary) BinaryPath() (string, error) {
+	// if user has a terraform use it
+	if binary.UseLocalBinary {
+		userTerraform, err := exec.LookPath(tfBinDataAssetName)
+		if err == nil && userTerraform != "" {
+			return userTerraform, nil
+		}
+	}
+
 	destinationPath := fmt.Sprintf("%s/%s", binary.FS.GetTempDir(os.TempDir()), bblTfBinaryName)
 	exists, err := binary.FS.Exists(destinationPath)
 	if err != nil {
