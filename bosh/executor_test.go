@@ -552,7 +552,7 @@ var _ = Describe("Executor", func() {
 					"-v", `cloudstack_secret_access_key="${BBL_CLOUDSTACK_SECRET_ACCESS_KEY}"`,
 				}
 
-				behavesLikePlan(expectedArgs, cli, fs, executor, dirInput, deploymentDir, "cloudstack", stateDir)
+				behavesLikePlan(expectedArgs, cli, fs, executor, dirInput, deploymentDir, "cloudstack", stateDir, storage.State{})
 			})
 		})
 	})
