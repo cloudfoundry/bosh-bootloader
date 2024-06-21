@@ -67,7 +67,7 @@ resource "azurerm_public_ip" "cf" {
   name                         = "${var.env_id}-cf-lb-ip"
   location                     = "${var.region}"
   resource_group_name          = "${azurerm_resource_group.bosh.name}"
-  allocation_method            = "Dynamic"
+  allocation_method            = "Static"
   sku                          = "Standard"
 }
 
