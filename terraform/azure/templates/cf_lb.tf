@@ -76,8 +76,8 @@ resource "azurerm_application_gateway" "cf" {
   location            = "${var.region}"
 
   sku {
-    name     = "Standard_Small"
-    tier     = "Standard"
+    name     = "Standard_v2"
+    tier     = "Standard_v2"
     capacity = 2
   }
 
@@ -164,6 +164,7 @@ resource "azurerm_application_gateway" "cf" {
     http_listener_name         = "${azurerm_virtual_network.bosh.name}-http-lstn"
     backend_address_pool_name  = "${var.env_id}-cf-backend-address-pool"
     backend_http_settings_name = "${azurerm_virtual_network.bosh.name}-be-htst"
+    priority                   = 201
   }
 
   request_routing_rule {
@@ -172,6 +173,7 @@ resource "azurerm_application_gateway" "cf" {
     http_listener_name         = "${azurerm_virtual_network.bosh.name}-https-lstn"
     backend_address_pool_name  = "${var.env_id}-cf-backend-address-pool"
     backend_http_settings_name = "${azurerm_virtual_network.bosh.name}-be-htst"
+    priority                   = 202
   }
 
   request_routing_rule {
@@ -180,6 +182,7 @@ resource "azurerm_application_gateway" "cf" {
     http_listener_name         = "${azurerm_virtual_network.bosh.name}-logs-lstn"
     backend_address_pool_name  = "${var.env_id}-cf-backend-address-pool"
     backend_http_settings_name = "${azurerm_virtual_network.bosh.name}-be-htst"
+    priority                   = 203
   }
 }
 
