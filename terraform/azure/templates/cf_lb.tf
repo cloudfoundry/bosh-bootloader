@@ -69,7 +69,6 @@ resource "azurerm_public_ip" "cf" {
   resource_group_name          = "${azurerm_resource_group.bosh.name}"
   allocation_method            = "Dynamic"
   sku                          = "Standard"
-
 }
 
 resource "azurerm_application_gateway" "cf" {
