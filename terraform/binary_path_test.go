@@ -39,9 +39,10 @@ var _ = Describe("BinaryPath", func() {
 		fileSystem.ExistsCall.Returns.Bool = false
 
 		binary = &terraform.Binary{
-			Path:      "testassets/success",
-			EmbedData: content,
-			FS:        fileSystem,
+			Path:           "testassets/success",
+			EmbedData:      content,
+			FS:             fileSystem,
+			UseLocalBinary: false,
 		}
 	})
 

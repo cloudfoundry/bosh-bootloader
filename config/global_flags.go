@@ -1,14 +1,15 @@
 package config
 
 type GlobalFlags struct {
-	Help        bool   `short:"h" long:"help"`
-	Debug       bool   `short:"d" long:"debug"        env:"BBL_DEBUG"`
-	Version     bool   `short:"v" long:"version"`
-	NoConfirm   bool   `short:"n" long:"no-confirm"`
-	StateDir    string `short:"s" long:"state-dir"    env:"BBL_STATE_DIRECTORY"`
-	StateBucket string `          long:"state-bucket" env:"BBL_STATE_BUCKET"`
-	EnvID       string `          long:"name"`
-	IAAS        string `          long:"iaas"         env:"BBL_IAAS"`
+	Help             bool   `short:"h" long:"help"`
+	Debug            bool   `short:"d" long:"debug"               env:"BBL_DEBUG"`
+	Version          bool   `short:"v" long:"version"`
+	NoConfirm        bool   `short:"n" long:"no-confirm"`
+	StateDir         string `short:"s" long:"state-dir"           env:"BBL_STATE_DIRECTORY"`
+	StateBucket      string `          long:"state-bucket"        env:"BBL_STATE_BUCKET"`
+	EnvID            string `          long:"name"`
+	IAAS             string `          long:"iaas"                env:"BBL_IAAS"`
+	UseTfLocalBinary bool   `short:"u" long:"use-tf-local-binary" env:"BBL_USE_TF_LOCAL_BINARY"`
 
 	AWSAccessKeyID     string `long:"aws-access-key-id"       env:"BBL_AWS_ACCESS_KEY_ID"`
 	AWSSecretAccessKey string `long:"aws-secret-access-key"   env:"BBL_AWS_SECRET_ACCESS_KEY"`
