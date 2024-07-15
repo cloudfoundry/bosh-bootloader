@@ -8,16 +8,18 @@ import (
 )
 
 type CLI struct {
-	errorBuffer  io.Writer
-	outputBuffer io.Writer
-	tfDataDir    string
+	errorBuffer      io.Writer
+	outputBuffer     io.Writer
+	tfDataDir        string
+	tfUseLocalBinary bool
 }
 
-func NewCLI(errorBuffer, outputBuffer io.Writer, tfDataDir string) CLI {
+func NewCLI(errorBuffer, outputBuffer io.Writer, tfDataDir string, tfUseLocalBinary bool) CLI {
 	return CLI{
-		errorBuffer:  errorBuffer,
-		outputBuffer: outputBuffer,
-		tfDataDir:    tfDataDir,
+		errorBuffer:      errorBuffer,
+		outputBuffer:     outputBuffer,
+		tfDataDir:        tfDataDir,
+		tfUseLocalBinary: tfUseLocalBinary,
 	}
 }
 
@@ -26,7 +28,7 @@ func (c CLI) Run(stdout io.Writer, workingDirectory string, args []string) error
 }
 
 func (c CLI) RunWithEnv(stdout io.Writer, workingDirectory string, args []string, extraEnvVars []string) error {
-	path, err := NewBinary().BinaryPath()
+	path, err := NewBinary(c.tfUseLocalBinary).BinaryPath()
 	if err != nil {
 		return err
 	}
