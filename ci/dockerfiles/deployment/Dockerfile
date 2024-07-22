@@ -67,9 +67,14 @@ RUN wget https://github.com/cloudfoundry-incubator/spiff/releases/download/v1.0.
   mv spiff_linux_amd64 /usr/local/bin/spiff && \
   chmod +x /usr/local/bin/spiff
 
-RUN curl -L "https://cli.run.pivotal.io/stable?release=linux64-binary&source=github" | tar -zx && \
-  chmod +x cf && \
-  mv cf /usr/local/bin/cf
+# Install cf
+RUN curl -s https://api.github.com/repos/cloudfoundry/cli/releases/latest | \
+  jq -r '.assets[] | .browser_download_url | select(contains("linux_x86-64"))' | \
+  xargs wget && \
+  tar -xvf cf*.tgz && \
+  rm cf*.tgz && \
+  mv cf* /usr/local/bin && \
+  chmod +x /usr/local/bin/cf*
 
 # Install Credhub
 RUN curl -s https://api.github.com/repos/cloudfoundry/credhub-cli/releases/latest | \
