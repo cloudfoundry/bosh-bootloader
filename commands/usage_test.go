@@ -40,11 +40,11 @@ Usage:
 
 Global Options:
   --help                 [-h] Prints usage. Use "bbl [command] --help" for more information about a command
-  --state-dir            [-s] Directory containing the bbl state                                            env:"BBL_STATE_DIRECTORY"
-  --debug                [-d] Prints debugging output                                                       env:"BBL_DEBUG"
+  --state-dir            [-s] Directory containing the bbl state                                                             env:"BBL_STATE_DIRECTORY"
+  --debug                [-d] Prints debugging output                                                                        env:"BBL_DEBUG"
   --version              [-v] Prints version
   --no-confirm           [-n] No confirm
-  --use-tf-local-binary  [-u] Use the local terraform binary if it exists                                   env:"BBL_USE_TF_LOCAL_BINARY"
+  --terraform-binary          Path of a terraform binary (optional). If the file does not exist the embedded binary is used. env:"BBL_TERRAFORM_BINARY"
 
 Basic Commands: A good place to start
   up                      Deploys BOSH director on an IAAS, creates CF/Concourse load balancers. Updates existing director.
@@ -86,11 +86,11 @@ Troubleshooting Commands:
 
 Global Options:
   --help                 [-h] Prints usage. Use "bbl [command] --help" for more information about a command
-  --state-dir            [-s] Directory containing the bbl state                                            env:"BBL_STATE_DIRECTORY"
-  --debug                [-d] Prints debugging output                                                       env:"BBL_DEBUG"
+  --state-dir            [-s] Directory containing the bbl state                                                             env:"BBL_STATE_DIRECTORY"
+  --debug                [-d] Prints debugging output                                                                        env:"BBL_DEBUG"
   --version              [-v] Prints version
   --no-confirm           [-n] No confirm
-  --use-tf-local-binary  [-u] Use the local terraform binary if it exists                                   env:"BBL_USE_TF_LOCAL_BINARY"
+  --terraform-binary          Path of a terraform binary (optional). If the file does not exist the embedded binary is used. env:"BBL_TERRAFORM_BINARY"
 
 [my-command command options]
   some message
