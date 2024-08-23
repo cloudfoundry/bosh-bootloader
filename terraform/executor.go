@@ -156,7 +156,7 @@ func (e Executor) runTFCommandWithEnvs(args, envs []string) error {
 		if e.debug {
 			return err
 		}
-		return fmt.Errorf(redactedError)
+		return fmt.Errorf("%s", redactedError)
 	}
 
 	return nil
@@ -224,7 +224,7 @@ func (e Executor) Validate(credentials map[string]string) error {
 		if e.debug {
 			return err
 		}
-		return fmt.Errorf(redactedError)
+		return fmt.Errorf("%s", redactedError)
 	}
 
 	return nil

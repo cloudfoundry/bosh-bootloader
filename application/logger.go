@@ -76,7 +76,10 @@ func (l *Logger) Prompt(message string) bool {
 	l.newline = true
 
 	var proceed string
-	fmt.Fscanln(l.reader, &proceed)
+	_, err := fmt.Fscanln(l.reader, &proceed)
+	if err != nil {
+		return false
+	}
 
 	proceed = strings.ToLower(proceed)
 	if proceed == "yes" || proceed == "y" {
