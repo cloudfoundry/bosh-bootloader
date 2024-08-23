@@ -48,13 +48,15 @@ func NewBinary(terraformBinary string) *Binary {
 
 func (binary *Binary) BinaryPath() (string, error) {
 	// if user sets a terraform binary use it
-	exists, err := binary.FS.Exists(binary.TerraformBinary)
-	if err == nil && exists {
-		return binary.TerraformBinary, nil
+	if binary.TerraformBinary != "" {
+		exists, err := binary.FS.Exists(binary.TerraformBinary)
+		if err == nil && exists {
+			return binary.TerraformBinary, nil
+		}
 	}
 
 	destinationPath := fmt.Sprintf("%s/%s", binary.FS.GetTempDir(os.TempDir()), bblTfBinaryName)
-	exists, err = binary.FS.Exists(destinationPath)
+	exists, err := binary.FS.Exists(destinationPath)
 	if err != nil {
 		return "", err
 	}
