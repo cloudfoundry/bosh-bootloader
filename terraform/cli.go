@@ -1,6 +1,7 @@
 package terraform
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"os"
@@ -8,18 +9,20 @@ import (
 )
 
 type CLI struct {
-	errorBuffer     io.Writer
-	outputBuffer    io.Writer
-	tfDataDir       string
-	terraformBinary string
+	errorBuffer          io.Writer
+	outputBuffer         io.Writer
+	tfDataDir            string
+	terraformBinary      string
+	disableTfAutoApprove bool
 }
 
-func NewCLI(errorBuffer, outputBuffer io.Writer, tfDataDir string, terraformBinary string) CLI {
+func NewCLI(errorBuffer, outputBuffer io.Writer, tfDataDir string, terraformBinary string, disableTfAutoApprove bool) CLI {
 	return CLI{
-		errorBuffer:     errorBuffer,
-		outputBuffer:    outputBuffer,
-		tfDataDir:       tfDataDir,
-		terraformBinary: terraformBinary,
+		errorBuffer:          errorBuffer,
+		outputBuffer:         outputBuffer,
+		tfDataDir:            tfDataDir,
+		terraformBinary:      terraformBinary,
+		disableTfAutoApprove: disableTfAutoApprove,
 	}
 }
 
@@ -40,9 +43,14 @@ func (c CLI) RunWithEnv(stdout io.Writer, workingDirectory string, args []string
 
 	command.Stdout = io.MultiWriter(stdout, c.outputBuffer)
 	command.Stderr = c.errorBuffer
+	command.Stdin = os.Stdin
 
 	err = command.Run()
 	if err != nil {
+		_, isBuffer := c.errorBuffer.(*bytes.Buffer)
+		if !isBuffer {
+			return fmt.Errorf("command execution failed got: %s", err)
+		}
 		return fmt.Errorf("command execution failed got: %s stderr:\n %s", err, c.errorBuffer)
 	}
 

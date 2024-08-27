@@ -13,12 +13,14 @@ Usage:
   bbl [GLOBAL OPTIONS] %s [OPTIONS]
 
 Global Options:
-  --help                 [-h] Prints usage. Use "bbl [command] --help" for more information about a command
-  --state-dir            [-s] Directory containing the bbl state                                                             env:"BBL_STATE_DIRECTORY"
-  --debug                [-d] Prints debugging output                                                                        env:"BBL_DEBUG"
-  --version              [-v] Prints version
-  --no-confirm           [-n] No confirm
-  --terraform-binary          Path of a terraform binary (optional). If the file does not exist the embedded binary is used. env:"BBL_TERRAFORM_BINARY"
+  --help                    [-h] Prints usage. Use "bbl [command] --help" for more information about a command
+  --state-dir               [-s] Directory containing the bbl state                                                             env:"BBL_STATE_DIRECTORY"
+  --debug                   [-d] Prints debugging output                                                                        env:"BBL_DEBUG"
+  --version                 [-v] Prints version
+  --no-confirm              [-n] No confirm
+  --terraform-binary             Path of a terraform binary (optional). If the file does not exist the embedded binary is used. env:"BBL_TERRAFORM_BINARY"
+  --disable-tf-auto-approve      Do not use the '-auto-approve' option with terraform (debug mode required)                     env:"BBL_DISABLE_TF_AUTO_APPROVE"
+
 %s
 `
 	CommandUsage = `

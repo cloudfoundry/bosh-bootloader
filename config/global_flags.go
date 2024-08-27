@@ -1,15 +1,16 @@
 package config
 
 type GlobalFlags struct {
-	Help            bool   `short:"h" long:"help"`
-	Debug           bool   `short:"d" long:"debug"            env:"BBL_DEBUG"`
-	Version         bool   `short:"v" long:"version"`
-	NoConfirm       bool   `short:"n" long:"no-confirm"`
-	StateDir        string `short:"s" long:"state-dir"        env:"BBL_STATE_DIRECTORY"`
-	StateBucket     string `          long:"state-bucket"     env:"BBL_STATE_BUCKET"`
-	EnvID           string `          long:"name"`
-	IAAS            string `          long:"iaas"             env:"BBL_IAAS"`
-	TerraformBinary string `          long:"terraform-binary" env:"BBL_TERRAFORM_BINARY"`
+	Help                 bool   `short:"h" long:"help"`
+	Debug                bool   `short:"d" long:"debug"                   env:"BBL_DEBUG"`
+	Version              bool   `short:"v" long:"version"`
+	NoConfirm            bool   `short:"n" long:"no-confirm"`
+	StateDir             string `short:"s" long:"state-dir"               env:"BBL_STATE_DIRECTORY"`
+	StateBucket          string `          long:"state-bucket"            env:"BBL_STATE_BUCKET"`
+	EnvID                string `          long:"name"`
+	IAAS                 string `          long:"iaas"                    env:"BBL_IAAS"`
+	TerraformBinary      string `          long:"terraform-binary"        env:"BBL_TERRAFORM_BINARY"`
+	DisableTfAutoApprove bool   `          long:"disable-tf-auto-approve" env:"BBL_DISABLE_TF_AUTO_APPROVE"`
 
 	AWSAccessKeyID     string `long:"aws-access-key-id"       env:"BBL_AWS_ACCESS_KEY_ID"`
 	AWSSecretAccessKey string `long:"aws-secret-access-key"   env:"BBL_AWS_SECRET_ACCESS_KEY"`

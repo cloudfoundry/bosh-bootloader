@@ -177,7 +177,14 @@ func (e Executor) Init() error {
 }
 
 func (e Executor) Apply(credentials map[string]string) error {
-	args := []string{"apply", "--auto-approve"}
+	args := []string{"apply"}
+	cli, ok := e.cli.(CLI)
+	if !ok || !cli.disableTfAutoApprove || !e.debug {
+		args = append(args, "--auto-approve")
+	}
+	if cli.disableTfAutoApprove && !e.debug {
+		return fmt.Errorf("%s", "Debug mode is mandatory when terraform auto approve is disabled.")
+	}
 	for key, value := range credentials {
 		arg := fmt.Sprintf("%s=%s", key, value)
 		args = append(args, "-var", arg)
@@ -231,7 +238,14 @@ func (e Executor) Validate(credentials map[string]string) error {
 }
 
 func (e Executor) Destroy(credentials map[string]string) error {
-	args := []string{"destroy", "-auto-approve"}
+	args := []string{"destroy"}
+	cli, ok := e.cli.(CLI)
+	if !ok || !cli.disableTfAutoApprove || !e.debug {
+		args = append(args, "-auto-approve")
+	}
+	if cli.disableTfAutoApprove && !e.debug {
+		return fmt.Errorf("%s", "Debug mode is mandatory when terraform auto approve is disabled.")
+	}
 	for key, value := range credentials {
 		arg := fmt.Sprintf("%s=%s", key, value)
 		args = append(args, "-var", arg)
