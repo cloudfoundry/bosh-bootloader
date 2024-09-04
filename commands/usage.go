@@ -20,7 +20,6 @@ Global Options:
   --no-confirm              [-n] No confirm
   --terraform-binary             Path of a terraform binary (optional). If the file does not exist the embedded binary is used. env:"BBL_TERRAFORM_BINARY"
   --disable-tf-auto-approve      Do not use the '-auto-approve' option with terraform (debug mode required)                     env:"BBL_DISABLE_TF_AUTO_APPROVE"
-
 %s
 `
 	CommandUsage = `
