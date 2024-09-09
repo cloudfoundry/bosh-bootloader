@@ -4,7 +4,7 @@ const (
 	BaseOps = `
 - type: replace
   path: /compilation/vm_type
-  value: e2-highcpu-4
+  value: e2-highcpu-8
 
 - type: replace
   path: /disk_types/name=default/cloud_properties?
