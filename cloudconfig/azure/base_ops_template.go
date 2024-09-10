@@ -4,7 +4,7 @@ const (
 	BaseOps = `
 - type: replace
   path: /compilation/vm_type
-  value: small
+  value: small-highmem
 
 - type: replace
   path: /azs/-
