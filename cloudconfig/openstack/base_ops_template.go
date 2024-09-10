@@ -31,7 +31,7 @@ const (
     workers: 5
     reuse_compilation_vms: true
     az: z1
-    vm_type: default
+    vm_type: large
     network: default
 
 - type: replace
