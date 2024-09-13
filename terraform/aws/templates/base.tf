@@ -16,7 +16,7 @@ provider "aws" {
   secret_key = "${var.secret_key}"
   region     = "${var.region}"
   assume_role {
-    role_arn = "${var.role_arn}"
+    role_arn = var.role_arn == "" ? null : "${var.role_arn}"
   }
 }
 
