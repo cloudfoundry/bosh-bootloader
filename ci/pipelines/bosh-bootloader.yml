@@ -86,7 +86,7 @@ resources:
   source:
     uri: git@github.com:cloudfoundry/bosh-bootloader-ci-envs.git
     branch: main
-    private_key: ((github.private_key))
+    private_key: ((github_deploy_key_bosh-bootloader-ci-envs.private_key))
 
 # - name: version
 #   type: semver
@@ -190,7 +190,7 @@ resources:
   source:
     uri: git@github.com:cloudfoundry/bosh-bootloader.git
     branch: bump-deployments-ci
-    private_key: ((github.private_key))
+    private_key: ((github_deploy_key_bosh-bootloader.private_key))
 
 - name: concourse-smoke-tests
   type: git
