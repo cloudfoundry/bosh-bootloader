@@ -70,3 +70,4 @@
   - name: minimal
   - name: small
   - name: small-highmem
+  - name: medium
