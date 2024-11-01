@@ -47,7 +47,7 @@ RUN echo "deb https://packages.cloud.google.com/apt cloud-sdk main" | tee -a /et
   apt-get -qqy install google-cloud-cli
 
 # Install jq
-RUN wget https://github.com/stedolan/jq/releases/download/jq-1.5/jq-linux64 && \
+RUN wget https://github.com/stedolan/jq/releases/latest/download/jq-linux64 && \
   mv jq-linux64 /usr/local/bin/jq && \
   chmod +x /usr/local/bin/jq
 
