@@ -121,20 +121,24 @@ func (w *Writer) ClearTeeWriters() {
 	w.teeWriters = []io.Writer{}
 }
 
-func (w *Writer) Print(a ...interface{}) {
+func (w *Writer) Print(a ...any) {
 	fmt.Fprint(w, a...)
 }
 
-func (w *Writer) Printf(format string, a ...interface{}) {
+func (w *Writer) Printf(format string, a ...any) {
 	fmt.Fprintf(w, format, a...)
 }
 
-func (w *Writer) Println(a ...interface{}) {
+func (w *Writer) Println(a ...any) {
 	fmt.Fprintln(w, a...)
 }
 
 func GinkgoLogrFunc(writer *Writer) logr.Logger {
 	return funcr.New(func(prefix, args string) {
-		writer.Printf("%s\n", args)
+		if prefix == "" {
+			writer.Printf("%s\n", args)
+		} else {
+			writer.Printf("%s %s\n", prefix, args)
+		}
 	}, funcr.Options{})
 }
