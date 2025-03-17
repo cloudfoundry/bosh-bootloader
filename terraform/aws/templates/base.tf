@@ -60,7 +60,7 @@ variable "vpc_cidr" {
 
 resource "aws_eip" "jumpbox_eip" {
   depends_on = [aws_internet_gateway.ig]
-  vpc        = true
+  domain     = "vpc"
 }
 
 resource "tls_private_key" "bosh_vms" {
@@ -138,7 +138,7 @@ resource "aws_nat_gateway" "nat" {
 }
 
 resource "aws_eip" "nat_eip" {
-  vpc = true
+  domain = "vpc"
 
   tags = {
     Name  = "${var.env_id}-nat"
