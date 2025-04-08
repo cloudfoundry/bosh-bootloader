@@ -1,45 +1,21 @@
 package bosh
 
 import (
-	"fmt"
-	"strconv"
-	"strings"
+	"encoding/binary"
+	"math"
+	"net/netip"
 )
 
 type CIDRBlock struct {
-	CIDRSize int
-	firstIP  IP
+	cidr netip.Prefix
 }
 
 func ParseCIDRBlock(cidrBlock string) (CIDRBlock, error) {
-	const HIGHEST_BITMASK = 32
-	const CIDR_PARTS = 2
-
-	cidrParts := strings.Split(cidrBlock, "/")
-
-	if len(cidrParts) != CIDR_PARTS {
-		return CIDRBlock{}, fmt.Errorf(`"%s" cannot parse CIDR block`, cidrBlock)
-	}
-
-	ip, err := ParseIP(cidrParts[0])
+	prefix, err := netip.ParsePrefix(cidrBlock)
 	if err != nil {
 		return CIDRBlock{}, err
 	}
-
-	maskBits, err := strconv.Atoi(cidrParts[1])
-	if err != nil {
-		return CIDRBlock{}, err
-	}
-
-	if maskBits < 0 || maskBits > HIGHEST_BITMASK {
-		return CIDRBlock{}, fmt.Errorf("mask bits out of range")
-	}
-
-	cidrSize := 1 << (HIGHEST_BITMASK - uint(maskBits))
-	return CIDRBlock{
-		CIDRSize: cidrSize,
-		firstIP:  ip,
-	}, nil
+	return CIDRBlock{cidr: prefix}, nil
 }
 
 func (c CIDRBlock) GetFirstIP() IP {
@@ -47,9 +23,25 @@ func (c CIDRBlock) GetFirstIP() IP {
 }
 
 func (c CIDRBlock) GetNthIP(n int) IP {
-	return c.firstIP.Add(n)
+	ip := IP{c.cidr.Addr()}
+
+	if n > 0 {
+		return ip.Add(n)
+	}
+	return ip.Subtract(n)
+
 }
 
 func (c CIDRBlock) GetLastIP() IP {
-	return c.GetNthIP(c.CIDRSize - 1)
+	a := c.cidr.Addr()
+	if a.Is4() {
+		four := a.As4()
+		uint32Four := binary.BigEndian.Uint32(four[:])
+		masklen := c.cidr.Addr().BitLen() - c.cidr.Bits()
+		mask := uint32(math.Pow(2, float64(masklen))) - 1
+		uint32Four += mask
+		binary.BigEndian.PutUint32(four[:], uint32Four)
+		return IP{netip.AddrFrom4(four)}
+	}
+	panic("not implemented")
 }
