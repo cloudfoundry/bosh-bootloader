@@ -180,7 +180,7 @@ iso_az_subnet_id_mapping:
 						"us-east-1a": "****",
 					}
 					_, err := opsGenerator.GenerateVars(incomingState)
-					Expect(err).To(MatchError(`"****" cannot parse CIDR block`))
+					Expect(err).To(MatchError(`netip.ParsePrefix("****"): no '/'`))
 				})
 			})
 

@@ -108,7 +108,7 @@ static_subnet3: 10.0.47.55-10.0.47.254
 						"subnet": "****",
 					}
 					_, err := opsGenerator.GenerateVars(incomingState)
-					Expect(err).To(MatchError(`"****" cannot parse CIDR block`))
+					Expect(err).To(MatchError(`netip.ParsePrefix("****"): no '/'`))
 				})
 			})
 

@@ -42,6 +42,25 @@ func (c CIDRBlock) GetLastIP() IP {
 		uint32Four += mask
 		binary.BigEndian.PutUint32(four[:], uint32Four)
 		return IP{netip.AddrFrom4(four)}
+	} else if a.Is6() || a.Is4In6() {
+		six := a.As16()
+		hi := binary.BigEndian.Uint64(six[:8])
+		lo := binary.BigEndian.Uint64(six[8:])
+		masklen := c.cidr.Addr().BitLen() - c.cidr.Bits()
+
+		var maskhi uint64
+		var masklo uint64
+		if masklen > 64 {
+			maskhi = uint64(math.Pow(2, float64(masklen-64))) - 1
+			masklo = uint64(math.Pow(2, float64(64))) - 1
+		} else {
+			masklo = uint64(math.Pow(2, float64(masklen))) - 1
+		}
+
+		binary.BigEndian.PutUint64(six[:], hi+maskhi)
+		binary.BigEndian.PutUint64(six[8:], lo+masklo)
+		return IP{netip.AddrFrom16(six)}
 	}
+
 	panic("not implemented")
 }
