@@ -5,9 +5,10 @@ import (
 	"os"
 	"strings"
 
+	"github.com/pmezard/go-difflib/difflib"
+
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/cloudfoundry/bosh-bootloader/terraform/gcp"
-	"github.com/pmezard/go-difflib/difflib"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -140,14 +141,14 @@ resource "google_compute_instance_group" "router-lb-2" {
 	Describe("GenerateBackendService", func() {
 		It("returns a backend service terraform template", func() {
 			template := templateGenerator.GenerateBackendService(zones)
-			Expect(template).To(Equal(string(backendService)))
+			Expect(template).To(Equal(backendService))
 		})
 	})
 
 	Describe("GenerateInstanceGroups", func() {
 		It("returns a backend service terraform template", func() {
 			template := templateGenerator.GenerateInstanceGroups(zones)
-			Expect(template).To(Equal(string(instanceGroups)))
+			Expect(template).To(Equal(instanceGroups))
 		})
 	})
 
@@ -164,10 +165,10 @@ func expectTemplate(parts ...string) string {
 }
 
 func checkTemplate(actual, expected string) {
-	if actual != string(expected) {
-		diff, _ := difflib.GetContextDiffString(difflib.ContextDiff{
+	if actual != expected {
+		diff, _ := difflib.GetContextDiffString(difflib.ContextDiff{ //nolint:errcheck
 			A:        difflib.SplitLines(actual),
-			B:        difflib.SplitLines(string(expected)),
+			B:        difflib.SplitLines(expected),
 			FromFile: "actual",
 			ToFile:   "expected",
 			Context:  10,
@@ -175,5 +176,5 @@ func checkTemplate(actual, expected string) {
 		fmt.Println(diff)
 	}
 
-	Expect(actual).To(Equal(string(expected)))
+	Expect(actual).To(Equal(expected))
 }

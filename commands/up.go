@@ -55,56 +55,56 @@ func (u Up) Execute(args []string, state storage.State) error {
 
 	err = u.stateStore.Set(state)
 	if err != nil {
-		return fmt.Errorf("Save state after terraform apply: %s", err)
+		return fmt.Errorf("Save state after terraform apply: %s", err) //nolint:staticcheck
 	}
 
 	terraformOutputs, err := u.terraformManager.GetOutputs()
 	if err != nil {
-		return fmt.Errorf("Parse terraform outputs: %s", err)
+		return fmt.Errorf("Parse terraform outputs: %s", err) //nolint:staticcheck
 	}
 
 	state, err = u.boshManager.CreateJumpbox(state, terraformOutputs)
-	switch err.(type) { //nolint:gosimple
+	switch err.(type) { //nolint:staticcheck
 	case bosh.ManagerCreateError:
-		bcErr := err.(bosh.ManagerCreateError) //nolint:gosimple
+		bcErr := err.(bosh.ManagerCreateError) //nolint:staticcheck
 		if setErr := u.stateStore.Set(bcErr.State()); setErr != nil {
-			return fmt.Errorf("Save state after jumpbox create error: %s, %s", err, setErr)
+			return fmt.Errorf("Save state after jumpbox create error: %s, %s", err, setErr) //nolint:staticcheck
 		}
-		return fmt.Errorf("Create jumpbox: %s", err)
+		return fmt.Errorf("Create jumpbox: %s", err) //nolint:staticcheck
 	case error:
-		return fmt.Errorf("Create jumpbox: %s", err)
+		return fmt.Errorf("Create jumpbox: %s", err) //nolint:staticcheck
 	}
 
 	err = u.stateStore.Set(state)
 	if err != nil {
-		return fmt.Errorf("Save state after create jumpbox: %s", err)
+		return fmt.Errorf("Save state after create jumpbox: %s", err) //nolint:staticcheck
 	}
 
 	state, err = u.boshManager.CreateDirector(state, terraformOutputs)
-	switch err.(type) { //nolint:gosimple
+	switch err.(type) { //nolint:staticcheck
 	case bosh.ManagerCreateError:
-		bcErr := err.(bosh.ManagerCreateError) //nolint:gosimple
+		bcErr := err.(bosh.ManagerCreateError) //nolint:staticcheck
 		if setErr := u.stateStore.Set(bcErr.State()); setErr != nil {
-			return fmt.Errorf("Save state after bosh director create error: %s, %s", err, setErr)
+			return fmt.Errorf("Save state after bosh director create error: %s, %s", err, setErr) //nolint:staticcheck
 		}
-		return fmt.Errorf("Create bosh director: %s", err)
+		return fmt.Errorf("Create bosh director: %s", err) //nolint:staticcheck
 	case error:
-		return fmt.Errorf("Create bosh director: %s", err)
+		return fmt.Errorf("Create bosh director: %s", err) //nolint:staticcheck
 	}
 
 	err = u.stateStore.Set(state)
 	if err != nil {
-		return fmt.Errorf("Save state after create director: %s", err)
+		return fmt.Errorf("Save state after create director: %s", err) //nolint:staticcheck
 	}
 
 	err = u.cloudConfigManager.Update(state)
 	if err != nil {
-		return fmt.Errorf("Update cloud config: %s", err)
+		return fmt.Errorf("Update cloud config: %s", err) //nolint:staticcheck
 	}
 
 	err = u.runtimeConfigManager.Update(state)
 	if err != nil {
-		return fmt.Errorf("Update runtime config: %s", err)
+		return fmt.Errorf("Update runtime config: %s", err) //nolint:staticcheck
 	}
 
 	return nil

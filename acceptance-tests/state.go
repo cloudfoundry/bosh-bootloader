@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"os"
 
-	. "github.com/onsi/gomega"
+	. "github.com/onsi/gomega" //nolint:staticcheck
 )
 
 type State struct {
@@ -56,7 +56,7 @@ func (s State) BOSHManifest() string {
 func (s State) readStateFile() state {
 	stateFile, err := os.Open(s.stateFilePath)
 	Expect(err).NotTo(HaveOccurred())
-	defer stateFile.Close()
+	defer stateFile.Close() //nolint:errcheck
 
 	var state state
 	err = json.NewDecoder(stateFile).Decode(&state)

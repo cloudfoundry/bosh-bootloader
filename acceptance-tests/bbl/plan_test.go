@@ -5,13 +5,14 @@ import (
 	"path/filepath"
 	"strings"
 
-	acceptance "github.com/cloudfoundry/bosh-bootloader/acceptance-tests"
-	"github.com/cloudfoundry/bosh-bootloader/acceptance-tests/actors"
-	"github.com/cloudfoundry/bosh-bootloader/storage"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
+
+	"github.com/cloudfoundry/bosh-bootloader/acceptance-tests"
+	"github.com/cloudfoundry/bosh-bootloader/acceptance-tests/actors"
+	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
 var _ = Describe("plan", func() {
@@ -80,7 +81,7 @@ var _ = Describe("plan", func() {
 			patchFileHandle, err = os.Create(patchFile)
 			Expect(err).NotTo(HaveOccurred())
 		})
-		defer patchFileHandle.Close()
+		defer patchFileHandle.Close() //nolint:errcheck
 
 		By("rerunning bbl plan", func() {
 			session = bbl.Plan("--name", bbl.PredefinedEnvID())

@@ -7,8 +7,9 @@ import (
 	"path/filepath"
 	"reflect"
 
-	"github.com/cloudfoundry/bosh-bootloader/fileio"
 	uuid "github.com/nu7hatch/gouuid"
+
+	"github.com/cloudfoundry/bosh-bootloader/fileio"
 )
 
 var (
@@ -53,13 +54,13 @@ func NewStore(dir string, fs fs, garbageCollector garbageCollector) Store {
 func (s Store) Set(state State) error {
 	_, err := s.fs.Stat(s.dir)
 	if err != nil {
-		return fmt.Errorf("Stat state dir: %s", err)
+		return fmt.Errorf("Stat state dir: %s", err) //nolint:staticcheck
 	}
 
 	if reflect.DeepEqual(state, State{}) {
 		err := s.garbageCollector.Remove(s.dir)
 		if err != nil {
-			return fmt.Errorf("Garbage collector clean up: %s", err)
+			return fmt.Errorf("Garbage collector clean up: %s", err) //nolint:staticcheck
 		}
 		return nil
 	}
@@ -69,7 +70,7 @@ func (s Store) Set(state State) error {
 	if state.ID == "" {
 		uuid, err := uuidNewV4()
 		if err != nil {
-			return fmt.Errorf("Create state ID: %s", err)
+			return fmt.Errorf("Create state ID: %s", err) //nolint:staticcheck
 		}
 		state.ID = uuid.String()
 	}
@@ -124,7 +125,7 @@ func (s Store) getDir(name string, perm os.FileMode) (string, error) {
 	dir := filepath.Join(s.dir, name)
 	err := s.fs.MkdirAll(dir, perm)
 	if err != nil {
-		return "", fmt.Errorf("Get %s dir: %s", name, err)
+		return "", fmt.Errorf("Get %s dir: %s", name, err) //nolint:staticcheck
 	}
 	return dir, nil
 }

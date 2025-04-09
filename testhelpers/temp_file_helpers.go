@@ -9,7 +9,7 @@ func WriteByteContentsToTempFile(contents []byte) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer tempFile.Close()
+	defer tempFile.Close() //nolint:errcheck
 
 	err = os.WriteFile(tempFile.Name(), contents, os.ModePerm)
 	if err != nil {

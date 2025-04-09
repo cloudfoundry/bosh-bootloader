@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"                         //nolint:staticcheck
-	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork" //nolint:staticcheck
-	acceptance "github.com/cloudfoundry/bosh-bootloader/acceptance-tests"
+	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
+	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/network/armnetwork"
+	"github.com/cloudfoundry/bosh-bootloader/acceptance-tests"
 
-	. "github.com/onsi/gomega"
+	. "github.com/onsi/gomega" //nolint:staticcheck
 )
 
 type azureLBHelper struct {
