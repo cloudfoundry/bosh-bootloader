@@ -81,7 +81,7 @@ func (e EnvIDManager) checkFastFail(iaas, envID string) error {
 	}
 
 	if exists {
-		return fmt.Errorf("It looks like a bbl environment already exists with the name '%s'. Please provide a different name.", envID)
+		return fmt.Errorf("It looks like a bbl environment already exists with the name '%s'. Please provide a different name.", envID) //nolint:staticcheck
 	}
 
 	return nil
@@ -94,7 +94,7 @@ func (e EnvIDManager) validateName(envID string) error {
 	}
 
 	if !matched {
-		return errors.New("Names must start with a letter, be all lowercase, and be alphanumeric or hyphenated.")
+		return errors.New("Names must start with a letter, be all lowercase, and be alphanumeric or hyphenated.") //nolint:staticcheck
 	}
 
 	return nil

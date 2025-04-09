@@ -38,12 +38,12 @@ func (l CleanupLeftovers) Execute(subcommandFlags []string, state storage.State)
 
 	err := f.Parse(subcommandFlags)
 	if err != nil {
-		return fmt.Errorf("Parsing cleanup-leftovers args: %s", err)
+		return fmt.Errorf("Parsing cleanup-leftovers args: %s", err) //nolint:staticcheck
 	}
 
 	if state.IAAS == "vsphere" && filter == "" {
 		// vSphere requires a filter
-		return errors.New("cleanup-leftovers on vSphere requires a filter.\nProvide a filter using the --filter or -f flag.")
+		return errors.New("cleanup-leftovers on vSphere requires a filter.\nProvide a filter using the --filter or -f flag.") //nolint:staticcheck
 	}
 
 	if state.IAAS == "openstack" {

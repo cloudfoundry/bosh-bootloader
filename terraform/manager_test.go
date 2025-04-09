@@ -76,7 +76,7 @@ var _ = Describe("Manager", func() {
 
 			Expect(executor.InitCall.CallCount).To(Equal(1))
 			Expect(executor.SetupCall.CallCount).To(Equal(1))
-			Expect(executor.SetupCall.Receives.Template).To(Equal(string("some-terraform-template")))
+			Expect(executor.SetupCall.Receives.Template).To(Equal("some-terraform-template"))
 			Expect(executor.SetupCall.Receives.Inputs).To(Equal(map[string]interface{}{
 				"env_id":        incomingState.EnvID,
 				"project_id":    incomingState.GCP.ProjectID,

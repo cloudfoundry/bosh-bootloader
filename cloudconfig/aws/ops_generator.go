@@ -6,7 +6,7 @@ import (
 	"sort"
 	"strings"
 
-	yaml "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
@@ -84,7 +84,7 @@ func NewOpsGenerator(terraformManager terraformManager, availabilityZones availa
 func (o OpsGenerator) GenerateVars(state storage.State) (string, error) {
 	terraformOutputs, err := o.terraformManager.GetOutputs()
 	if err != nil {
-		return "", fmt.Errorf("Get terraform outputs: %s", err)
+		return "", fmt.Errorf("Get terraform outputs: %s", err) //nolint:staticcheck
 	}
 
 	requiredOutputs := []string{
@@ -217,7 +217,7 @@ func (o OpsGenerator) generateOps(state storage.State) ([]op, error) {
 
 	azs, err := o.availabilityZones.RetrieveAZs(state.AWS.Region)
 	if err != nil {
-		return []op{}, fmt.Errorf("Retrieve availability zones: %s", err)
+		return []op{}, fmt.Errorf("Retrieve availability zones: %s", err) //nolint:staticcheck
 	}
 
 	for i := range azs {

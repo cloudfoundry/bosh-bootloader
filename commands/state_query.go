@@ -74,7 +74,7 @@ func (s StateQuery) Execute(subcommandFlags []string, state storage.State) error
 	}
 
 	if propertyValue == "" {
-		return fmt.Errorf("Could not retrieve %s, please make sure you are targeting the proper state dir.", s.propertyName)
+		return fmt.Errorf("Could not retrieve %s, please make sure you are targeting the proper state dir.", s.propertyName) //nolint:staticcheck
 	}
 
 	s.logger.Println(propertyValue)

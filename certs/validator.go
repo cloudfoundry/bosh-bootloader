@@ -230,7 +230,7 @@ func readFile(propertyName string, flagName string, filePath string) ([]byte, er
 
 func validateCertAndKey(certificate *x509.Certificate, privateKey *rsa.PrivateKey) error {
 	publicKey := certificate.PublicKey.(*rsa.PublicKey)
-	if privateKey.PublicKey.N.Cmp(publicKey.N) != 0 || privateKey.PublicKey.E != publicKey.E {
+	if privateKey.PublicKey.N.Cmp(publicKey.N) != 0 || privateKey.PublicKey.E != publicKey.E { //nolint:staticcheck
 		return errors.New("certificate and key mismatch")
 	}
 

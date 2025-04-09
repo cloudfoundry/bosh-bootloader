@@ -2,7 +2,7 @@ package commands
 
 import (
 	"github.com/cloudfoundry/bosh-bootloader/storage"
-	yaml "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 )
 
 type Outputs struct {

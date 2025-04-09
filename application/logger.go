@@ -44,7 +44,7 @@ func (l *Logger) Dot() {
 
 func (l *Logger) Printf(message string, a ...interface{}) {
 	l.clear()
-	fmt.Fprintf(l.writer, "%s", fmt.Sprintf(message, a...))
+	fmt.Fprintf(l.writer, "%s", fmt.Sprintf(message, a...)) //nolint:errcheck
 }
 
 func (l *Logger) Println(message string) {
@@ -54,12 +54,12 @@ func (l *Logger) Println(message string) {
 
 func (l *Logger) Debugf(message string, a ...interface{}) {
 	l.clear()
-	fmt.Fprintf(l.writer, "%s\n", message)
+	fmt.Fprintf(l.writer, "%s\n", message) //nolint:errcheck
 }
 
 func (l *Logger) Debugln(message string) {
 	l.clear()
-	fmt.Fprintf(l.writer, "%s\n", message)
+	fmt.Fprintf(l.writer, "%s\n", message) //nolint:errcheck
 }
 
 func (l *Logger) NoConfirm() {
@@ -72,7 +72,7 @@ func (l *Logger) Prompt(message string) bool {
 	}
 
 	l.clear()
-	fmt.Fprintf(l.writer, "%s (y/N): ", message)
+	fmt.Fprintf(l.writer, "%s (y/N): ", message) //nolint:errcheck
 	l.newline = true
 
 	var proceed string

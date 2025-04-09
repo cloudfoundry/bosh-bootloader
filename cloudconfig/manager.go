@@ -106,7 +106,7 @@ func (m Manager) IsPresentCloudConfigVars() bool {
 	}
 
 	_, err = m.fs.Stat(filepath.Join(varsDir, "cloud-config-vars.yml"))
-	if err != nil { //nolint:gosimple
+	if err != nil { //nolint:staticcheck
 		return false
 	}
 

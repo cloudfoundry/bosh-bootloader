@@ -23,13 +23,13 @@ func NewCLI(in io.Reader, out, err io.Writer) CLI {
 
 // background execute
 func (c CLI) Start(args []string) (*exec.Cmd, error) {
-	fmt.Fprintf(c.out, "starting:\nssh %s\n", strings.Join(args, " "))
+	fmt.Fprintf(c.out, "starting:\nssh %s\n", strings.Join(args, " ")) //nolint:errcheck
 	return c.start(args)
 }
 
 // foreground execute
 func (c CLI) Run(args []string) error {
-	fmt.Fprintf(c.out, "running:\nssh %s\n", strings.Join(args, " "))
+	fmt.Fprintf(c.out, "running:\nssh %s\n", strings.Join(args, " ")) //nolint:errcheck
 	cmd, err := c.start(args)
 	if err != nil {
 		return err

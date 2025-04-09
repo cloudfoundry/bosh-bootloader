@@ -6,7 +6,7 @@ import (
 
 	"github.com/cloudfoundry/bosh-bootloader/fileio"
 
-	yaml "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 )
 
 type CredhubGetter struct {
@@ -28,12 +28,12 @@ func (c CredhubGetter) GetServer() (string, error) {
 
 	varsDir, err := c.stateStore.GetVarsDir()
 	if err != nil {
-		return "", fmt.Errorf("Get vars directory: %s", err)
+		return "", fmt.Errorf("Get vars directory: %s", err) //nolint:staticcheck
 	}
 
 	varsFile, err := c.reader.ReadFile(filepath.Join(varsDir, "director-vars-file.yml"))
 	if err != nil {
-		return "", fmt.Errorf("Read director-vars-file.yml file: %s", err)
+		return "", fmt.Errorf("Read director-vars-file.yml file: %s", err) //nolint:staticcheck
 	}
 
 	err = yaml.Unmarshal(varsFile, &p)
@@ -56,12 +56,12 @@ func (c CredhubGetter) GetCerts() (string, error) {
 
 	varsDir, err := c.stateStore.GetVarsDir()
 	if err != nil {
-		return "", fmt.Errorf("Get vars directory: %s", err)
+		return "", fmt.Errorf("Get vars directory: %s", err) //nolint:staticcheck
 	}
 
 	varsStore, err := c.reader.ReadFile(filepath.Join(varsDir, "director-vars-store.yml"))
 	if err != nil {
-		return "", fmt.Errorf("Read director-vars-store.yml file: %s", err)
+		return "", fmt.Errorf("Read director-vars-store.yml file: %s", err) //nolint:staticcheck
 	}
 
 	err = yaml.Unmarshal(varsStore, &certs)
@@ -79,12 +79,12 @@ func (c CredhubGetter) GetPassword() (string, error) {
 
 	varsDir, err := c.stateStore.GetVarsDir()
 	if err != nil {
-		return "", fmt.Errorf("Get vars directory: %s", err)
+		return "", fmt.Errorf("Get vars directory: %s", err) //nolint:staticcheck
 	}
 
 	varsStore, err := c.reader.ReadFile(filepath.Join(varsDir, "director-vars-store.yml"))
 	if err != nil {
-		return "", fmt.Errorf("Read director-vars-store.yml file: %s", err)
+		return "", fmt.Errorf("Read director-vars-store.yml file: %s", err) //nolint:staticcheck
 	}
 
 	err = yaml.Unmarshal(varsStore, &certs)

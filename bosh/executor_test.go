@@ -8,11 +8,12 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/spf13/afero"
+
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/fileio"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
-	"github.com/spf13/afero"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -40,7 +41,7 @@ var _ = Describe("Executor", func() {
 		fs = &afero.Afero{Fs: afero.NewMemMapFs()}
 		cli = &fakes.BOSHCLI{}
 		cli.RunStub = func(stdout io.Writer, workingDirectory string, args []string) error {
-			stdout.Write([]byte("some-manifest"))
+			stdout.Write([]byte("some-manifest")) //nolint:errcheck
 			return nil
 		}
 		cli.GetBOSHPathCall.Returns.Path = "bosh-path"
@@ -1073,7 +1074,7 @@ var _ = Describe("Executor", func() {
 		Context("when the version cannot be parsed", func() {
 			BeforeEach(func() {
 				cli.RunStub = func(stdout io.Writer, workingDirectory string, args []string) error {
-					stdout.Write([]byte(""))
+					stdout.Write([]byte("")) //nolint:errcheck
 					return nil
 				}
 			})

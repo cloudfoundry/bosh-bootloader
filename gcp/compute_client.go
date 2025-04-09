@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sort"
 
-	compute "google.golang.org/api/compute/v1"
+	"google.golang.org/api/compute/v1"
 )
 
 type gcpComputeClient struct {

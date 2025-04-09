@@ -6,10 +6,11 @@ import (
 	"path/filepath"
 	"strings"
 
+	"gopkg.in/yaml.v2"
+
 	"github.com/cloudfoundry/bosh-bootloader/fileio"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/cloudfoundry/bosh-bootloader/terraform"
-	yaml "gopkg.in/yaml.v2"
 )
 
 var (
@@ -109,7 +110,7 @@ func (m *Manager) InitializeJumpbox(state storage.State) error {
 
 	err = m.executor.PlanJumpboxWithState(iaasInputs, deploymentDir, state.IAAS, state)
 	if err != nil {
-		return fmt.Errorf("Jumpbox interpolate: %s", err)
+		return fmt.Errorf("Jumpbox interpolate: %s", err) //nolint:staticcheck
 	}
 
 	return nil
@@ -133,7 +134,7 @@ func (m *Manager) CreateJumpbox(state storage.State, terraformOutputs terraform.
 
 	err = m.executor.WriteDeploymentVars(dirInput, m.GetJumpboxDeploymentVars(state, terraformOutputs))
 	if err != nil {
-		return storage.State{}, fmt.Errorf("Write deployment vars: %s", err)
+		return storage.State{}, fmt.Errorf("Write deployment vars: %s", err) //nolint:staticcheck
 	}
 
 	_, err = m.executor.CreateEnv(dirInput, state)
@@ -148,19 +149,19 @@ func (m *Manager) CreateJumpbox(state storage.State, terraformOutputs terraform.
 
 	dir, err := m.fs.TempDir("", "bosh-jumpbox")
 	if err != nil {
-		return storage.State{}, fmt.Errorf("Create temp dir for jumpbox private key: %s", err)
+		return storage.State{}, fmt.Errorf("Create temp dir for jumpbox private key: %s", err) //nolint:staticcheck
 	}
 
 	privateKeyPath := filepath.Join(dir, "bosh_jumpbox_private.key")
 
 	privateKeyContents, err := m.sshKeyGetter.Get("jumpbox")
 	if err != nil {
-		return storage.State{}, fmt.Errorf("Get jumpbox private key: %s", err)
+		return storage.State{}, fmt.Errorf("Get jumpbox private key: %s", err) //nolint:staticcheck
 	}
 
 	err = m.fs.WriteFile(privateKeyPath, []byte(privateKeyContents), 0600)
 	if err != nil {
-		return storage.State{}, fmt.Errorf("Write jumpbox private key: %s", err)
+		return storage.State{}, fmt.Errorf("Write jumpbox private key: %s", err) //nolint:staticcheck
 	}
 
 	osSetenv("BOSH_ALL_PROXY", fmt.Sprintf("ssh+socks5://jumpbox@%s?private-key=%s", state.Jumpbox.URL, privateKeyPath)) //nolint:errcheck
@@ -235,7 +236,7 @@ func (m *Manager) CreateDirector(state storage.State, terraformOutputs terraform
 
 	err = m.executor.WriteDeploymentVars(dirInput, m.GetDirectorDeploymentVars(state, terraformOutputs))
 	if err != nil {
-		return storage.State{}, fmt.Errorf("Write deployment vars: %s", err)
+		return storage.State{}, fmt.Errorf("Write deployment vars: %s", err) //nolint:staticcheck
 	}
 
 	variables, err := m.executor.CreateEnv(dirInput, state)
@@ -252,7 +253,7 @@ func (m *Manager) CreateDirector(state storage.State, terraformOutputs terraform
 	parsedInternalCIDR, err := ParseCIDRBlock(internalCIDR)
 	if err != nil {
 		internalCIDR = "10.0.0.0/24"
-		parsedInternalCIDR, _ = ParseCIDRBlock(internalCIDR)
+		parsedInternalCIDR, _ = ParseCIDRBlock(internalCIDR) //nolint:errcheck
 	}
 
 	internalIP := terraformOutputs.GetString("director__internal_ip")
@@ -296,24 +297,24 @@ func (m *Manager) DeleteDirector(state storage.State, terraformOutputs terraform
 
 	err = m.executor.WriteDeploymentVars(dirInput, m.GetDirectorDeploymentVars(state, terraformOutputs))
 	if err != nil {
-		return fmt.Errorf("Write deployment vars: %s", err)
+		return fmt.Errorf("Write deployment vars: %s", err) //nolint:staticcheck
 	}
 
 	dir, err := m.fs.TempDir("", "bosh-jumpbox")
 	if err != nil {
-		return fmt.Errorf("Create temp dir for jumpbox private key: %s", err)
+		return fmt.Errorf("Create temp dir for jumpbox private key: %s", err) //nolint:staticcheck
 	}
 
 	privateKeyPath := filepath.Join(dir, "bosh_jumpbox_private.key")
 
 	privateKeyContents, err := m.sshKeyGetter.Get("jumpbox")
 	if err != nil {
-		return fmt.Errorf("Get jumpbox private key: %s", err)
+		return fmt.Errorf("Get jumpbox private key: %s", err) //nolint:staticcheck
 	}
 
 	err = m.fs.WriteFile(privateKeyPath, []byte(privateKeyContents), 0600)
 	if err != nil {
-		return fmt.Errorf("Write jumpbox private key: %s", err)
+		return fmt.Errorf("Write jumpbox private key: %s", err) //nolint:staticcheck
 	}
 
 	osSetenv("BOSH_ALL_PROXY", fmt.Sprintf("ssh+socks5://jumpbox@%s?private-key=%s", state.Jumpbox.URL, privateKeyPath)) //nolint:errcheck
@@ -348,7 +349,7 @@ func (m *Manager) DeleteJumpbox(state storage.State, terraformOutputs terraform.
 
 	err = m.executor.WriteDeploymentVars(dirInput, m.GetJumpboxDeploymentVars(state, terraformOutputs))
 	if err != nil {
-		return fmt.Errorf("Write deployment vars: %s", err)
+		return fmt.Errorf("Write deployment vars: %s", err) //nolint:staticcheck
 	}
 
 	err = m.executor.DeleteEnv(dirInput, state)

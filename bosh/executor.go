@@ -208,7 +208,7 @@ func (e Executor) getDirectorSetupFiles(stateDir, deploymentDir, iaas string) []
 	statePath := filepath.Join(stateDir, "bbl-ops-files", iaas)
 	assetPath := filepath.Join(boshDeploymentRepo, iaas)
 
-	if iaas == "gcp" {
+	if iaas == "gcp" { //nolint:staticcheck
 		files = append(files, setupFile{
 			source:   filepath.Join(assetPath, "bosh-director-ephemeral-ip-ops.yml"),
 			dest:     filepath.Join(statePath, "bosh-director-ephemeral-ip-ops.yml"),
@@ -232,7 +232,7 @@ func (e Executor) getDirectorOpsFiles(stateDir, deploymentDir, iaas string, stat
 		filepath.Join(deploymentDir, "uaa.yml"),
 		filepath.Join(deploymentDir, "credhub.yml"),
 	}
-	if iaas == "gcp" {
+	if iaas == "gcp" { //nolint:staticcheck
 		files = append(files, filepath.Join(stateDir, "bbl-ops-files", iaas, "bosh-director-ephemeral-ip-ops.yml"))
 	} else if iaas == "aws" {
 		files = append(files, filepath.Join(stateDir, "bbl-ops-files", iaas, "bosh-director-ephemeral-ip-ops.yml"))
@@ -343,7 +343,7 @@ func formatScript(boshPath, stateDir, command string, args []string) string {
 			script = fmt.Sprintf("%s  %s \\\n", script, arg)
 		}
 	}
-	script = strings.Replace(script, stateDir, "${BBL_STATE_DIR}", -1)
+	script = strings.Replace(script, stateDir, "${BBL_STATE_DIR}", -1) //nolint:staticcheck
 	return fmt.Sprintf("%s\n", script[:len(script)-2])
 }
 
@@ -357,36 +357,36 @@ func (e Executor) WriteDeploymentVars(input DirInput, deploymentVars string) err
 }
 
 func (e Executor) CreateEnv(input DirInput, state storage.State) (string, error) {
-	os.Setenv("BBL_STATE_DIR", input.StateDir)
+	os.Setenv("BBL_STATE_DIR", input.StateDir) //nolint:errcheck
 	createEnvScript := filepath.Join(input.StateDir, fmt.Sprintf("create-%s-override.sh", input.Deployment))
 	_, err := e.FS.Stat(createEnvScript)
 	if err != nil {
-		createEnvScript = strings.Replace(createEnvScript, "-override", "", -1)
+		createEnvScript = strings.Replace(createEnvScript, "-override", "", -1) //nolint:staticcheck
 	}
 
-	os.Setenv("BBL_IAAS", state.IAAS)
+	os.Setenv("BBL_IAAS", state.IAAS) //nolint:errcheck
 	switch state.IAAS {
 	case "aws":
-		os.Setenv("BBL_AWS_ACCESS_KEY_ID", state.AWS.AccessKeyID)
-		os.Setenv("BBL_AWS_SECRET_ACCESS_KEY", state.AWS.SecretAccessKey)
+		os.Setenv("BBL_AWS_ACCESS_KEY_ID", state.AWS.AccessKeyID)         //nolint:errcheck
+		os.Setenv("BBL_AWS_SECRET_ACCESS_KEY", state.AWS.SecretAccessKey) //nolint:errcheck
 	case "azure":
-		os.Setenv("BBL_AZURE_CLIENT_ID", state.Azure.ClientID)
-		os.Setenv("BBL_AZURE_CLIENT_SECRET", state.Azure.ClientSecret)
-		os.Setenv("BBL_AZURE_SUBSCRIPTION_ID", state.Azure.SubscriptionID)
-		os.Setenv("BBL_AZURE_TENANT_ID", state.Azure.TenantID)
+		os.Setenv("BBL_AZURE_CLIENT_ID", state.Azure.ClientID)             //nolint:errcheck
+		os.Setenv("BBL_AZURE_CLIENT_SECRET", state.Azure.ClientSecret)     //nolint:errcheck
+		os.Setenv("BBL_AZURE_SUBSCRIPTION_ID", state.Azure.SubscriptionID) //nolint:errcheck
+		os.Setenv("BBL_AZURE_TENANT_ID", state.Azure.TenantID)             //nolint:errcheck
 	case "gcp":
-		os.Setenv("BBL_GCP_SERVICE_ACCOUNT_KEY_PATH", state.GCP.ServiceAccountKeyPath)
-		os.Setenv("BBL_GCP_ZONE", state.GCP.Zone)
-		os.Setenv("BBL_GCP_PROJECT_ID", state.GCP.ProjectID)
+		os.Setenv("BBL_GCP_SERVICE_ACCOUNT_KEY_PATH", state.GCP.ServiceAccountKeyPath) //nolint:errcheck
+		os.Setenv("BBL_GCP_ZONE", state.GCP.Zone)                                      //nolint:errcheck
+		os.Setenv("BBL_GCP_PROJECT_ID", state.GCP.ProjectID)                           //nolint:errcheck
 	case "vsphere":
-		os.Setenv("BBL_VSPHERE_VCENTER_USER", state.VSphere.VCenterUser)
-		os.Setenv("BBL_VSPHERE_VCENTER_PASSWORD", state.VSphere.VCenterPassword)
+		os.Setenv("BBL_VSPHERE_VCENTER_USER", state.VSphere.VCenterUser)         //nolint:errcheck
+		os.Setenv("BBL_VSPHERE_VCENTER_PASSWORD", state.VSphere.VCenterPassword) //nolint:errcheck
 	case "openstack":
-		os.Setenv("BBL_OPENSTACK_USERNAME", state.OpenStack.Username)
-		os.Setenv("BBL_OPENSTACK_PASSWORD", state.OpenStack.Password)
+		os.Setenv("BBL_OPENSTACK_USERNAME", state.OpenStack.Username) //nolint:errcheck
+		os.Setenv("BBL_OPENSTACK_PASSWORD", state.OpenStack.Password) //nolint:errcheck
 	case "cloudstack":
-		os.Setenv("BBL_CLOUDSTACK_API_KEY", state.CloudStack.ApiKey)
-		os.Setenv("BBL_CLOUDSTACK_SECRET_ACCESS_KEY", state.CloudStack.SecretAccessKey)
+		os.Setenv("BBL_CLOUDSTACK_API_KEY", state.CloudStack.ApiKey)                    //nolint:errcheck
+		os.Setenv("BBL_CLOUDSTACK_SECRET_ACCESS_KEY", state.CloudStack.SecretAccessKey) //nolint:errcheck
 	}
 
 	cmd := exec.Command(createEnvScript)
@@ -399,7 +399,7 @@ func (e Executor) CreateEnv(input DirInput, state storage.State) (string, error)
 	}
 
 	name := fmt.Sprintf("%s-vars-store.yml", input.Deployment)
-	contents, _ := e.FS.ReadFile(filepath.Join(input.VarsDir, name))
+	contents, _ := e.FS.ReadFile(filepath.Join(input.VarsDir, name)) //nolint:errcheck
 
 	return string(contents), nil
 }
@@ -413,33 +413,33 @@ func (e Executor) DeleteEnv(input DirInput, state storage.State) error {
 		return nil
 	}
 
-	os.Setenv("BBL_STATE_DIR", input.StateDir)
+	os.Setenv("BBL_STATE_DIR", input.StateDir) //nolint:errcheck
 
 	deleteEnvScript := filepath.Join(input.StateDir, fmt.Sprintf("delete-%s-override.sh", input.Deployment))
 	_, err = e.FS.Stat(deleteEnvScript)
 	if err != nil {
-		deleteEnvScript = strings.Replace(deleteEnvScript, "-override", "", -1)
+		deleteEnvScript = strings.Replace(deleteEnvScript, "-override", "", -1) //nolint:staticcheck
 	}
 
 	switch state.IAAS {
 	case "aws":
-		os.Setenv("BBL_AWS_ACCESS_KEY_ID", state.AWS.AccessKeyID)
-		os.Setenv("BBL_AWS_SECRET_ACCESS_KEY", state.AWS.SecretAccessKey)
+		os.Setenv("BBL_AWS_ACCESS_KEY_ID", state.AWS.AccessKeyID)         //nolint:errcheck
+		os.Setenv("BBL_AWS_SECRET_ACCESS_KEY", state.AWS.SecretAccessKey) //nolint:errcheck
 	case "azure":
-		os.Setenv("BBL_AZURE_CLIENT_ID", state.Azure.ClientID)
-		os.Setenv("BBL_AZURE_CLIENT_SECRET", state.Azure.ClientSecret)
-		os.Setenv("BBL_AZURE_SUBSCRIPTION_ID", state.Azure.SubscriptionID)
-		os.Setenv("BBL_AZURE_TENANT_ID", state.Azure.TenantID)
+		os.Setenv("BBL_AZURE_CLIENT_ID", state.Azure.ClientID)             //nolint:errcheck
+		os.Setenv("BBL_AZURE_CLIENT_SECRET", state.Azure.ClientSecret)     //nolint:errcheck
+		os.Setenv("BBL_AZURE_SUBSCRIPTION_ID", state.Azure.SubscriptionID) //nolint:errcheck
+		os.Setenv("BBL_AZURE_TENANT_ID", state.Azure.TenantID)             //nolint:errcheck
 	case "gcp":
-		os.Setenv("BBL_GCP_SERVICE_ACCOUNT_KEY_PATH", state.GCP.ServiceAccountKeyPath)
-		os.Setenv("BBL_GCP_ZONE", state.GCP.Zone)
-		os.Setenv("BBL_GCP_PROJECT_ID", state.GCP.ProjectID)
+		os.Setenv("BBL_GCP_SERVICE_ACCOUNT_KEY_PATH", state.GCP.ServiceAccountKeyPath) //nolint:errcheck
+		os.Setenv("BBL_GCP_ZONE", state.GCP.Zone)                                      //nolint:errcheck
+		os.Setenv("BBL_GCP_PROJECT_ID", state.GCP.ProjectID)                           //nolint:errcheck
 	case "vsphere":
-		os.Setenv("BBL_VSPHERE_VCENTER_USER", state.VSphere.VCenterUser)
-		os.Setenv("BBL_VSPHERE_VCENTER_PASSWORD", state.VSphere.VCenterPassword)
+		os.Setenv("BBL_VSPHERE_VCENTER_USER", state.VSphere.VCenterUser)         //nolint:errcheck
+		os.Setenv("BBL_VSPHERE_VCENTER_PASSWORD", state.VSphere.VCenterPassword) //nolint:errcheck
 	case "cloudstack":
-		os.Setenv("BBL_CLOUDSTACK_API_KEY", state.CloudStack.ApiKey)
-		os.Setenv("BBL_CLOUDSTACK_SECRET_ACCESS_KEY", state.CloudStack.SecretAccessKey)
+		os.Setenv("BBL_CLOUDSTACK_API_KEY", state.CloudStack.ApiKey)                    //nolint:errcheck
+		os.Setenv("BBL_CLOUDSTACK_SECRET_ACCESS_KEY", state.CloudStack.SecretAccessKey) //nolint:errcheck
 	}
 
 	cmd := exec.Command(deleteEnvScript)
