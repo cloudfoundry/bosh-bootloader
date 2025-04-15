@@ -1,4 +1,4 @@
-FROM golang:1.20
+FROM golang:latest
 LABEL maintainer="https://github.com/cloudfoundry/bosh-bootloader"
 
 ARG GITHUB_TOKEN
