@@ -53,6 +53,11 @@ variable "short_env_id" {
   type = string
 }
 
+variable "dualstack" {
+  type = bool
+  default = false
+}
+
 variable "vpc_cidr" {
   type    = string
   default = "10.0.0.0/16"
@@ -95,6 +100,7 @@ resource "aws_security_group_rule" "nat_to_internet_rule" {
   to_port     = 0
   protocol    = "-1"
   cidr_blocks = ["0.0.0.0/0"]
+  ipv6_cidr_blocks = var.dualstack ? ["::/0"] : null
 }
 
 resource "aws_security_group_rule" "nat_icmp_rule" {
@@ -105,6 +111,7 @@ resource "aws_security_group_rule" "nat_icmp_rule" {
   from_port   = -1
   to_port     = -1
   cidr_blocks = ["0.0.0.0/0"]
+  ipv6_cidr_blocks = var.dualstack ? ["::/0"] : null
 }
 
 resource "aws_security_group_rule" "nat_tcp_rule" {
@@ -189,6 +196,7 @@ resource "aws_security_group_rule" "internal_security_group_rule_icmp" {
   from_port         = -1
   to_port           = -1
   cidr_blocks       = ["0.0.0.0/0"]
+  ipv6_cidr_blocks = var.dualstack ? ["::/0"] : null
 }
 
 resource "aws_security_group_rule" "internal_security_group_rule_allow_internet" {
@@ -198,6 +206,7 @@ resource "aws_security_group_rule" "internal_security_group_rule_allow_internet"
   from_port         = 0
   to_port           = 0
   cidr_blocks       = ["0.0.0.0/0"]
+  ipv6_cidr_blocks = var.dualstack ? ["::/0"] : null
 }
 
 resource "aws_security_group_rule" "internal_security_group_rule_ssh" {
@@ -293,6 +302,7 @@ resource "aws_security_group_rule" "bosh_security_group_rule_allow_internet" {
   from_port         = 0
   to_port           = 0
   cidr_blocks       = ["0.0.0.0/0"]
+  ipv6_cidr_blocks  = var.dualstack ? ["::/0"] : null
 }
 
 resource "aws_security_group" "jumpbox" {
@@ -316,6 +326,7 @@ resource "aws_security_group_rule" "jumpbox_ssh" {
   from_port         = 22
   to_port           = 22
   cidr_blocks       = ["${var.bosh_inbound_cidr}"]
+  ipv6_cidr_blocks  = var.dualstack ? ["::/0"] : null
 }
 
 resource "aws_security_group_rule" "jumpbox_rdp" {
@@ -325,6 +336,7 @@ resource "aws_security_group_rule" "jumpbox_rdp" {
   from_port         = 3389
   to_port           = 3389
   cidr_blocks       = ["${var.bosh_inbound_cidr}"]
+  ipv6_cidr_blocks  = var.dualstack ? ["::/0"] : null
 }
 
 resource "aws_security_group_rule" "jumpbox_agent" {
@@ -334,6 +346,7 @@ resource "aws_security_group_rule" "jumpbox_agent" {
   from_port         = 6868
   to_port           = 6868
   cidr_blocks       = ["${var.bosh_inbound_cidr}"]
+  ipv6_cidr_blocks  = var.dualstack ? ["::/0"] : null
 }
 
 resource "aws_security_group_rule" "jumpbox_director" {
@@ -343,6 +356,7 @@ resource "aws_security_group_rule" "jumpbox_director" {
   from_port         = 25555
   to_port           = 25555
   cidr_blocks       = ["${var.bosh_inbound_cidr}"]
+  ipv6_cidr_blocks  = var.dualstack ? ["::/0"] : null
 }
 
 resource "aws_security_group_rule" "jumpbox_egress" {
@@ -352,6 +366,7 @@ resource "aws_security_group_rule" "jumpbox_egress" {
   from_port         = 0
   to_port           = 0
   cidr_blocks       = ["0.0.0.0/0"]
+  ipv6_cidr_blocks  = var.dualstack ? ["::/0"] : null
 }
 
 resource "aws_security_group_rule" "bosh_internal_security_rule_tcp" {
@@ -375,6 +390,10 @@ resource "aws_security_group_rule" "bosh_internal_security_rule_udp" {
 resource "aws_subnet" "bosh_subnet" {
   vpc_id     = "${local.vpc_id}"
   cidr_block = "${cidrsubnet(var.vpc_cidr, 8, 0)}"
+  ipv6_cidr_block = var.dualstack ? "${cidrsubnet(aws_vpc.vpc[0].ipv6_cidr_block, 8, 0)}" : null
+
+  assign_ipv6_address_on_creation = var.dualstack
+  enable_dns64 = var.dualstack
 
   tags = {
     Name = "${var.env_id}-bosh-subnet"
@@ -391,6 +410,13 @@ resource "aws_route" "bosh_route_table" {
   route_table_id         = "${aws_route_table.bosh_route_table.id}"
 }
 
+resource "aws_route" "bosh_route_table_ipv6" {
+  count = var.dualstack ? 1 : 0
+  route_table_id         = "${aws_route_table.bosh_route_table.id}"
+  destination_ipv6_cidr_block = "::/0"
+  egress_only_gateway_id      = aws_egress_only_internet_gateway.egress_ipv6[0].id
+}
+
 resource "aws_route_table_association" "route_bosh_subnets" {
   subnet_id      = "${aws_subnet.bosh_subnet.id}"
   route_table_id = "${aws_route_table.bosh_route_table.id}"
@@ -401,6 +427,10 @@ resource "aws_subnet" "internal_subnets" {
   vpc_id            = "${local.vpc_id}"
   cidr_block        = "${cidrsubnet(var.vpc_cidr, 4, count.index+1)}"
   availability_zone = "${element(var.availability_zones, count.index)}"
+  ipv6_cidr_block   = var.dualstack ? "${cidrsubnet(aws_vpc.vpc[0].ipv6_cidr_block, 8, count.index + 1)}" : null
+
+  assign_ipv6_address_on_creation = var.dualstack
+  enable_dns64 = var.dualstack
 
   tags = {
     Name = "${var.env_id}-internal-subnet${count.index}"
@@ -420,6 +450,13 @@ resource "aws_route_table" "nated_route_table" {
   }
 }
 
+resource "aws_route" "internal_subnets_route_table_ipv6" {
+  count = var.dualstack ? 1 : 0
+  route_table_id         = "${aws_route_table.nated_route_table.id}"
+  destination_ipv6_cidr_block = "::/0"
+  egress_only_gateway_id      = aws_egress_only_internet_gateway.egress_ipv6[0].id
+}
+
 resource "aws_route_table_association" "route_internal_subnets" {
   count          = "${length(var.availability_zones)}"
   subnet_id      = "${element(aws_subnet.internal_subnets.*.id, count.index)}"
@@ -428,6 +465,19 @@ resource "aws_route_table_association" "route_internal_subnets" {
 
 resource "aws_internet_gateway" "ig" {
   vpc_id = "${local.vpc_id}"
+
+  tags = {
+    Name = "${var.env_id}"
+  }
+}
+
+resource "aws_egress_only_internet_gateway" "egress_ipv6" {
+  count = var.dualstack ? 1 : 0
+  vpc_id = "${local.vpc_id}"
+
+  tags = {
+    Name = "${var.env_id}"
+  }
 }
 
 locals {
@@ -519,12 +569,20 @@ output "internal_az_subnet_cidr_mapping" {
 	}"
 }
 
+output "internal_az_subnet_ipv6_cidr_mapping" {
+  value = var.dualstack ? zipmap("${aws_subnet.internal_subnets.*.availability_zone}", "${aws_subnet.internal_subnets.*.ipv6_cidr_block}") : null
+}
+
 output "director_name" {
   value = "${local.director_name}"
 }
 
 output "internal_cidr" {
   value = "${local.internal_cidr}"
+}
+
+output "internal_cidr_ipv6" {
+  value = var.dualstack ? aws_subnet.bosh_subnet.ipv6_cidr_block : null
 }
 
 output "internal_gw" {
@@ -537,4 +595,8 @@ output "jumpbox__internal_ip" {
 
 output "director__internal_ip" {
   value = "${local.director_internal_ip}"
+}
+
+output "dualstack" {
+  value = var.dualstack
 }

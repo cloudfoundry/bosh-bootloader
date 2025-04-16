@@ -24,10 +24,13 @@ locals {
 }
 
 resource "aws_subnet" "iso_subnets" {
-  count             = "${local.iso_az_count}"
-  vpc_id            = "${local.vpc_id}"
-  cidr_block        = "${cidrsubnet(var.vpc_cidr, 4, count.index + length(var.availability_zones) + 1)}"
-  availability_zone = "${element(var.availability_zones, count.index)}"
+  count                           = "${local.iso_az_count}"
+  vpc_id                          = "${local.vpc_id}"
+  cidr_block                      = "${cidrsubnet(var.vpc_cidr, 4, count.index + length(var.availability_zones) + 1)}"
+  ipv6_cidr_block                 = var.dualstack ? "${cidrsubnet(aws_vpc.vpc[0].ipv6_cidr_block, 8, count.index + 2 + length(var.availability_zones))}" : null
+  availability_zone               = "${element(var.availability_zones, count.index)}"
+  assign_ipv6_address_on_creation = var.dualstack
+  enable_dns64                    = var.dualstack
 
   tags = {
     Name = "${var.env_id}-iso-subnet${count.index}"
@@ -225,6 +228,10 @@ output "iso_az_subnet_cidr_mapping" {
   value = "${
     zipmap("${aws_subnet.iso_subnets.*.availability_zone}", "${aws_subnet.iso_subnets.*.cidr_block}")
   }"
+}
+
+output "iso_az_subnet_ipv6_cidr_mapping" {
+  value = var.dualstack ? "${zipmap("${aws_subnet.iso_subnets.*.availability_zone}", "${aws_subnet.iso_subnets.*.cidr_block}")}" : null
 }
 
 output "iso_shared_security_group_id" {
