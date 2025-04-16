@@ -18,6 +18,7 @@ resource "aws_security_group_rule" "concourse_lb_internal_80" {
   from_port   = 80
   to_port     = 80
   cidr_blocks = ["0.0.0.0/0"]
+  ipv6_cidr_blocks = var.dualstack ? ["::/0"] : null
 
   security_group_id = "${aws_security_group.concourse_lb_internal_security_group.id}"
 }
@@ -28,6 +29,7 @@ resource "aws_security_group_rule" "concourse_lb_internal_2222" {
   from_port   = 2222
   to_port     = 2222
   cidr_blocks = ["0.0.0.0/0"]
+  ipv6_cidr_blocks = var.dualstack ? ["::/0"] : null
 
   security_group_id = "${aws_security_group.concourse_lb_internal_security_group.id}"
 }
@@ -38,6 +40,7 @@ resource "aws_security_group_rule" "concourse_lb_internal_443" {
   from_port   = 443
   to_port     = 443
   cidr_blocks = ["0.0.0.0/0"]
+  ipv6_cidr_blocks = var.dualstack ? ["::/0"] : null
 
   security_group_id = "${aws_security_group.concourse_lb_internal_security_group.id}"
 }
@@ -48,6 +51,7 @@ resource "aws_security_group_rule" "concourse_lb_internal_egress" {
   from_port   = 0
   to_port     = 0
   cidr_blocks = ["0.0.0.0/0"]
+  ipv6_cidr_blocks = var.dualstack ? ["::/0"] : null
 
   security_group_id = "${aws_security_group.concourse_lb_internal_security_group.id}"
 }
@@ -141,6 +145,7 @@ resource "aws_security_group_rule" "concourse_lb_internal_8844" {
   from_port   = 8844
   to_port     = 8844
   cidr_blocks = ["0.0.0.0/0"]
+  ipv6_cidr_blocks = var.dualstack ? ["::/0"] : null
 
   security_group_id = "${aws_security_group.concourse_lb_internal_security_group.id}"
 }
@@ -151,6 +156,7 @@ resource "aws_security_group_rule" "concourse_lb_internal_8443" {
   from_port   = 8443
   to_port     = 8443
   cidr_blocks = ["0.0.0.0/0"]
+  ipv6_cidr_blocks = var.dualstack ? ["::/0"] : null
 
   security_group_id = "${aws_security_group.concourse_lb_internal_security_group.id}"
 }
