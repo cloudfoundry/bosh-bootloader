@@ -52,8 +52,11 @@ RUN wget https://github.com/stedolan/jq/releases/latest/download/jq-linux64 && \
   chmod +x /usr/local/bin/jq
 
 # Install bosh_cli v2
-RUN curl -L "https://s3.amazonaws.com/bosh-cli-artifacts/bosh-cli-$(curl -s https://api.github.com/repos/cloudfoundry/bosh-cli/releases | jq -r '.[0].name' | tr -d 'v')-linux-amd64" -o "/usr/local/bin/bosh" && \
-  chmod +x "/usr/local/bin/bosh"
+RUN curl -s https://api.github.com/repos/cloudfoundry/bosh-cli/releases/latest | \
+  jq -r '.assets[] | .browser_download_url | select(contains("linux-amd64"))' | \
+  xargs wget && \
+  mv bosh-cli-* /usr/local/bin/bosh && \
+  chmod +x /usr/local/bin/bosh
 
 # Install bbl
 RUN curl -s https://api.github.com/repos/cloudfoundry/bosh-bootloader/releases/latest | \
