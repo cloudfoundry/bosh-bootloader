@@ -10,6 +10,7 @@ resource "aws_security_group" "cf_ssh_lb_security_group" {
 
   ingress {
     cidr_blocks = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
     protocol    = "tcp"
     from_port   = 2222
     to_port     = 2222
@@ -20,6 +21,7 @@ resource "aws_security_group" "cf_ssh_lb_security_group" {
     to_port     = 0
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
   }
 
   tags = {
@@ -52,6 +54,7 @@ resource "aws_security_group" "cf_ssh_lb_internal_security_group" {
     to_port     = 0
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
   }
 
   tags = {
@@ -111,6 +114,7 @@ resource "aws_security_group" "cf_router_lb_security_group" {
 
   ingress {
     cidr_blocks = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
     protocol    = "tcp"
     from_port   = 80
     to_port     = 80
@@ -118,6 +122,7 @@ resource "aws_security_group" "cf_router_lb_security_group" {
 
   ingress {
     cidr_blocks = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
     protocol    = "tcp"
     from_port   = 443
     to_port     = 443
@@ -125,6 +130,7 @@ resource "aws_security_group" "cf_router_lb_security_group" {
 
   ingress {
     cidr_blocks = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
     protocol    = "tcp"
     from_port   = 4443
     to_port     = 4443
@@ -135,6 +141,7 @@ resource "aws_security_group" "cf_router_lb_security_group" {
     to_port     = 0
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
   }
 
   tags = {
@@ -167,6 +174,7 @@ resource "aws_security_group" "cf_router_lb_internal_security_group" {
     to_port     = 0
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
   }
 
   tags = {
@@ -257,6 +265,7 @@ resource "aws_security_group" "cf_tcp_lb_security_group" {
 
   ingress {
     cidr_blocks = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
     protocol    = "tcp"
     from_port   = 1024
     to_port     = 1123
@@ -267,6 +276,7 @@ resource "aws_security_group" "cf_tcp_lb_security_group" {
     to_port     = 0
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
   }
 
   tags = {
@@ -306,6 +316,7 @@ resource "aws_security_group" "cf_tcp_lb_internal_security_group" {
     to_port     = 0
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
   }
 
   tags = {
