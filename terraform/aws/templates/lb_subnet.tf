@@ -2,7 +2,10 @@ resource "aws_subnet" "lb_subnets" {
   count             = "${length(var.availability_zones)}"
   vpc_id            = "${local.vpc_id}"
   cidr_block        = "${cidrsubnet(var.vpc_cidr, 8, count.index+2)}"
+  ipv6_cidr_block   = "${cidrsubnet(aws_vpc.vpc[0].ipv6_cidr_block, 8, count.index + 1 + length(var.availability_zones))}"
   availability_zone = "${element(var.availability_zones, count.index)}"
+  assign_ipv6_address_on_creation = true
+  enable_dns64 = true
 
   tags = {
     Name = "${var.env_id}-lb-subnet${count.index}"
@@ -21,6 +24,12 @@ resource "aws_route" "lb_route_table" {
   destination_cidr_block = "0.0.0.0/0"
   gateway_id             = "${aws_internet_gateway.ig.id}"
   route_table_id         = "${aws_route_table.lb_route_table.id}"
+}
+
+resource "aws_route" "lb_route_table_ipv6" {
+  route_table_id         = "${aws_route_table.lb_route_table.id}"
+  destination_ipv6_cidr_block = "::/0"
+  egress_only_gateway_id = aws_egress_only_internet_gateway.egress_ipv6.id
 }
 
 resource "aws_route_table_association" "route_lb_subnets" {
