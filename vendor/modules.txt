@@ -199,7 +199,7 @@ github.com/go-logr/logr/funcr
 # github.com/go-task/slim-sprig v0.0.0-20230315185526-52ccab3ef572
 ## explicit; go 1.13
 github.com/go-task/slim-sprig
-# github.com/golang-jwt/jwt/v4 v4.5.0
+# github.com/golang-jwt/jwt/v4 v4.5.2
 ## explicit; go 1.16
 github.com/golang-jwt/jwt/v4
 # github.com/golang/protobuf v1.5.3
