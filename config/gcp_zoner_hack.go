@@ -25,10 +25,10 @@ func (g GCPZonerHack) SetZones(state storage.State) (storage.State, error) {
 	if len(state.GCP.Zones) == 0 {
 		zones, err := g.gcpAvailabilityZoneRetriever.GetZones(state.GCP.Region)
 		if err != nil {
-			return storage.State{}, fmt.Errorf("Retrieving availability zones: %s", err)
+			return storage.State{}, fmt.Errorf("Retrieving availability zones: %s", err) //nolint:staticcheck
 		}
 		if len(zones) == 0 {
-			return storage.State{}, errors.New("Zone list is empty")
+			return storage.State{}, errors.New("Zone list is empty") //nolint:staticcheck
 		}
 		state.GCP.Zones = zones
 	}

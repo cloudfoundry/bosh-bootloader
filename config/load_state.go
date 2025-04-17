@@ -7,7 +7,7 @@ import (
 	"github.com/cloudfoundry/bosh-bootloader/application"
 	"github.com/cloudfoundry/bosh-bootloader/fileio"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
-	flags "github.com/jessevdk/go-flags"
+	"github.com/jessevdk/go-flags"
 )
 
 type logger interface {

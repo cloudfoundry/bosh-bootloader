@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/ginkgo/v2" //nolint:staticcheck
 )
 
 type Config struct {
@@ -64,7 +64,7 @@ func LoadConfig() (Config, error) {
 
 	err := validateIAAS(config)
 	if err != nil {
-		return Config{}, fmt.Errorf("Error found: %s\n", err)
+		return Config{}, fmt.Errorf("Error found: %s\n", err) //nolint:staticcheck
 	}
 
 	switch config.IAAS {
@@ -80,7 +80,7 @@ func LoadConfig() (Config, error) {
 		err = validateOpenStackCreds(config)
 	}
 	if err != nil {
-		return Config{}, fmt.Errorf("Error Found: %s\nProvide a full set of credentials for a single IAAS.", err)
+		return Config{}, fmt.Errorf("Error Found: %s\nProvide a full set of credentials for a single IAAS.", err) //nolint:staticcheck
 	}
 
 	if config.StateFileDir == "" {

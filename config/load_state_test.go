@@ -6,12 +6,13 @@ import (
 	"os"
 	"path/filepath"
 
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+
 	"github.com/cloudfoundry/bosh-bootloader/application"
 	"github.com/cloudfoundry/bosh-bootloader/config"
 	"github.com/cloudfoundry/bosh-bootloader/fakes"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
 )
 
 func bootstrapArgs(args []string) (config.GlobalFlags, []string, int) {
@@ -152,7 +153,7 @@ var _ = Describe("LoadState", func() {
 
 			Context("when debug flag is passed in through environment variable", func() {
 				BeforeEach(func() {
-					os.Setenv("BBL_DEBUG", "true")
+					os.Setenv("BBL_DEBUG", "true") //nolint:errcheck
 				})
 
 				It("returns global flags", func() {
@@ -165,7 +166,7 @@ var _ = Describe("LoadState", func() {
 
 			Context("when state dir flag is passed in through environment variable", func() {
 				BeforeEach(func() {
-					os.Setenv("BBL_STATE_DIRECTORY", "/path/to/state")
+					os.Setenv("BBL_STATE_DIRECTORY", "/path/to/state") //nolint:errcheck
 				})
 
 				It("returns global flags", func() {
@@ -395,19 +396,19 @@ var _ = Describe("LoadState", func() {
 					BeforeEach(func() {
 						args = []string{"bbl", "up"}
 
-						os.Setenv("BBL_IAAS", "openstack")
-						os.Setenv("BBL_OPENSTACK_AUTH_URL", "auth-url")
-						os.Setenv("BBL_OPENSTACK_AZ", "az")
-						os.Setenv("BBL_OPENSTACK_NETWORK_ID", "network-id")
-						os.Setenv("BBL_OPENSTACK_NETWORK_NAME", "network-name")
-						os.Setenv("BBL_OPENSTACK_PASSWORD", "password")
-						os.Setenv("BBL_OPENSTACK_USERNAME", "username")
-						os.Setenv("BBL_OPENSTACK_PROJECT", "project")
-						os.Setenv("BBL_OPENSTACK_DOMAIN", "domain")
-						os.Setenv("BBL_OPENSTACK_REGION", "region")
-						os.Setenv("BBL_OPENSTACK_CACERT_FILE", "/path/to/file")
-						os.Setenv("BBL_OPENSTACK_INSECURE", "true")
-						os.Setenv("BBL_OPENSTACK_DNS_NAME_SERVERS", "8.8.8.8,9.9.9.9")
+						os.Setenv("BBL_IAAS", "openstack")                             //nolint:errcheck
+						os.Setenv("BBL_OPENSTACK_AUTH_URL", "auth-url")                //nolint:errcheck
+						os.Setenv("BBL_OPENSTACK_AZ", "az")                            //nolint:errcheck
+						os.Setenv("BBL_OPENSTACK_NETWORK_ID", "network-id")            //nolint:errcheck
+						os.Setenv("BBL_OPENSTACK_NETWORK_NAME", "network-name")        //nolint:errcheck
+						os.Setenv("BBL_OPENSTACK_PASSWORD", "password")                //nolint:errcheck
+						os.Setenv("BBL_OPENSTACK_USERNAME", "username")                //nolint:errcheck
+						os.Setenv("BBL_OPENSTACK_PROJECT", "project")                  //nolint:errcheck
+						os.Setenv("BBL_OPENSTACK_DOMAIN", "domain")                    //nolint:errcheck
+						os.Setenv("BBL_OPENSTACK_REGION", "region")                    //nolint:errcheck
+						os.Setenv("BBL_OPENSTACK_CACERT_FILE", "/path/to/file")        //nolint:errcheck
+						os.Setenv("BBL_OPENSTACK_INSECURE", "true")                    //nolint:errcheck
+						os.Setenv("BBL_OPENSTACK_DNS_NAME_SERVERS", "8.8.8.8,9.9.9.9") //nolint:errcheck
 					})
 
 					It("returns a state object containing configuration flags", func() {
@@ -568,19 +569,19 @@ var _ = Describe("LoadState", func() {
 					BeforeEach(func() {
 						args = []string{"bbl", "up"}
 
-						os.Setenv("BBL_IAAS", "vsphere")
-						os.Setenv("BBL_VSPHERE_VCENTER_USER", "user")
-						os.Setenv("BBL_VSPHERE_VCENTER_PASSWORD", "password")
-						os.Setenv("BBL_VSPHERE_VCENTER_IP", "ip")
-						os.Setenv("BBL_VSPHERE_VCENTER_DC", "dc")
-						os.Setenv("BBL_VSPHERE_VCENTER_CLUSTER", "cluster")
-						os.Setenv("BBL_VSPHERE_VCENTER_RP", "rp")
-						os.Setenv("BBL_VSPHERE_NETWORK", "network")
-						os.Setenv("BBL_VSPHERE_VCENTER_DS", "ds")
-						os.Setenv("BBL_VSPHERE_SUBNET_CIDR", "subnet")
-						os.Setenv("BBL_VSPHERE_VCENTER_DISKS", "disks")
-						os.Setenv("BBL_VSPHERE_VCENTER_TEMPLATES", "templates")
-						os.Setenv("BBL_VSPHERE_VCENTER_VMS", "vms")
+						os.Setenv("BBL_IAAS", "vsphere")                        //nolint:errcheck
+						os.Setenv("BBL_VSPHERE_VCENTER_USER", "user")           //nolint:errcheck
+						os.Setenv("BBL_VSPHERE_VCENTER_PASSWORD", "password")   //nolint:errcheck
+						os.Setenv("BBL_VSPHERE_VCENTER_IP", "ip")               //nolint:errcheck
+						os.Setenv("BBL_VSPHERE_VCENTER_DC", "dc")               //nolint:errcheck
+						os.Setenv("BBL_VSPHERE_VCENTER_CLUSTER", "cluster")     //nolint:errcheck
+						os.Setenv("BBL_VSPHERE_VCENTER_RP", "rp")               //nolint:errcheck
+						os.Setenv("BBL_VSPHERE_NETWORK", "network")             //nolint:errcheck
+						os.Setenv("BBL_VSPHERE_VCENTER_DS", "ds")               //nolint:errcheck
+						os.Setenv("BBL_VSPHERE_SUBNET_CIDR", "subnet")          //nolint:errcheck
+						os.Setenv("BBL_VSPHERE_VCENTER_DISKS", "disks")         //nolint:errcheck
+						os.Setenv("BBL_VSPHERE_VCENTER_TEMPLATES", "templates") //nolint:errcheck
+						os.Setenv("BBL_VSPHERE_VCENTER_VMS", "vms")             //nolint:errcheck
 					})
 
 					It("returns a state object containing configuration flags", func() {
@@ -746,10 +747,10 @@ var _ = Describe("LoadState", func() {
 							"bbl", "up",
 						}
 
-						os.Setenv("BBL_IAAS", "aws")
-						os.Setenv("BBL_AWS_ACCESS_KEY_ID", "some-access-key-id")
-						os.Setenv("BBL_AWS_SECRET_ACCESS_KEY", "some-secret-key")
-						os.Setenv("BBL_AWS_REGION", "some-region")
+						os.Setenv("BBL_IAAS", "aws")                              //nolint:errcheck
+						os.Setenv("BBL_AWS_ACCESS_KEY_ID", "some-access-key-id")  //nolint:errcheck
+						os.Setenv("BBL_AWS_SECRET_ACCESS_KEY", "some-secret-key") //nolint:errcheck
+						os.Setenv("BBL_AWS_REGION", "some-region")                //nolint:errcheck
 					})
 
 					It("returns a state object containing configuration flags", func() {
@@ -987,9 +988,9 @@ var _ = Describe("LoadState", func() {
 					BeforeEach(func() {
 						args = []string{"bbl", "up"}
 
-						os.Setenv("BBL_IAAS", "gcp")
-						os.Setenv("BBL_GCP_SERVICE_ACCOUNT_KEY", serviceAccountKey)
-						os.Setenv("BBL_GCP_REGION", "some-region")
+						os.Setenv("BBL_IAAS", "gcp")                                //nolint:errcheck
+						os.Setenv("BBL_GCP_SERVICE_ACCOUNT_KEY", serviceAccountKey) //nolint:errcheck
+						os.Setenv("BBL_GCP_REGION", "some-region")                  //nolint:errcheck
 
 						fakeFileIO.StatCall.Returns.Error = errors.New("no file found")
 					})
@@ -1113,12 +1114,12 @@ var _ = Describe("LoadState", func() {
 					BeforeEach(func() {
 						args = []string{"bbl", "up"}
 
-						os.Setenv("BBL_IAAS", "azure")
-						os.Setenv("BBL_AZURE_CLIENT_ID", "azure-client-id")
-						os.Setenv("BBL_AZURE_CLIENT_SECRET", "azure-client-secret")
-						os.Setenv("BBL_AZURE_REGION", "azure-region")
-						os.Setenv("BBL_AZURE_SUBSCRIPTION_ID", "azure-subscription-id")
-						os.Setenv("BBL_AZURE_TENANT_ID", "azure-tenant-id")
+						os.Setenv("BBL_IAAS", "azure")                                  //nolint:errcheck
+						os.Setenv("BBL_AZURE_CLIENT_ID", "azure-client-id")             //nolint:errcheck
+						os.Setenv("BBL_AZURE_CLIENT_SECRET", "azure-client-secret")     //nolint:errcheck
+						os.Setenv("BBL_AZURE_REGION", "azure-region")                   //nolint:errcheck
+						os.Setenv("BBL_AZURE_SUBSCRIPTION_ID", "azure-subscription-id") //nolint:errcheck
+						os.Setenv("BBL_AZURE_TENANT_ID", "azure-tenant-id")             //nolint:errcheck
 					})
 
 					It("returns a state containing configuration", func() {
@@ -1197,13 +1198,13 @@ var _ = Describe("LoadState", func() {
 								"bbl", "up",
 							}
 
-							os.Setenv("BBL_IAAS", "cloudstack")
-							os.Setenv("BBL_CLOUDSTACK_API_KEY", "some-api-key")
-							os.Setenv("BBL_CLOUDSTACK_SECRET_ACCESS_KEY", "some-secret-key")
-							os.Setenv("BBL_CLOUDSTACK_ZONE", "some-zone")
-							os.Setenv("BBL_CLOUDSTACK_SECURE", "true")
-							os.Setenv("BBL_CLOUDSTACK_ISO_SEGMENT", "true")
-							os.Setenv("BBL_CLOUDSTACK_ENDPOINT", "http://my-cloudstack.com/client/api")
+							os.Setenv("BBL_IAAS", "cloudstack")                                         //nolint:errcheck
+							os.Setenv("BBL_CLOUDSTACK_API_KEY", "some-api-key")                         //nolint:errcheck
+							os.Setenv("BBL_CLOUDSTACK_SECRET_ACCESS_KEY", "some-secret-key")            //nolint:errcheck
+							os.Setenv("BBL_CLOUDSTACK_ZONE", "some-zone")                               //nolint:errcheck
+							os.Setenv("BBL_CLOUDSTACK_SECURE", "true")                                  //nolint:errcheck
+							os.Setenv("BBL_CLOUDSTACK_ISO_SEGMENT", "true")                             //nolint:errcheck
+							os.Setenv("BBL_CLOUDSTACK_ENDPOINT", "http://my-cloudstack.com/client/api") //nolint:errcheck
 						})
 
 						It("returns a state object containing configuration flags", func() {

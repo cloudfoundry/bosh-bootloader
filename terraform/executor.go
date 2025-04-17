@@ -66,7 +66,7 @@ func (e Executor) Setup(template string, input map[string]interface{}) error {
 
 	err = e.fs.WriteFile(filepath.Join(terraformDir, "bbl-template.tf"), []byte(template), storage.StateMode)
 	if err != nil {
-		return fmt.Errorf("Write terraform template: %s", err)
+		return fmt.Errorf("Write terraform template: %s", err) //nolint:staticcheck
 	}
 
 	varsDir, err := e.stateStore.GetVarsDir()
@@ -76,17 +76,17 @@ func (e Executor) Setup(template string, input map[string]interface{}) error {
 
 	err = os.MkdirAll(filepath.Join(terraformDir, ".terraform"), os.ModePerm)
 	if err != nil {
-		return fmt.Errorf("Create .terraform directory: %s", err)
+		return fmt.Errorf("Create .terraform directory: %s", err) //nolint:staticcheck
 	}
 
 	err = e.fs.WriteFile(filepath.Join(terraformDir, ".terraform", ".gitignore"), []byte("*\n"), storage.StateMode)
 	if err != nil {
-		return fmt.Errorf("Write .gitignore for terraform binaries: %s", err)
+		return fmt.Errorf("Write .gitignore for terraform binaries: %s", err) //nolint:staticcheck
 	}
 
 	err = e.fs.WriteFile(filepath.Join(varsDir, "bbl.tfvars"), []byte(formatVars(input)), storage.StateMode)
 	if err != nil {
-		return fmt.Errorf("Write terraform vars: %s", err)
+		return fmt.Errorf("Write terraform vars: %s", err) //nolint:staticcheck
 	}
 
 	return nil
@@ -97,8 +97,8 @@ func formatVars(inputs map[string]interface{}) string {
 	for name, value := range inputs {
 		if vString, ok := value.(string); ok {
 			vString = fmt.Sprintf(`"%s"`, vString)
-			if strings.Contains(vString, "\n") { //nolint:gosimple
-				vString = strings.Replace(vString, "\n", "\\n", -1)
+			if strings.Contains(vString, "\n") { //nolint:staticcheck
+				vString = strings.Replace(vString, "\n", "\\n", -1) //nolint:staticcheck
 			}
 			value = vString
 		} else if valList, ok := value.([]string); ok {
@@ -127,7 +127,8 @@ func (e Executor) runTFCommandWithEnvs(args, envs []string) error {
 	}
 	relativeStatePath, err := filepath.Rel(terraformDir, tfStatePath)
 	if err != nil {
-		return fmt.Errorf("Get relative terraform state path: %s", err) //not tested
+		//not tested
+		return fmt.Errorf("Get relative terraform state path: %s", err) //nolint:staticcheck
 	}
 
 	args = append(args,
@@ -136,14 +137,15 @@ func (e Executor) runTFCommandWithEnvs(args, envs []string) error {
 
 	varsFiles, err := e.fs.ReadDir(varsDir)
 	if err != nil {
-		return fmt.Errorf("Read contents of vars directory: %s", err)
+		return fmt.Errorf("Read contents of vars directory: %s", err) //nolint:staticcheck
 	}
 
 	for _, file := range varsFiles {
 		if strings.HasSuffix(file.Name(), ".tfvars") {
 			relativeFilePath, err := filepath.Rel(terraformDir, filepath.Join(varsDir, file.Name()))
 			if err != nil {
-				return fmt.Errorf("Get relative terraform vars path: %s", err) //not tested
+				//not tested
+				return fmt.Errorf("Get relative terraform vars path: %s", err) //nolint:staticcheck
 			}
 			args = append(args,
 				"-var-file", relativeFilePath,
@@ -170,7 +172,7 @@ func (e Executor) Init() error {
 
 	err = e.cli.Run(e.out, terraformDir, []string{"init", "--upgrade"})
 	if err != nil {
-		return fmt.Errorf("Run terraform init --upgrade: %s", err)
+		return fmt.Errorf("Run terraform init --upgrade: %s", err) //nolint:staticcheck
 	}
 
 	return nil
@@ -211,14 +213,15 @@ func (e Executor) Validate(credentials map[string]string) error {
 
 	varsFiles, err := e.fs.ReadDir(varsDir)
 	if err != nil {
-		return fmt.Errorf("Read contents of vars directory: %s", err)
+		return fmt.Errorf("Read contents of vars directory: %s", err) //nolint:staticcheck
 	}
 
 	for _, file := range varsFiles {
 		if strings.HasSuffix(file.Name(), ".tfvars") {
 			relativeFilePath, err := filepath.Rel(terraformDir, filepath.Join(varsDir, file.Name()))
 			if err != nil {
-				return fmt.Errorf("Get relative terraform vars path: %s", err) //not tested
+				//not tested
+				return fmt.Errorf("Get relative terraform vars path: %s", err) //nolint:staticcheck
 			}
 			args = append(args,
 				"-var-file", relativeFilePath,
@@ -264,7 +267,7 @@ func (e Executor) Version() (string, error) {
 
 	version := regex.FindString(versionOutput)
 	if version == "" {
-		return "", errors.New("Terraform version could not be parsed")
+		return "", errors.New("Terraform version could not be parsed") //nolint:staticcheck
 	}
 
 	return version, nil
@@ -338,7 +341,7 @@ func (e Executor) Outputs() (map[string]interface{}, error) {
 	tfOutputs := map[string]tfOutput{}
 	err = json.Unmarshal(buffer.Bytes(), &tfOutputs)
 	if err != nil {
-		return map[string]interface{}{}, fmt.Errorf("Unmarshal terraform output: %s", err)
+		return map[string]interface{}{}, fmt.Errorf("Unmarshal terraform output: %s", err) //nolint:staticcheck
 	}
 
 	outputs := map[string]interface{}{}

@@ -26,7 +26,7 @@ func (c Client) CheckExists(envID string) (bool, error) {
 
 	response, err := c.azureGroupsClient.CheckExistence(context.TODO(), resourceGroupName, nil)
 	if err != nil {
-		return false, fmt.Errorf("Check existence for resource group %s: %s", resourceGroupName, err)
+		return false, fmt.Errorf("Check existence for resource group %s: %s", resourceGroupName, err) //nolint:staticcheck
 	}
 
 	if response.Success {
@@ -41,7 +41,7 @@ func (c Client) ValidateSafeToDelete(networkName string, envID string) error {
 
 	instances, err := c.azureVMsClient.List(context.TODO(), resourceGroup)
 	if err != nil {
-		return fmt.Errorf("List instances: %s", err)
+		return fmt.Errorf("List instances: %s", err) //nolint:staticcheck
 	}
 
 	for _, instance := range instances.Value {

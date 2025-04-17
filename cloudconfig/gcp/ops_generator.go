@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	yaml "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
@@ -78,7 +78,7 @@ func NewOpsGenerator(terraformManager terraformManager) OpsGenerator {
 func (o OpsGenerator) GenerateVars(state storage.State) (string, error) {
 	terraformOutputs, err := o.terraformManager.GetOutputs()
 	if err != nil {
-		return "", fmt.Errorf("Get terraform outputs: %s", err)
+		return "", fmt.Errorf("Get terraform outputs: %s", err) //nolint:staticcheck
 	}
 
 	subnetCidrVal, ok := terraformOutputs.Map["internal_cidr"]

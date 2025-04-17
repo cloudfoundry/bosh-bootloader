@@ -6,7 +6,7 @@ import (
 
 	"github.com/cloudfoundry/bosh-bootloader/fileio"
 
-	yaml "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 )
 
 type SSHKeyGetter struct {
@@ -30,12 +30,12 @@ func (j SSHKeyGetter) Get(deployment string) (string, error) {
 
 	varsDir, err := j.stateStore.GetVarsDir()
 	if err != nil {
-		return "", fmt.Errorf("Get vars directory: %s", err)
+		return "", fmt.Errorf("Get vars directory: %s", err) //nolint:staticcheck
 	}
 
 	varsStore, err := j.fReader.ReadFile(filepath.Join(varsDir, fmt.Sprintf("%s-vars-store.yml", deployment)))
 	if err != nil {
-		return "", fmt.Errorf("Read %s vars file: %s", deployment, err)
+		return "", fmt.Errorf("Read %s vars file: %s", deployment, err) //nolint:staticcheck
 	}
 
 	err = yaml.Unmarshal(varsStore, &p)

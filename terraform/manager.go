@@ -5,8 +5,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/coreos/go-semver/semver"
+
+	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
 type Manager struct {
@@ -73,7 +74,7 @@ func (m Manager) ValidateVersion() error {
 	}
 
 	if currentVersion.LessThan(*minimumVersion) {
-		return errors.New("Terraform version must be at least v0.11.0")
+		return errors.New("Terraform version must be at least v0.11.0") //nolint:staticcheck
 	}
 
 	return nil
@@ -86,11 +87,11 @@ func (m Manager) Setup(bblState storage.State) error {
 	m.logger.Step("generating terraform variables")
 	input, err := m.inputGenerator.Generate(bblState)
 	if err != nil {
-		return fmt.Errorf("Input generator generate: %s", err)
+		return fmt.Errorf("Input generator generate: %s", err) //nolint:staticcheck
 	}
 
 	if err := m.executor.Setup(template, input); err != nil {
-		return fmt.Errorf("Executor setup: %s", err)
+		return fmt.Errorf("Executor setup: %s", err) //nolint:staticcheck
 	}
 
 	return m.Init(bblState)
@@ -99,7 +100,7 @@ func (m Manager) Setup(bblState storage.State) error {
 func (m Manager) Init(bblState storage.State) error {
 	m.logger.Step("terraform init")
 	if err := m.executor.Init(); err != nil {
-		return fmt.Errorf("Executor init: %s", err)
+		return fmt.Errorf("Executor init: %s", err) //nolint:staticcheck
 	}
 	return nil
 }
@@ -107,7 +108,7 @@ func (m Manager) Init(bblState storage.State) error {
 func (m Manager) Apply(bblState storage.State) (storage.State, error) {
 	m.logger.Step("terraform init")
 	if err := m.executor.Init(); err != nil {
-		return bblState, fmt.Errorf("Executor init: %s", err)
+		return bblState, fmt.Errorf("Executor init: %s", err) //nolint:staticcheck
 	}
 
 	m.logger.Step("terraform apply")
@@ -116,7 +117,7 @@ func (m Manager) Apply(bblState storage.State) (storage.State, error) {
 	bblState.LatestTFOutput = readAndReset(m.terraformOutputBuffer)
 
 	if err != nil {
-		return bblState, fmt.Errorf("Executor apply: %s", err)
+		return bblState, fmt.Errorf("Executor apply: %s", err) //nolint:staticcheck
 	}
 
 	return bblState, nil
@@ -129,7 +130,7 @@ func (m Manager) Destroy(bblState storage.State) (storage.State, error) {
 	bblState.LatestTFOutput = readAndReset(m.terraformOutputBuffer)
 
 	if err != nil {
-		return bblState, fmt.Errorf("Executor destroy: %s", err)
+		return bblState, fmt.Errorf("Executor destroy: %s", err) //nolint:staticcheck
 	}
 
 	m.logger.Step("finished destroying infrastructure")
@@ -143,7 +144,7 @@ func (m Manager) Validate(bblState storage.State) (storage.State, error) {
 	bblState.LatestTFOutput = readAndReset(m.terraformOutputBuffer)
 
 	if err != nil {
-		return bblState, fmt.Errorf("Executor validate: %s", err)
+		return bblState, fmt.Errorf("Executor validate: %s", err) //nolint:staticcheck
 	}
 
 	return bblState, nil

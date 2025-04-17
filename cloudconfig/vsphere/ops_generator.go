@@ -3,7 +3,7 @@ package vsphere
 import (
 	"fmt"
 
-	yaml "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/cloudfoundry/bosh-bootloader/terraform"
@@ -30,7 +30,7 @@ func (o OpsGenerator) Generate(state storage.State) (string, error) {
 func (o OpsGenerator) GenerateVars(state storage.State) (string, error) {
 	terraformOutputs, err := o.terraformManager.GetOutputs()
 	if err != nil {
-		return "", fmt.Errorf("Get terraform outputs: %s", err)
+		return "", fmt.Errorf("Get terraform outputs: %s", err) //nolint:staticcheck
 	}
 	varsBytes, err := yaml.Marshal(terraformOutputs.Map)
 	if err != nil {

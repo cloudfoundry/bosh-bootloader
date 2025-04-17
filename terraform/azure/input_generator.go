@@ -14,7 +14,7 @@ func NewInputGenerator() InputGenerator {
 }
 
 func (i InputGenerator) Generate(state storage.State) (map[string]interface{}, error) {
-	simpleEnvId := strings.Replace(state.EnvID, "-", "", -1)
+	simpleEnvId := strings.Replace(state.EnvID, "-", "", -1) //nolint:staticcheck
 	if len(simpleEnvId) > 20 {
 		simpleEnvId = simpleEnvId[:20]
 	}

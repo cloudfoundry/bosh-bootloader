@@ -10,7 +10,7 @@ func (r RandomPort) GetPort() (string, error) {
 		return "", err
 	}
 
-	defer l.Close()
+	defer l.Close() //nolint:errcheck
 
 	_, port, err := net.SplitHostPort(l.Addr().String())
 	if err != nil {

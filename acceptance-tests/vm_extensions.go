@@ -1,9 +1,9 @@
 package acceptance
 
 import (
-	yaml "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 
-	. "github.com/onsi/gomega"
+	. "github.com/onsi/gomega" //nolint:staticcheck
 )
 
 func VmExtensionNames(cloudConfigOutput string) []string {

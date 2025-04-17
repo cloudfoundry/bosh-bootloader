@@ -50,7 +50,7 @@ func (s SSHKey) Execute(subcommandFlags []string, state storage.State) error {
 	}
 
 	if privateKey == "" {
-		return errors.New("Could not retrieve the ssh key, please make sure you are targeting the proper state dir.")
+		return errors.New("Could not retrieve the ssh key, please make sure you are targeting the proper state dir.") //nolint:staticcheck
 	}
 
 	s.logger.Println(privateKey)

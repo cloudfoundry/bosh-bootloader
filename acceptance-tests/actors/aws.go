@@ -4,19 +4,17 @@ import (
 	"fmt"
 	"os"
 
+	awslib "github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/elb"
+	"github.com/cloudfoundry/bosh-bootloader/acceptance-tests"
+	. "github.com/onsi/gomega" //nolint:staticcheck
+
 	"github.com/cloudfoundry/bosh-bootloader/application"
 	"github.com/cloudfoundry/bosh-bootloader/aws"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/cloudfoundry/bosh-bootloader/testhelpers"
-
-	. "github.com/onsi/gomega"
-
-	awslib "github.com/aws/aws-sdk-go/aws"
-	acceptance "github.com/cloudfoundry/bosh-bootloader/acceptance-tests"
-
-	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/elb"
 )
 
 func NewAWSLBHelper(c acceptance.Config) awsLBHelper {

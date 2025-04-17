@@ -5,13 +5,11 @@ import (
 	"encoding/json"
 	"os"
 
-	"golang.org/x/oauth2/google"
-
-	acceptance "github.com/cloudfoundry/bosh-bootloader/acceptance-tests"
+	"github.com/cloudfoundry/bosh-bootloader/acceptance-tests"
 	"github.com/cloudfoundry/bosh-bootloader/testhelpers"
-	compute "google.golang.org/api/compute/v1"
-
-	. "github.com/onsi/gomega"
+	. "github.com/onsi/gomega" //nolint:staticcheck
+	"golang.org/x/oauth2/google"
+	"google.golang.org/api/compute/v1"
 )
 
 type gcpLBHelper struct {

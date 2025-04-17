@@ -12,6 +12,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	awsec2 "github.com/aws/aws-sdk-go/service/ec2"
 	awsroute53 "github.com/aws/aws-sdk-go/service/route53"
+
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 )
 
@@ -127,7 +128,7 @@ func (c Client) CheckExists(networkName string) (bool, error) {
 		},
 	})
 	if err != nil {
-		return false, fmt.Errorf("Failed to check vpc existence: %s", err)
+		return false, fmt.Errorf("Failed to check vpc existence: %s", err) //nolint:staticcheck
 	}
 
 	if len(vpcs.Vpcs) > 0 {

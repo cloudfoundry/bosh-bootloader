@@ -67,11 +67,11 @@ func (p Plan) CheckFastFails(args []string, state storage.State) error {
 	}
 
 	if err := p.terraformManager.ValidateVersion(); err != nil {
-		return fmt.Errorf("Terraform manager validate version: %s", err)
+		return fmt.Errorf("Terraform manager validate version: %s", err) //nolint:staticcheck
 	}
 
 	if state.EnvID != "" && config.Name != "" && config.Name != state.EnvID {
-		return fmt.Errorf("The director name cannot be changed for an existing environment. Current name is %s.", state.EnvID)
+		return fmt.Errorf("The director name cannot be changed for an existing environment. Current name is %s.", state.EnvID) //nolint:staticcheck
 	}
 
 	return nil
@@ -125,32 +125,32 @@ func (p Plan) InitializePlan(config PlanConfig, state storage.State) (storage.St
 	var err error
 	state, err = p.envIDManager.Sync(state, config.Name)
 	if err != nil {
-		return storage.State{}, fmt.Errorf("Env id manager sync: %s", err)
+		return storage.State{}, fmt.Errorf("Env id manager sync: %s", err) //nolint:staticcheck
 	}
 
 	err = p.stateStore.Set(state)
 	if err != nil {
-		return storage.State{}, fmt.Errorf("Save state: %s", err)
+		return storage.State{}, fmt.Errorf("Save state: %s", err) //nolint:staticcheck
 	}
 
 	if err := p.terraformManager.Setup(state); err != nil {
-		return storage.State{}, fmt.Errorf("Terraform manager init: %s", err)
+		return storage.State{}, fmt.Errorf("Terraform manager init: %s", err) //nolint:staticcheck
 	}
 
 	if err := p.boshManager.InitializeJumpbox(state); err != nil {
-		return storage.State{}, fmt.Errorf("Bosh manager initialize jumpbox: %s", err)
+		return storage.State{}, fmt.Errorf("Bosh manager initialize jumpbox: %s", err) //nolint:staticcheck
 	}
 
 	if err := p.boshManager.InitializeDirector(state); err != nil {
-		return storage.State{}, fmt.Errorf("Bosh manager initialize director: %s", err)
+		return storage.State{}, fmt.Errorf("Bosh manager initialize director: %s", err) //nolint:staticcheck
 	}
 
 	if err := p.cloudConfigManager.Initialize(state); err != nil {
-		return storage.State{}, fmt.Errorf("Cloud config manager initialize: %s", err)
+		return storage.State{}, fmt.Errorf("Cloud config manager initialize: %s", err) //nolint:staticcheck
 	}
 
 	if err := p.runtimeConfigManager.Initialize(state); err != nil {
-		return storage.State{}, fmt.Errorf("Runtime config manager initialize: %s", err)
+		return storage.State{}, fmt.Errorf("Runtime config manager initialize: %s", err) //nolint:staticcheck
 	}
 
 	if err := p.patchDetector.Find(); err != nil {

@@ -4,10 +4,11 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/cloudfoundry/bosh-bootloader/config"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
+
+	"github.com/cloudfoundry/bosh-bootloader/config"
 )
 
 var _ = Describe("GetBOSHPath", func() {
@@ -29,13 +30,13 @@ var _ = Describe("GetBOSHPath", func() {
 	})
 
 	AfterEach(func() {
-		os.Setenv("PATH", originalPath)
+		os.Setenv("PATH", originalPath) //nolint:errcheck
 		gexec.CleanupBuildArtifacts()
 	})
 
 	Context("when a user has bosh", func() {
 		It("returns bosh", func() {
-			os.Setenv("PATH", filepath.Dir(pathToBOSH))
+			os.Setenv("PATH", filepath.Dir(pathToBOSH)) //nolint:errcheck
 
 			boshPath, err := config.GetBOSHPath()
 			Expect(boshPath).To(Equal("bosh"))

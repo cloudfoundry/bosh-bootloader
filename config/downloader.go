@@ -32,7 +32,7 @@ func (d Downloader) DownloadAndPrepareState(flags GlobalFlags) error {
 		}
 
 		if flags.AWSAssumeRole != "" {
-			return errors.New("Assume role not supported when using an AWS state bucket")
+			return errors.New("Assume role not supported when using an AWS state bucket") //nolint:staticcheck
 		}
 	case "gcp":
 		config = backends.Config{

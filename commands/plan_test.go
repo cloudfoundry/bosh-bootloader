@@ -274,11 +274,11 @@ var _ = Describe("Plan", func() {
 
 		Context("when the user provides the name flag as an environment variable", func() {
 			BeforeEach(func() {
-				os.Setenv("BBL_ENV_NAME", "a-better-name")
+				os.Setenv("BBL_ENV_NAME", "a-better-name") //nolint:errcheck
 			})
 
 			AfterEach(func() {
-				os.Unsetenv("BBL_ENV_NAME")
+				os.Unsetenv("BBL_ENV_NAME") //nolint:errcheck
 			})
 
 			It("passes the name flag in the up config", func() {

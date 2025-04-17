@@ -58,7 +58,7 @@ func (d Destroy) CheckFastFails(subcommandFlags []string, state storage.State) e
 		return err
 	}
 
-	isPaved, _ := d.terraformManager.IsPaved()
+	isPaved, _ := d.terraformManager.IsPaved() //nolint:errcheck
 	if !isPaved {
 		return nil
 	}
@@ -106,7 +106,7 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
 		var err error
 		state, err = d.plan.InitializePlan(planConfig, state)
 		if err != nil {
-			return fmt.Errorf("Initialize plan during destroy: %s", err)
+			return fmt.Errorf("Initialize plan during destroy: %s", err) //nolint:staticcheck
 		}
 	}
 
@@ -128,9 +128,9 @@ func (d Destroy) Execute(subcommandFlags []string, state storage.State) error {
 	}
 
 	state, err = d.deleteBOSH(state, terraformOutputs)
-	switch err.(type) { //nolint:gosimple
+	switch err.(type) { //nolint:staticcheck
 	case bosh.ManagerDeleteError:
-		mdErr := err.(bosh.ManagerDeleteError) //nolint:gosimple
+		mdErr := err.(bosh.ManagerDeleteError) //nolint:staticcheck
 		setErr := d.stateStore.Set(mdErr.State())
 		if setErr != nil {
 			errorList := helpers.Errors{}

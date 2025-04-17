@@ -14,7 +14,7 @@ func NewInputGenerator() InputGenerator {
 
 func (i InputGenerator) Generate(state storage.State) (map[string]interface{}, error) {
 	cidr := state.VSphere.SubnetCIDR
-	parsedCIDR, _ := bosh.ParseCIDRBlock(cidr)
+	parsedCIDR, _ := bosh.ParseCIDRBlock(cidr) //nolint:errcheck
 	jumpboxIP := state.VSphere.JumpboxIP
 	if jumpboxIP == "" {
 		jumpboxIP = parsedCIDR.GetNthIP(5).String()

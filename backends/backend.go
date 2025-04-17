@@ -112,7 +112,7 @@ func (g gcsStateBackend) getGCPServiceAccountKey(key string) (string, error) {
 
 	keyBytes, err := os.ReadFile(key)
 	if err != nil {
-		return "", fmt.Errorf("Reading key: %v", err)
+		return "", fmt.Errorf("Reading key: %v", err) //nolint:staticcheck
 	}
 
 	return string(keyBytes), nil

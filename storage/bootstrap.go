@@ -57,11 +57,11 @@ func (b StateBootstrap) GetState(dir string) (State, error) {
 	}
 
 	if state.Version < 3 {
-		return state, errors.New("Existing bbl environment is incompatible with bbl v3. Create a new environment with v3 to continue.")
+		return state, errors.New("Existing bbl environment is incompatible with bbl v3. Create a new environment with v3 to continue.") //nolint:staticcheck
 	}
 
 	if state.Version > STATE_SCHEMA {
-		return state, fmt.Errorf("Existing bbl environment was created with a newer version of bbl. Please upgrade to bbl v%s.\n", state.BBLVersion)
+		return state, fmt.Errorf("Existing bbl environment was created with a newer version of bbl. Please upgrade to bbl v%s.\n", state.BBLVersion) //nolint:staticcheck
 	}
 
 	return state, nil

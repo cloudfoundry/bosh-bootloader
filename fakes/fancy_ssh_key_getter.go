@@ -18,7 +18,7 @@ type FancySSHKeyGetter struct {
 }
 
 func (s *FancySSHKeyGetter) Get(deployment string) (string, error) {
-	if deployment == "jumpbox" {
+	if deployment == "jumpbox" { //nolint:staticcheck
 		s.JumpboxGetCall.CallCount++
 
 		return s.JumpboxGetCall.Returns.PrivateKey, s.JumpboxGetCall.Returns.Error

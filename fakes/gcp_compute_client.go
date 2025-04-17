@@ -1,6 +1,6 @@
 package fakes
 
-import compute "google.golang.org/api/compute/v1"
+import "google.golang.org/api/compute/v1"
 
 type GCPComputeClient struct {
 	ListInstancesCall struct {

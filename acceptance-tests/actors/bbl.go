@@ -10,11 +10,12 @@ import (
 	"syscall"
 	"time"
 
-	acceptance "github.com/cloudfoundry/bosh-bootloader/acceptance-tests"
 	"github.com/kr/pty"
 
+	"github.com/cloudfoundry/bosh-bootloader/acceptance-tests"
+
 	"github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
+	. "github.com/onsi/gomega" //nolint:staticcheck
 	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
 )
@@ -80,9 +81,9 @@ func (b BBL) Rotate() *gexec.Session {
 
 func (b BBL) VerifySSH(session *gexec.Session, ptmx *os.File) {
 	time.Sleep(5 * time.Second)
-	fmt.Fprintln(ptmx, "whoami | rev")
+	fmt.Fprintln(ptmx, "whoami | rev")                        //nolint:errcheck
 	Eventually(session.Out, 10).Should(gbytes.Say("xobpmuj")) // jumpbox in reverse
-	fmt.Fprintln(ptmx, "exit 0")
+	fmt.Fprintln(ptmx, "exit 0")                              //nolint:errcheck
 	Eventually(session, 5).Should(gexec.Exit(0))
 }
 
@@ -185,7 +186,7 @@ func (b BBL) SaveDirectorCA() string {
 
 	file, err := os.CreateTemp("", "")
 	Expect(err).NotTo(HaveOccurred())
-	defer file.Close()
+	defer file.Close() //nolint:errcheck
 
 	file.Write(stdout.Bytes()) //nolint:errcheck
 
@@ -207,8 +208,8 @@ func (b BBL) StartSSHTunnel() *gexec.Session {
 	for i := 0; i < len(printEnvLines); i++ {
 		if strings.HasPrefix(printEnvLines[i], "ssh ") {
 			sshCmd := strings.TrimPrefix(printEnvLines[i], "ssh ")
-			sshCmd = strings.Replace(sshCmd, "$JUMPBOX_PRIVATE_KEY", getExport("JUMPBOX_PRIVATE_KEY", printEnvLines), -1)
-			sshCmd = strings.Replace(sshCmd, "-f ", "", -1)
+			sshCmd = strings.Replace(sshCmd, "$JUMPBOX_PRIVATE_KEY", getExport("JUMPBOX_PRIVATE_KEY", printEnvLines), -1) //nolint:staticcheck
+			sshCmd = strings.Replace(sshCmd, "-f ", "", -1)                                                               //nolint:staticcheck
 			sshArgs = strings.Split(sshCmd, " ")
 		}
 	}
@@ -280,7 +281,7 @@ func (b BBL) interactiveExecute(args []string, stdout io.Writer, stderr io.Write
 
 	ptmx, pts, err := pty.Open()
 	Expect(err).NotTo(HaveOccurred())
-	defer ptmx.Close()
+	defer ptmx.Close() //nolint:errcheck
 
 	cmd.Stdin = pts
 	cmd.Stdout = pts
@@ -295,7 +296,7 @@ func (b BBL) interactiveExecute(args []string, stdout io.Writer, stderr io.Write
 	Expect(err).NotTo(HaveOccurred())
 
 	// Close our open reference to pts so that ptmx recieves EOF
-	pts.Close()
+	pts.Close() //nolint:errcheck
 
 	actions(session, ptmx)
 

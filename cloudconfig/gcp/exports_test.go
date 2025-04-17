@@ -1,6 +1,6 @@
 package gcp
 
-import yaml "gopkg.in/yaml.v2"
+import "gopkg.in/yaml.v2"
 
 func SetMarshal(f func(interface{}) ([]byte, error)) {
 	marshal = f

@@ -20,7 +20,7 @@ func NewMerger(fs fs) Merger {
 func (m Merger) MergeGlobalFlagsToState(globalFlags GlobalFlags, state storage.State) (storage.State, error) {
 	if globalFlags.IAAS != "" {
 		if state.IAAS != "" && globalFlags.IAAS != state.IAAS {
-			return storage.State{}, fmt.Errorf("The iaas type cannot be changed for an existing environment. The current iaas type is %s.", state.IAAS)
+			return storage.State{}, fmt.Errorf("The iaas type cannot be changed for an existing environment. The current iaas type is %s.", state.IAAS) //nolint:staticcheck
 		}
 		state.IAAS = globalFlags.IAAS
 	}
@@ -120,7 +120,7 @@ func (m Merger) updateAWSState(globalFlags GlobalFlags, state storage.State) (st
 
 	if globalFlags.AWSRegion != "" {
 		if state.AWS.Region != "" && globalFlags.AWSRegion != state.AWS.Region {
-			return storage.State{}, fmt.Errorf("The region cannot be changed for an existing environment. The current region is %s.", state.AWS.Region)
+			return storage.State{}, fmt.Errorf("The region cannot be changed for an existing environment. The current region is %s.", state.AWS.Region) //nolint:staticcheck
 		}
 		state.AWS.Region = globalFlags.AWSRegion
 	}
@@ -152,14 +152,14 @@ func (m Merger) updateGCPState(globalFlags GlobalFlags, state storage.State) (st
 			return storage.State{}, err
 		}
 		if state.GCP.ProjectID != "" && id != state.GCP.ProjectID {
-			return storage.State{}, fmt.Errorf("The project ID cannot be changed for an existing environment. The current project ID is %s.", state.GCP.ProjectID)
+			return storage.State{}, fmt.Errorf("The project ID cannot be changed for an existing environment. The current project ID is %s.", state.GCP.ProjectID) //nolint:staticcheck
 		}
 		state.GCP.ProjectID = id
 	}
 
 	if globalFlags.GCPRegion != "" {
 		if state.GCP.Region != "" && globalFlags.GCPRegion != state.GCP.Region {
-			return storage.State{}, fmt.Errorf("The region cannot be changed for an existing environment. The current region is %s.", state.GCP.Region)
+			return storage.State{}, fmt.Errorf("The region cannot be changed for an existing environment. The current region is %s.", state.GCP.Region) //nolint:staticcheck
 		}
 		state.GCP.Region = globalFlags.GCPRegion
 	}
@@ -177,11 +177,11 @@ func (m Merger) getGCPServiceAccountKey(key string) (string, string, error) {
 func (m Merger) writeGCPServiceAccountKey(contents string) (string, string, error) {
 	tempFile, err := m.fs.TempFile("", "gcpServiceAccountKey.json")
 	if err != nil {
-		return "", "", fmt.Errorf("Creating temp file for credentials: %s", err)
+		return "", "", fmt.Errorf("Creating temp file for credentials: %s", err) //nolint:staticcheck
 	}
 	err = m.fs.WriteFile(tempFile.Name(), []byte(contents), storage.StateMode)
 	if err != nil {
-		return "", "", fmt.Errorf("Writing credentials to temp file: %s", err)
+		return "", "", fmt.Errorf("Writing credentials to temp file: %s", err) //nolint:staticcheck
 	}
 	return tempFile.Name(), contents, nil
 }
@@ -189,11 +189,11 @@ func (m Merger) writeGCPServiceAccountKey(contents string) (string, string, erro
 func (m Merger) readKey(path string) (string, string, error) {
 	keyBytes, err := m.fs.ReadFile(path)
 	if err != nil {
-		return "", "", fmt.Errorf("Reading key: %v", err)
+		return "", "", fmt.Errorf("Reading key: %v", err) //nolint:staticcheck
 	}
 	absPath, err := filepath.Abs(path)
 	if err != nil {
-		return "", "", fmt.Errorf("Getting absolute path to key: %v", err)
+		return "", "", fmt.Errorf("Getting absolute path to key: %v", err) //nolint:staticcheck
 	}
 	return absPath, string(keyBytes), nil
 }
@@ -205,11 +205,11 @@ func getGCPProjectID(key string) (string, error) {
 
 	err := json.Unmarshal([]byte(key), &p)
 	if err != nil {
-		return "", fmt.Errorf("Unmarshalling service account key (must be valid json): %s", err)
+		return "", fmt.Errorf("Unmarshalling service account key (must be valid json): %s", err) //nolint:staticcheck
 	}
 
 	if p.ProjectID == "" {
-		return "", errors.New("Service account key is missing field `project_id`")
+		return "", errors.New("Service account key is missing field `project_id`") //nolint:staticcheck
 	}
 
 	return p.ProjectID, nil

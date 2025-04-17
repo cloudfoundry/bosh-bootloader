@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/cloudfoundry/bosh-bootloader/storage"
-	compute "google.golang.org/api/compute/v1"
+	"google.golang.org/api/compute/v1"
 
 	"golang.org/x/oauth2/google"
 	"golang.org/x/oauth2/jwt"

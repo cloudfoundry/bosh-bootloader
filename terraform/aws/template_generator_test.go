@@ -5,9 +5,10 @@ import (
 	"os"
 	"strings"
 
+	"github.com/pmezard/go-difflib/difflib"
+
 	"github.com/cloudfoundry/bosh-bootloader/storage"
 	"github.com/cloudfoundry/bosh-bootloader/terraform/aws"
-	"github.com/pmezard/go-difflib/difflib"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -89,10 +90,10 @@ func expectTemplate(parts ...string) string {
 }
 
 func checkTemplate(actual, expected string) {
-	if actual != string(expected) {
-		diff, _ := difflib.GetContextDiffString(difflib.ContextDiff{
+	if actual != expected {
+		diff, _ := difflib.GetContextDiffString(difflib.ContextDiff{ //nolint:errcheck
 			A:        difflib.SplitLines(actual),
-			B:        difflib.SplitLines(string(expected)),
+			B:        difflib.SplitLines(expected),
 			FromFile: "actual",
 			ToFile:   "expected",
 			Context:  10,
@@ -100,5 +101,5 @@ func checkTemplate(actual, expected string) {
 		fmt.Println(diff)
 	}
 
-	Expect(actual).To(Equal(string(expected)))
+	Expect(actual).To(Equal(expected))
 }

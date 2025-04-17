@@ -52,12 +52,12 @@ func (l LBArgsHandler) GetLBState(iaas string, args LBArgs) (storage.LB, error) 
 	if args.LBType != "concourse" {
 		certData, err = l.certificateValidator.ReadAndValidate(args.CertPath, args.KeyPath, args.ChainPath)
 		if err != nil {
-			return storage.LB{}, fmt.Errorf("Validate certificate: %s", err)
+			return storage.LB{}, fmt.Errorf("Validate certificate: %s", err) //nolint:staticcheck
 		}
 	}
 
 	if args.LBType == "concourse" && args.Domain != "" {
-		return storage.LB{}, errors.New("domain is not implemented for concourse load balancers. Remove the --lb-domain flag and try again.")
+		return storage.LB{}, errors.New("domain is not implemented for concourse load balancers. Remove the --lb-domain flag and try again.") //nolint:staticcheck
 	}
 
 	return storage.LB{

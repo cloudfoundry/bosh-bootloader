@@ -204,7 +204,7 @@ var _ = Describe("Executor", func() {
 		})
 
 		AfterEach(func() {
-			os.RemoveAll(varsDir)
+			os.RemoveAll(varsDir) //nolint:errcheck
 		})
 
 		It("runs terraform validate", func() {
@@ -310,7 +310,7 @@ var _ = Describe("Executor", func() {
 		})
 
 		AfterEach(func() {
-			os.RemoveAll(varsDir)
+			os.RemoveAll(varsDir) //nolint:errcheck
 		})
 
 		It("runs terraform apply", func() {
@@ -486,7 +486,7 @@ var _ = Describe("Executor", func() {
 	Describe("Version", func() {
 		BeforeEach(func() {
 			bufferingCLI.RunCall.Stub = func(stdout io.Writer) {
-				stdout.Write([]byte("some-text v0.8.9 some-other-text"))
+				stdout.Write([]byte("some-text v0.8.9 some-other-text")) //nolint:errcheck
 			}
 		})
 
@@ -518,7 +518,7 @@ var _ = Describe("Executor", func() {
 			Context("when the version cannot be parsed", func() {
 				BeforeEach(func() {
 					bufferingCLI.RunCall.Stub = func(stdout io.Writer) {
-						stdout.Write([]byte(""))
+						stdout.Write([]byte("")) //nolint:errcheck
 					}
 				})
 
@@ -538,7 +538,7 @@ var _ = Describe("Executor", func() {
 
 		It("returns an output from the terraform state", func() {
 			bufferingCLI.RunCall.Stub = func(stdout io.Writer) {
-				fmt.Fprintf(stdout, "some-external-ip\n")
+				fmt.Fprintf(stdout, "some-external-ip\n") //nolint:errcheck
 			}
 			output, err := executor.Output("external_ip")
 			Expect(err).NotTo(HaveOccurred())
@@ -599,7 +599,8 @@ var _ = Describe("Executor", func() {
 	Describe("Outputs", func() {
 		BeforeEach(func() {
 			bufferingCLI.RunCall.Stub = func(stdout io.Writer) {
-				fmt.Fprintf(stdout, `{
+				fmt.Fprintf(stdout, //nolint:errcheck
+					`{
 					"director_address": {
 						"sensitive": false,
 						"type": "string",
@@ -694,7 +695,7 @@ var _ = Describe("Executor", func() {
 			Context("when it fails to unmarshal the terraform outputs", func() {
 				BeforeEach(func() {
 					bufferingCLI.RunCall.Stub = func(stdout io.Writer) {
-						fmt.Fprintf(stdout, "%%")
+						fmt.Fprintf(stdout, "%%") //nolint:errcheck
 					}
 				})
 
@@ -730,7 +731,7 @@ var _ = Describe("Executor", func() {
 		Context("when terraform show returns No state", func() {
 			BeforeEach(func() {
 				bufferingCLI.RunCall.Stub = func(stdout io.Writer) {
-					fmt.Fprint(stdout, "No state.")
+					fmt.Fprint(stdout, "No state.") //nolint:errcheck
 				}
 			})
 			It("returns false", func() {
@@ -744,7 +745,7 @@ var _ = Describe("Executor", func() {
 		Context("when terraform show returns outputs", func() {
 			BeforeEach(func() {
 				bufferingCLI.RunCall.Stub = func(stdout io.Writer) {
-					fmt.Fprint(stdout, "Pretty much anything else.")
+					fmt.Fprint(stdout, "Pretty much anything else.") //nolint:errcheck
 				}
 			})
 			It("returns true", func() {

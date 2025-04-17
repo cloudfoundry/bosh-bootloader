@@ -1,12 +1,11 @@
 package cloudstack
 
 import (
+	"crypto/sha1"
 	"fmt"
+	"strings"
 
 	"gopkg.in/yaml.v2"
-
-	"crypto/sha1"
-	"strings"
 
 	"github.com/cloudfoundry/bosh-bootloader/bosh"
 	"github.com/cloudfoundry/bosh-bootloader/storage"
@@ -124,7 +123,7 @@ func (o OpsGenerator) GenerateVars(state storage.State) (string, error) {
 
 	terraformOutputs, err := o.terraformManager.GetOutputs()
 	if err != nil {
-		return "", fmt.Errorf("Get terraform outputs: %s", err)
+		return "", fmt.Errorf("Get terraform outputs: %s", err) //nolint:staticcheck
 	}
 
 	requiredOutputs := []string{
