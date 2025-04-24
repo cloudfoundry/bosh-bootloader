@@ -9,9 +9,9 @@ variable "parent_zone" {
 }
 
 data "aws_route53_zone" "parent" {
-  count = "${var.parent_zone == "" ? 0 : 1}"
+  count = var.parent_zone == "" ? 0 : 1
 
-  name = "${var.parent_zone}"
+  name = var.parent_zone
 }
 
 output "env_dns_zone_name_servers" {
@@ -24,9 +24,9 @@ locals {
 }
 
 resource "aws_route53_zone" "env_dns_zone" {
-  count = "${var.parent_zone == "" ? 1 : 0}"
+  count = var.parent_zone == "" ? 1 : 0
 
-  name = "${var.system_domain}"
+  name = var.system_domain
 
   tags = {
     Name = "${var.env_id}-hosted-zone"
@@ -34,7 +34,7 @@ resource "aws_route53_zone" "env_dns_zone" {
 }
 
 resource "aws_route53_record" "wildcard_dns" {
-  zone_id = "${local.zone_id}"
+  zone_id = local.zone_id
   name    = "*.${var.system_domain}"
   type    = "CNAME"
   ttl     = 300
@@ -43,7 +43,7 @@ resource "aws_route53_record" "wildcard_dns" {
 }
 
 resource "aws_route53_record" "ssh" {
-  zone_id = "${local.zone_id}"
+  zone_id = local.zone_id
   name    = "ssh.${var.system_domain}"
   type    = "CNAME"
   ttl     = 300
@@ -52,7 +52,7 @@ resource "aws_route53_record" "ssh" {
 }
 
 resource "aws_route53_record" "bosh" {
-  zone_id = "${local.zone_id}"
+  zone_id = local.zone_id
   name    = "bosh.${var.system_domain}"
   type    = "A"
   ttl     = 300
@@ -61,7 +61,7 @@ resource "aws_route53_record" "bosh" {
 }
 
 resource "aws_route53_record" "tcp" {
-  zone_id = "${local.zone_id}"
+  zone_id = local.zone_id
   name    = "tcp.${var.system_domain}"
   type    = "CNAME"
   ttl     = 300
@@ -70,9 +70,9 @@ resource "aws_route53_record" "tcp" {
 }
 
 resource "aws_route53_record" "iso" {
-  count = "${var.isolation_segments}"
+  count = var.isolation_segments
 
-  zone_id = "${local.zone_id}"
+  zone_id = local.zone_id
   name    = "*.iso-seg.${var.system_domain}"
   type    = "CNAME"
   ttl     = 300
