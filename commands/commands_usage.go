@@ -59,9 +59,9 @@ const (
 	LBUsage = `
 
   Load Balancer options:
-  --lb-type                  Load balancer(s) type: "concourse" or "cf"
-  --lb-cert                  Path to SSL certificate (supported when type="cf")
-  --lb-key                   Path to SSL certificate key (supported when type="cf")
+  --lb-type                  Load balancer(s) type: "concourse", "cf", or "nlb"
+  --lb-cert                  Path to SSL certificate (supported when type="cf" or "nlb")
+  --lb-key                   Path to SSL certificate key (supported when type="cf" or "nlb")
   --lb-chain                 Path to SSL certificate chain (supported when iaas="aws")
   --lb-domain                Creates a DNS zone and records for the given domain (supported when type="cf")`
 

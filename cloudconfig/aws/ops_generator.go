@@ -3,6 +3,7 @@ package aws
 import (
 	"errors"
 	"fmt"
+	"maps"
 	"sort"
 	"strings"
 
@@ -92,6 +93,26 @@ func (o OpsGenerator) GenerateVars(state storage.State) (string, error) {
 		"internal_az_subnet_id_mapping",
 		"internal_az_subnet_cidr_mapping",
 	}
+	cfRequiredOutputs := []string{
+		"cf_router_lb_name",
+		"cf_router_lb_internal_security_group",
+		"cf_ssh_lb_name",
+		"cf_ssh_lb_internal_security_group",
+		"cf_tcp_lb_name",
+		"cf_tcp_lb_internal_security_group",
+	}
+	dualstackOutput, ok := terraformOutputs.Map["dualstack"]
+	if !ok {
+		return "", fmt.Errorf("missing dualstack terraform output")
+	}
+	dualstack := dualstackOutput.(bool)
+	if dualstack {
+		requiredOutputs = append(requiredOutputs,
+			"internal_cidr_ipv6",
+			"internal_az_subnet_ipv6_cidr_mapping",
+		)
+	}
+
 	switch state.LB.Type {
 	case "concourse":
 		requiredOutputs = append(
@@ -99,16 +120,10 @@ func (o OpsGenerator) GenerateVars(state storage.State) (string, error) {
 			"concourse_lb_target_groups",
 			"concourse_lb_internal_security_group",
 		)
+	case "nlb":
+		fallthrough
 	case "cf":
-		requiredOutputs = append(
-			requiredOutputs,
-			"cf_router_lb_name",
-			"cf_router_lb_internal_security_group",
-			"cf_ssh_lb_name",
-			"cf_ssh_lb_internal_security_group",
-			"cf_tcp_lb_name",
-			"cf_tcp_lb_internal_security_group",
-		)
+		requiredOutputs = append(requiredOutputs, cfRequiredOutputs...)
 	}
 
 	for _, output := range requiredOutputs {
@@ -124,21 +139,34 @@ func (o OpsGenerator) GenerateVars(state storage.State) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	if dualstack {
+		internalAZSubnetIPv6CIDRMap := terraformOutputs.GetStringMap("internal_az_subnet_ipv6_cidr_mapping")
+		ipv6AvailabilityZones, err := generateAZs(3, internalAZSubnetIDMap, internalAZSubnetIPv6CIDRMap)
+		if err != nil {
+			return "", err
+		}
+		azs = append(azs, ipv6AvailabilityZones...)
+	}
 
 	varsYAML := map[string]interface{}{}
-	for k, v := range terraformOutputs.Map {
-		varsYAML[k] = v
-	}
+	maps.Copy(varsYAML, terraformOutputs.Map)
+
 	for _, az := range azs {
 		for key, value := range az {
 			varsYAML[key] = value
 		}
 	}
-
+	// TODO: Make the ISO Segments handle IPv6
 	isoSegAZSubnetIDMap := terraformOutputs.GetStringMap("iso_az_subnet_id_mapping")
 	isoSegAZSubnetCIDRMap := terraformOutputs.GetStringMap("iso_az_subnet_cidr_mapping")
 	if len(isoSegAZSubnetIDMap) > 0 && len(isoSegAZSubnetCIDRMap) > 0 {
-		isoSegAzs, err := generateAZs(len(azs), isoSegAZSubnetIDMap, isoSegAZSubnetCIDRMap)
+		// If not running IPv6, start the index after len(azs) many subnets
+		// If running IPv6, double we need to offset by another len(azs) to accommodate the IPv6 entries
+		offset := len(azs)
+		if dualstack {
+			offset = len(azs) * 2
+		}
+		isoSegAzs, err := generateAZs(offset, isoSegAZSubnetIDMap, isoSegAZSubnetCIDRMap)
 		if err == nil {
 			for _, az := range isoSegAzs {
 				for key, value := range az {
@@ -219,7 +247,7 @@ func (o OpsGenerator) generateOps(state storage.State) ([]op, error) {
 	if err != nil {
 		return []op{}, fmt.Errorf("Retrieve availability zones: %s", err) //nolint:staticcheck
 	}
-
+	// This block doesn't seem to handle generating the OPs for isolation segments?
 	for i := range azs {
 		azOp := createOp("replace", "/azs/-", az{
 			Name: fmt.Sprintf("z%d", i+1),
@@ -229,8 +257,15 @@ func (o OpsGenerator) generateOps(state storage.State) ([]op, error) {
 		})
 		ops = append(ops, azOp)
 
-		subnet := generateNetworkSubnet(i)
-		subnets = append(subnets, subnet)
+		// IPv4 Subnets don't need offset
+		ipv4Subnet := generateNetworkSubnet(i, 0)
+		subnets = append(subnets, ipv4Subnet)
+
+		if state.LB.Type == "nlb" {
+			// IPv6 subnets need to set the same values as IPv4 for
+			// AZ name (e.g z1, z2, z3) but require an offset value for templating reasons
+			subnets = append(subnets, generateNetworkSubnet(i, len(azs)))
+		}
 	}
 
 	ops = append(ops, createOp("replace", "/networks/-", network{
@@ -246,6 +281,8 @@ func (o OpsGenerator) generateOps(state storage.State) ([]op, error) {
 	}))
 
 	switch state.LB.Type {
+	case "nlb":
+		fallthrough
 	case "cf":
 		lbSecurityGroups := []map[string]string{
 			{"name": "cf-router-network-properties", "lb": "((cf_router_lb_name))", "group": "((cf_router_lb_internal_security_group))"},
@@ -307,21 +344,21 @@ func azify(az int, azName, cidr, subnet string) (map[string]string, error) {
 	}, nil
 }
 
-func generateNetworkSubnet(az int) networkSubnet {
+func generateNetworkSubnet(az int, offset int) networkSubnet {
 	az++
 	return networkSubnet{
 		AZ:      fmt.Sprintf("z%d", az),
-		Gateway: fmt.Sprintf("((az%d_gateway))", az),
-		Range:   fmt.Sprintf("((az%d_range))", az),
+		Gateway: fmt.Sprintf("((az%d_gateway))", az+offset),
+		Range:   fmt.Sprintf("((az%d_range))", az+offset),
 		Reserved: []string{
-			fmt.Sprintf("((az%d_reserved_1))", az),
-			fmt.Sprintf("((az%d_reserved_2))", az),
+			fmt.Sprintf("((az%d_reserved_1))", az+offset),
+			fmt.Sprintf("((az%d_reserved_2))", az+offset),
 		},
 		Static: []string{
-			fmt.Sprintf("((az%d_static))", az),
+			fmt.Sprintf("((az%d_static))", az+offset),
 		},
 		CloudProperties: networkSubnetCloudProperties{
-			Subnet:         fmt.Sprintf("((az%d_subnet))", az),
+			Subnet:         fmt.Sprintf("((az%d_subnet))", az+offset),
 			SecurityGroups: []string{"((internal_security_group))"},
 		},
 	}
