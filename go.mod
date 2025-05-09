@@ -69,7 +69,7 @@ require (
 	github.com/pierrec/lz4 v2.0.3+incompatible // indirect
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8 // indirect
 	github.com/smartystreets/goconvey v1.6.4 // indirect
-	github.com/ulikunitz/xz v0.5.4 // indirect
+	github.com/ulikunitz/xz v0.5.8 // indirect
 	github.com/vmware/govmomi v0.18.0 // indirect
 	go.opencensus.io v0.18.0 // indirect
 	golang.org/x/sys v0.31.0 // indirect
