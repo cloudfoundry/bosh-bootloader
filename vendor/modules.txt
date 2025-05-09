@@ -330,8 +330,8 @@ github.com/pmezard/go-difflib/difflib
 ## explicit
 github.com/spf13/afero
 github.com/spf13/afero/mem
-# github.com/ulikunitz/xz v0.5.4
-## explicit
+# github.com/ulikunitz/xz v0.5.8
+## explicit; go 1.12
 github.com/ulikunitz/xz
 github.com/ulikunitz/xz/internal/hash
 github.com/ulikunitz/xz/internal/xlog
