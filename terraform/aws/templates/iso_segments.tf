@@ -5,17 +5,17 @@ variable "isolation_segments" {
 }
 
 variable "iso_to_bosh_ports" {
-  type    = list(any)
+  type    = list(number)
   default = [22, 6868, 2555, 4222, 25250]
 }
 
 variable "iso_to_shared_tcp_ports" {
-  type    = list(any)
+  type    = list(number)
   default = [9090, 9091, 8082, 8300, 8301, 8889, 8443, 3000, 4443, 8080, 3457, 9023, 9022, 4222]
 }
 
 variable "iso_to_shared_udp_ports" {
-  type    = list(any)
+  type    = list(number)
   default = [8301, 8302, 8600]
 }
 
@@ -39,12 +39,13 @@ resource "aws_subnet" "iso_subnets" {
 
 resource "aws_route_table_association" "route_iso_subnets" {
   count          = local.iso_az_count
-  subnet_id      = element(aws_subnet.iso_subnets.*.id, count.index)
+  subnet_id      = aws_subnet.iso_subnets[count.index].id
   route_table_id = aws_route_table.nated_route_table.id
 }
 
+
 resource "aws_elb" "iso_router_lb" {
-  count = var.isolation_segments
+  count = var.isolation_segments == "1" && var.dualstack == false ? 1 : 0
 
   name                      = "${var.short_env_id}-iso-router-lb"
   cross_zone_load_balancing = true
@@ -85,6 +86,85 @@ resource "aws_elb" "iso_router_lb" {
 
   tags = {
     Name = "${var.env_id}"
+  }
+}
+
+resource "aws_lb" "iso_router_nlb" {
+  count              = var.isolation_segments == "1" && var.dualstack ? 1 : 0
+  name               = "${var.short_env_id}-iso-router-lb"
+  internal           = false
+  load_balancer_type = "network"
+  security_groups    = [aws_security_group.cf_router_lb_security_group.id]
+  subnets            = [for subnet in aws_subnet.lb_subnets : subnet.id]
+
+  enable_deletion_protection       = false
+  enable_cross_zone_load_balancing = true
+
+  # idle_timeout = var.elb_idle_timeout
+  ip_address_type = "dualstack"
+
+  tags = {
+    Name = var.env_id
+  }
+}
+
+resource "aws_lb_target_group" "iso_router_nlb_http" {
+  count    = var.isolation_segments == "1" && var.dualstack ? 1 : 0
+  name     = "${var.short_env_id}-iso-router-nlb-http"
+  port     = 80
+  protocol = "HTTP"
+  vpc_id   = local.vpc_id
+
+  health_check {
+    healthy_threshold   = 5
+    unhealthy_threshold = 2
+    interval            = 15
+    protocol            = "TCP"
+    port                = 80
+  }
+
+  tags = {
+    Name = "${var.env_id}"
+  }
+}
+
+resource "aws_lb_listener" "iso_router_nlb_http" {
+  count             = var.isolation_segments == "1" && var.dualstack ? 1 : 0
+  load_balancer_arn = aws_lb.iso_router_nlb[0].arn
+  port              = "80"
+  protocol          = "TCP"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.iso_router_nlb_http[0].arn
+  }
+}
+
+resource "aws_lb_listener" "iso_router_nlb_https" {
+  count             = var.isolation_segments == "1" && var.dualstack ? 1 : 0
+  load_balancer_arn = aws_lb.iso_router_nlb[0].arn
+  port              = "443"
+  protocol          = "TLS"
+  ssl_policy        = "ELBSecurityPolicy-2016-08"
+  certificate_arn   = aws_iam_server_certificate.lb_cert.arn
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.iso_router_nlb_http[0].arn
+  }
+}
+
+resource "aws_lb_listener" "iso_router_nlb_4443" {
+  count             = var.isolation_segments == "1" && var.dualstack ? 1 : 0
+  load_balancer_arn = aws_lb.iso_router_nlb[0].arn
+  port              = "4443"
+  protocol          = "TLS"
+  ssl_policy        = "ELBSecurityPolicy-2016-08"
+  certificate_arn   = aws_iam_server_certificate.lb_cert.arn
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.iso_router_nlb_http[0].arn
   }
 }
 
@@ -211,7 +291,7 @@ resource "aws_security_group_rule" "nat_to_isolated_cells_rule" {
 }
 
 output "cf_iso_router_lb_name" {
-  value = one(aws_elb.iso_router_lb[*].name)
+  value = var.dualstack ? one(aws_lb.iso_router_nlb[*].name) : one(aws_elb.iso_router_lb[*].name)
 }
 
 output "iso_security_group_id" {
