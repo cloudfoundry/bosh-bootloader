@@ -103,15 +103,14 @@ func (o OpsGenerator) GenerateVars(state storage.State) (string, error) {
 	}
 	dualstackOutput, ok := terraformOutputs.Map["dualstack"]
 	if !ok {
-		return "", fmt.Errorf("dualstack output not present")
+		return "", fmt.Errorf("missing dualstack terraform output")
 	}
-	var dualstack bool
-	if dualstackOutput.(bool) {
+	dualstack := dualstackOutput.(bool)
+	if dualstack {
 		requiredOutputs = append(requiredOutputs,
 			"internal_cidr_ipv6",
 			"internal_az_subnet_ipv6_cidr_mapping",
 		)
-		dualstack = true
 	}
 
 	switch state.LB.Type {
