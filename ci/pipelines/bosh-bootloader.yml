@@ -395,7 +395,7 @@ jobs:
     params:
       BBL_IAAS: gcp
       BBL_GCP_SERVICE_ACCOUNT_KEY: ((gcp_json_key))
-      BBL_GCP_REGION: us-central1
+      BBL_GCP_REGION: europe-north2
       BBL_TEST_ENV_ID_PREFIX: bump-deployments
       BBL_TEST_PACKAGES: bbl
       BBL_DOWN_TIMEOUT: 20m
@@ -753,7 +753,7 @@ jobs:
     params:
       BBL_IAAS: gcp
       BBL_GCP_SERVICE_ACCOUNT_KEY: ((gcp_json_key))
-      BBL_GCP_REGION: us-central1
+      BBL_GCP_REGION: europe-north2
       BBL_ENV_NAME: bump-deployments-downstream
       BBL_STATE_DIR: bump-deployments/bbl-gcp-cf
 
@@ -763,7 +763,7 @@ jobs:
     params:
       BBL_IAAS: gcp
       BBL_GCP_SERVICE_ACCOUNT_KEY: ((gcp_json_key))
-      BBL_GCP_REGION: us-central1
+      BBL_GCP_REGION: europe-north2
       BBL_LB_CERT: ((bbl_lb_cert.certificate))
       BBL_LB_KEY: ((bbl_lb_cert.private_key))
       LB_DOMAIN: bump-deployments-cf.bbl.ci.cloudfoundry.org
@@ -960,7 +960,7 @@ jobs:
     params:
       BBL_IAAS: gcp
       BBL_GCP_SERVICE_ACCOUNT_KEY: ((gcp_json_key))
-      BBL_GCP_REGION: us-central1
+      BBL_GCP_REGION: europe-north2
       BBL_ENV_NAME: bump-deployments-gcp-concourse
       BBL_STATE_DIR: bump-deployments/bbl-gcp-concourse
 
@@ -970,7 +970,7 @@ jobs:
     params:
       BBL_IAAS: gcp
       BBL_GCP_SERVICE_ACCOUNT_KEY: ((gcp_json_key))
-      BBL_GCP_REGION: us-central1
+      BBL_GCP_REGION: europe-north2
       BBL_ENV_NAME: bump-deployments-gcp-concourse
       BBL_STATE_DIR: bump-deployments/bbl-gcp-concourse
       DELETE_TERRAFORM_PLUGINS: false
@@ -1084,7 +1084,7 @@ jobs:
 #     params:
 #       BBL_IAAS: gcp
 #       BBL_GCP_SERVICE_ACCOUNT_KEY: ((bbl_gcp_service_account_json))
-#       BBL_GCP_REGION: us-central1
+#       BBL_GCP_REGION: europe-north2
 #       BBL_CONFIG_DIR: plan-patches/bosh-lite-gcp
 #       BBL_ENV_NAME: bump-deployments-lite-gcp
 #       BBL_STATE_DIR: bump-deployments/bbl-lite-gcp
