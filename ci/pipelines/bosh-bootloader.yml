@@ -991,6 +991,16 @@ jobs:
           rebase: true
           repository: updated-bbl-state
 
+  - task: extend-cloud-config
+    file: runtime-ci/tasks/bosh-extend-cloud-config/task.yml
+    image: cf-deployment-concourse-tasks-bbl-dev
+    input_mapping:
+      bbl-state: updated-bbl-state
+      ops-files: bbl-ci
+    params:
+      BBL_STATE_DIR: bump-deployments/bbl-gcp-concourse
+      OPS_FILES: bbl-ci/ci/ops-files/replace-n1-machine-types.yml
+
   - task: create-bosh-source-file
     file: bbl-ci/ci/tasks/create-bosh-deployment-source-file/task.yml
     image: cf-deployment-concourse-tasks-bbl-dev

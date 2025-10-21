@@ -1,0 +1,7 @@
+- type: replace
+  path: /vm_types/name=default/cloud_properties/machine_type
+  value: n4-standard-2
+
+- type: replace
+  path: /vm_types/name=n1-standard-1/cloud_properties/machine_type
+  value: n4-standard-2
