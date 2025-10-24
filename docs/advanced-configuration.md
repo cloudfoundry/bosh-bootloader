@@ -3,6 +3,7 @@
 ## Table of Contents
 * <a href='#opsfile'>Using a BOSH ops-file with bbl</a>
 * <a href='#terraform'>Customizing IaaS Paving with Terraform</a>
+* <a href='#vm-extensions'>Using VM Extensions for Cost Optimization</a>
 * <a href='#plan-patches'>Applying and authoring plan patches, bundled modifications to default bbl configurations.</a>
 
 ## <a name='opsfile'></a>Using a BOSH ops-file with bbl
@@ -70,6 +71,37 @@ Numerous settings can be reconfigured repeatedly by editing `$BBL_STATE_DIR/vars
     bbl up
     ```
     That's it. Your director is now at `192.168.0.6`.
+
+## <a name='vm-extensions'></a>Using VM Extensions for Cost Optimization
+
+### GCP Spot VMs
+
+`bbl` includes a `spot` VM extension for GCP environments that enables the use of GCP Spot VMs, which provide significant cost savings (~91% discount) compared to standard instances. Spot VMs are suitable for fault-tolerant workloads that can handle interruptions.
+
+#### Requirements
+- Google CPI version 50.1.0 or later
+- BOSH director deployed with `bbl` on GCP
+
+#### Usage
+Apply the `spot` vm_extension to instance groups in your deployment manifest:
+
+```yaml
+instance_groups:
+- name: worker
+  instances: 10
+  vm_type: default
+  vm_extensions: [spot]
+  stemcell: default
+  azs: [z1, z2, z3]
+  networks:
+  - name: default
+```
+
+#### Considerations
+- Spot VMs can be preempted by GCP when capacity is needed for standard instances
+- Best suited for stateless, fault-tolerant workloads
+- Not recommended for singleton instances or databases
+- For legacy compatibility, the `preemptible` vm_extension is also available (uses the older GCP API)
 
 ## <a name='plan-patches'> [Plan Patches](https://github.com/cloudfoundry/bosh-bootloader/tree/master/plan-patches)
 
