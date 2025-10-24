@@ -49,6 +49,25 @@ gcloud projects add-iam-policy-binding <project id> --member='serviceAccount:<se
     bbl up
     ```
 
+## Cloud Config Features
+
+### VM Extensions
+
+The generated cloud-config for GCP includes several VM extensions that can be applied to your deployments:
+
+- **`spot`**: Uses GCP Spot VMs for cost savings (~91% discount). Requires Google CPI 50.1.0 or later. Spot VMs may be preempted by GCP when capacity is needed.
+- **`preemptible`**: Uses the legacy preemptible VM API (similar cost savings as spot, but spot is the recommended approach).
+- **`internet-not-required`**: Disables external IPs for VMs that don't need internet access.
+- **`100GB_ephemeral_disk`**, **`500GB_ephemeral_disk`**, **`1TB_ephemeral_disk`**: Provides larger ephemeral disks.
+
+To use a VM extension in your deployment manifest:
+
+```yaml
+instance_groups:
+- name: my-instance-group
+  vm_extensions: [spot]
+```
+
 ## Next Steps
 
 * [Target the BOSH Director](howto-target-bosh-director.md)

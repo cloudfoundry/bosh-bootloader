@@ -520,6 +520,13 @@
       preemptible: true
 
 - type: replace
+  path: /vm_extensions/-
+  value:
+    name: spot
+    cloud_properties:
+      provisioning_model: SPOT
+
+- type: replace
   path: /azs/-
   value:
     name: z1

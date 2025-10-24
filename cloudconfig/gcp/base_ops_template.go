@@ -522,5 +522,12 @@ const (
     name: preemptible
     cloud_properties:
       preemptible: true
+
+- type: replace
+  path: /vm_extensions/-
+  value:
+    name: spot
+    cloud_properties:
+      provisioning_model: SPOT
 `
 )
