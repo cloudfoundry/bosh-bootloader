@@ -192,6 +192,9 @@ func (o *OpsGenerator) generateGCPOps(state storage.State) ([]op, error) {
 			Name: "lb",
 			CloudProperties: lbCloudProperties{
 				TargetPool: "((concourse_target_pool))",
+				Tags: []string{
+					"concourse",
+				},
 			},
 		}))
 	}

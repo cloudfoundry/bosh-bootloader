@@ -4,3 +4,5 @@
     name: lb
     cloud_properties:
       target_pool: ((concourse_target_pool))
+      tags:
+      - concourse
