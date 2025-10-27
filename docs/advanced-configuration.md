@@ -105,7 +105,7 @@ instance_groups:
 
 ## <a name='plan-patches'> [Plan Patches](https://github.com/cloudfoundry/bosh-bootloader/tree/master/plan-patches)
 
-Through operations files and terraform overrides, all sorts of wild modifications can be done to the vanilla bosh environments that bbl creates. The basic principal of a plan patch is to make several modifications to a bbl plan in override files that bbl finds under `terraform/`, `cloud-config/`, and `{create,delete}-{jumpbox,director}.sh` . BBL will read and merge those into it's plan when you run `bbl up`.
+Through operations files and terraform overrides, all sorts of wild modifications can be done to the vanilla bosh environments that bbl creates. The basic principle of a plan patch is to make several modifications to a `bbl plan` in override files that bbl finds under `terraform/`, `cloud-config/`, and `{create,delete}-{jumpbox,director}.sh` . BBL will read and merge those into it's plan when you run `bbl up`.
 
 We've used plan patches to [deploy bosh-lite directors on gcp](https://github.com/cloudfoundry/bosh-bootloader/tree/master/plan-patches/bosh-lite-gcp), to deploy CF Isolation Segments on [public](https://github.com/cloudfoundry/bosh-bootloader/tree/master/plan-patches/iso-segs-gcp) [clouds](https://github.com/cloudfoundry/bosh-bootloader/tree/master/plan-patches/iso-segs-aws), and to deploy bosh managed k8s clusters with working cloud-providers using [cfcr](https://github.com/cloudfoundry-incubator/kubo-deployment/tree/master/manifests).
 
