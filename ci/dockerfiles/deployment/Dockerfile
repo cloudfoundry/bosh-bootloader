@@ -22,7 +22,6 @@ RUN \
             tree \
             host \
             python3 \
-            python3-distutils \
             ruby \
             netcat-openbsd \
       && \
