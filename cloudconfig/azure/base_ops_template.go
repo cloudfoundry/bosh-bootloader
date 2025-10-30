@@ -65,7 +65,7 @@ const (
   value:
     ephemeral_disk:
       size: 20480
-    instance_type: Standard_D2ls_v6
+    instance_type: Standard_D2s_v5
 
 - type: replace
   path: /vm_types/name=medium/cloud_properties?
