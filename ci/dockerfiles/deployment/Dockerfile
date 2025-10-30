@@ -2,8 +2,8 @@ FROM golang:latest
 LABEL maintainer="https://github.com/cloudfoundry/bosh-bootloader"
 
 ARG GITHUB_TOKEN
-ENV TERRAFORM_VERSION 1.4.5
-ENV RUBY_VERSION 3.0.1
+ENV TERRAFORM_VERSION=1.4.5
+ENV RUBY_VERSION=3.0.1
 
 # Create testuser
 RUN mkdir -p /home/testuser && \
@@ -30,9 +30,6 @@ RUN \
 # Install bundler
 RUN gem install bundler -no-ri-no-rdoc
 
-# Install bosh_cli v1
-RUN gem install bosh_cli -no-ri-no-rdoc
-
 # Install terraform
 RUN wget https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip && \
   unzip terraform_${TERRAFORM_VERSION}_linux_amd64.zip && \
@@ -40,8 +37,9 @@ RUN wget https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform
   mv terraform /usr/local/bin/terraform
 
 # Install gcloud
-RUN echo "deb https://packages.cloud.google.com/apt cloud-sdk main" | tee -a /etc/apt/sources.list.d/google-cloud-sdk.list && \
-  curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add - && \
+RUN apt-get install -y ca-certificates gnupg curl && \
+  curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | gpg --dearmor -o /usr/share/keyrings/cloud.google.gpg && \
+  echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" | tee -a /etc/apt/sources.list.d/google-cloud-sdk.list && \
   apt-get update && \
   apt-get -qqy install google-cloud-cli
 
