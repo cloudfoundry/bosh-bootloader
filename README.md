@@ -34,6 +34,47 @@ $ brew install bosh-cli
 $ brew install bbl
 ```
 
+**Ubuntu/Debian**
+
+```sh
+# Install prerequisites
+$ sudo apt-get update
+$ sudo apt install -y gnupg wget
+
+# Import the CloudFoundry APT repo GPG key
+$ wget -q -O - https://raw.githubusercontent.com/cloudfoundry/bosh-apt-resources/master/public.key | sudo apt-key add -
+
+# Add the CloudFoundry APT repo
+$ echo "deb http://apt.ci.cloudfoundry.org stable main" | sudo tee /etc/apt/sources.list.d/bosh-cloudfoundry.list
+
+# Refresh metadata and install packages
+$ sudo apt-get update
+$ sudo apt install -y bosh-cli
+$ sudo apt install -y bosh-bootloader
+```
+
+**Fedora/RedHat**
+
+```sh
+# Install prerequisites
+$ sudo dnf install -y gnupg wget
+
+# Add the CloudFoundry YUM repo
+$ cat <<EOF | sudo tee /etc/yum.repos.d/bosh-cloudfoundry.repo
+[cloudfoundry]
+name=CloudFoundry CLI RPMs
+baseurl=http://rpm.ci.cloudfoundry.org/
+enabled=1
+gpgcheck=1
+gpgkey=https://raw.githubusercontent.com/cloudfoundry/bosh-apt-resources/master/rpm-public.key
+EOF
+
+# Refresh metadata and install packages
+$ sudo dnf makecache
+$ sudo dnf install -y bosh-cli
+$ sudo dnf install -y bosh-bootloader
+```
+
 ## Usage
 
 ### IaaS-Specific Getting Started Guides
