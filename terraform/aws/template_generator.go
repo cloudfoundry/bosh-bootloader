@@ -15,6 +15,7 @@ type templates struct {
 	cfLB           string
 	cfNLB          string
 	cfDNS          string
+	cfNLBDNS       string
 	concourseLB    string
 	cfCommon       string
 	sslCertificate string
@@ -54,7 +55,7 @@ func (tg TemplateGenerator) Generate(state storage.State) string {
 		template = strings.Join([]string{template, tmpls.lbSubnet, tmpls.cfNLB, tmpls.cfCommon, tmpls.sslCertificate, tmpls.isoSeg}, "\n")
 
 		if state.LB.Domain != "" {
-			template = strings.Join([]string{template, tmpls.cfDNS}, "\n")
+			template = strings.Join([]string{template, tmpls.cfNLBDNS}, "\n")
 		}
 	}
 
@@ -68,6 +69,7 @@ func (t TemplateGenerator) readTemplates() templates {
 		"lb_subnet.tf":       "",
 		"cf_lb.tf":           "",
 		"cf_dns.tf":          "",
+		"cf_nlb_dns.tf":      "",
 		"cf_lb_common.tf":    "",
 		"cf_nlb.tf":          "",
 		"concourse_lb.tf":    "",
@@ -107,6 +109,7 @@ func (t TemplateGenerator) readTemplates() templates {
 		cfCommon:       listings["cf_lb_common.tf"],
 		cfLB:           listings["cf_lb.tf"],
 		cfDNS:          listings["cf_dns.tf"],
+		cfNLBDNS:       listings["cf_nlb_dns.tf"],
 		cfNLB:          listings["cf_nlb.tf"],
 		concourseLB:    listings["concourse_lb.tf"],
 		sslCertificate: listings["ssl_certificate.tf"],

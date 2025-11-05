@@ -27,7 +27,7 @@ func (l AWSLBs) Execute(subcommandFlags []string, state storage.State) error {
 	}
 
 	switch state.LB.Type {
-	case "cf":
+	case "cf", "nlb":
 		if len(subcommandFlags) > 0 && subcommandFlags[0] == "--json" {
 			lbOutput, err := json.Marshal(struct {
 				RouterLBName           string   `json:"cf_router_lb,omitempty"`
