@@ -76,6 +76,33 @@ var _ = Describe("TemplateGenerator", func() {
 				checkTemplate(template, expectedTemplate)
 			})
 		})
+
+		Context("when a nlb type is provided with no system domain", func() {
+			BeforeEach(func() {
+				expectedTemplate = expectTemplate("base", "iam", "vpc", "lb_subnet", "cf_nlb", "cf_lb_common", "ssl_certificate", "iso_segments")
+				lb = storage.LB{
+					Type: "nlb",
+				}
+			})
+			It("adds the nlb lb templates without DNS", func() {
+				template := templateGenerator.Generate(storage.State{LB: lb})
+				checkTemplate(template, expectedTemplate)
+			})
+		})
+
+		Context("when a nlb type is provided with a system domain", func() {
+			BeforeEach(func() {
+				expectedTemplate = expectTemplate("base", "iam", "vpc", "lb_subnet", "cf_nlb", "cf_lb_common", "ssl_certificate", "iso_segments", "cf_nlb_dns")
+				lb = storage.LB{
+					Type:   "nlb",
+					Domain: "some-domain",
+				}
+			})
+			It("adds the nlb DNS template that references aws_lb resources", func() {
+				template := templateGenerator.Generate(storage.State{LB: lb})
+				checkTemplate(template, expectedTemplate)
+			})
+		})
 	})
 })
 
