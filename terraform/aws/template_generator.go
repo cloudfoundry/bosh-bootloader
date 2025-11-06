@@ -13,10 +13,8 @@ type templates struct {
 	iam            string
 	lbSubnet       string
 	cfLB           string
-	cfNLB          string
 	cfDNS          string
 	concourseLB    string
-	cfCommon       string
 	sslCertificate string
 	isoSeg         string
 	vpc            string
@@ -45,13 +43,7 @@ func (tg TemplateGenerator) Generate(state storage.State) string {
 	case "concourse":
 		template = strings.Join([]string{template, tmpls.lbSubnet, tmpls.concourseLB}, "\n")
 	case "cf":
-		template = strings.Join([]string{template, tmpls.lbSubnet, tmpls.cfLB, tmpls.cfCommon, tmpls.sslCertificate, tmpls.isoSeg}, "\n")
-
-		if state.LB.Domain != "" {
-			template = strings.Join([]string{template, tmpls.cfDNS}, "\n")
-		}
-	case "nlb":
-		template = strings.Join([]string{template, tmpls.lbSubnet, tmpls.cfNLB, tmpls.cfCommon, tmpls.sslCertificate, tmpls.isoSeg}, "\n")
+		template = strings.Join([]string{template, tmpls.lbSubnet, tmpls.cfLB, tmpls.sslCertificate, tmpls.isoSeg}, "\n")
 
 		if state.LB.Domain != "" {
 			template = strings.Join([]string{template, tmpls.cfDNS}, "\n")
@@ -68,8 +60,6 @@ func (t TemplateGenerator) readTemplates() templates {
 		"lb_subnet.tf":       "",
 		"cf_lb.tf":           "",
 		"cf_dns.tf":          "",
-		"cf_lb_common.tf":    "",
-		"cf_nlb.tf":          "",
 		"concourse_lb.tf":    "",
 		"ssl_certificate.tf": "",
 		"iso_segments.tf":    "",
@@ -104,10 +94,8 @@ func (t TemplateGenerator) readTemplates() templates {
 		base:           listings["base.tf"],
 		iam:            listings["iam.tf"],
 		lbSubnet:       listings["lb_subnet.tf"],
-		cfCommon:       listings["cf_lb_common.tf"],
 		cfLB:           listings["cf_lb.tf"],
 		cfDNS:          listings["cf_dns.tf"],
-		cfNLB:          listings["cf_nlb.tf"],
 		concourseLB:    listings["concourse_lb.tf"],
 		sslCertificate: listings["ssl_certificate.tf"],
 		isoSeg:         listings["iso_segments.tf"],
