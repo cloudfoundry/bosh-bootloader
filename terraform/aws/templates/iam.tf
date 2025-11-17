@@ -80,7 +80,11 @@ resource "aws_iam_policy" "bosh" {
         "ec2:RequestSpotInstances",
         "ec2:CreateRoute",
         "ec2:DescribeRouteTables",
-        "ec2:ReplaceRoute"
+        "ec2:ReplaceRoute",
+        "ec2:CreateNetworkInterface",
+        "ec2:DeleteNetworkInterface",
+        "ec2:DescribeNetworkInterfaces",
+        "ec2:ModifyNetworkInterfaceAttribute"
 	  ],
 	  "Effect": "Allow",
 	  "Resource": "*"
