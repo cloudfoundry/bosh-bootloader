@@ -1,0 +1,25 @@
+# This ops file adds the 'spot' vm_extension to all Concourse instance groups
+# to enable GCP Spot VMs for cost savings in development/testing environments.
+#
+# Usage:
+#   bosh deploy -d concourse concourse.yml \
+#     -o concourse-gcp-spot.yml \
+#     ...other ops files...
+#
+# Note: Spot VMs can be preempted at any time and are recommended for
+# non-production environments only.
+
+- type: replace
+  path: /instance_groups/name=db/vm_extensions?
+  value:
+    - spot
+
+- type: replace
+  path: /instance_groups/name=web/vm_extensions?
+  value:
+    - spot
+
+- type: replace
+  path: /instance_groups/name=worker/vm_extensions?
+  value:
+    - spot

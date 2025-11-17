@@ -774,7 +774,7 @@ jobs:
       DELETE_TERRAFORM_PLUGINS: false
     input_mapping:
       bbl-state: relint-envs
-      bbl-config: relint-envs
+      bbl-config: bbl-ci/plan-patches/spot-gcp
     on_failure:
       task: bbl-up-destroy-infrastructure
       file: cf-deployment-concourse-tasks/bbl-destroy/task.yml
@@ -826,7 +826,7 @@ jobs:
       BBL_GCP_SERVICE_ACCOUNT_KEY: ((gcp_json_key))
       SYSTEM_DOMAIN: bump-deployments-cf.bbl.ci.cloudfoundry.org
       VARS_STORE_FILE: bump-deployments/bbl-gcp-cf/deployment-vars.yml
-      OPS_FILES: operations/use-compiled-releases.yml operations/experimental/fast-deploy-with-downtime-and-danger.yml
+      OPS_FILES: operations/use-compiled-releases.yml operations/experimental/fast-deploy-with-downtime-and-danger.yml operations/experimental/use-spot-instances.yml
     on_failure:
       do:
       - task: remove-from-gcp-dns
@@ -992,16 +992,6 @@ jobs:
           rebase: true
           repository: updated-bbl-state
 
-  - task: extend-cloud-config
-    file: runtime-ci/tasks/bosh-extend-cloud-config/task.yml
-    image: cf-deployment-concourse-tasks-bbl-dev
-    input_mapping:
-      bbl-state: updated-bbl-state
-      ops-files: bbl-ci
-    params:
-      BBL_STATE_DIR: bump-deployments/bbl-gcp-concourse
-      OPS_FILES: bbl-ci/ci/ops-files/replace-n1-machine-types.yml
-
   - task: create-bosh-source-file
     file: bbl-ci/ci/tasks/create-bosh-deployment-source-file/task.yml
     image: cf-deployment-concourse-tasks-bbl-dev
@@ -1034,6 +1024,7 @@ jobs:
         - concourse-deployment/cluster/operations/tls.yml
         - concourse-deployment/cluster/operations/tls-vars.yml
         - concourse-deployment/cluster/operations/web-network-extension.yml
+        - bbl-ci/ci/ops-files/concourse-gcp-spot.yml
     on_failure:
       task: bbl-up-destroy-infrastructure
       file: cf-deployment-concourse-tasks/bbl-destroy/task.yml
