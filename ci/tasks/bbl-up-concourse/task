@@ -29,7 +29,7 @@ function main() {
       ${name_flag} \
       --lb-type concourse > "${root_dir}/bbl_plan.txt"
 
-    cp -r bbl-ci/plan-patches/spot-gcp .
+    cp -r ${root_dir}/bbl-ci/plan-patches/spot-gcp .
 
     bbl --debug up \
       ${name_flag} \

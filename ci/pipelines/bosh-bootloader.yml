@@ -769,12 +769,13 @@ jobs:
       LB_DOMAIN: bump-deployments-cf.bbl.ci.cloudfoundry.org
       BBL_ENV_NAME: bump-deployments-downstream
       BBL_STATE_DIR: bump-deployments/bbl-gcp-cf
+      BBL_CONFIG_DIR: plan-patches/spot-gcp
       GIT_COMMIT_EMAIL: cf-infrastructure@pivotal.io
       GIT_COMMIT_USERNAME: CI Infra Bot
       DELETE_TERRAFORM_PLUGINS: false
     input_mapping:
       bbl-state: relint-envs
-      bbl-config: bbl-ci/plan-patches/spot-gcp
+      bbl-config: bbl-ci
     on_failure:
       task: bbl-up-destroy-infrastructure
       file: cf-deployment-concourse-tasks/bbl-destroy/task.yml
