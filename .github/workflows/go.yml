@@ -11,7 +11,7 @@ jobs:
     name: lint
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           submodules: true
       - uses: actions/setup-go@v6
@@ -22,7 +22,7 @@ jobs:
   test-unit:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
       with:
         submodules: true
     - uses: actions/setup-go@v6
