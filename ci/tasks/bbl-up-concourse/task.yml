@@ -41,6 +41,7 @@ params:
   BBL_IAAS:
   BBL_ENV_NAME:
   BBL_LB_TYPE: concourse
+  BBL_PLAN_PATCH:  # Optional: Plan patch directory name (e.g., "spot-gcp", "bosh-lite-gcp")
 
   GIT_COMMIT_EMAIL: "cf-infrastructure@pivotal.io"
   GIT_COMMIT_USERNAME: "CI Infra Bot"

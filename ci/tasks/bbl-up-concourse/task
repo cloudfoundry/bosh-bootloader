@@ -29,7 +29,16 @@ function main() {
       ${name_flag} \
       --lb-type concourse > "${root_dir}/bbl_plan.txt"
 
-    cp -r ${root_dir}/bbl-ci/plan-patches/spot-gcp .
+    # Apply plan patch if specified
+    if [ -n "${BBL_PLAN_PATCH:-}" ]; then
+      echo "Applying plan patch: ${BBL_PLAN_PATCH}"
+      if [ -d "${root_dir}/bbl-ci/plan-patches/${BBL_PLAN_PATCH}" ]; then
+        cp -r "${root_dir}/bbl-ci/plan-patches/${BBL_PLAN_PATCH}" .
+      else
+        echo "Warning: Plan patch '${BBL_PLAN_PATCH}' not found"
+        exit 1
+      fi
+    fi
 
     bbl --debug up \
       ${name_flag} \
