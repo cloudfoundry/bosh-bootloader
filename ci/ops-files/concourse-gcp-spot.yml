@@ -8,18 +8,18 @@
 #
 # Note: Spot VMs can be preempted at any time and are recommended for
 # non-production environments only.
+#
+# This appends 'spot' to vm_extensions without removing existing extensions
+# like 'lb' which is required for load balancer configuration.
 
 - type: replace
-  path: /instance_groups/name=db/vm_extensions?
-  value:
-    - spot
+  path: /instance_groups/name=db/vm_extensions?/-
+  value: spot
 
 - type: replace
-  path: /instance_groups/name=web/vm_extensions?
-  value:
-    - spot
+  path: /instance_groups/name=web/vm_extensions?/-
+  value: spot
 
 - type: replace
-  path: /instance_groups/name=worker/vm_extensions?
-  value:
-    - spot
+  path: /instance_groups/name=worker/vm_extensions?/-
+  value: spot
