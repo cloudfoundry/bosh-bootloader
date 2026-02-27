@@ -47,6 +47,7 @@ var _ = Describe("OpsGenerator", func() {
 			"cf_tcp_lb_internal_security_group":    "some-cf-tcp-lb-internal-security-group",
 			"concourse_lb_target_groups":           []string{"some-concourse-lb-target-group", "some-other-concourse-lb-target-group"},
 			"concourse_lb_internal_security_group": "some-concourse-lb-internal-security-group",
+			"dualstack":                            false,
 			"internal_az_subnet_id_mapping": map[string]interface{}{
 				"us-east-1c": "some-internal-subnet-ids-3",
 				"us-east-1a": "some-internal-subnet-ids-1",
@@ -136,6 +137,7 @@ cf_tcp_lb_internal_security_group: some-cf-tcp-lb-internal-security-group
 cf_iso_router_lb_name: some-cf-iso-seg-router-lb-name
 concourse_lb_target_groups: [some-concourse-lb-target-group, some-other-concourse-lb-target-group]
 concourse_lb_internal_security_group: some-concourse-lb-internal-security-group
+dualstack: false
 internal_az_subnet_cidr_mapping:
   us-east-1a: 10.0.16.0/20
   us-east-1b: 10.0.32.0/20
@@ -191,7 +193,7 @@ iso_az_subnet_id_mapping:
 				Expect(err).To(MatchError(fmt.Sprintf("missing %s terraform output", outputKey)))
 			},
 				Entry("when internal_security_group is missing", "internal_security_group", ""),
-
+				Entry("when dualstack is missing", "dualstack", "nlb"),
 				Entry("when internal_az_subnet_id_mapping is missing", "internal_az_subnet_id_mapping", "cf"),
 				Entry("when internal_az_subnet_cidr_mapping is missing", "internal_az_subnet_cidr_mapping", "cf"),
 				Entry("when cf_router_lb_name is missing", "cf_router_lb_name", "cf"),
