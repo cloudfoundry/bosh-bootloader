@@ -5,8 +5,10 @@ set -e -x -u
 root="${PWD}"
 version=$(cat "${root}/bbl-release/version")
 
-shaOS=$(shasum -a 256 bbl-release/bbl-*_osx | cut -d ' ' -f 1)
-shaLinux=$(shasum -a 256 bbl-release/bbl-*_linux_x86-64 | cut -d ' ' -f 1)
+shaOSAmd64=$(shasum -a 256 bbl-release/bbl-*_osx_amd64 | cut -d ' ' -f 1)
+shaOSArm64=$(shasum -a 256 bbl-release/bbl-*_osx_arm64 | cut -d ' ' -f 1)
+shaLinuxAmd64=$(shasum -a 256 bbl-release/bbl-*_linux_amd64 | cut -d ' ' -f 1)
+shaLinuxArm64=$(shasum -a 256 bbl-release/bbl-*_linux_arm64 | cut -d ' ' -f 1)
 
 pushd homebrew-tap
   cat <<EOF > bbl.rb
@@ -16,28 +18,42 @@ class Bbl < Formula
   version "v${version}"
 
   if OS.mac?
-    url "https://github.com/cloudfoundry/bosh-bootloader/releases/download/#{version}/bbl-#{version}_osx"
-    sha256 "${shaOS}"
+    if Hardware::CPU.arm?
+      url "https://github.com/cloudfoundry/bosh-bootloader/releases/download/#{version}/bbl-#{version}_osx_arm64"
+      sha256 "${shaOSArm64}"
+    else
+      url "https://github.com/cloudfoundry/bosh-bootloader/releases/download/#{version}/bbl-#{version}_osx_amd64"
+      sha256 "${shaOSAmd64}"
+    end
   elsif OS.linux?
-    url "https://github.com/cloudfoundry/bosh-bootloader/releases/download/#{version}/bbl-#{version}_linux_x86-64"
-    sha256 "${shaLinux}"
+    if Hardware::CPU.arm?
+      url "https://github.com/cloudfoundry/bosh-bootloader/releases/download/#{version}/bbl-#{version}_linux_arm64"
+      sha256 "${shaLinuxArm64}"
+    else
+      url "https://github.com/cloudfoundry/bosh-bootloader/releases/download/#{version}/bbl-#{version}_linux_amd64"
+      sha256 "${shaLinuxAmd64}"
+    end
   end
-
-  depends_on :arch => :x86_64
-  depends_on "terraform" => "0.11.0"
-  depends_on "cloudfoundry/tap/bosh-cli" => "2.0.48"
 
   def install
     binary_name = "bbl"
     if OS.mac?
-      bin.install "bbl-#{version}_osx" => binary_name
+      if Hardware::CPU.arm?
+        bin.install "bbl-#{version}_osx_arm64" => binary_name
+      else
+        bin.install "bbl-#{version}_osx_amd64" => binary_name
+      end
     elsif OS.linux?
-      bin.install "bbl-#{version}_linux_x86-64" => binary_name
+      if Hardware::CPU.arm?
+        bin.install "bbl-#{version}_linux_arm64" => binary_name
+      else
+        bin.install "bbl-#{version}_linux_amd64" => binary_name
+      end
     end
   end
 
   test do
-    system "#{bin}/#{binary_name} --help"
+    system "#{bin}/bbl", "--help"
   end
 end
 EOF
@@ -47,8 +63,8 @@ EOF
   git add bbl.rb
   if ! [ -z "$(git status --porcelain)" ];
   then
-    git config --global user.email "cf-infrastructure@pivotal.io"
-    git config --global user.name "CF Infrastructure"
+    git config --global user.email "cf-bosh-eng@pivotal.io"
+    git config --global user.name "BOSH CI"
     git commit -m "Release bbl ${version}"
   else
     echo "No new version to commit"
