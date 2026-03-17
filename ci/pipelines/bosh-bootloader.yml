@@ -19,7 +19,7 @@ groups:
   jobs:
   - bump-bbl-docs
   - bump-bbl-deployment-image
-#  - bump-brew-tap
+  - bump-brew-tap
 
 resource_types:
 - name: bosh-deployment
@@ -125,12 +125,12 @@ resources:
     access_token: ((github-access-token))
     drafts: false
 
-# - name: homebrew-tap
-#   type: git
-#   source:
-#     uri: git@github.com:cloudfoundry/homebrew-tap.git
-#     branch: master
-#     private_key: ((cf_infra_bot_github_user.private_key))
+- name: homebrew-tap
+  type: git
+  source:
+    uri: git@github.com:cloudfoundry/homebrew-tap
+    branch: master
+    private_key: ((github_deploy_key_homebrew-tap.private_key))
 
 # - name: terraform
 #   type: github-release
@@ -1335,26 +1335,25 @@ jobs:
       rebase: true
       repository: bbl-docs
 
-# - name: bump-brew-tap
-#   plan:
-#   - in_parallel:
-#     - get: homebrew-tap
-#     - get: bbl-release
-#       resource: bbl-release-official
-#       params:
-#         version:
-#           tag: bbl-release/number
-#         globs:
-#         - bbl-*_osx
-#         - bbl-*_linux_x86-64
-#         - bbl-*_windows
-#       # trigger: true
-#     - get: bbl-ci
-#       resource: bosh-bootloader-ci
+- name: bump-brew-tap
+  plan:
+  - in_parallel:
+    - get: homebrew-tap
+    - get: bbl-release
+      resource: bbl-release-official
+      params:
+        globs:
+        - bbl-*_osx_amd64
+        - bbl-*_osx_arm64
+        - bbl-*_linux_amd64
+        - bbl-*_linux_arm64
+      trigger: true
+    - get: bbl-ci
+      resource: bosh-bootloader-ci
 
-#   - task: update-brew-formula
-#     file: bbl-ci/ci/tasks/bump-brew-tap/task.yml
+  - task: update-brew-formula
+    file: bbl-ci/ci/tasks/bump-brew-tap/task.yml
 
-#   - put: homebrew-tap
-#     params:
-#       repository: updated-brew-tap/homebrew-tap
+  - put: homebrew-tap
+    params:
+      repository: updated-brew-tap/homebrew-tap
