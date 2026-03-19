@@ -932,7 +932,8 @@ jobs:
 
 - name: bbl-gcp-concourse-bump-deployments
   serial: true
-  build_logs_to_retain: 100
+  build_log_retention:
+    builds: 100
   plan:
   - in_parallel:
     - get: concourse-deployment
@@ -1069,7 +1070,8 @@ jobs:
 
 # - name: bbl-lite-gcp-bump-deployments
 #   serial: true
-#   build_logs_to_retain: 100
+#   build_log_retention:
+#     builds: 100
 #   plan:
 #   - in_parallel:
 #     - get: bosh-bootloader
