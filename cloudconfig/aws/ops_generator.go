@@ -141,11 +141,22 @@ func (o OpsGenerator) GenerateVars(state storage.State) (string, error) {
 	}
 	if dualstack {
 		internalAZSubnetIPv6CIDRMap := terraformOutputs.GetStringMap("internal_az_subnet_ipv6_cidr_mapping")
-		ipv6AvailabilityZones, err := generateAZs(3, internalAZSubnetIDMap, internalAZSubnetIPv6CIDRMap)
-		if err != nil {
-			return "", err
+		var azNames []string
+		for azName := range internalAZSubnetIDMap {
+			azNames = append(azNames, azName)
 		}
-		azs = append(azs, ipv6AvailabilityZones...)
+		sort.Strings(azNames)
+		for azIndex, azName := range azNames {
+			cidr, ok := internalAZSubnetIPv6CIDRMap[azName]
+			if !ok {
+				return "", errors.New("missing AZ in terraform output: internal_az_subnet_ipv6_cidr_mapping")
+			}
+			v6Vars, err := azifyV6(azIndex, cidr)
+			if err != nil {
+				return "", err
+			}
+			azs = append(azs, v6Vars)
+		}
 	}
 
 	varsYAML := map[string]interface{}{}
@@ -160,12 +171,8 @@ func (o OpsGenerator) GenerateVars(state storage.State) (string, error) {
 	isoSegAZSubnetIDMap := terraformOutputs.GetStringMap("iso_az_subnet_id_mapping")
 	isoSegAZSubnetCIDRMap := terraformOutputs.GetStringMap("iso_az_subnet_cidr_mapping")
 	if len(isoSegAZSubnetIDMap) > 0 && len(isoSegAZSubnetCIDRMap) > 0 {
-		// If not running IPv6, start the index after len(azs) many subnets
-		// If running IPv6, double we need to offset by another len(azs) to accommodate the IPv6 entries
-		offset := len(azs)
-		if dualstack {
-			offset = len(azs) * 2
-		}
+		// Iso segment AZ indices start after the internal AZs
+		offset := len(internalAZSubnetIDMap)
 		isoSegAzs, err := generateAZs(offset, isoSegAZSubnetIDMap, isoSegAZSubnetCIDRMap)
 		if err == nil {
 			for _, az := range isoSegAzs {
@@ -242,6 +249,7 @@ func createOp(opType, opPath string, value interface{}) op {
 func (o OpsGenerator) generateOps(state storage.State) ([]op, error) {
 	ops := []op{}
 	subnets := []networkSubnet{}
+	subnetsV6 := []networkSubnet{}
 
 	azs, err := o.availabilityZones.RetrieveAZs(state.AWS.Region)
 	if err != nil {
@@ -257,14 +265,10 @@ func (o OpsGenerator) generateOps(state storage.State) ([]op, error) {
 		})
 		ops = append(ops, azOp)
 
-		// IPv4 Subnets don't need offset
-		ipv4Subnet := generateNetworkSubnet(i, 0)
-		subnets = append(subnets, ipv4Subnet)
+		subnets = append(subnets, generateNetworkSubnet(i))
 
-		if state.LB.Type == "nlb" {
-			// IPv6 subnets need to set the same values as IPv4 for
-			// AZ name (e.g z1, z2, z3) but require an offset value for templating reasons
-			subnets = append(subnets, generateNetworkSubnet(i, len(azs)))
+		if state.LB.DualStack {
+			subnetsV6 = append(subnetsV6, generateNetworkSubnetV6(i))
 		}
 	}
 
@@ -279,6 +283,20 @@ func (o OpsGenerator) generateOps(state storage.State) ([]op, error) {
 		Subnets: subnets,
 		Type:    "manual",
 	}))
+
+	if state.LB.DualStack {
+		ops = append(ops, createOp("replace", "/networks/-", network{
+			Name:    "private_v6",
+			Subnets: subnetsV6,
+			Type:    "manual",
+		}))
+
+		ops = append(ops, createOp("replace", "/networks/-", network{
+			Name:    "default_v6",
+			Subnets: subnetsV6,
+			Type:    "manual",
+		}))
+	}
 
 	switch state.LB.Type {
 	case "nlb":
@@ -344,21 +362,63 @@ func azify(az int, azName, cidr, subnet string) (map[string]string, error) {
 	}, nil
 }
 
-func generateNetworkSubnet(az int, offset int) networkSubnet {
+func azifyV6(az int, cidr string) (map[string]string, error) {
+	parsedCidr, err := bosh.ParseCIDRBlock(cidr)
+	if err != nil {
+		return map[string]string{}, err
+	}
+
+	gateway := parsedCidr.GetNthIP(1).String()
+	firstReserved := parsedCidr.GetNthIP(2).String()
+	secondReserved := parsedCidr.GetNthIP(3).String()
+	lastReserved := parsedCidr.GetLastIP().String()
+	lastStatic := parsedCidr.GetLastIP().Subtract(1).String()
+	firstStatic := parsedCidr.GetLastIP().Subtract(65).String()
+
+	return map[string]string{
+		fmt.Sprintf("az%d_gateway_v6", az+1):    gateway,
+		fmt.Sprintf("az%d_range_v6", az+1):      cidr,
+		fmt.Sprintf("az%d_reserved_1_v6", az+1): fmt.Sprintf("%s-%s", firstReserved, secondReserved),
+		fmt.Sprintf("az%d_reserved_2_v6", az+1): lastReserved,
+		fmt.Sprintf("az%d_static_v6", az+1):     fmt.Sprintf("%s-%s", firstStatic, lastStatic),
+	}, nil
+}
+
+func generateNetworkSubnet(az int) networkSubnet {
 	az++
 	return networkSubnet{
 		AZ:      fmt.Sprintf("z%d", az),
-		Gateway: fmt.Sprintf("((az%d_gateway))", az+offset),
-		Range:   fmt.Sprintf("((az%d_range))", az+offset),
+		Gateway: fmt.Sprintf("((az%d_gateway))", az),
+		Range:   fmt.Sprintf("((az%d_range))", az),
 		Reserved: []string{
-			fmt.Sprintf("((az%d_reserved_1))", az+offset),
-			fmt.Sprintf("((az%d_reserved_2))", az+offset),
+			fmt.Sprintf("((az%d_reserved_1))", az),
+			fmt.Sprintf("((az%d_reserved_2))", az),
 		},
 		Static: []string{
-			fmt.Sprintf("((az%d_static))", az+offset),
+			fmt.Sprintf("((az%d_static))", az),
 		},
 		CloudProperties: networkSubnetCloudProperties{
-			Subnet:         fmt.Sprintf("((az%d_subnet))", az+offset),
+			Subnet:         fmt.Sprintf("((az%d_subnet))", az),
+			SecurityGroups: []string{"((internal_security_group))"},
+		},
+	}
+}
+
+func generateNetworkSubnetV6(az int) networkSubnet {
+	az++
+	return networkSubnet{
+		AZ:      fmt.Sprintf("z%d", az),
+		Gateway: fmt.Sprintf("((az%d_gateway_v6))", az),
+		Range:   fmt.Sprintf("((az%d_range_v6))", az),
+		Reserved: []string{
+			fmt.Sprintf("((az%d_reserved_1_v6))", az),
+			fmt.Sprintf("((az%d_reserved_2_v6))", az),
+		},
+		Static: []string{
+			fmt.Sprintf("((az%d_static_v6))", az),
+		},
+		CloudProperties: networkSubnetCloudProperties{
+			Subnet:         fmt.Sprintf("((az%d_subnet))", az),
 			SecurityGroups: []string{"((internal_security_group))"},
 		},
 	}

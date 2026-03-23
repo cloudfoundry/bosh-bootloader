@@ -9,7 +9,7 @@ resource "aws_lb" "cf_ssh_lb" {
   enable_cross_zone_load_balancing = true
 
   # idle_timeout = var.elb_idle_timeout
-  ip_address_type = "dualstack"
+  ip_address_type = var.dualstack ? "dualstack" : "ipv4"
 
   tags = {
     Name = var.env_id
@@ -27,7 +27,7 @@ resource "aws_lb" "cf_router_lb" {
   enable_cross_zone_load_balancing = true
 
   # idle_timeout = var.elb_idle_timeout
-  ip_address_type = "dualstack"
+  ip_address_type = var.dualstack ? "dualstack" : "ipv4"
 
   tags = {
     Name = var.env_id
@@ -45,7 +45,7 @@ resource "aws_lb" "cf_tcp_lb" {
   enable_cross_zone_load_balancing = true
 
   # idle_timeout = var.elb_idle_timeout
-  ip_address_type = "dualstack"
+  ip_address_type = var.dualstack ? "dualstack" : "ipv4"
 
   tags = {
     Name = var.env_id

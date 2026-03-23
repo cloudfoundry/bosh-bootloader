@@ -29,7 +29,7 @@ resource "aws_subnet" "iso_subnets" {
   cidr_block                      = cidrsubnet(var.vpc_cidr, 4, count.index + length(var.availability_zones) + 1)
   ipv6_cidr_block                 = var.dualstack ? "${cidrsubnet(aws_vpc.vpc[0].ipv6_cidr_block, 8, count.index + 2 + length(var.availability_zones))}" : null
   availability_zone               = element(var.availability_zones, count.index)
-  assign_ipv6_address_on_creation = var.dualstack
+  assign_ipv6_address_on_creation = false
   enable_dns64                    = var.dualstack
 
   tags = {

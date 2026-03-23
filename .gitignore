@@ -41,3 +41,4 @@ bbl/debug
 # packrd
 **/*-packr.go
 bbl/packrd
+bbl-env
