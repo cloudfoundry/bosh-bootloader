@@ -23,7 +23,7 @@ groups:
 
 resource_types:
 - name: bosh-deployment
-  type: docker-image
+  type: registry-image
   source:
     repository: cloudfoundry/bosh-deployment-resource
 
