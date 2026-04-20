@@ -162,7 +162,7 @@ resources:
     uri: https://github.com/cloudfoundry/cf-deployment-concourse-tasks.git
 
 - name: cf-deployment-concourse-tasks-bbl-dev
-  type: docker-image
+  type: registry-image
   source:
     repository: cfinfrastructure/cf-deployment-concourse-tasks-bbl-dev
     tag: main
@@ -171,7 +171,7 @@ resources:
     email: cf-release-integration+dockerhub-push-bot@pivotal.io
 
 - name: cf-deployment-concourse-tasks-docker-image
-  type: docker-image
+  type: registry-image
   source:
     repository: cloudfoundry/cf-deployment-concourse-tasks
     tag: latest
