@@ -4,6 +4,7 @@
 * <a href='#opsfile'>Using a BOSH ops-file with bbl</a>
 * <a href='#terraform'>Customizing IaaS Paving with Terraform</a>
 * <a href='#vm-extensions'>Using VM Extensions for Cost Optimization</a>
+* <a href='#dual-stack'>IPv6 Dual-Stack Networking (AWS)</a>
 * <a href='#plan-patches'>Applying and authoring plan patches, bundled modifications to default bbl configurations.</a>
 
 ## <a name='opsfile'></a>Using a BOSH ops-file with bbl
@@ -102,6 +103,33 @@ instance_groups:
 - Best suited for stateless, fault-tolerant workloads
 - Not recommended for singleton instances or databases
 - For legacy compatibility, the `preemptible` vm_extension is also available (uses the older GCP API)
+
+## <a name='dual-stack'></a>IPv6 Dual-Stack Networking (AWS)
+
+On AWS, you can enable IPv6 dual-stack networking for your BOSH environment. This assigns IPv6 CIDRs to all VPCs and subnets, and configures Network Load Balancers (NLBs) for dual-stack operation.
+
+Dual-stack requires the `nlb` load balancer type, as classic AWS Elastic Load Balancers do not support IPv6:
+
+```sh
+bbl plan \
+  --lb-type nlb \
+  --lb-cert path/to/cert.pem \
+  --lb-key path/to/key.pem \
+  --lb-chain path/to/chain.pem \
+  --dual-stack
+
+bbl up
+```
+
+This configures:
+- IPv6 CIDR blocks on the VPC and all subnets (internal, LB, isolation segments)
+- NLB `ip_address_type` set to `dualstack` (IPv4 when `--dual-stack` is not used)
+- IPv6 ingress/egress rules on all security groups
+- Separate `default_v6` and `private_v6` BOSH cloud-config networks for IPv6 subnets, alongside the existing `default` and `private` IPv4 networks
+
+Deployments that want to use IPv6 should reference the `default_v6` network as a secondary network in their manifest. The IPv4 network should remain the primary (with `default: [dns, gateway]`) for control plane communication.
+
+Dual-stack is currently only supported on AWS. Using `--dual-stack` on other IaaS providers will result in an error.
 
 ## <a name='plan-patches'> [Plan Patches](https://github.com/cloudfoundry/bosh-bootloader/tree/master/plan-patches)
 

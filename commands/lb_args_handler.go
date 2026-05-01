@@ -19,6 +19,7 @@ type LBArgs struct {
 	KeyPath   string
 	ChainPath string
 	Domain    string
+	DualStack bool
 }
 
 func NewLBArgsHandler(certificateValidator certificateValidator) LBArgsHandler {
@@ -28,6 +29,10 @@ func NewLBArgsHandler(certificateValidator certificateValidator) LBArgsHandler {
 }
 
 func (l LBArgsHandler) GetLBState(iaas string, args LBArgs) (storage.LB, error) {
+	if args.DualStack && !(iaas == "aws" && args.LBType == "nlb") {
+		return storage.LB{}, errors.New("dual stack networking requires AWS with the 'nlb' load balancer type. Set --lb-type=nlb on AWS, or remove the --dual-stack flag.") //nolint:staticcheck
+	}
+
 	if args.LBType == "" {
 		return storage.LB{}, nil
 	}
@@ -61,11 +66,12 @@ func (l LBArgsHandler) GetLBState(iaas string, args LBArgs) (storage.LB, error) 
 	}
 
 	return storage.LB{
-		Type:   args.LBType,
-		Cert:   string(certData.Cert),
-		Key:    string(certData.Key),
-		Chain:  string(certData.Chain),
-		Domain: args.Domain,
+		Type:      args.LBType,
+		Cert:      string(certData.Cert),
+		Key:       string(certData.Key),
+		Chain:     string(certData.Chain),
+		Domain:    args.Domain,
+		DualStack: args.DualStack,
 	}, nil
 }
 
@@ -77,6 +83,10 @@ func (l LBArgsHandler) Merge(new storage.LB, old storage.LB) storage.LB {
 
 		if new.Type == "" {
 			new.Type = old.Type
+		}
+
+		if !new.DualStack {
+			new.DualStack = old.DualStack
 		}
 	}
 
