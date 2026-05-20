@@ -10,7 +10,7 @@ resource "azurerm_storage_account" "bosh" {
 
   location                 = "${var.region}"
   account_tier             = "Standard"
-  account_replication_type = "GRS"
+  account_replication_type = "LRS"
 
   tags = {
     environment = "${var.env_id}"
