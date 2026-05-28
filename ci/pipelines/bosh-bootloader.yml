@@ -29,7 +29,7 @@ resource_types:
 
 resources:
 - name: docker-bbl-deployment
-  type: docker-image
+  type: registry-image
   source:
     repository: cloudfoundry/bbl-deployment
     username: ((foundationalinfrastructure-dockerhub_username))
@@ -168,7 +168,6 @@ resources:
     tag: main
     username: ((dockerhub_username))
     password: ((dockerhub_password))
-    email: cf-release-integration+dockerhub-push-bot@pivotal.io
 
 - name: cf-deployment-concourse-tasks-docker-image
   type: registry-image
@@ -228,10 +227,26 @@ jobs:
     - get: bosh-bootloader
     - get: bbl-release-official
       trigger: true
+  - task: build-bbl-deployment-image
+    privileged: true
+    config:
+      platform: linux
+      image_resource:
+        type: registry-image
+        source:
+          repository: concourse/oci-build-task
+      inputs:
+      - name: bosh-bootloader
+      outputs:
+      - name: image
+      params:
+        DOCKERFILE: bosh-bootloader/ci/dockerfiles/deployment/Dockerfile
+        CONTEXT: bosh-bootloader/ci/dockerfiles/deployment/
+      run:
+        path: build
   - put: docker-bbl-deployment
     params:
-      # tag: main
-      build: bosh-bootloader/ci/dockerfiles/deployment/
+      image: image/image.tar
 
 - name: sync-version-bump-deployments
   serial: true
@@ -444,11 +459,27 @@ jobs:
     params:
       DOCKERFILE: dockerfiles/cf-deployment-concourse-tasks-bbl-dev/Dockerfile
 
+  - task: build-bbl-dev-image
+    privileged: true
+    config:
+      platform: linux
+      image_resource:
+        type: registry-image
+        source:
+          repository: concourse/oci-build-task
+      inputs:
+      - name: docker-workspace
+      outputs:
+      - name: image
+      params:
+        DOCKERFILE: docker-workspace/Dockerfile
+        CONTEXT: docker-workspace
+      run:
+        path: build
+
   - put: cf-deployment-concourse-tasks-bbl-dev
     params:
-      build: docker-workspace
-      cache: false
-      # tag: main
+      image: image/image.tar
 
 # - name: bbl-aws-cf-bump-deployments
 #   serial: true
