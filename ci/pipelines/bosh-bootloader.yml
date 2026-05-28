@@ -32,6 +32,7 @@ resources:
   type: registry-image
   source:
     repository: cloudfoundry/bbl-deployment
+    tag: latest
     username: ((foundationalinfrastructure-dockerhub_username))
     password: ((foundationalinfrastructure-dockerhub_password))
 
