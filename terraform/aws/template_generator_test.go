@@ -52,7 +52,7 @@ var _ = Describe("TemplateGenerator", func() {
 
 		Context("when a CF lb type is provided with no system domain", func() {
 			BeforeEach(func() {
-				expectedTemplate = expectTemplate("base", "iam", "vpc", "lb_subnet", "cf_lb", "ssl_certificate", "iso_segments")
+				expectedTemplate = expectTemplate("base", "iam", "vpc", "lb_subnet", "cf_lb", "cf_lb_common", "ssl_certificate", "iso_segments")
 				lb = storage.LB{
 					Type: "cf",
 				}
@@ -65,9 +65,36 @@ var _ = Describe("TemplateGenerator", func() {
 
 		Context("when a CF lb type is provided with a system domain", func() {
 			BeforeEach(func() {
-				expectedTemplate = expectTemplate("base", "iam", "vpc", "lb_subnet", "cf_lb", "ssl_certificate", "iso_segments", "cf_dns")
+				expectedTemplate = expectTemplate("base", "iam", "vpc", "lb_subnet", "cf_lb", "cf_lb_common", "ssl_certificate", "iso_segments", "cf_dns")
 				lb = storage.LB{
 					Type:   "cf",
+					Domain: "some-domain",
+				}
+			})
+			It("adds the domain", func() {
+				template := templateGenerator.Generate(storage.State{LB: lb})
+				checkTemplate(template, expectedTemplate)
+			})
+		})
+
+		Context("when an NLB lb type is provided with no system domain", func() {
+			BeforeEach(func() {
+				expectedTemplate = expectTemplate("base", "iam", "vpc", "lb_subnet", "cf_nlb", "cf_lb_common", "ssl_certificate", "iso_segments")
+				lb = storage.LB{
+					Type: "nlb",
+				}
+			})
+			It("adds the lb subnet, cf nlb, ssl cert and iso seg to the base template", func() {
+				template := templateGenerator.Generate(storage.State{LB: lb})
+				checkTemplate(template, expectedTemplate)
+			})
+		})
+
+		Context("when an NLB lb type is provided with a system domain", func() {
+			BeforeEach(func() {
+				expectedTemplate = expectTemplate("base", "iam", "vpc", "lb_subnet", "cf_nlb", "cf_lb_common", "ssl_certificate", "iso_segments", "cf_dns")
+				lb = storage.LB{
+					Type:   "nlb",
 					Domain: "some-domain",
 				}
 			})

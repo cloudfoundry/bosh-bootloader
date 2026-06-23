@@ -136,6 +136,28 @@ var _ = Describe("Plan", func() {
 					Expect(envIDManager.SyncCall.Receives.State.LB).To(Equal(lb))
 				})
 			})
+
+			Context("aws with dual-stack", func() {
+				It("sets LB args with DualStack on the state", func() {
+					err := command.Execute(
+						[]string{
+							"--lb-type", "nlb",
+							"--lb-cert", "cert",
+							"--lb-key", "key",
+							"--lb-chain", "chain",
+							"--dual-stack",
+						}, storage.State{IAAS: "aws"})
+					Expect(err).NotTo(HaveOccurred())
+					Expect(lbArgsHandler.GetLBStateCall.CallCount).To(Equal(1))
+					Expect(lbArgsHandler.GetLBStateCall.Receives.Args).To(Equal(commands.LBArgs{
+						LBType:    "nlb",
+						CertPath:  "cert",
+						KeyPath:   "key",
+						ChainPath: "chain",
+						DualStack: true,
+					}))
+				})
+			})
 		})
 
 		Describe("failure cases", func() {
@@ -316,6 +338,30 @@ var _ = Describe("Plan", func() {
 						KeyPath:   "key",
 						ChainPath: "chain",
 						Domain:    "something.io",
+					}))
+
+					Expect(config.LB).To(Equal(lb))
+				})
+			})
+
+			Context("aws with dual-stack", func() {
+				It("sets LB args with DualStack on the state", func() {
+					config, err := command.ParseArgs(
+						[]string{
+							"--lb-type", "nlb",
+							"--lb-cert", "cert",
+							"--lb-key", "key",
+							"--lb-chain", "chain",
+							"--dual-stack",
+						}, storage.State{IAAS: "aws"})
+					Expect(err).NotTo(HaveOccurred())
+					Expect(lbArgsHandler.GetLBStateCall.CallCount).To(Equal(1))
+					Expect(lbArgsHandler.GetLBStateCall.Receives.Args).To(Equal(commands.LBArgs{
+						LBType:    "nlb",
+						CertPath:  "cert",
+						KeyPath:   "key",
+						ChainPath: "chain",
+						DualStack: true,
 					}))
 
 					Expect(config.LB).To(Equal(lb))

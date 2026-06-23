@@ -66,6 +66,7 @@ var _ = Describe("LBArgsHandler", func() {
 					Expect(lbState.Key).To(Equal(""))
 					Expect(lbState.Chain).To(Equal(""))
 					Expect(lbState.Domain).To(Equal(""))
+					Expect(lbState.DualStack).To(BeFalse())
 					Expect(certificateValidator.ReadAndValidateCall.CallCount).To(Equal(0))
 				})
 			})
@@ -77,6 +78,24 @@ var _ = Describe("LBArgsHandler", func() {
 					Expect(lbState.Type).To(Equal("concourse"))
 					Expect(certificateValidator.ReadAndValidateCall.CallCount).To(Equal(0))
 				})
+			})
+		})
+
+		Context("when lb type is nlb with dualstack", func() {
+			It("returns a storage.LB object with DualStack set", func() {
+				lbState, err := handler.GetLBState("aws", commands.LBArgs{
+					LBType:    "nlb",
+					CertPath:  "/path/to/cert",
+					KeyPath:   "/path/to/key",
+					ChainPath: "/path/to/chain",
+					DualStack: true,
+				})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(lbState.Type).To(Equal("nlb"))
+				Expect(lbState.Cert).To(Equal("some-cert"))
+				Expect(lbState.Key).To(Equal("some-key"))
+				Expect(lbState.Chain).To(Equal("some-chain"))
+				Expect(lbState.DualStack).To(BeTrue())
 			})
 		})
 
@@ -137,6 +156,37 @@ var _ = Describe("LBArgsHandler", func() {
 					Expect(err).To(MatchError("domain is not implemented for concourse load balancers. Remove the --lb-domain flag and try again."))
 				})
 			})
+
+			Context("when dualstack is set on non-AWS IaaS", func() {
+				It("returns an error", func() {
+					_, err := handler.GetLBState("gcp", commands.LBArgs{
+						LBType:    "nlb",
+						DualStack: true,
+					})
+					Expect(err).To(MatchError("dual stack networking requires AWS with the 'nlb' load balancer type. Set --lb-type=nlb on AWS, or remove the --dual-stack flag."))
+				})
+			})
+
+			Context("when dualstack is set without nlb type", func() {
+				It("returns an error", func() {
+					_, err := handler.GetLBState("aws", commands.LBArgs{
+						LBType:    "cf",
+						CertPath:  "/path/to/cert",
+						KeyPath:   "/path/to/key",
+						DualStack: true,
+					})
+					Expect(err).To(MatchError("dual stack networking requires AWS with the 'nlb' load balancer type. Set --lb-type=nlb on AWS, or remove the --dual-stack flag."))
+				})
+			})
+
+			Context("when dualstack is set with empty lb type", func() {
+				It("returns an error", func() {
+					_, err := handler.GetLBState("aws", commands.LBArgs{
+						DualStack: true,
+					})
+					Expect(err).To(MatchError("dual stack networking requires AWS with the 'nlb' load balancer type. Set --lb-type=nlb on AWS, or remove the --dual-stack flag."))
+				})
+			})
 		})
 	})
 
@@ -146,18 +196,20 @@ var _ = Describe("LBArgsHandler", func() {
 
 		BeforeEach(func() {
 			new = storage.LB{
-				Type:   "new-type",
-				Cert:   "new-cert",
-				Key:    "new-key",
-				Chain:  "new-chain",
-				Domain: "new-domain",
+				Type:      "new-type",
+				Cert:      "new-cert",
+				Key:       "new-key",
+				Chain:     "new-chain",
+				Domain:    "new-domain",
+				DualStack: true,
 			}
 			old = storage.LB{
-				Type:   "old-type",
-				Cert:   "old-cert",
-				Key:    "old-key",
-				Chain:  "old-chain",
-				Domain: "old-domain",
+				Type:      "old-type",
+				Cert:      "old-cert",
+				Key:       "old-key",
+				Chain:     "old-chain",
+				Domain:    "old-domain",
+				DualStack: true,
 			}
 		})
 
@@ -176,11 +228,12 @@ var _ = Describe("LBArgsHandler", func() {
 		})
 
 		Context("when the new state is empty", func() {
-			It("keeps the old domain and type", func() {
+			It("keeps the old domain, type, and dualstack", func() {
 				merged := handler.Merge(storage.LB{}, old)
 				Expect(merged).To(Equal(storage.LB{
-					Type:   "old-type",
-					Domain: "old-domain",
+					Type:      "old-type",
+					Domain:    "old-domain",
+					DualStack: true,
 				}))
 			})
 		})
