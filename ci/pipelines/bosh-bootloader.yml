@@ -1,3 +1,15 @@
+#@ def leftovers_task(env_name, state_dir):
+task: bbl-leftovers
+file: bbl-ci/ci/tasks/leftovers/task.yml
+image: cf-deployment-concourse-tasks-bbl-dev
+params:
+  BBL_IAAS: "gcp"
+  BBL_GCP_SERVICE_ACCOUNT_KEY: "((gcp_json_key))"
+  BBL_GCP_REGION: "europe-north1"
+  BBL_ENV_NAME: #@ env_name
+  BBL_STATE_DIR: #@ state_dir
+#@ end
+
 groups:
 - name: bump-deployments
   jobs:
@@ -779,15 +791,7 @@ jobs:
       - bbl-downstream-docker-image-bump-deployments
     - get: runtime-ci
 
-  - task: bbl-leftovers
-    file: bbl-ci/ci/tasks/leftovers/task.yml
-    image: cf-deployment-concourse-tasks-bbl-dev
-    params:
-      BBL_IAAS: gcp
-      BBL_GCP_SERVICE_ACCOUNT_KEY: ((gcp_json_key))
-      BBL_GCP_REGION: europe-north1
-      BBL_ENV_NAME: bump-deployments-downstream
-      BBL_STATE_DIR: bump-deployments/bbl-gcp-cf
+  - #@ leftovers_task("bump-deployments-downstream", "bump-deployments/bbl-gcp-cf")
 
   - task: bbl-up
     file: cf-deployment-concourse-tasks/bbl-up/task.yml
@@ -809,19 +813,21 @@ jobs:
       bbl-state: relint-envs
       bbl-config: bbl-ci
     on_failure:
-      task: bbl-up-destroy-infrastructure
-      file: cf-deployment-concourse-tasks/bbl-destroy/task.yml
-      image: cf-deployment-concourse-tasks-bbl-dev
-      params:
-        BBL_STATE_DIR: bump-deployments/bbl-gcp-cf
-        BBL_GCP_SERVICE_ACCOUNT_KEY: ((gcp_json_key))
-      input_mapping:
-        bbl-state: updated-bbl-state
-      ensure:
-        put: relint-envs
+      do:
+      - task: bbl-up-destroy-infrastructure
+        file: cf-deployment-concourse-tasks/bbl-destroy/task.yml
+        image: cf-deployment-concourse-tasks-bbl-dev
         params:
-          rebase: true
-          repository: updated-bbl-state
+          BBL_STATE_DIR: bump-deployments/bbl-gcp-cf
+          BBL_GCP_SERVICE_ACCOUNT_KEY: ((gcp_json_key))
+        input_mapping:
+          bbl-state: updated-bbl-state
+        ensure:
+          put: relint-envs
+          params:
+            rebase: true
+            repository: updated-bbl-state
+      - #@ leftovers_task("bump-deployments-downstream", "bump-deployments/bbl-gcp-cf")
 
   - task: add-to-gcp-dns
     file: runtime-ci/tasks/manage-gcp-dns/task.yml
@@ -835,19 +841,21 @@ jobs:
     input_mapping:
       bbl-state: updated-bbl-state
     on_failure:
-      task: destroy-infrastructure
-      file: cf-deployment-concourse-tasks/bbl-destroy/task.yml
-      image: cf-deployment-concourse-tasks-bbl-dev
-      input_mapping:
-        bbl-state: updated-bbl-state
-      params:
-        BBL_STATE_DIR: bump-deployments/bbl-gcp-cf
-        BBL_GCP_SERVICE_ACCOUNT_KEY: ((gcp_json_key))
-      ensure:
-        put: relint-envs
+      do:
+      - task: destroy-infrastructure
+        file: cf-deployment-concourse-tasks/bbl-destroy/task.yml
+        image: cf-deployment-concourse-tasks-bbl-dev
+        input_mapping:
+          bbl-state: updated-bbl-state
         params:
-          rebase: true
-          repository: updated-bbl-state
+          BBL_STATE_DIR: bump-deployments/bbl-gcp-cf
+          BBL_GCP_SERVICE_ACCOUNT_KEY: ((gcp_json_key))
+        ensure:
+          put: relint-envs
+          params:
+            rebase: true
+            repository: updated-bbl-state
+      - #@ leftovers_task("bump-deployments-downstream", "bump-deployments/bbl-gcp-cf")
 
   - task: deploy-cf
     file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
@@ -906,7 +914,7 @@ jobs:
           params:
             rebase: true
             repository: updated-bbl-state
-
+      - #@ leftovers_task("bump-deployments-downstream", "bump-deployments/bbl-gcp-cf")
   - task: run-smoke-tests
     file: cf-deployment-concourse-tasks/run-errand/task.yml
     image: cf-deployment-concourse-tasks-bbl-dev
@@ -961,6 +969,7 @@ jobs:
           params:
             rebase: true
             repository: updated-bbl-state
+      - #@ leftovers_task("bump-deployments-downstream", "bump-deployments/bbl-gcp-cf")
 
 - name: bbl-gcp-concourse-bump-deployments
   serial: true
@@ -989,16 +998,7 @@ jobs:
       - bbl-downstream-docker-image-bump-deployments
     - get: runtime-ci
 
-  - task: bbl-leftovers
-    file: bbl-ci/ci/tasks/leftovers/task.yml
-    image: cf-deployment-concourse-tasks-bbl-dev
-    params:
-      BBL_IAAS: gcp
-      BBL_GCP_SERVICE_ACCOUNT_KEY: ((gcp_json_key))
-      BBL_GCP_REGION: europe-north1
-      BBL_ENV_NAME: bump-deployments-gcp-concourse
-      BBL_STATE_DIR: bump-deployments/bbl-gcp-concourse
-
+  - #@ leftovers_task("bump-deployments-gcp-concourse", "bump-deployments/bbl-gcp-concourse")
   - task: bbl-up
     file: bbl-ci/ci/tasks/bbl-up-concourse/task.yml
     image: cf-deployment-concourse-tasks-bbl-dev
@@ -1013,20 +1013,21 @@ jobs:
     input_mapping:
       bbl-state: relint-envs
     on_failure:
-      task: bbl-up-destroy-infrastructure
-      file: cf-deployment-concourse-tasks/bbl-destroy/task.yml
-      image: cf-deployment-concourse-tasks-bbl-dev
-      params:
-        BBL_STATE_DIR: bump-deployments/bbl-gcp-concourse
-        BBL_GCP_SERVICE_ACCOUNT_KEY: ((gcp_json_key))
-      input_mapping:
-        bbl-state: updated-bbl-state
-      ensure:
-        put: relint-envs
+      do:
+      - task: bbl-up-destroy-infrastructure
+        file: cf-deployment-concourse-tasks/bbl-destroy/task.yml
+        image: cf-deployment-concourse-tasks-bbl-dev
         params:
-          rebase: true
-          repository: updated-bbl-state
-
+          BBL_STATE_DIR: bump-deployments/bbl-gcp-concourse
+          BBL_GCP_SERVICE_ACCOUNT_KEY: ((gcp_json_key))
+        input_mapping:
+          bbl-state: updated-bbl-state
+        ensure:
+          put: relint-envs
+          params:
+            rebase: true
+            repository: updated-bbl-state
+      - #@ leftovers_task("bump-deployments-gcp-concourse", "bump-deployments/bbl-gcp-concourse")
   - task: create-bosh-source-file
     file: bbl-ci/ci/tasks/create-bosh-deployment-source-file/task.yml
     image: cf-deployment-concourse-tasks-bbl-dev
@@ -1061,20 +1062,21 @@ jobs:
         - concourse-deployment/cluster/operations/web-network-extension.yml
         - bbl-ci/ci/ops-files/concourse-gcp-spot.yml
     on_failure:
-      task: bbl-up-destroy-infrastructure
-      file: cf-deployment-concourse-tasks/bbl-destroy/task.yml
-      image: cf-deployment-concourse-tasks-bbl-dev
-      params:
-        BBL_STATE_DIR: bump-deployments/bbl-gcp-concourse
-        BBL_GCP_SERVICE_ACCOUNT_KEY: ((gcp_json_key))
-      input_mapping:
-        bbl-state: updated-bbl-state
-      ensure:
-        put: relint-envs
+      do:
+      - task: bbl-up-destroy-infrastructure
+        file: cf-deployment-concourse-tasks/bbl-destroy/task.yml
+        image: cf-deployment-concourse-tasks-bbl-dev
         params:
-          rebase: true
-          repository: updated-bbl-state
-
+          BBL_STATE_DIR: bump-deployments/bbl-gcp-concourse
+          BBL_GCP_SERVICE_ACCOUNT_KEY: ((gcp_json_key))
+        input_mapping:
+          bbl-state: updated-bbl-state
+        ensure:
+          put: relint-envs
+          params:
+            rebase: true
+            repository: updated-bbl-state
+      - #@ leftovers_task("bump-deployments-gcp-concourse", "bump-deployments/bbl-gcp-concourse")
   - task: smoke-tests
     file: concourse-smoke-tests/ci/tasks/run-tests-dynamic.yml
     ensure:
@@ -1099,7 +1101,8 @@ jobs:
           params:
             rebase: true
             repository: updated-bbl-state
-
+      - #@ leftovers_task("bump-deployments-gcp-concourse", "bump-deployments/bbl-gcp-concourse")
+      
 # - name: bbl-lite-gcp-bump-deployments
 #   serial: true
 #   build_log_retention:
