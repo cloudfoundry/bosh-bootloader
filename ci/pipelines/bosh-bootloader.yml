@@ -10,6 +10,47 @@ params:
   BBL_STATE_DIR: #@ state_dir
 #@ end
 
+#@ def relint_envs_push():
+put: relint-envs
+params:
+  rebase: true
+  repository: updated-bbl-state
+#@ end
+
+#@ def destroy_infrastructure_task(task_name, state_dir, hook="ensure"):
+task: #@ task_name
+file: cf-deployment-concourse-tasks/bbl-destroy/task.yml
+image: cf-deployment-concourse-tasks-bbl-dev
+input_mapping:
+  bbl-state: updated-bbl-state
+params:
+  BBL_STATE_DIR: #@ state_dir
+  BBL_GCP_SERVICE_ACCOUNT_KEY: "((gcp_json_key))"
+#@ if hook == "ensure":
+ensure: #@ relint_envs_push()
+#@ else:
+on_failure: #@ relint_envs_push()
+#@ end
+#@ end
+
+#@ def manage_gcp_dns_task(task_name, action, state_dir, on_failure_steps=None):
+task: #@ task_name
+file: runtime-ci/tasks/manage-gcp-dns/task.yml
+image: cf-deployment-concourse-tasks-bbl-dev
+params:
+  BBL_STATE_DIR: #@ state_dir
+  GCP_DNS_SERVICE_ACCOUNT_KEY: "((bbl_dns_json_key))"
+  GCP_DNS_ZONE_NAME: bootloader-ci
+  GCP_DNS_RECORD_SET_NAME: bump-deployments-cf.bbl.ci.cloudfoundry.org
+  ACTION: #@ action
+input_mapping:
+  bbl-state: updated-bbl-state
+#@ if on_failure_steps != None:
+on_failure:
+  do: #@ on_failure_steps
+#@ end
+#@ end
+
 groups:
 - name: bump-deployments
   jobs:
@@ -427,6 +468,9 @@ jobs:
       BBL_TEST_ENV_ID_PREFIX: bump-deployments
       BBL_TEST_PACKAGES: bbl
       BBL_DOWN_TIMEOUT: 20m
+    on_failure:
+      do:
+      - #@ leftovers_task("bump-deployments", "bump-deployments")
 
 - name: bbl-downstream-docker-image-bump-deployments
   plan:
@@ -814,48 +858,10 @@ jobs:
       bbl-config: bbl-ci
     on_failure:
       do:
-      - task: bbl-up-destroy-infrastructure
-        file: cf-deployment-concourse-tasks/bbl-destroy/task.yml
-        image: cf-deployment-concourse-tasks-bbl-dev
-        params:
-          BBL_STATE_DIR: bump-deployments/bbl-gcp-cf
-          BBL_GCP_SERVICE_ACCOUNT_KEY: ((gcp_json_key))
-        input_mapping:
-          bbl-state: updated-bbl-state
-        ensure:
-          put: relint-envs
-          params:
-            rebase: true
-            repository: updated-bbl-state
+      - #@ destroy_infrastructure_task("bbl-up-destroy-infrastructure", "bump-deployments/bbl-gcp-cf")
       - #@ leftovers_task("bump-deployments-downstream", "bump-deployments/bbl-gcp-cf")
 
-  - task: add-to-gcp-dns
-    file: runtime-ci/tasks/manage-gcp-dns/task.yml
-    image: cf-deployment-concourse-tasks-bbl-dev
-    params:
-      BBL_STATE_DIR: bump-deployments/bbl-gcp-cf
-      GCP_DNS_SERVICE_ACCOUNT_KEY: ((bbl_dns_json_key))
-      GCP_DNS_ZONE_NAME: bootloader-ci
-      GCP_DNS_RECORD_SET_NAME: bump-deployments-cf.bbl.ci.cloudfoundry.org
-      ACTION: add
-    input_mapping:
-      bbl-state: updated-bbl-state
-    on_failure:
-      do:
-      - task: destroy-infrastructure
-        file: cf-deployment-concourse-tasks/bbl-destroy/task.yml
-        image: cf-deployment-concourse-tasks-bbl-dev
-        input_mapping:
-          bbl-state: updated-bbl-state
-        params:
-          BBL_STATE_DIR: bump-deployments/bbl-gcp-cf
-          BBL_GCP_SERVICE_ACCOUNT_KEY: ((gcp_json_key))
-        ensure:
-          put: relint-envs
-          params:
-            rebase: true
-            repository: updated-bbl-state
-      - #@ leftovers_task("bump-deployments-downstream", "bump-deployments/bbl-gcp-cf")
+  - #@ manage_gcp_dns_task("add-to-gcp-dns", "add", "bump-deployments/bbl-gcp-cf", [destroy_infrastructure_task("destroy-infrastructure", "bump-deployments/bbl-gcp-cf"), leftovers_task("bump-deployments-downstream", "bump-deployments/bbl-gcp-cf")])
 
   - task: deploy-cf
     file: cf-deployment-concourse-tasks/bosh-deploy/task.yml
@@ -870,17 +876,7 @@ jobs:
       OPS_FILES: operations/use-compiled-releases.yml operations/experimental/fast-deploy-with-downtime-and-danger.yml operations/experimental/use-spot-instances.yml
     on_failure:
       do:
-      - task: remove-from-gcp-dns
-        file: runtime-ci/tasks/manage-gcp-dns/task.yml
-        image: cf-deployment-concourse-tasks-bbl-dev
-        params:
-          BBL_STATE_DIR: bump-deployments/bbl-gcp-cf
-          GCP_DNS_SERVICE_ACCOUNT_KEY: ((bbl_dns_json_key))
-          GCP_DNS_ZONE_NAME: bootloader-ci
-          GCP_DNS_RECORD_SET_NAME: bump-deployments-cf.bbl.ci.cloudfoundry.org
-          ACTION: remove
-        input_mapping:
-          bbl-state: updated-bbl-state
+      - #@ manage_gcp_dns_task("remove-from-gcp-dns", "remove", "bump-deployments/bbl-gcp-cf")
 
       - task: delete-cf-deployment
         file: cf-deployment-concourse-tasks/bosh-delete-deployment/task.yml
@@ -901,19 +897,7 @@ jobs:
           BBL_STATE_DIR: bump-deployments/bbl-gcp-cf
           BBL_GCP_SERVICE_ACCOUNT_KEY: ((gcp_json_key))
 
-      - task: destroy-infrastructure
-        file: cf-deployment-concourse-tasks/bbl-destroy/task.yml
-        image: cf-deployment-concourse-tasks-bbl-dev
-        input_mapping:
-          bbl-state: updated-bbl-state
-        params:
-          BBL_STATE_DIR: bump-deployments/bbl-gcp-cf
-          BBL_GCP_SERVICE_ACCOUNT_KEY: ((gcp_json_key))
-        ensure:
-          put: relint-envs
-          params:
-            rebase: true
-            repository: updated-bbl-state
+      - #@ destroy_infrastructure_task("destroy-infrastructure", "bump-deployments/bbl-gcp-cf")
       - #@ leftovers_task("bump-deployments-downstream", "bump-deployments/bbl-gcp-cf")
   - task: run-smoke-tests
     file: cf-deployment-concourse-tasks/run-errand/task.yml
@@ -944,31 +928,9 @@ jobs:
           BBL_STATE_DIR: bump-deployments/bbl-gcp-cf
           BBL_GCP_SERVICE_ACCOUNT_KEY: ((gcp_json_key))
 
-      - task: remove-from-gcp-dns
-        file: runtime-ci/tasks/manage-gcp-dns/task.yml
-        image: cf-deployment-concourse-tasks-bbl-dev
-        params:
-          BBL_STATE_DIR: bump-deployments/bbl-gcp-cf
-          GCP_DNS_SERVICE_ACCOUNT_KEY: ((bbl_dns_json_key))
-          GCP_DNS_ZONE_NAME: bootloader-ci
-          GCP_DNS_RECORD_SET_NAME: bump-deployments-cf.bbl.ci.cloudfoundry.org
-          ACTION: remove
-        input_mapping:
-          bbl-state: updated-bbl-state
+      - #@ manage_gcp_dns_task("remove-from-gcp-dns", "remove", "bump-deployments/bbl-gcp-cf")
 
-      - task: destroy-infrastructure
-        file: cf-deployment-concourse-tasks/bbl-destroy/task.yml
-        image: cf-deployment-concourse-tasks-bbl-dev
-        input_mapping:
-          bbl-state: updated-bbl-state
-        params:
-          BBL_STATE_DIR: bump-deployments/bbl-gcp-cf
-          BBL_GCP_SERVICE_ACCOUNT_KEY: ((gcp_json_key))
-        on_failure:
-          put: relint-envs
-          params:
-            rebase: true
-            repository: updated-bbl-state
+      - #@ destroy_infrastructure_task("destroy-infrastructure", "bump-deployments/bbl-gcp-cf", "on_failure")
       - #@ leftovers_task("bump-deployments-downstream", "bump-deployments/bbl-gcp-cf")
 
 - name: bbl-gcp-concourse-bump-deployments
@@ -1014,19 +976,7 @@ jobs:
       bbl-state: relint-envs
     on_failure:
       do:
-      - task: bbl-up-destroy-infrastructure
-        file: cf-deployment-concourse-tasks/bbl-destroy/task.yml
-        image: cf-deployment-concourse-tasks-bbl-dev
-        params:
-          BBL_STATE_DIR: bump-deployments/bbl-gcp-concourse
-          BBL_GCP_SERVICE_ACCOUNT_KEY: ((gcp_json_key))
-        input_mapping:
-          bbl-state: updated-bbl-state
-        ensure:
-          put: relint-envs
-          params:
-            rebase: true
-            repository: updated-bbl-state
+      - #@ destroy_infrastructure_task("bbl-up-destroy-infrastructure", "bump-deployments/bbl-gcp-concourse")
       - #@ leftovers_task("bump-deployments-gcp-concourse", "bump-deployments/bbl-gcp-concourse")
   - task: create-bosh-source-file
     file: bbl-ci/ci/tasks/create-bosh-deployment-source-file/task.yml
@@ -1063,19 +1013,7 @@ jobs:
         - bbl-ci/ci/ops-files/concourse-gcp-spot.yml
     on_failure:
       do:
-      - task: bbl-up-destroy-infrastructure
-        file: cf-deployment-concourse-tasks/bbl-destroy/task.yml
-        image: cf-deployment-concourse-tasks-bbl-dev
-        params:
-          BBL_STATE_DIR: bump-deployments/bbl-gcp-concourse
-          BBL_GCP_SERVICE_ACCOUNT_KEY: ((gcp_json_key))
-        input_mapping:
-          bbl-state: updated-bbl-state
-        ensure:
-          put: relint-envs
-          params:
-            rebase: true
-            repository: updated-bbl-state
+      - #@ destroy_infrastructure_task("bbl-up-destroy-infrastructure", "bump-deployments/bbl-gcp-concourse")
       - #@ leftovers_task("bump-deployments-gcp-concourse", "bump-deployments/bbl-gcp-concourse")
   - task: smoke-tests
     file: concourse-smoke-tests/ci/tasks/run-tests-dynamic.yml
@@ -1088,19 +1026,7 @@ jobs:
             enabled: true
             force: true
 
-      - task: destroy-infrastructure
-        file: cf-deployment-concourse-tasks/bbl-destroy/task.yml
-        image: cf-deployment-concourse-tasks-bbl-dev
-        input_mapping:
-          bbl-state: updated-bbl-state
-        params:
-          BBL_STATE_DIR: bump-deployments/bbl-gcp-concourse
-          BBL_GCP_SERVICE_ACCOUNT_KEY: ((gcp_json_key))
-        on_failure:
-          put: relint-envs
-          params:
-            rebase: true
-            repository: updated-bbl-state
+      - #@ destroy_infrastructure_task("destroy-infrastructure", "bump-deployments/bbl-gcp-concourse", "on_failure")
       - #@ leftovers_task("bump-deployments-gcp-concourse", "bump-deployments/bbl-gcp-concourse")
       
 # - name: bbl-lite-gcp-bump-deployments
