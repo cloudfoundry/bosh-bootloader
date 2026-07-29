@@ -23,12 +23,12 @@ resource "azurerm_storage_account" "bosh" {
 
 resource "azurerm_storage_container" "bosh" {
   name                  = "bosh"
-  storage_account_name  = "${azurerm_storage_account.bosh.name}"
+  storage_account_id    = "${azurerm_storage_account.bosh.id}"
   container_access_type = "private"
 }
 
 resource "azurerm_storage_container" "stemcell" {
   name                  = "stemcell"
-  storage_account_name  = "${azurerm_storage_account.bosh.name}"
+  storage_account_id    = "${azurerm_storage_account.bosh.id}"
   container_access_type = "blob"
 }
