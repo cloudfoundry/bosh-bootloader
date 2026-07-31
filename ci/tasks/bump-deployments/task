@@ -29,7 +29,7 @@ function main() {
     git config user.email "cf-infrastructure@pivotal.io"
     git config user.name "cf-infra-bot"
 
-    git commit -am 'Update deployments'
+    git diff-index --quiet HEAD || git commit -am 'Update deployments'
 
     cp -r . ${ROOT}/bump-deployments-ci
   popd > /dev/null
