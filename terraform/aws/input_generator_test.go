@@ -64,6 +64,7 @@ var _ = Describe("InputGenerator", func() {
 				"short_env_id":       "some-env-id",
 				"region":             "some-region",
 				"availability_zones": []string{"z1", "z2", "z3"},
+				"dualstack":          false,
 			}))
 		})
 
@@ -102,6 +103,7 @@ var _ = Describe("InputGenerator", func() {
 					"ssl_certificate":             "some-cert",
 					"ssl_certificate_chain":       "some-chain",
 					"ssl_certificate_private_key": "some-key",
+					"dualstack":                   false,
 				}))
 			})
 
@@ -128,6 +130,67 @@ var _ = Describe("InputGenerator", func() {
 						"ssl_certificate_private_key": "some-key",
 						"system_domain":               "some-domain",
 						"parent_zone":                 "zone-id",
+						"dualstack":                   false,
+					}))
+				})
+			})
+		})
+
+		Context("when an nlb lb exists", func() {
+			var state storage.State
+
+			BeforeEach(func() {
+				state = storage.State{
+					IAAS:  "aws",
+					EnvID: "some-env-id",
+					AWS: storage.AWS{
+						AccessKeyID:     "some-access-key-id",
+						SecretAccessKey: "some-secret-access-key",
+						Region:          "some-region",
+					},
+					LB: storage.LB{
+						Type:  "nlb",
+						Cert:  "some-cert",
+						Chain: "some-chain",
+						Key:   "some-key",
+					},
+				}
+			})
+
+			It("returns a map with ssl certificate inputs and dualstack false", func() {
+				inputs, err := inputGenerator.Generate(state)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(inputs).To(Equal(map[string]interface{}{
+					"env_id":                      "some-env-id",
+					"short_env_id":                "some-env-id",
+					"region":                      "some-region",
+					"availability_zones":          []string{"z1", "z2", "z3"},
+					"ssl_certificate":             "some-cert",
+					"ssl_certificate_chain":       "some-chain",
+					"ssl_certificate_private_key": "some-key",
+					"dualstack":                   false,
+				}))
+			})
+
+			Context("when dualstack is enabled", func() {
+				BeforeEach(func() {
+					state.LB.DualStack = true
+				})
+
+				It("returns a map with dualstack true", func() {
+					inputs, err := inputGenerator.Generate(state)
+					Expect(err).NotTo(HaveOccurred())
+
+					Expect(inputs).To(Equal(map[string]interface{}{
+						"env_id":                      "some-env-id",
+						"short_env_id":                "some-env-id",
+						"region":                      "some-region",
+						"availability_zones":          []string{"z1", "z2", "z3"},
+						"ssl_certificate":             "some-cert",
+						"ssl_certificate_chain":       "some-chain",
+						"ssl_certificate_private_key": "some-key",
+						"dualstack":                   true,
 					}))
 				})
 			})

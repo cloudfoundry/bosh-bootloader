@@ -88,6 +88,7 @@ func (p Plan) ParseArgs(args []string, state storage.State) (PlanConfig, error) 
 	planFlags.String(&lbArgs.CertPath, "lb-cert", "")
 	planFlags.String(&lbArgs.KeyPath, "lb-key", "")
 	planFlags.String(&lbArgs.Domain, "lb-domain", "")
+	planFlags.Bool(&lbArgs.DualStack, "dual-stack")
 	if state.IAAS == "aws" {
 		planFlags.String(&lbArgs.ChainPath, "lb-chain", "")
 	}

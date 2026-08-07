@@ -392,7 +392,7 @@ resource "aws_subnet" "bosh_subnet" {
   cidr_block      = cidrsubnet(var.vpc_cidr, 8, 0)
   ipv6_cidr_block = var.dualstack ? "${cidrsubnet(aws_vpc.vpc[0].ipv6_cidr_block, 8, 0)}" : null
 
-  assign_ipv6_address_on_creation = var.dualstack
+  assign_ipv6_address_on_creation = false
   enable_dns64                    = var.dualstack
 
   tags = {
@@ -429,7 +429,7 @@ resource "aws_subnet" "internal_subnets" {
   availability_zone = element(var.availability_zones, count.index)
   ipv6_cidr_block   = var.dualstack ? "${cidrsubnet(aws_vpc.vpc[0].ipv6_cidr_block, 8, count.index + 1)}" : null
 
-  assign_ipv6_address_on_creation = var.dualstack
+  assign_ipv6_address_on_creation = false
   enable_dns64                    = var.dualstack
 
   tags = {
