@@ -449,6 +449,7 @@ jobs:
       trigger: true
     - get: bbl-ci
       resource: bosh-bootloader-ci
+    - get: cf-deployment-concourse-tasks-bbl-dev
     - get: version
       resource: version-bump-deployments
       passed:
