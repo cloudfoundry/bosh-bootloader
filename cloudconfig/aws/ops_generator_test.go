@@ -47,6 +47,7 @@ var _ = Describe("OpsGenerator", func() {
 			"cf_tcp_lb_internal_security_group":    "some-cf-tcp-lb-internal-security-group",
 			"concourse_lb_target_groups":           []string{"some-concourse-lb-target-group", "some-other-concourse-lb-target-group"},
 			"concourse_lb_internal_security_group": "some-concourse-lb-internal-security-group",
+			"dualstack":                            false,
 			"internal_az_subnet_id_mapping": map[string]interface{}{
 				"us-east-1c": "some-internal-subnet-ids-3",
 				"us-east-1a": "some-internal-subnet-ids-1",
@@ -136,6 +137,7 @@ cf_tcp_lb_internal_security_group: some-cf-tcp-lb-internal-security-group
 cf_iso_router_lb_name: some-cf-iso-seg-router-lb-name
 concourse_lb_target_groups: [some-concourse-lb-target-group, some-other-concourse-lb-target-group]
 concourse_lb_internal_security_group: some-concourse-lb-internal-security-group
+dualstack: false
 internal_az_subnet_cidr_mapping:
   us-east-1a: 10.0.16.0/20
   us-east-1b: 10.0.32.0/20
@@ -154,6 +156,36 @@ iso_az_subnet_id_mapping:
   us-east-1b: some-iso-seg-subnet-id-2
   us-east-1c: some-iso-seg-subnet-id-3
 `))
+		})
+
+		Context("when dualstack is enabled", func() {
+			BeforeEach(func() {
+				terraformManager.GetOutputsCall.Returns.Outputs.Map["dualstack"] = true
+				terraformManager.GetOutputsCall.Returns.Outputs.Map["internal_cidr_ipv6"] = "2600:1f18::/56"
+				terraformManager.GetOutputsCall.Returns.Outputs.Map["internal_az_subnet_ipv6_cidr_mapping"] = map[string]interface{}{
+					"us-east-1a": "2600:1f18:0:1::/64",
+					"us-east-1b": "2600:1f18:0:2::/64",
+					"us-east-1c": "2600:1f18:0:3::/64",
+				}
+			})
+
+			It("includes _v6 suffixed variables for each AZ", func() {
+				varsYAML, err := opsGenerator.GenerateVars(incomingState)
+				Expect(err).NotTo(HaveOccurred())
+
+				// IPv4 vars still present
+				Expect(varsYAML).To(ContainSubstring("az1_gateway: 10.0.16.1"))
+				Expect(varsYAML).To(ContainSubstring("az1_subnet: some-internal-subnet-ids-1"))
+
+				// IPv6 _v6 vars present
+				Expect(varsYAML).To(ContainSubstring("az1_gateway_v6: 2600:1f18:0:1::1"))
+				Expect(varsYAML).To(ContainSubstring("az1_range_v6: 2600:1f18:0:1::/64"))
+				Expect(varsYAML).To(ContainSubstring("az2_gateway_v6: 2600:1f18:0:2::1"))
+				Expect(varsYAML).To(ContainSubstring("az3_gateway_v6: 2600:1f18:0:3::1"))
+
+				// No offset-based az4+ IPv6 entries
+				Expect(varsYAML).NotTo(ContainSubstring("az4_gateway_v6"))
+			})
 		})
 
 		Context("failure cases", func() {
@@ -191,7 +223,7 @@ iso_az_subnet_id_mapping:
 				Expect(err).To(MatchError(fmt.Sprintf("missing %s terraform output", outputKey)))
 			},
 				Entry("when internal_security_group is missing", "internal_security_group", ""),
-
+				Entry("when dualstack is missing", "dualstack", "nlb"),
 				Entry("when internal_az_subnet_id_mapping is missing", "internal_az_subnet_id_mapping", "cf"),
 				Entry("when internal_az_subnet_cidr_mapping is missing", "internal_az_subnet_cidr_mapping", "cf"),
 				Entry("when cf_router_lb_name is missing", "cf_router_lb_name", "cf"),
@@ -244,6 +276,32 @@ iso_az_subnet_id_mapping:
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(opsYAML).To(MatchYAML(expectedOpsYAML))
+			})
+		})
+
+		Context("when there are cf lbs with dualstack", func() {
+			It("generates ops with separate IPv6 networks", func() {
+				incomingState.LB.Type = "cf"
+				incomingState.LB.DualStack = true
+				opsYAML, err := opsGenerator.Generate(incomingState)
+				Expect(err).NotTo(HaveOccurred())
+
+				// IPv6 subnets are in separate networks, not mixed into private/default
+				Expect(opsYAML).To(ContainSubstring("name: private_v6"))
+				Expect(opsYAML).To(ContainSubstring("name: default_v6"))
+
+				// IPv6 networks use _v6 variable references
+				numAZs := len(availabilityZones.RetrieveAZsCall.Returns.AZs)
+				for i := range numAZs {
+					az := fmt.Sprintf("az%d", i+1)
+					Expect(opsYAML).To(ContainSubstring(fmt.Sprintf("((%s_gateway_v6))", az)))
+					Expect(opsYAML).To(ContainSubstring(fmt.Sprintf("((%s_range_v6))", az)))
+					Expect(opsYAML).To(ContainSubstring(fmt.Sprintf("((%s_reserved_1_v6))", az)))
+					Expect(opsYAML).To(ContainSubstring(fmt.Sprintf("((%s_static_v6))", az)))
+				}
+
+				// IPv6 subnets share the same AWS subnet as IPv4
+				Expect(opsYAML).To(ContainSubstring("((az1_subnet))"))
 			})
 		})
 
