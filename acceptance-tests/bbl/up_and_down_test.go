@@ -11,7 +11,7 @@ import (
 	"github.com/onsi/gomega/gexec"
 )
 
-var _ = Describe("up_and_down", func() {
+var _ = Describe("up_and_down", Serial, func() {
 	var (
 		bbl     actors.BBL
 		boshcli actors.BOSHCLI
