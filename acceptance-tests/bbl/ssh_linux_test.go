@@ -12,7 +12,7 @@ import (
 	"github.com/onsi/gomega/gexec"
 )
 
-var _ = Describe("ssh", func() {
+var _ = Describe("ssh", Serial, func() {
 	var (
 		bbl actors.BBL
 
