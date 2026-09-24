@@ -72,6 +72,26 @@ var _ = Describe("InputGenerator", func() {
 				}))
 			})
 		})
+
+		Context("when labels are provided", func() {
+			BeforeEach(func() {
+				state.GCP.Labels = map[string]string{"pipeline": "bosh-deployment"}
+			})
+
+			It("returns a map containing the labels variable", func() {
+				inputs, err := inputGenerator.Generate(state)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(inputs).To(Equal(map[string]interface{}{
+					"env_id":        state.EnvID,
+					"project_id":    state.GCP.ProjectID,
+					"region":        state.GCP.Region,
+					"zone":          state.GCP.Zone,
+					"system_domain": state.LB.Domain,
+					"labels":        state.GCP.Labels,
+				}))
+			})
+		})
 	})
 
 	Describe("Credentials", func() {

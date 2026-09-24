@@ -4,6 +4,7 @@
 * <a href='#opsfile'>Using a BOSH ops-file with bbl</a>
 * <a href='#terraform'>Customizing IaaS Paving with Terraform</a>
 * <a href='#vm-extensions'>Using VM Extensions for Cost Optimization</a>
+* <a href='#gcp-labels'>Applying GCP resource labels for cost attribution</a>
 * <a href='#plan-patches'>Applying and authoring plan patches, bundled modifications to default bbl configurations.</a>
 
 ## <a name='opsfile'></a>Using a BOSH ops-file with bbl
@@ -102,6 +103,41 @@ instance_groups:
 - Best suited for stateless, fault-tolerant workloads
 - Not recommended for singleton instances or databases
 - For legacy compatibility, the `preemptible` vm_extension is also available (uses the older GCP API)
+
+## <a name='gcp-labels'></a>GCP resource labels
+
+On GCP, `bbl` can apply [resource labels](https://cloud.google.com/resource-manager/docs/labels-overview)
+to the resources it manages. This is useful for attributing cost (for example, VM hours) to the
+pipeline, team or environment that owns an environment.
+
+Pass one or more `--gcp-label key=value` flags, or set `BBL_GCP_LABELS` to a comma-separated list.
+Keys and values are lower-cased, must be non-empty, and must satisfy GCP's label constraints: keys may
+contain lowercase letters, digits and `-`; values may also contain `_`; both are limited to 63 characters.
+
+```bash
+bbl plan --name my-env --iaas gcp \
+  --gcp-region us-central1 \
+  --gcp-label pipeline=bosh-deployment \
+  --gcp-label owner=fiwg
+
+bbl up
+```
+
+The labels are applied to:
+
+* the BOSH director and jumpbox VMs (through the google CPI `labels` cloud property)
+* the GCP resources that `bbl` creates with terraform that support labels (static addresses,
+  load balancer forwarding rules and the managed DNS zone)
+
+Some GCP resources (VPC networks, subnets, firewall rules, routers and target pools) do not support
+labels and are therefore not labelled.
+
+Labels are stored in the environment state, so they persist across `bbl plan`/`bbl up` runs. To
+inspect labelled instances:
+
+```bash
+gcloud compute instances list --filter='labels.pipeline=bosh-deployment'
+```
 
 ## <a name='plan-patches'> [Plan Patches](https://github.com/cloudfoundry/bosh-bootloader/tree/master/plan-patches)
 

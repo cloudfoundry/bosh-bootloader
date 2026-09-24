@@ -25,6 +25,10 @@ func (i InputGenerator) Generate(state storage.State) (map[string]interface{}, e
 		input["ssl_certificate_private_key"] = state.LB.Key
 	}
 
+	if len(state.GCP.Labels) > 0 {
+		input["labels"] = state.GCP.Labels
+	}
+
 	return input, nil
 }
 

@@ -20,7 +20,8 @@ resource "google_compute_firewall" "firewall-concourse" {
 }
 
 resource "google_compute_address" "concourse-address" {
-  name = "${var.env_id}-concourse"
+  name   = "${var.env_id}-concourse"
+  labels = var.labels
 }
 
 resource "google_compute_target_pool" "target-pool" {
@@ -35,6 +36,7 @@ resource "google_compute_forwarding_rule" "ssh-forwarding-rule" {
   port_range  = "2222"
   ip_protocol = "TCP"
   ip_address  = "${google_compute_address.concourse-address.address}"
+  labels      = var.labels
 }
 
 resource "google_compute_forwarding_rule" "https-forwarding-rule" {
@@ -43,6 +45,7 @@ resource "google_compute_forwarding_rule" "https-forwarding-rule" {
   port_range  = "443"
   ip_protocol = "TCP"
   ip_address  = "${google_compute_address.concourse-address.address}"
+  labels      = var.labels
 }
 
 resource "google_compute_forwarding_rule" "http-forwarding-rule" {
@@ -51,6 +54,7 @@ resource "google_compute_forwarding_rule" "http-forwarding-rule" {
   port_range  = "80"
   ip_protocol = "TCP"
   ip_address  = "${google_compute_address.concourse-address.address}"
+  labels      = var.labels
 }
 
 resource "google_compute_forwarding_rule" "credhub-forwarding-rule" {
@@ -59,6 +63,7 @@ resource "google_compute_forwarding_rule" "credhub-forwarding-rule" {
   port_range  = "8844"
   ip_protocol = "TCP"
   ip_address  = "${google_compute_address.concourse-address.address}"
+  labels      = var.labels
 }
 
 resource "google_compute_forwarding_rule" "uaa-forwarding-rule" {
@@ -67,4 +72,5 @@ resource "google_compute_forwarding_rule" "uaa-forwarding-rule" {
   port_range  = "8443"
   ip_protocol = "TCP"
   ip_address  = "${google_compute_address.concourse-address.address}"
+  labels      = var.labels
 }

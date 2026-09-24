@@ -23,8 +23,9 @@ type GlobalFlags struct {
 	AzureSubscriptionID string `long:"azure-subscription-id"  env:"BBL_AZURE_SUBSCRIPTION_ID"`
 	AzureTenantID       string `long:"azure-tenant-id"        env:"BBL_AZURE_TENANT_ID"`
 
-	GCPServiceAccountKey string `long:"gcp-service-account-key" env:"BBL_GCP_SERVICE_ACCOUNT_KEY"`
-	GCPRegion            string `long:"gcp-region"              env:"BBL_GCP_REGION"`
+	GCPServiceAccountKey string   `long:"gcp-service-account-key" env:"BBL_GCP_SERVICE_ACCOUNT_KEY"`
+	GCPRegion            string   `long:"gcp-region"              env:"BBL_GCP_REGION"`
+	GCPLabels            []string `long:"gcp-label"               env:"BBL_GCP_LABELS" env-delim:","`
 
 	VSphereNetwork            string `long:"vsphere-network"            env:"BBL_VSPHERE_NETWORK"`
 	VSphereSubnetCIDR         string `long:"vsphere-subnet-cidr"        env:"BBL_VSPHERE_SUBNET_CIDR"`

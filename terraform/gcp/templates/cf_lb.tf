@@ -42,7 +42,8 @@ resource "google_compute_firewall" "firewall-cf" {
 }
 
 resource "google_compute_global_address" "cf-address" {
-  name = "${var.env_id}-cf"
+  name   = "${var.env_id}-cf"
+  labels = var.labels
 }
 
 resource "google_compute_global_forwarding_rule" "cf-http-forwarding-rule" {
@@ -50,6 +51,7 @@ resource "google_compute_global_forwarding_rule" "cf-http-forwarding-rule" {
   ip_address = "${google_compute_global_address.cf-address.address}"
   target     = "${google_compute_target_http_proxy.cf-http-lb-proxy.self_link}"
   port_range = "80"
+  labels     = var.labels
 }
 
 resource "google_compute_global_forwarding_rule" "cf-https-forwarding-rule" {
@@ -57,6 +59,7 @@ resource "google_compute_global_forwarding_rule" "cf-https-forwarding-rule" {
   ip_address = "${google_compute_global_address.cf-address.address}"
   target     = "${google_compute_target_https_proxy.cf-https-lb-proxy.self_link}"
   port_range = "443"
+  labels     = var.labels
 }
 
 resource "google_compute_target_http_proxy" "cf-http-lb-proxy" {
@@ -123,7 +126,8 @@ output "ssh_proxy_target_pool" {
 }
 
 resource "google_compute_address" "cf-ssh-proxy" {
-  name = "${var.env_id}-cf-ssh-proxy"
+  name   = "${var.env_id}-cf-ssh-proxy"
+  labels = var.labels
 }
 
 resource "google_compute_firewall" "cf-ssh-proxy" {
@@ -153,6 +157,7 @@ resource "google_compute_forwarding_rule" "cf-ssh-proxy" {
   port_range  = "2222"
   ip_protocol = "TCP"
   ip_address  = "${google_compute_address.cf-ssh-proxy.address}"
+  labels      = var.labels
 }
 
 output "tcp_router_target_pool" {
@@ -175,7 +180,8 @@ resource "google_compute_firewall" "cf-tcp-router" {
 }
 
 resource "google_compute_address" "cf-tcp-router" {
-  name = "${var.env_id}-cf-tcp-router"
+  name   = "${var.env_id}-cf-tcp-router"
+  labels = var.labels
 }
 
 resource "google_compute_http_health_check" "cf-tcp-router" {
@@ -200,6 +206,7 @@ resource "google_compute_forwarding_rule" "cf-tcp-router" {
   port_range  = "1024-32768"
   ip_protocol = "TCP"
   ip_address  = "${google_compute_address.cf-tcp-router.address}"
+  labels      = var.labels
 }
 
 output "ws_target_pool" {
@@ -207,7 +214,8 @@ output "ws_target_pool" {
 }
 
 resource "google_compute_address" "cf-ws" {
-  name = "${var.env_id}-cf-ws"
+  name   = "${var.env_id}-cf-ws"
+  labels = var.labels
 }
 
 resource "google_compute_target_pool" "cf-ws" {
@@ -224,6 +232,7 @@ resource "google_compute_forwarding_rule" "cf-ws-https" {
   port_range  = "443"
   ip_protocol = "TCP"
   ip_address  = "${google_compute_address.cf-ws.address}"
+  labels      = var.labels
 }
 
 resource "google_compute_forwarding_rule" "cf-ws-http" {
@@ -232,4 +241,5 @@ resource "google_compute_forwarding_rule" "cf-ws-http" {
   port_range  = "80"
   ip_protocol = "TCP"
   ip_address  = "${google_compute_address.cf-ws.address}"
+  labels      = var.labels
 }

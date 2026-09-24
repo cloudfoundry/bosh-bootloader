@@ -164,6 +164,16 @@ func (m Merger) updateGCPState(globalFlags GlobalFlags, state storage.State) (st
 		state.GCP.Region = globalFlags.GCPRegion
 	}
 
+	if len(globalFlags.GCPLabels) > 0 {
+		labels, err := parseGCPLabels(globalFlags.GCPLabels)
+		if err != nil {
+			return storage.State{}, err
+		}
+		if labels != nil {
+			state.GCP.Labels = labels
+		}
+	}
+
 	return state, nil
 }
 

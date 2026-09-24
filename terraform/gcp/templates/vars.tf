@@ -18,6 +18,11 @@ variable "credentials" {
   type = string
 }
 
+variable "labels" {
+  type    = map(string)
+  default = {}
+}
+
 provider "google" {
   credentials = "${file("${var.credentials}")}"
   project     = "${var.project_id}"

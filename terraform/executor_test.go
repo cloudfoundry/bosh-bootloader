@@ -119,6 +119,19 @@ var _ = Describe("Executor", func() {
 			Expect(bufferingCLI.RunCall.CallCount).To(Equal(0))
 		})
 
+		Context("when a map variable is provided", func() {
+			BeforeEach(func() {
+				input["labels"] = map[string]string{"pipeline": "bosh-deployment", "owner": "fiwg"}
+			})
+
+			It("serializes it as an HCL object", func() {
+				err := executor.Setup("some-template", input)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(string(fileIO.WriteFileCall.Receives[2].Contents)).To(ContainSubstring(`labels={owner="fiwg", pipeline="bosh-deployment"}`))
+			})
+		})
+
 		Context("when an error occurs", func() {
 			Context("when getting terraform dir fails", func() {
 				BeforeEach(func() {
