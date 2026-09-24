@@ -8,10 +8,12 @@ import (
 
 // GCP resource label constraints:
 // https://cloud.google.com/resource-manager/docs/labels-overview
-// The value pattern also matches the google CPI's label validation, which
-// requires a non-empty value.
+// Keys must start with a lowercase letter and may contain lowercase letters,
+// digits, dashes and underscores; values must start with a lowercase letter or
+// digit and may additionally contain underscores. The value pattern also
+// matches the google CPI's label validation, which requires a non-empty value.
 var (
-	gcpLabelKeyPattern   = regexp.MustCompile(`^[a-z]([-a-z0-9]{0,61}[a-z0-9])?$`)
+	gcpLabelKeyPattern   = regexp.MustCompile(`^[a-z]([-_a-z0-9]{0,61}[a-z0-9])?$`)
 	gcpLabelValuePattern = regexp.MustCompile(`^[a-z0-9]([-_a-z0-9]{0,61}[a-z0-9])?$`)
 )
 
@@ -40,7 +42,7 @@ func parseGCPLabels(entries []string) (map[string]string, error) {
 		value = strings.ToLower(strings.TrimSpace(value))
 
 		if !gcpLabelKeyPattern.MatchString(key) {
-			return nil, fmt.Errorf("invalid GCP label key %q: must start with a lowercase letter and may contain only lowercase letters, digits or dashes (max 63 characters)", key)
+			return nil, fmt.Errorf("invalid GCP label key %q: must start with a lowercase letter and may contain only lowercase letters, digits, dashes or underscores (max 63 characters)", key)
 		}
 		if !gcpLabelValuePattern.MatchString(value) {
 			return nil, fmt.Errorf("invalid GCP label value %q: must contain at least one lowercase letter, digit, dash or underscore (max 63 characters)", value)
