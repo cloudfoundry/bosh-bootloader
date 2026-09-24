@@ -252,6 +252,34 @@ var _ = Describe("Executor", func() {
 			})
 		})
 
+		Context("when gcp labels are provided", func() {
+			It("adds a labels ops file to the create-env args", func() {
+				state := storage.State{GCP: storage.GCP{Labels: map[string]string{"pipeline": "bosh-deployment"}}}
+				err := executor.PlanJumpboxWithState(dirInput, deploymentDir, "gcp", state)
+				Expect(err).NotTo(HaveOccurred())
+
+				expectedArgs := []string{
+					fmt.Sprintf("%s/jumpbox.yml", relativeDeploymentDir),
+					"--state", fmt.Sprintf("%s/jumpbox-state.json", relativeVarsDir),
+					"--vars-store", fmt.Sprintf("%s/jumpbox-vars-store.yml", relativeVarsDir),
+					"--vars-file", fmt.Sprintf("%s/jumpbox-vars-file.yml", relativeVarsDir),
+					"-o", fmt.Sprintf("%s/gcp/cpi.yml", relativeDeploymentDir),
+					"-o", filepath.Join(relativeStateDir, "bbl-ops-files", "gcp", "gcp-labels.yml"),
+					"--var-file", `gcp_credentials_json="${BBL_GCP_SERVICE_ACCOUNT_KEY_PATH}"`,
+					"-v", `project_id="${BBL_GCP_PROJECT_ID}"`,
+					"-v", `zone="${BBL_GCP_ZONE}"`,
+				}
+
+				shellScript, err := fs.ReadFile(fmt.Sprintf("%s/create-jumpbox.sh", stateDir))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(shellScript)).To(Equal(formatScript("create-env", stateDir, expectedArgs)))
+
+				contents, err := fs.ReadFile(filepath.Join(stateDir, "bbl-ops-files", "gcp", "gcp-labels.yml"))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(contents)).To(Equal("- type: replace\n  path: /resource_pools/name=vms/cloud_properties/labels?\n  value:\n    pipeline: bosh-deployment\n"))
+			})
+		})
+
 		Context("when the iaas is vsphere", func() {
 			It("generates create-env args for jumpbox", func() {
 				err := executor.PlanJumpbox(dirInput, deploymentDir, "vsphere")
@@ -476,6 +504,29 @@ var _ = Describe("Executor", func() {
   path: /networks/name=default/subnets/0/cloud_properties/ephemeral_external_ip?
   value: true
 `))
+			})
+
+			Context("when gcp labels are provided", func() {
+				It("adds a labels ops file to the create-env args", func() {
+					state := storage.State{GCP: storage.GCP{Labels: map[string]string{"pipeline": "bosh-deployment"}}}
+					expectedArgs := []string{
+						filepath.Join(relativeDeploymentDir, "bosh.yml"),
+						"--state", filepath.Join(relativeVarsDir, "bosh-state.json"),
+						"--vars-store", filepath.Join(relativeVarsDir, "director-vars-store.yml"),
+						"--vars-file", filepath.Join(relativeVarsDir, "director-vars-file.yml"),
+						"-o", filepath.Join(relativeDeploymentDir, "gcp", "cpi.yml"),
+						"-o", filepath.Join(relativeDeploymentDir, "jumpbox-user.yml"),
+						"-o", filepath.Join(relativeDeploymentDir, "uaa.yml"),
+						"-o", filepath.Join(relativeDeploymentDir, "credhub.yml"),
+						"-o", filepath.Join(relativeStateDir, "bbl-ops-files", "gcp", "bosh-director-ephemeral-ip-ops.yml"),
+						"-o", filepath.Join(relativeStateDir, "bbl-ops-files", "gcp", "gcp-labels.yml"),
+						"--var-file", `gcp_credentials_json="${BBL_GCP_SERVICE_ACCOUNT_KEY_PATH}"`,
+						"-v", `project_id="${BBL_GCP_PROJECT_ID}"`,
+						"-v", `zone="${BBL_GCP_ZONE}"`,
+					}
+
+					behavesLikePlan(expectedArgs, cli, fs, executor, dirInput, deploymentDir, "gcp", stateDir, state)
+				})
 			})
 		})
 

@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 
 	"github.com/cloudfoundry/bosh-bootloader/fileio"
@@ -103,10 +104,27 @@ func formatVars(inputs map[string]interface{}) string {
 			value = vString
 		} else if valList, ok := value.([]string); ok {
 			value = fmt.Sprintf(`["%s"]`, strings.Join(valList, `","`))
+		} else if valMap, ok := value.(map[string]string); ok {
+			value = formatStringMap(valMap)
 		}
 		formattedVars = fmt.Sprintf("%s\n%s=%v", formattedVars, name, value)
 	}
 	return formattedVars
+}
+
+func formatStringMap(values map[string]string) string {
+	keys := make([]string, 0, len(values))
+	for key := range values {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+
+	pairs := make([]string, 0, len(keys))
+	for _, key := range keys {
+		pairs = append(pairs, fmt.Sprintf(`%s="%s"`, key, values[key]))
+	}
+
+	return fmt.Sprintf("{%s}", strings.Join(pairs, ", "))
 }
 
 func (e Executor) runTFCommand(args []string) error {

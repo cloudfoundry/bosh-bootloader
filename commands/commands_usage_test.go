@@ -26,6 +26,7 @@ var _ = Describe("Commands Usage", func() {
 
   --gcp-service-account-key          GCP Service Access Key to use    env: $BBL_GCP_SERVICE_ACCOUNT_KEY
   --gcp-region                       GCP Region to use                env: $BBL_GCP_REGION
+  --gcp-label                        GCP resource labels (key=value)  env: $BBL_GCP_LABELS
 
   --azure-subscription-id            Azure Subscription ID            env: $BBL_AZURE_SUBSCRIPTION_ID
   --azure-tenant-id                  Azure Tenant ID                  env: $BBL_AZURE_TENANT_ID

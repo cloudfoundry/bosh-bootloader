@@ -1,5 +1,6 @@
 resource "google_compute_address" "jumpbox-ip" {
-  name = "${var.env_id}-jumpbox-ip"
+  name   = "${var.env_id}-jumpbox-ip"
+  labels = var.labels
 }
 
 output "jumpbox_url" {

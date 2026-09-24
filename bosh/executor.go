@@ -138,6 +138,14 @@ func (e Executor) PlanJumpboxWithState(input DirInput, deploymentDir, iaas strin
 		}
 	}
 
+	labelsOpsPath, labelsOpsErr := e.writeGCPLabelsOpsFile(input.StateDir, iaas, state)
+	if labelsOpsErr != nil {
+		return fmt.Errorf("jumpbox write gcp labels ops file: %s", labelsOpsErr)
+	}
+	if labelsOpsPath != "" {
+		sharedArgs = append(sharedArgs, "-o", labelsOpsPath)
+	}
+
 	jumpboxState := filepath.Join(input.VarsDir, "jumpbox-state.json")
 
 	boshArgs := append([]string{filepath.Join(deploymentDir, "jumpbox.yml"), "--state", jumpboxState}, sharedArgs...)
@@ -225,6 +233,25 @@ func (e Executor) getDirectorSetupFiles(stateDir, deploymentDir, iaas string) []
 	return files
 }
 
+func (e Executor) writeGCPLabelsOpsFile(stateDir, iaas string, state storage.State) (string, error) {
+	if iaas != "gcp" || len(state.GCP.Labels) == 0 {
+		return "", nil
+	}
+
+	contents, err := GCPLabelsOps(state.GCP.Labels)
+	if err != nil {
+		return "", fmt.Errorf("marshal gcp labels ops file: %s", err)
+	}
+
+	path := filepath.Join(stateDir, "bbl-ops-files", "gcp", "gcp-labels.yml")
+	os.MkdirAll(filepath.Dir(path), storage.StateMode) //nolint:errcheck
+	if err := e.FS.WriteFile(path, contents, storage.StateMode); err != nil {
+		return "", fmt.Errorf("write gcp labels ops file: %s", err)
+	}
+
+	return path, nil
+}
+
 func (e Executor) getDirectorOpsFiles(stateDir, deploymentDir, iaas string, state storage.State) []string {
 	files := []string{
 		filepath.Join(deploymentDir, iaas, "cpi.yml"),
@@ -270,6 +297,14 @@ func (e Executor) PlanDirectorWithState(input DirInput, deploymentDir, iaas stri
 
 	for _, f := range e.getDirectorOpsFiles(input.StateDir, deploymentDir, iaas, state) {
 		sharedArgs = append(sharedArgs, "-o", f)
+	}
+
+	labelsOpsPath, labelsOpsErr := e.writeGCPLabelsOpsFile(input.StateDir, iaas, state)
+	if labelsOpsErr != nil {
+		return fmt.Errorf("director write gcp labels ops file: %s", labelsOpsErr)
+	}
+	if labelsOpsPath != "" {
+		sharedArgs = append(sharedArgs, "-o", labelsOpsPath)
 	}
 
 	boshState := filepath.Join(input.VarsDir, "bosh-state.json")
