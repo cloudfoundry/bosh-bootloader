@@ -111,8 +111,9 @@ to the resources it manages. This is useful for attributing cost (for example, V
 pipeline, team or environment that owns an environment.
 
 Pass one or more `--gcp-label key=value` flags, or set `BBL_GCP_LABELS` to a comma-separated list.
-Keys and values are lower-cased, must be non-empty, and must satisfy GCP's label constraints: keys may
-contain lowercase letters, digits and `-`; values may also contain `_`; both are limited to 63 characters.
+Keys and values are lower-cased, must be non-empty, and must satisfy GCP's label constraints: keys must
+start with a lowercase letter and may contain lowercase letters, digits, `-` and `_`; values must start
+with a lowercase letter or digit and may also contain `_`; both are limited to 63 characters.
 
 ```bash
 bbl plan --name my-env --iaas gcp \
@@ -126,11 +127,18 @@ bbl up
 The labels are applied to:
 
 * the BOSH director and jumpbox VMs (through the google CPI `labels` cloud property)
-* the GCP resources that `bbl` creates with terraform that support labels (static addresses,
-  load balancer forwarding rules and the managed DNS zone)
+* the GCP resources that `bbl` creates with terraform that support labels (static addresses and the
+  managed DNS zone)
+
+Load balancer forwarding rules are intentionally not labelled: they are not billed, and Google Cloud
+only supports labels on some forwarding-rule types.
 
 Some GCP resources (VPC networks, subnets, firewall rules, routers and target pools) do not support
 labels and are therefore not labelled.
+
+Note: when labels are propagated to deployment VMs through the BOSH director, the google CPI normalizes
+`_` in label keys to `-`. Use `-` in a key if you need the same key on both `bbl`-managed resources and
+deployment VMs.
 
 Labels are stored in the environment state, so they persist across `bbl plan`/`bbl up` runs. To
 inspect labelled instances:

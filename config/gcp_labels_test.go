@@ -51,6 +51,19 @@ var _ = Describe("GCP labels", func() {
 		})
 	})
 
+	Context("when a label key contains an underscore", func() {
+		BeforeEach(func() {
+			globalFlags.GCPLabels = []string{"cost_center=platform"}
+		})
+
+		It("accepts it", func() {
+			Expect(mergeErr).NotTo(HaveOccurred())
+			Expect(mergedState.GCP.Labels).To(Equal(map[string]string{
+				"cost_center": "platform",
+			}))
+		})
+	})
+
 	Context("when a label is missing a value separator", func() {
 		BeforeEach(func() {
 			globalFlags.GCPLabels = []string{"pipeline"}
