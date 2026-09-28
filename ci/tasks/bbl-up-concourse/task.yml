@@ -37,6 +37,9 @@ params:
   # - Path is relative to the `bbl-state` input
   BBL_GCP_REGION:
 
+  # - Optional: GCP resource labels applied by bbl (key=value, comma-separated)
+  BBL_GCP_LABELS:
+
   BBL_STATE_DIR: bbl-state
   BBL_IAAS:
   BBL_ENV_NAME:

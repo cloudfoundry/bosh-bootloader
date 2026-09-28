@@ -466,6 +466,7 @@ jobs:
       BBL_IAAS: gcp
       BBL_GCP_SERVICE_ACCOUNT_KEY: ((gcp_json_key))
       BBL_GCP_REGION: europe-north1
+      BBL_GCP_LABELS: pipeline=bosh-bootloader
       BBL_TEST_ENV_ID_PREFIX: bump-deployments
       BBL_TEST_PACKAGES: bbl
       BBL_DOWN_TIMEOUT: 20m
@@ -845,6 +846,7 @@ jobs:
       BBL_IAAS: gcp
       BBL_GCP_SERVICE_ACCOUNT_KEY: ((gcp_json_key))
       BBL_GCP_REGION: europe-north1
+      BBL_GCP_LABELS: pipeline=bosh-bootloader
       BBL_LB_CERT: ((bbl_lb_cert.certificate))
       BBL_LB_KEY: ((bbl_lb_cert.private_key))
       LB_DOMAIN: bump-deployments-cf.bbl.ci.cloudfoundry.org
@@ -968,6 +970,7 @@ jobs:
       BBL_IAAS: gcp
       BBL_GCP_SERVICE_ACCOUNT_KEY: ((gcp_json_key))
       BBL_GCP_REGION: europe-north1
+      BBL_GCP_LABELS: pipeline=bosh-bootloader
       BBL_ENV_NAME: bump-deployments-gcp-concourse
       BBL_STATE_DIR: bump-deployments/bbl-gcp-concourse
       DELETE_TERRAFORM_PLUGINS: false
