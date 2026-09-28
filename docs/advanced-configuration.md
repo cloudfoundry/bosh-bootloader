@@ -135,7 +135,8 @@ The labels are applied to:
 
 Runtime config tags require a BOSH director running bosh-release v260 or newer. Deployments that are
 already running pick the tags up on their next deploy, which updates the VM metadata without
-recreating the VMs.
+recreating the VMs. Tags that a deployment sets itself take precedence over the runtime config tags, so
+a deployment can override a label by setting the same key in its own `tags`.
 
 Persistent disks are only labelled when the CPI implements `set_disk_metadata`, which the google CPI
 does not, so disks are not labelled on GCP.
