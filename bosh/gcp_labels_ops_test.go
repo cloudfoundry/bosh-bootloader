@@ -23,3 +23,20 @@ var _ = Describe("GCPLabelsOps", func() {
 `))
 	})
 })
+
+var _ = Describe("GCPLabelsRuntimeConfigOps", func() {
+	It("renders an ops file that sets the labels as runtime config tags", func() {
+		ops, err := bosh.GCPLabelsRuntimeConfigOps(map[string]string{
+			"pipeline": "bosh-deployment",
+			"owner":    "fiwg",
+		})
+		Expect(err).NotTo(HaveOccurred())
+
+		Expect(string(ops)).To(Equal(`- type: replace
+  path: /tags?
+  value:
+    owner: fiwg
+    pipeline: bosh-deployment
+`))
+	})
+})

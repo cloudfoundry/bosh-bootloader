@@ -23,3 +23,17 @@ func GCPLabelsOps(labels map[string]string) ([]byte, error) {
 		},
 	})
 }
+
+// GCPLabelsRuntimeConfigOps renders an ops file that applies the GCP resource
+// labels as runtime config tags. The director combines runtime config tags with
+// the tags of each deployment, so every VM deployed to the environment is
+// labelled, not only the VMs that bbl creates itself.
+func GCPLabelsRuntimeConfigOps(labels map[string]string) ([]byte, error) {
+	return yaml.Marshal([]gcpLabelsOp{
+		{
+			Type:  "replace",
+			Path:  "/tags?",
+			Value: labels,
+		},
+	})
+}

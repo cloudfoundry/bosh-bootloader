@@ -127,8 +127,18 @@ bbl up
 The labels are applied to:
 
 * the BOSH director and jumpbox VMs (through the google CPI `labels` cloud property)
+* every other VM deployed to the environment: `bbl` sets the labels as a `tags` block in the
+  director's runtime config, and the director combines runtime config tags with the tags of each
+  deployment
 * the GCP resources that `bbl` creates with terraform that support labels (static addresses and the
   managed DNS zone)
+
+Runtime config tags require a BOSH director running bosh-release v260 or newer. Deployments that are
+already running pick the tags up on their next deploy, which updates the VM metadata without
+recreating the VMs.
+
+Persistent disks are only labelled when the CPI implements `set_disk_metadata`, which the google CPI
+does not, so disks are not labelled on GCP.
 
 Load balancer forwarding rules are intentionally not labelled: they are not billed, and Google Cloud
 only supports labels on some forwarding-rule types.
@@ -136,9 +146,8 @@ only supports labels on some forwarding-rule types.
 Some GCP resources (VPC networks, subnets, firewall rules, routers and target pools) do not support
 labels and are therefore not labelled.
 
-Note: when labels are propagated to deployment VMs through the BOSH director, the google CPI normalizes
-`_` in label keys to `-`. Use `-` in a key if you need the same key on both `bbl`-managed resources and
-deployment VMs.
+Note: the google CPI normalizes `_` in label keys to `-`. Use `-` in a key if you need the same key on
+both `bbl`-managed resources and deployment VMs.
 
 Labels are stored in the environment state, so they persist across `bbl plan`/`bbl up` runs. To
 inspect labelled instances:

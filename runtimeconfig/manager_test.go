@@ -130,6 +130,59 @@ var _ = Describe("Manager", func() {
 			Expect(configUpdater.UpdateRuntimeConfigCall.Receives.Name).To(Equal("dns"))
 		})
 
+		Context("when the environment has gcp labels", func() {
+			BeforeEach(func() {
+				incomingState.GCP = storage.GCP{
+					Labels: map[string]string{"pipeline": "bosh-bootloader"},
+				}
+			})
+
+			It("writes an ops file that applies the labels as runtime config tags", func() {
+				err := manager.Update(incomingState)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(fileIO.WriteFileCall.CallCount).To(Equal(1))
+				Expect(fileIO.WriteFileCall.Receives[0].Filename).To(Equal(filepath.Join("some-runtime-config-dir", "gcp-labels.yml")))
+				Expect(fileIO.WriteFileCall.Receives[0].Contents).To(MatchYAML([]byte(`- type: replace
+  path: /tags?
+  value:
+    pipeline: bosh-bootloader
+`)))
+			})
+
+			Context("when writing the ops file fails", func() {
+				BeforeEach(func() {
+					fileIO.WriteFileCall.Returns = []fakes.WriteFileReturn{{Error: errors.New("some-error")}}
+				})
+
+				It("returns an error", func() {
+					err := manager.Update(incomingState)
+					Expect(err).To(MatchError("failed to sync gcp labels ops file: write ops file: some-error"))
+				})
+			})
+		})
+
+		Context("when the environment has no gcp labels", func() {
+			It("removes a stale ops file", func() {
+				err := manager.Update(incomingState)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(fileIO.RemoveCall.CallCount).To(Equal(1))
+				Expect(fileIO.RemoveCall.Receives[0].Name).To(Equal(filepath.Join("some-runtime-config-dir", "gcp-labels.yml")))
+			})
+
+			Context("when removing a stale ops file fails", func() {
+				BeforeEach(func() {
+					fileIO.RemoveCall.Returns = []fakes.RemoveReturn{{Error: errors.New("some-error")}}
+				})
+
+				It("returns an error", func() {
+					err := manager.Update(incomingState)
+					Expect(err).To(MatchError("failed to sync gcp labels ops file: remove stale ops file: some-error"))
+				})
+			})
+		})
+
 		Context("failure cases", func() {
 			Context("when the config updater fails to initialize the authenticated bosh cli", func() {
 				BeforeEach(func() {

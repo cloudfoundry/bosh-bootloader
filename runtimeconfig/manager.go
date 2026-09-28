@@ -2,6 +2,7 @@ package runtimeconfig
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -22,6 +23,7 @@ type fs interface {
 	fileio.DirReader
 	fileio.Stater
 	fileio.FileReader
+	fileio.Remover
 }
 
 type logger interface {
@@ -83,6 +85,10 @@ func (m Manager) Update(state storage.State) error {
 		return fmt.Errorf("could not find runtime-config directory: %s", err)
 	}
 
+	if err := m.syncGCPLabelsOpsFile(dir, state); err != nil {
+		return fmt.Errorf("failed to sync gcp labels ops file: %s", err)
+	}
+
 	opsFiles := []string{}
 	files, err := m.fs.ReadDir(dir)
 	if err != nil {
@@ -101,6 +107,34 @@ func (m Manager) Update(state storage.State) error {
 	err = m.runtimeConfigUpdater.UpdateRuntimeConfig(boshCLI, runtimeConfigPath, opsFiles, "dns")
 	if err != nil {
 		return fmt.Errorf("failed to update runtime-config: %s", err)
+	}
+
+	return nil
+}
+
+// syncGCPLabelsOpsFile keeps the ops file that applies the GCP resource labels
+// as runtime config tags in sync with the environment state. The director
+// combines runtime config tags with the tags of every deployment, so all VMs
+// deployed to the environment are labelled, not only the VMs that bbl creates
+// itself. The file is removed when the environment has no GCP labels so that
+// stale tags are not left behind.
+func (m Manager) syncGCPLabelsOpsFile(dir string, state storage.State) error {
+	path := filepath.Join(dir, "gcp-labels.yml")
+
+	if state.IAAS != "gcp" || len(state.GCP.Labels) == 0 {
+		if err := m.fs.Remove(path); err != nil && !os.IsNotExist(err) {
+			return fmt.Errorf("remove stale ops file: %s", err)
+		}
+		return nil
+	}
+
+	contents, err := bosh.GCPLabelsRuntimeConfigOps(state.GCP.Labels)
+	if err != nil {
+		return fmt.Errorf("marshal ops file: %s", err)
+	}
+
+	if err := m.fs.WriteFile(path, contents, 0600); err != nil {
+		return fmt.Errorf("write ops file: %s", err)
 	}
 
 	return nil
