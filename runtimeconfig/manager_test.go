@@ -135,19 +135,28 @@ var _ = Describe("Manager", func() {
 				incomingState.GCP = storage.GCP{
 					Labels: map[string]string{"pipeline": "bosh-bootloader"},
 				}
+				// The generated ops file is written before the directory is read,
+				// so it appears in the listing and is passed to the update.
+				fileIO.ReadDirCall.Returns.FileInfos = []os.FileInfo{
+					fakes.FileInfo{FileName: "runtime-config.yml"},
+					fakes.FileInfo{FileName: "gcp-labels.yml"},
+				}
 			})
 
-			It("writes an ops file that applies the labels as runtime config tags", func() {
+			It("writes an ops file that applies the labels as runtime config tags and passes it to the director", func() {
 				err := manager.Update(incomingState)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(fileIO.WriteFileCall.CallCount).To(Equal(1))
 				Expect(fileIO.WriteFileCall.Receives[0].Filename).To(Equal(filepath.Join("some-runtime-config-dir", "gcp-labels.yml")))
 				Expect(fileIO.WriteFileCall.Receives[0].Contents).To(MatchYAML([]byte(`- type: replace
-  path: /tags?
-  value:
-    pipeline: bosh-bootloader
+  path: /tags?/pipeline?
+  value: bosh-bootloader
 `)))
+
+				Expect(configUpdater.UpdateRuntimeConfigCall.Receives.OpsFilepaths).To(ContainElement(
+					filepath.Join("some-runtime-config-dir", "gcp-labels.yml"),
+				))
 			})
 
 			Context("when writing the ops file fails", func() {
