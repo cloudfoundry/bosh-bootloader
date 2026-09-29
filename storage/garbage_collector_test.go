@@ -106,18 +106,23 @@ var _ = Describe("garbage collector", func() {
 		})
 
 		Describe("runtime-config", func() {
-			var runtimeConfig string
+			var (
+				runtimeConfig string
+				gcpLabels     string
+			)
 
 			BeforeEach(func() {
 				runtimeConfig = filepath.Join("some-dir", "runtime-config", "runtime-config.yml")
+				gcpLabels = filepath.Join("some-dir", "runtime-config", "gcp-labels.yml")
 				fileIO.StatCall.Returns.FileInfo = &fakes.DirFileInfo{}
 			})
 
-			It("removes the runtime-config file; removes the directory if there are no user-provided files", func() {
+			It("removes the runtime-config and generated gcp-labels files; removes the directory if there are no user-provided files", func() {
 				err := gc.Remove("some-dir")
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(fileIO.RemoveAllCall.Receives).To(ContainElement(fakes.RemoveAllReceive{Path: runtimeConfig}))
+				Expect(fileIO.RemoveAllCall.Receives).To(ContainElement(fakes.RemoveAllReceive{Path: gcpLabels}))
 				// don't remove populated, relevant dirs
 				Expect(fileIO.RemoveCall.Receives).To(ContainElement(fakes.RemoveReceive{
 					Name: filepath.Join("some-dir", "runtime-config"),

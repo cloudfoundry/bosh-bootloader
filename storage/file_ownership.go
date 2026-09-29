@@ -33,6 +33,7 @@ var bblManaged = []string{
 
 	// runtime config
 	"runtime-config/runtime-config.yml",
+	"runtime-config/gcp-labels.yml",
 
 	// directories
 	"jumpbox-deployment",

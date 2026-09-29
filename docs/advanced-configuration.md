@@ -138,6 +138,15 @@ already running pick the tags up on their next deploy, which updates the VM meta
 recreating the VMs. Tags that a deployment sets itself take precedence over the runtime config tags, so
 a deployment can override a label by setting the same key in its own `tags`.
 
+BOSH enforces its own reserved VM tags (`director`, `deployment`, `instance_group`, `job`, `id`,
+`name`, `index` and `created_at`). A label that uses one of those keys is still applied to the GCP
+resources that `bbl` labels directly, but the director will not apply it to deployment VMs, so avoid
+reserved keys when the label is meant to reach VMs.
+
+The director only allows `tags` in a single runtime config. If another runtime config on the director
+already defines `tags`, `bbl up` fails with `Runtime config 'tags' key cannot be defined in multiple
+runtime configs.` Remove the other definition before enabling `--gcp-label`.
+
 Persistent disks are only labelled when the CPI implements `set_disk_metadata`, which the google CPI
 does not, so disks are not labelled on GCP.
 
