@@ -1,8 +1,8 @@
 module github.com/cloudfoundry/bosh-bootloader
 
-go 1.24.0
+go 1.27.0
 
-toolchain go1.24.1
+toolchain go1.27.1
 
 require (
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.3.0
