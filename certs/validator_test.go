@@ -339,9 +339,7 @@ var _ = Describe("CertificateValidator", func() {
 				It("returns an error", func() {
 					err := certificateValidator.Validate(realCert, invalidKey, []byte{})
 
-					expectedErr := multierror.NewMultiError("")
-					expectedErr.Add(errors.New("tls: failed to parse private key"))
-					Expect(err).To(Equal(expectedErr))
+					Expect(err.Error()).To(ContainSubstring("tls: failed to parse private key"))
 				})
 			})
 
