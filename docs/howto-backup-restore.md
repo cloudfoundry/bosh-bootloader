@@ -5,7 +5,7 @@
 ## Enable Backup and Restore on your BBL Director
 
 Backup and restore is not enabled by default in a bbl'd up director.
-To enable it, you must apply the `bbr.yml` ops file that is present in the top-level of the [`bosh-deployment` repo](https://github.com/cloudfoundry/bosh-deployment/blob/master/bbr.yml).
+To enable it, you must apply the `bbr.yml` ops file that is present in the top-level of the [`bosh-deployment` repo](https://github.com/cloudfoundry/bosh-deployment/blob/main/bbr.yml).
 To do this, follow the [instructions for overriding your director creation script](customization.md#override-scripts) and apply this ops file. 
 
 ## Accessing your BBL Environment
