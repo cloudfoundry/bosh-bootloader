@@ -254,7 +254,6 @@ resources:
   type: git
   source:
     uri: https://github.com/cloudfoundry/bosh-deployment.git
-    branch: master
 
 - name: jumpbox-deployment
   type: git
