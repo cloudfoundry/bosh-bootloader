@@ -42,7 +42,7 @@ $ sudo apt-get update
 $ sudo apt install -y gnupg wget
 
 # Import the CloudFoundry APT repo GPG key
-$ wget -q -O - https://raw.githubusercontent.com/cloudfoundry/bosh-apt-resources/master/public.key | sudo apt-key add -
+$ wget -q -O - https://raw.githubusercontent.com/cloudfoundry/bosh-apt-resources/HEAD/public.key | sudo apt-key add -
 
 # Add the CloudFoundry APT repo
 $ echo "deb http://apt.ci.cloudfoundry.org stable main" | sudo tee /etc/apt/sources.list.d/bosh-cloudfoundry.list
@@ -66,7 +66,7 @@ name=CloudFoundry CLI RPMs
 baseurl=http://rpm.ci.cloudfoundry.org/
 enabled=1
 gpgcheck=1
-gpgkey=https://raw.githubusercontent.com/cloudfoundry/bosh-apt-resources/master/rpm-public.key
+gpgkey=https://raw.githubusercontent.com/cloudfoundry/bosh-apt-resources/HEAD/rpm-public.key
 EOF
 
 # Refresh metadata and install packages

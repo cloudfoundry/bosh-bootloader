@@ -260,7 +260,6 @@ resources:
   type: git
   source:
     uri: https://github.com/cloudfoundry/jumpbox-deployment.git
-    branch: master
 
 - name: runtime-ci
   type: git
