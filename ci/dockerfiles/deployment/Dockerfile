@@ -44,7 +44,7 @@ RUN apt-get install -y ca-certificates gnupg curl && \
   apt-get -qqy install google-cloud-cli
 
 # Install jq
-RUN wget https://github.com/stedolan/jq/releases/latest/download/jq-linux64 && \
+RUN wget https://github.com/jqlang/jq/releases/latest/download/jq-linux64 && \
   mv jq-linux64 /usr/local/bin/jq && \
   chmod +x /usr/local/bin/jq
 
