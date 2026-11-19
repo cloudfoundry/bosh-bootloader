@@ -83,11 +83,16 @@ resource "aws_lb_target_group" "concourse_lb_80" {
   protocol = "TCP"
   vpc_id   = local.vpc_id
 
+  # HTTP health check rather than TCP. NLB has supported HTTP health checks
+  # since launch; this also clears the stale path/matcher values that
+  # environments created while this check was HTTP inherited (see issue #701).
   health_check {
     healthy_threshold   = 10
     unhealthy_threshold = 10
     interval            = 30
-    protocol            = "TCP"
+    protocol            = "HTTP"
+    path                = "/"
+    matcher             = "200-499"
   }
 
   tags = {
