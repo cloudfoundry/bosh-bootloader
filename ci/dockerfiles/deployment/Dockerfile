@@ -78,9 +78,10 @@ RUN curl -s https://api.github.com/repos/cloudfoundry/cli/releases/latest | \
 
 # Install Credhub
 RUN curl -s https://api.github.com/repos/cloudfoundry/credhub-cli/releases/latest | \
-  jq -r '.assets[] | .browser_download_url | select(contains("linux"))' | \
+  jq -r '.assets[] | .browser_download_url | select(contains("linux-amd64"))' | \
   xargs wget && \
-  mv credhub-* /usr/local/bin/credhub && \
+  tar -xzf credhub-linux-amd64-*.tgz -C /usr/local/bin && \
+  rm credhub-linux-amd64-*.tgz && \
   chmod +x /usr/local/bin/credhub
 
 # Install yq
